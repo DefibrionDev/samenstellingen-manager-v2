@@ -21,38 +21,38 @@ Per todo geldt TDD red-green-refactor; dat hoeft niet als aparte stap te staan.
 - [x] `.env.example` met `SAMENSTELLINGEN_DB_PATH`.
 - [x] Leeg `bin/samenstellingen` PHP-entry-script met shebang en sanity-output, chmod +x.
 - [x] `make check` is groen op het lege project.
-- [ ] **Commit + push** "fase 0: scaffolding".
+- [x] **Commit + push** "fase 0: scaffolding".
 
 ## Fase 1 — Domein: `Group` value object
 
-- [ ] `Group` readonly class in `src/Domain/Group/Group.php` met `name` en `familyHeadItemcode`, beide niet-leeg (whitespace telt als leeg), getrimd. Validatie in de constructor met `InvalidArgumentException`.
+- [x] `Group` readonly class in `src/Domain/Group/Group.php` met `name` en `familyHeadItemcode`, beide niet-leeg (whitespace telt als leeg), getrimd. Validatie in de constructor met `InvalidArgumentException`.
 
 ## Fase 2 — Repository-contract + in-memory fake
 
-- [ ] `GroupRepository` interface in `src/Domain/Group/` met `save(Group $g): void` en `findByName(string $name): ?Group`.
-- [ ] `GroupAlreadyExistsException` in `src/Domain/Group/`, gegooid bij een duplicate naam.
-- [ ] `InMemoryGroupRepository` in `src/Infrastructure/Persistence/InMemory/`, met round-trip-gedrag en duplicate-detectie.
+- [x] `GroupRepository` interface in `src/Domain/Group/` met `save(Group $g): void` en `findByName(string $name): ?Group`.
+- [x] `GroupAlreadyExistsException` in `src/Domain/Group/`, gegooid bij een duplicate naam.
+- [x] `InMemoryGroupRepository` in `src/Infrastructure/Persistence/InMemory/`, met round-trip-gedrag en duplicate-detectie.
 
 ## Fase 3 — SQLite-repository
 
-- [ ] Migratiebestand `migrations/0001_create_groups.sql` met de `groups`-tabel uit PLAN.md §3 (`naming_template` weglaten voor nu).
-- [ ] Kleine migrator in `src/Infrastructure/Persistence/Sqlite/Migrator.php` die SQL-bestanden in volgorde toepast.
-- [ ] `SqliteGroupRepository implements GroupRepository`, geparametriseerd op een PDO-instance, met dezelfde gedragsgaranties als de in-memory variant.
-- [ ] `tests/bootstrap.php` migreert de test-database één keer per phpunit-process; tests cleanen rijen tussen runs, geen re-migrate.
-- [ ] Gedeelde abstracte testbasis zodat beide repository-implementaties dezelfde contract-tests draaien.
+- [x] Migratiebestand `migrations/0001_create_groups.sql` met de `groups`-tabel uit PLAN.md §3 (`naming_template` weglaten voor nu).
+- [x] Kleine migrator in `src/Infrastructure/Persistence/Sqlite/Migrator.php` die SQL-bestanden in volgorde toepast.
+- [x] `SqliteGroupRepository implements GroupRepository`, geparametriseerd op een PDO-instance, met dezelfde gedragsgaranties als de in-memory variant.
+- [x] `tests/bootstrap.php` migreert de test-database één keer per phpunit-process; tests cleanen rijen tussen runs, geen re-migrate.
+- [x] Gedeelde abstracte testbasis zodat beide repository-implementaties dezelfde contract-tests draaien.
 
-## Fase 4 — Application: define-group use case
+## Fase 4 — Application: create-group use case
 
-- [ ] `DefineGroup` command-DTO in `src/Application/Group/` met `name` en `familyHeadItemcode`.
-- [ ] `DefineGroupHandler` in `src/Application/Group/` met `GroupRepository` via de constructor; legt een `Group` vast en retourneert hem; laat `GroupAlreadyExistsException` doorgaan.
+- [x] `CreateGroup` command-DTO in `src/Application/Group/` met `name` en `familyHeadItemcode`.
+- [x] `CreateGroupHandler` in `src/Application/Group/` met `GroupRepository` via de constructor; legt een `Group` vast en retourneert hem; laat `GroupAlreadyExistsException` doorgaan.
 
-## Fase 5 — CLI: het define-group commando
+## Fase 5 — CLI: het create-group commando
 
-- [ ] `symfony/console` toevoegen aan `composer.json`.
-- [ ] `DefineGroupCommand` in `src/Interface/Cli/` (werknaam `group:define <name> <family-head-itemcode>`) die `DefineGroupHandler` aanroept; vangt `GroupAlreadyExistsException` op en rendert "Groep '<naam>' bestaat al" met niet-nul exit code.
-- [ ] `bin/samenstellingen` als dunne bootstrap: één gedeelde PDO, repo, handler, command — geregistreerd in de Symfony Console application.
-- [ ] **Handmatige verificatie**: `bin/samenstellingen group:define "Reanibex 100 Semi-Auto" 52112` tegen een echt lokaal SQLite-bestand, dan opnieuw uitvoeren voor de duplicate-melding. Inspecteer met `sqlite3`.
-- [ ] `make check` is groen.
+- [x] `symfony/console` toevoegen aan `composer.json`.
+- [x] `CreateGroupCommand` in `src/Interface/Cli/` (commando `group:create <name> <family-head-itemcode>`) die `CreateGroupHandler` aanroept; vangt `GroupAlreadyExistsException` op en rendert "Groep '<naam>' bestaat al" met niet-nul exit code.
+- [x] `bin/samenstellingen` als dunne bootstrap: één gedeelde PDO, repo, handler, command — geregistreerd in de Symfony Console application.
+- [x] **Handmatige verificatie**: `bin/samenstellingen group:create "Reanibex 100 Semi-Auto" 52112` tegen een echt lokaal SQLite-bestand, dan opnieuw uitvoeren voor de duplicate-melding. Inspecteer met `sqlite3`.
+- [x] `make check` is groen.
 - [ ] **Commit + push** "slice 1: groep definiëren via CLI".
 
 ---
@@ -66,8 +66,8 @@ Per todo geldt TDD red-green-refactor; dat hoeft niet als aparte stap te staan.
 - `naming_template`-veld op `groups` (nog geen normalisatie-werk).
 - Uniciteit van `family_head_itemcode` over groepen heen — huidige regel is "naam is uniek"; opnieuw bekijken zodra een latere slice dit nodig heeft.
 
-## Openstaande vragen voordat we Fase 1 starten
+## Beslissingen
 
-1. CLI-library: is `symfony/console` ok, of voorkeur voor iets lichters (bv. `league/climate`, eigen parser)?
-2. Itemcode-normalisatie: laten zoals het is (alleen trim) of uppercase / non-alphanum strippen?
-3. Commando-werknaam: `group:define` ok, of een andere namespace (`groups:define`, `define-group`, …)?
+- CLI-library: `symfony/console`.
+- Itemcode-normalisatie: trim-only.
+- Commando-naam: `group:create`.

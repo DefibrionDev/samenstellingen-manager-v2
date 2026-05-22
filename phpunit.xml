@@ -10,11 +10,11 @@
     <testsuites>
         <testsuite name="unit">
             <directory>tests</directory>
-            <exclude>tests/Infrastructure</exclude>
+            <exclude>tests/Infrastructure/Persistence/Sqlite</exclude>
             <exclude>tests/Interface</exclude>
         </testsuite>
         <testsuite name="integration">
-            <directory>tests/Infrastructure</directory>
+            <directory>tests/Infrastructure/Persistence/Sqlite</directory>
             <directory>tests/Interface</directory>
         </testsuite>
     </testsuites>
