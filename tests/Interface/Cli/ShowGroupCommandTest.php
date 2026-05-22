@@ -48,7 +48,7 @@ final class ShowGroupCommandTest extends TestCase
         self::assertStringContainsString('50013', $display);
         self::assertStringContainsString('50015', $display);
         self::assertStringContainsString('60112', $display);
-        self::assertStringContainsString('(nog niet bekend)', $display);
+        self::assertStringContainsString('niet gecheckt', $display);
     }
 
     #[Test]

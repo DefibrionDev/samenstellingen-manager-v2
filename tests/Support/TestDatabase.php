@@ -34,6 +34,8 @@ final class TestDatabase
     public static function truncate(): void
     {
         $pdo = self::pdo();
+        $pdo->exec('DELETE FROM afas_samenstelling_bom');
+        $pdo->exec('DELETE FROM afas_samenstellingen');
         $pdo->exec('DELETE FROM group_variants');
         $pdo->exec('DELETE FROM group_base_items');
         $pdo->exec('DELETE FROM group_accessoires');
@@ -41,7 +43,8 @@ final class TestDatabase
         $pdo->exec('DELETE FROM group_bases');
         $pdo->exec('DELETE FROM groups');
         $pdo->exec(
-            "DELETE FROM sqlite_sequence WHERE name IN ('groups', 'accessoires', 'group_variants', 'group_bases')"
+            "DELETE FROM sqlite_sequence
+             WHERE name IN ('groups', 'accessoires', 'group_variants', 'group_bases', 'afas_samenstellingen')"
         );
     }
 

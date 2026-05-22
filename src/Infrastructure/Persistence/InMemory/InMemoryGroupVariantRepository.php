@@ -106,6 +106,54 @@ final class InMemoryGroupVariantRepository implements GroupVariantRepository
         return $variants;
     }
 
+    public function markMatched(int $variantId, string $afasItemcode): void
+    {
+        $this->updateById(
+            $variantId,
+            static fn (GroupVariant $v): GroupVariant => new GroupVariant(
+                $v->id,
+                $v->baseId,
+                $v->baseName,
+                $v->accessoireItemcode,
+                $v->accessoireLabel,
+                $afasItemcode,
+                'matched',
+            ),
+        );
+    }
+
+    public function markNoMatch(int $variantId): void
+    {
+        $this->updateById(
+            $variantId,
+            static fn (GroupVariant $v): GroupVariant => new GroupVariant(
+                $v->id,
+                $v->baseId,
+                $v->baseName,
+                $v->accessoireItemcode,
+                $v->accessoireLabel,
+                null,
+                'no_match',
+            ),
+        );
+    }
+
+    /**
+     * @param callable(GroupVariant): GroupVariant $mutator
+     */
+    private function updateById(int $variantId, callable $mutator): void
+    {
+        foreach ($this->variantsByGroup as $familyHead => $variants) {
+            foreach ($variants as $key => $variant) {
+                if ($variant->id === $variantId) {
+                    $this->variantsByGroup[$familyHead][$key] = $mutator($variant);
+
+                    return;
+                }
+            }
+        }
+    }
+
     private function keyFor(int $baseId, ?string $accessoireItemcode): string
     {
         return $baseId . '|' . ($accessoireItemcode ?? '');

@@ -4,13 +4,19 @@
 declare(strict_types=1);
 
 use Defibrion\Samenstellingen\Application\Accessoire\CreateAccessoireHandler;
+use Defibrion\Samenstellingen\Application\Afas\PullAfasSamenstellingenHandler;
 use Defibrion\Samenstellingen\Application\Group\AddAccessoireToGroupHandler;
 use Defibrion\Samenstellingen\Application\Group\AddBaseItemHandler;
 use Defibrion\Samenstellingen\Application\Group\AddBaseToGroupHandler;
 use Defibrion\Samenstellingen\Application\Group\CreateGroupHandler;
 use Defibrion\Samenstellingen\Application\Group\ShowGroupHandler;
+use Defibrion\Samenstellingen\Application\Group\SyncGroupAgainstAfasHandler;
+use Defibrion\Samenstellingen\Domain\Afas\VariantMatcher;
+use Defibrion\Samenstellingen\Infrastructure\Afas\Http\AfasClientFactory;
+use Defibrion\Samenstellingen\Infrastructure\Afas\Http\HttpAfasSamenstellingenFetcher;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\Migrator;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAccessoireRepository;
+use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAfasSamenstellingenRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteGroupAccessoireRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteGroupBaseItemRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteGroupBaseRepository;
@@ -19,9 +25,11 @@ use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteGroupVaria
 use Defibrion\Samenstellingen\Interface\Cli\AddAccessoireCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AddBaseCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AddBaseItemCommand;
+use Defibrion\Samenstellingen\Interface\Cli\AfasPullCommand;
 use Defibrion\Samenstellingen\Interface\Cli\CreateAccessoireCommand;
 use Defibrion\Samenstellingen\Interface\Cli\CreateGroupCommand;
 use Defibrion\Samenstellingen\Interface\Cli\ShowGroupCommand;
+use Defibrion\Samenstellingen\Interface\Cli\SyncGroupAgainstAfasCommand;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Dotenv\Dotenv;
 
@@ -51,6 +59,7 @@ $baseItemRepository = new SqliteGroupBaseItemRepository($pdo);
 $accessoireRepository = new SqliteAccessoireRepository($pdo);
 $linkRepository = new SqliteGroupAccessoireRepository($pdo);
 $variantRepository = new SqliteGroupVariantRepository($pdo);
+$afasSamenstellingenRepository = new SqliteAfasSamenstellingenRepository($pdo);
 
 $createGroupHandler = new CreateGroupHandler($groupRepository);
 $showGroupHandler = new ShowGroupHandler(
@@ -64,6 +73,12 @@ $addBaseHandler = new AddBaseToGroupHandler($baseRepository, $variantRepository)
 $addBaseItemHandler = new AddBaseItemHandler($baseItemRepository);
 $createAccessoireHandler = new CreateAccessoireHandler($accessoireRepository);
 $addAccessoireHandler = new AddAccessoireToGroupHandler($linkRepository, $variantRepository);
+$syncHandler = new SyncGroupAgainstAfasHandler(
+    $variantRepository,
+    $baseItemRepository,
+    $afasSamenstellingenRepository,
+    new VariantMatcher(),
+);
 
 $application = new Application('samenstellingen-manager');
 $application->addCommand(new CreateGroupCommand($createGroupHandler));
@@ -72,4 +87,15 @@ $application->addCommand(new AddBaseCommand($addBaseHandler));
 $application->addCommand(new AddBaseItemCommand($addBaseItemHandler));
 $application->addCommand(new CreateAccessoireCommand($createAccessoireHandler));
 $application->addCommand(new AddAccessoireCommand($addAccessoireHandler));
+$application->addCommand(new SyncGroupAgainstAfasCommand($syncHandler));
+
+// `afas:pull` heeft credentials nodig en bouwt zelf z'n fetcher.
+$hasAfasCreds = is_string($_ENV['AFAS_BASE_URL'] ?? null) && ($_ENV['AFAS_BASE_URL'] ?? '') !== ''
+    && is_string($_ENV['AFAS_TOKEN'] ?? null) && ($_ENV['AFAS_TOKEN'] ?? '') !== '';
+if ($hasAfasCreds) {
+    $fetcher = new HttpAfasSamenstellingenFetcher(AfasClientFactory::fromEnv());
+    $pullHandler = new PullAfasSamenstellingenHandler($fetcher, $afasSamenstellingenRepository);
+    $application->addCommand(new AfasPullCommand($pullHandler));
+}
+
 exit($application->run());

@@ -57,7 +57,8 @@ final readonly class SqliteGroupVariantRepository implements GroupVariantReposit
                 gb.name AS base_name,
                 a.itemcode AS accessoire_itemcode,
                 a.label AS accessoire_label,
-                gv.afas_samenstelling_itemcode
+                gv.afas_samenstelling_itemcode,
+                gv.afas_status
              FROM group_variants gv
              INNER JOIN group_bases gb ON gb.id = gv.base_id
              LEFT JOIN accessoires a ON a.id = gv.accessoire_id
@@ -84,6 +85,7 @@ final readonly class SqliteGroupVariantRepository implements GroupVariantReposit
             $accessoireItemcode = $row['accessoire_itemcode'] ?? null;
             $accessoireLabel = $row['accessoire_label'] ?? null;
             $afasItemcode = $row['afas_samenstelling_itemcode'] ?? null;
+            $afasStatus = $row['afas_status'] ?? null;
 
             $variants[] = new GroupVariant(
                 $id,
@@ -92,10 +94,38 @@ final readonly class SqliteGroupVariantRepository implements GroupVariantReposit
                 is_string($accessoireItemcode) ? $accessoireItemcode : null,
                 is_string($accessoireLabel) ? $accessoireLabel : null,
                 is_string($afasItemcode) ? $afasItemcode : null,
+                is_string($afasStatus) ? $afasStatus : null,
             );
         }
 
         return $variants;
+    }
+
+    public function markMatched(int $variantId, string $afasItemcode): void
+    {
+        $stmt = $this->pdo->prepare(
+            "UPDATE group_variants
+             SET afas_samenstelling_itemcode = :itemcode,
+                 afas_status = 'matched',
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE id = :id"
+        );
+        $stmt->execute([
+            ':itemcode' => $afasItemcode,
+            ':id' => $variantId,
+        ]);
+    }
+
+    public function markNoMatch(int $variantId): void
+    {
+        $stmt = $this->pdo->prepare(
+            "UPDATE group_variants
+             SET afas_samenstelling_itemcode = NULL,
+                 afas_status = 'no_match',
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE id = :id"
+        );
+        $stmt->execute([':id' => $variantId]);
     }
 
     /**

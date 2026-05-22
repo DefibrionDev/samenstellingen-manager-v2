@@ -214,7 +214,63 @@ Design-keuzes (zie ook §Beslissingen):
 - [x] End-to-end demo opgebouwd: 1 groep, 2 bases (NL + FR), elk 5 items, 2 accessoires.
 - [x] 6 varianten elk met hun complete BOM zichtbaar in `group:show 52112`.
 - [x] `make check` groen (108 tests / 214 assertions).
-- [ ] **Commit + push** "slice 5: schema-refactor + verwachte BOM lokaal modelleren".
+- [x] **Commit + push** "slice 5: schema-refactor + verwachte BOM lokaal modelleren".
+
+---
+
+## Slice 6 — AFAS-matching: koppel lokale varianten aan echte AFAS-samenstellingen
+
+Eindbeeld: `group:sync-afas <family-head>` haalt alle AFAS samenstellingen onder dit Itemcode_Parent op, vergelijkt hun BOMs met onze lokale verwachte BOMs per variant, en zet per variant:
+- **Match gevonden**: `afas_samenstelling_itemcode` = AFAS-SKU, `afas_status` = `matched`.
+- **Geen match**: `afas_status` = `no_match`, SKU blijft NULL.
+- **Meerdere matches**: harde error (zou bij goede AFAS-staat nooit mogen gebeuren).
+
+Design-keuzes:
+- Echte AFAS HTTP-client in deze slice. `guzzlehttp/guzzle` als dependency.
+- Match-criterium: BOM van AFAS-samenstelling = exact dezelfde set itemcodes als de lokale variant's verwachte BOM (set-gelijkheid, quantity wordt genegeerd).
+- AFAS-data wordt niet lokaal gecached: elke sync queryt AFAS fresh.
+- `AfasSamenstellingenFetcher` interface zodat tests in-memory kunnen draaien zonder credentials.
+
+### Fase 1 — Composer + env
+- [x] `composer require guzzlehttp/guzzle`.
+- [x] `.env.example` uitbreiden met `AFAS_BASE_URL` en `AFAS_TOKEN`.
+
+### Fase 2 — Domein
+- [x] `AfasSamenstelling` readonly value object.
+- [x] `AmbiguousMatchException`.
+- [x] `VariantMatcher` domain service.
+
+### Fase 3 — Fetcher abstractie + fake
+- [x] `AfasSamenstellingenFetcher` interface.
+- [x] `InMemoryAfasSamenstellingenFetcher` voor tests.
+
+### Fase 4 — HTTP-implementatie
+- [x] `AfasHttpClient` met Guzzle.
+- [x] `HttpAfasSamenstellingenFetcher` via Get_Artikelen + easylinq_stock_item + easylinq_stock_item_parts.
+- [x] `AfasClientFactory::fromEnv()`.
+
+### Fase 5 — Repository-uitbreiding
+- [x] `GroupVariant.afasStatus` veld.
+- [x] `GroupVariantRepository.markMatched` / `markNoMatch`.
+- [x] In-memory + SQLite implementaties.
+
+### Fase 6 — Application
+- [x] `SyncGroupAgainstAfas` + handler retourneert `SyncSummary`.
+
+### Fase 7 — CLI
+- [x] `SyncGroupAgainstAfasCommand` (`group:sync-afas`).
+- [x] Commando registreert zich alleen als AFAS-credentials in env staan.
+- [x] `bin/samenstellingen` bedraadt fetcher + handler.
+
+### Fase 8 — Show-output uitbreiden
+- [x] `ShowGroupCommand` toont per variant status `✓ matched` / `✗ no_match` / `— niet gecheckt`.
+
+### Fase 9 — Handmatige verificatie + commit
+- [x] `make check` groen (114 tests / 229 assertions).
+- [x] Refactor naar aparte `afas:pull` + lokale snapshot-tabellen (`afas_samenstellingen`, `afas_samenstelling_bom`); geen `Itemcode_Parent`-filter meer.
+- [x] Live tegen echte AFAS: `afas:pull` haalde 1894 samenstellingen op; `group:sync-afas 52112` vond AFAS-SKU `52112` voor de NL-base variant.
+- [x] `group:show 52112` toont `AFAS: ✓ matched (52112)`.
+- [ ] **Commit + push** "slice 6: AFAS-matching via lokale snapshot".
 
 ---
 

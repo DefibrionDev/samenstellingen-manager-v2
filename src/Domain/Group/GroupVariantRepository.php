@@ -7,10 +7,7 @@ namespace Defibrion\Samenstellingen\Domain\Group;
 interface GroupVariantRepository
 {
     /**
-     * Synchroniseer de variantmatrix voor een groep met het cartesisch product
-     * van bases × {null ∪ accessoires}. Idempotent.
-     *
-     * @throws GroupNotFoundException wanneer de groep niet bestaat.
+     * @throws GroupNotFoundException
      */
     public function regenerateForGroup(string $familyHeadItemcode): void;
 
@@ -20,4 +17,8 @@ interface GroupVariantRepository
      * @return list<GroupVariant>
      */
     public function findAllForGroup(string $familyHeadItemcode): array;
+
+    public function markMatched(int $variantId, string $afasItemcode): void;
+
+    public function markNoMatch(int $variantId): void;
 }

@@ -98,15 +98,20 @@ final class ShowGroupCommand extends Command
     private function renderVariant(SymfonyStyle $io, int $index, GroupVariantWithBom $variantWithBom): void
     {
         $variant = $variantWithBom->variant;
+        $statusLabel = match ($variant->afasStatus) {
+            'matched' => sprintf('<info>✓ matched</info> (%s)', $variant->afasSamenstellingItemcode ?? '?'),
+            'no_match' => '<comment>✗ no_match</comment>',
+            default => '<fg=gray>— niet gecheckt</>',
+        };
         $header = sprintf(
-            '#%d — Base #%d (%s)%s   |   AFAS-SKU: %s',
+            '#%d — Base #%d (%s)%s   |   AFAS: %s',
             $index,
             $variant->baseId,
             $variant->baseName,
             $variant->accessoireItemcode !== null
                 ? sprintf(' + %s (%s)', $variant->accessoireItemcode, $variant->accessoireLabel ?? '')
                 : '',
-            $variant->afasSamenstellingItemcode ?? '(nog niet bekend)',
+            $statusLabel,
         );
         $io->writeln($header);
 

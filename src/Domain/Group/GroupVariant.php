@@ -13,6 +13,7 @@ final readonly class GroupVariant
         public ?string $accessoireItemcode,
         public ?string $accessoireLabel,
         public ?string $afasSamenstellingItemcode,
+        public ?string $afasStatus = null,
     ) {
     }
 
