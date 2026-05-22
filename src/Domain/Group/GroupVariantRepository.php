@@ -8,17 +8,16 @@ interface GroupVariantRepository
 {
     /**
      * Synchroniseer de variantmatrix voor een groep met het cartesisch product
-     * van bases × {null ∪ accessoires}. Idempotent: ontbrekende rijen worden
-     * toegevoegd, bestaande rijen (incl. eventuele AFAS-koppeling) blijven staan.
+     * van bases × {null ∪ accessoires}. Idempotent.
      *
      * @throws GroupNotFoundException wanneer de groep niet bestaat.
      */
-    public function regenerateForGroup(string $groupName): void;
+    public function regenerateForGroup(string $familyHeadItemcode): void;
 
     /**
-     * @throws GroupNotFoundException wanneer de groep niet bestaat.
+     * @throws GroupNotFoundException
      *
      * @return list<GroupVariant>
      */
-    public function findAllForGroup(string $groupName): array;
+    public function findAllForGroup(string $familyHeadItemcode): array;
 }

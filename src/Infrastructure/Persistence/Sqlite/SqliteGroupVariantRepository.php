@@ -15,55 +15,105 @@ final readonly class SqliteGroupVariantRepository implements GroupVariantReposit
     {
     }
 
-    public function regenerateForGroup(string $groupName): void
+    public function regenerateForGroup(string $familyHeadItemcode): void
     {
-        $groupId = $this->resolveGroupId($groupName);
-        $baseItemcodes = $this->loadBaseItemcodes($groupId);
+        $groupId = $this->resolveGroupId($familyHeadItemcode);
+        $baseIds = $this->loadBaseIds($groupId);
         $accessoireIds = $this->loadLinkedAccessoireIds($groupId);
 
         $insert = $this->pdo->prepare(
-            'INSERT OR IGNORE INTO group_variants (group_id, base_itemcode, accessoire_id)
-             VALUES (:group_id, :base_itemcode, :accessoire_id)'
+            'INSERT OR IGNORE INTO group_variants (base_id, accessoire_id)
+             VALUES (:base_id, :accessoire_id)'
         );
 
         $expectedPairs = [];
-        foreach ($baseItemcodes as $itemcode) {
+        foreach ($baseIds as $baseId) {
             $insert->execute([
-                ':group_id' => $groupId,
-                ':base_itemcode' => $itemcode,
+                ':base_id' => $baseId,
                 ':accessoire_id' => null,
             ]);
-            $expectedPairs[] = [$itemcode, null];
+            $expectedPairs[] = [$baseId, null];
 
             foreach ($accessoireIds as $accessoireId) {
                 $insert->execute([
-                    ':group_id' => $groupId,
-                    ':base_itemcode' => $itemcode,
+                    ':base_id' => $baseId,
                     ':accessoire_id' => $accessoireId,
                 ]);
-                $expectedPairs[] = [$itemcode, $accessoireId];
+                $expectedPairs[] = [$baseId, $accessoireId];
             }
         }
 
-        $this->deleteOrphans($groupId, $expectedPairs);
+        $this->deleteOrphans($baseIds, $expectedPairs);
+    }
+
+    public function findAllForGroup(string $familyHeadItemcode): array
+    {
+        $groupId = $this->resolveGroupId($familyHeadItemcode);
+
+        $stmt = $this->pdo->prepare(
+            'SELECT
+                gv.id,
+                gv.base_id,
+                gb.name AS base_name,
+                a.itemcode AS accessoire_itemcode,
+                a.label AS accessoire_label,
+                gv.afas_samenstelling_itemcode
+             FROM group_variants gv
+             INNER JOIN group_bases gb ON gb.id = gv.base_id
+             LEFT JOIN accessoires a ON a.id = gv.accessoire_id
+             WHERE gb.group_id = :group_id
+             ORDER BY gv.base_id,
+                      CASE WHEN gv.accessoire_id IS NULL THEN 0 ELSE 1 END,
+                      a.itemcode'
+        );
+        $stmt->execute([':group_id' => $groupId]);
+
+        $variants = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $id = $row['id'] ?? null;
+            $baseId = $row['base_id'] ?? null;
+            $baseName = $row['base_name'] ?? null;
+            if (!is_int($id) || !is_int($baseId) || !is_string($baseName)) {
+                continue;
+            }
+
+            $accessoireItemcode = $row['accessoire_itemcode'] ?? null;
+            $accessoireLabel = $row['accessoire_label'] ?? null;
+            $afasItemcode = $row['afas_samenstelling_itemcode'] ?? null;
+
+            $variants[] = new GroupVariant(
+                $id,
+                $baseId,
+                $baseName,
+                is_string($accessoireItemcode) ? $accessoireItemcode : null,
+                is_string($accessoireLabel) ? $accessoireLabel : null,
+                is_string($afasItemcode) ? $afasItemcode : null,
+            );
+        }
+
+        return $variants;
     }
 
     /**
-     * @return list<string>
+     * @return list<int>
      */
-    private function loadBaseItemcodes(int $groupId): array
+    private function loadBaseIds(int $groupId): array
     {
-        $stmt = $this->pdo->prepare('SELECT itemcode FROM group_bases WHERE group_id = :group_id');
+        $stmt = $this->pdo->prepare('SELECT id FROM group_bases WHERE group_id = :group_id ORDER BY id');
         $stmt->execute([':group_id' => $groupId]);
 
-        $itemcodes = [];
+        $ids = [];
         foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $value) {
-            if (is_string($value)) {
-                $itemcodes[] = $value;
+            if (is_int($value)) {
+                $ids[] = $value;
             }
         }
 
-        return $itemcodes;
+        return $ids;
     }
 
     /**
@@ -86,79 +136,30 @@ final readonly class SqliteGroupVariantRepository implements GroupVariantReposit
         return $ids;
     }
 
-    public function findAllForGroup(string $groupName): array
+    /**
+     * @param list<int>                       $baseIds
+     * @param list<array{0: int, 1: int|null}> $expectedPairs
+     */
+    private function deleteOrphans(array $baseIds, array $expectedPairs): void
     {
-        $groupId = $this->resolveGroupId($groupName);
-
-        $stmt = $this->pdo->prepare(
-            'SELECT
-                gv.base_itemcode,
-                gb.language_code AS base_language_code,
-                gb.name AS base_name,
-                a.itemcode AS accessoire_itemcode,
-                a.label AS accessoire_label,
-                gv.afas_samenstelling_itemcode
-             FROM group_variants gv
-             INNER JOIN group_bases gb
-                 ON gb.group_id = gv.group_id AND gb.itemcode = gv.base_itemcode
-             LEFT JOIN accessoires a
-                 ON a.id = gv.accessoire_id
-             WHERE gv.group_id = :group_id
-             ORDER BY gv.base_itemcode,
-                      CASE WHEN gv.accessoire_id IS NULL THEN 0 ELSE 1 END,
-                      a.itemcode'
-        );
-        $stmt->execute([':group_id' => $groupId]);
-
-        $variants = [];
-        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
-            if (!is_array($row)) {
-                continue;
-            }
-
-            $baseItemcode = $row['base_itemcode'] ?? null;
-            $baseLanguageCode = $row['base_language_code'] ?? null;
-            $baseName = $row['base_name'] ?? null;
-            if (!is_string($baseItemcode) || !is_string($baseLanguageCode) || !is_string($baseName)) {
-                continue;
-            }
-
-            $accessoireItemcode = $row['accessoire_itemcode'] ?? null;
-            $accessoireLabel = $row['accessoire_label'] ?? null;
-            $afasItemcode = $row['afas_samenstelling_itemcode'] ?? null;
-
-            $variants[] = new GroupVariant(
-                $baseItemcode,
-                $baseLanguageCode,
-                $baseName,
-                is_string($accessoireItemcode) ? $accessoireItemcode : null,
-                is_string($accessoireLabel) ? $accessoireLabel : null,
-                is_string($afasItemcode) ? $afasItemcode : null,
-            );
+        if ($baseIds === []) {
+            return;
         }
 
-        return $variants;
-    }
-
-    /**
-     * @param list<array{0: string, 1: int|null}> $expectedPairs
-     */
-    private function deleteOrphans(int $groupId, array $expectedPairs): void
-    {
+        $placeholders = implode(',', array_fill(0, count($baseIds), '?'));
         $stmt = $this->pdo->prepare(
-            'SELECT base_itemcode, accessoire_id FROM group_variants WHERE group_id = :group_id'
+            "SELECT base_id, accessoire_id FROM group_variants WHERE base_id IN ({$placeholders})"
         );
-        $stmt->execute([':group_id' => $groupId]);
+        $stmt->execute($baseIds);
 
         $expectedKeys = [];
-        foreach ($expectedPairs as [$itemcode, $accessoireId]) {
-            $expectedKeys[$itemcode . '|' . ($accessoireId ?? '')] = true;
+        foreach ($expectedPairs as [$baseId, $accessoireId]) {
+            $expectedKeys[$baseId . '|' . ($accessoireId ?? '')] = true;
         }
 
         $delete = $this->pdo->prepare(
             'DELETE FROM group_variants
-             WHERE group_id = :group_id
-               AND base_itemcode = :base_itemcode
+             WHERE base_id = :base_id
                AND ((:accessoire_id IS NULL AND accessoire_id IS NULL)
                     OR accessoire_id = :accessoire_id)'
         );
@@ -167,31 +168,29 @@ final readonly class SqliteGroupVariantRepository implements GroupVariantReposit
             if (!is_array($row)) {
                 continue;
             }
-            $itemcode = $row['base_itemcode'] ?? null;
+            $baseId = $row['base_id'] ?? null;
             $accessoireId = $row['accessoire_id'] ?? null;
-            if (!is_string($itemcode)) {
+            if (!is_int($baseId)) {
                 continue;
             }
-            $key = $itemcode . '|' . (is_int($accessoireId) ? (string) $accessoireId : '');
+            $key = $baseId . '|' . (is_int($accessoireId) ? (string) $accessoireId : '');
             if (isset($expectedKeys[$key])) {
                 continue;
             }
-
             $delete->execute([
-                ':group_id' => $groupId,
-                ':base_itemcode' => $itemcode,
+                ':base_id' => $baseId,
                 ':accessoire_id' => is_int($accessoireId) ? $accessoireId : null,
             ]);
         }
     }
 
-    private function resolveGroupId(string $groupName): int
+    private function resolveGroupId(string $familyHeadItemcode): int
     {
-        $stmt = $this->pdo->prepare('SELECT id FROM groups WHERE name = :name');
-        $stmt->execute([':name' => $groupName]);
+        $stmt = $this->pdo->prepare('SELECT id FROM groups WHERE family_head_itemcode = :itemcode');
+        $stmt->execute([':itemcode' => $familyHeadItemcode]);
         $id = $stmt->fetchColumn();
         if (!is_int($id)) {
-            throw GroupNotFoundException::forName($groupName);
+            throw GroupNotFoundException::forFamilyHeadItemcode($familyHeadItemcode);
         }
 
         return $id;

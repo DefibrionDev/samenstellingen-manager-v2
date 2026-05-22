@@ -167,7 +167,54 @@ Design-keuzes:
 ### Fase 6 — Handmatige verificatie + commit
 - [x] End-to-end demo: 2 bases × (geen + 2 accessoires) = 6 varianten geproduceerd zonder expliciete regenerate-stap.
 - [x] `make check` groen (85 tests / 170 assertions).
-- [ ] **Commit + push** "slice 4: variantmatrix automatisch genereren en tonen".
+- [x] **Commit + push** "slice 4: variantmatrix automatisch genereren en tonen".
+
+---
+
+## Slice 5 — schema-refactor + verwachte BOM lokaal modelleren
+
+Eindbeeld: één consistent ID-gebaseerd model. Groepen worden gelookupt via hun `family_head_itemcode` (UNIQUE), bases via een surrogate `id`, accessoires via hun `itemcode` (UNIQUE). Bases hebben geen `itemcode`-anker en geen `language_code` meer — alleen `name`. Alle items van een base (incl. de AED) staan als gelijkwaardige rijen in een nieuwe `group_base_items` tabel. `group:show` toont per variant de volledige verwachte BOM uit lokale data.
+
+Design-keuzes (zie ook §Beslissingen):
+- Refactor van slice 3 en 4 schema. Demo-data gaat verloren.
+- Groep-lookups via `family_head_itemcode`. UNIQUE-constraint toegevoegd.
+- Bases hebben geen taal-veld of itemcode-anker meer. Identifier = surrogate `id`.
+- AED is gewoon één van de items in `group_base_items` — geen special-case.
+- BOM per variant is afgeleid bij weergave uit: `group_base_items` + (optioneel) accessoire.
+
+### Fase 1 — Schema refactor
+- [x] `migrations/0006_refactor_schema.sql` — herbouwt groups (UNIQUE family-head), drop+create group_bases (id PK, geen itemcode/language), creëert group_base_items, herbouwt group_variants (base_id FK).
+
+### Fase 2 — Domein refactor
+- [x] `GroupBase` → `(?id, name)`.
+- [x] `GroupBaseItem` nieuw.
+- [x] `GroupVariant` op `baseId`.
+- [x] Excepties: `BaseNotFoundException`, `BaseItemAlreadyExistsException`; `GroupAlreadyExistsException` + `GroupNotFoundException` krijgen factory voor family-head itemcode.
+
+### Fase 3 — Repositories refactor
+- [x] Alle 6 repositories + in-memory + sqlite implementaties.
+- [x] Contract-testbases voor 5 repository-types (Group, GroupBase, GroupBaseItem, GroupAccessoire, GroupVariant) draaien tegen InMemory en SQLite.
+
+### Fase 4 — Application refactor
+- [x] DTOs en handlers op family-head itemcode (writes/reads) en base-id (base-items).
+
+### Fase 5 — CLI refactor
+- [x] `group:show <family-head-itemcode>`.
+- [x] `group:add-base <family-head-itemcode> <name>` toont base-id na succes.
+- [x] `group:add-base-item <base-id> <itemcode> <name>`.
+- [x] `group:add-accessoire <family-head-itemcode> <accessoire-itemcode>`.
+- [x] `bin/samenstellingen` bedraad alle handlers/commands.
+
+### Fase 6 — Verwachte BOM in `group:show`
+- [x] `BomItem` + `GroupVariantWithBom` read-modellen.
+- [x] `ShowGroupHandler` bouwt per variant de BOM (group_base_items + optioneel accessoire).
+- [x] `ShowGroupCommand` rendert per variant een sub-tabel + AFAS-SKU regel.
+
+### Fase 7 — Handmatige verificatie + commit
+- [x] End-to-end demo opgebouwd: 1 groep, 2 bases (NL + FR), elk 5 items, 2 accessoires.
+- [x] 6 varianten elk met hun complete BOM zichtbaar in `group:show 52112`.
+- [x] `make check` groen (108 tests / 214 assertions).
+- [ ] **Commit + push** "slice 5: schema-refactor + verwachte BOM lokaal modelleren".
 
 ---
 
@@ -179,8 +226,9 @@ Design-keuzes:
 - Alle CLI-commando's gaan via de application-laag (ook reads). Eén consistent patroon: CLI → handler → repo.
 - Foreign keys in slice 3: surrogate `group_id` / `accessoire_id` (INTEGER) → `groups(id)` / `accessoires(id)`. Rename-robuust. De repository-API blijft op `string $groupName` / `string $itemcode` — de SQLite-impl vertaalt naar id.
 - Bases zijn 1:N (taal+model-specifiek per groep). Accessoires zijn M:N: eigen catalogustabel + join-tabel, zodat dezelfde accessoire (bv. ARKY witte binnenkast `60112`) bij meerdere groepen kan horen zonder duplicatie.
-- `GroupBase.itemcode` is de **AED-component itemcode** (50013 NL, 50001 FR), niet de AFAS samenstelling-SKU. De samenstelling-SKU is iets dat in AFAS bestaat en straks per variant-rij in `group_variants.afas_samenstelling_itemcode` wordt opgeslagen na een AFAS-sync.
+- `GroupBase.itemcode` is de **AED-component itemcode** (50013 NL, 50001 FR), niet de AFAS samenstelling-SKU. De samenstelling-SKU is iets dat in AFAS bestaat en straks per variant-rij in `group_variants.afas_samenstelling_itemcode` wordt opgeslagen na een AFAS-sync. — **Vervangen in slice 5**: bases verliezen het itemcode-anker; alle items (incl. de AED) staan in `group_base_items`.
 - Varianten = (base × {null ∪ accessoires}). Worden in `group_variants` opgeslagen zodat AFAS-metadata (SKU, status) er per rij aan kan worden gekoppeld. Auto-regenereren bij elke add-base / add-accessoire. Hard CASCADE.
+- Slice 5 refactor: alle business-lookups via id (groep = `family_head_itemcode` UNIQUE; base = surrogate `id`; accessoire = `itemcode` UNIQUE). Geen lookup op naam, geen `language_code` op base. Demo-data uit slice 3-4 gaat verloren.
 - Slice 3 modelleert bases/accessoires als losse entiteiten met eigen repositories, niet als aggregate-graph onder `Group`. Aggregate-refactor blijft optioneel voor wanneer variant-generatie zelf in scope komt.
 
 ---

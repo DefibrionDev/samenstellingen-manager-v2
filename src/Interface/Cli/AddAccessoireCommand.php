@@ -30,25 +30,33 @@ final class AddAccessoireCommand extends Command
     protected function configure(): void
     {
         $this
-            ->addArgument('group', InputArgument::REQUIRED, 'De groepsnaam')
-            ->addArgument('accessoire-itemcode', InputArgument::REQUIRED, 'Itemcode van een reeds geregistreerde accessoire');
+            ->addArgument(
+                'family-head-itemcode',
+                InputArgument::REQUIRED,
+                'AFAS family-head itemcode van de groep',
+            )
+            ->addArgument(
+                'accessoire-itemcode',
+                InputArgument::REQUIRED,
+                'Itemcode van een reeds geregistreerde accessoire',
+            );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $groupName = (string) $input->getArgument('group');
+        $familyHead = (string) $input->getArgument('family-head-itemcode');
         $itemcode = (string) $input->getArgument('accessoire-itemcode');
 
         try {
-            ($this->handler)(new AddAccessoireToGroup($groupName, $itemcode));
+            ($this->handler)(new AddAccessoireToGroup($familyHead, $itemcode));
         } catch (GroupNotFoundException | AccessoireNotFoundException | AccessoireAlreadyLinkedException $e) {
             $io->error($e->getMessage());
 
             return Command::FAILURE;
         }
 
-        $io->success(sprintf("Accessoire '%s' gekoppeld aan groep '%s'.", $itemcode, $groupName));
+        $io->success(sprintf("Accessoire '%s' gekoppeld aan groep %s.", $itemcode, $familyHead));
 
         return Command::SUCCESS;
     }

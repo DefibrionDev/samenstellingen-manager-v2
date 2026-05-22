@@ -7,8 +7,8 @@ namespace Defibrion\Samenstellingen\Domain\Group;
 final readonly class GroupVariant
 {
     public function __construct(
-        public string $baseItemcode,
-        public string $baseLanguageCode,
+        public ?int $id,
+        public int $baseId,
         public string $baseName,
         public ?string $accessoireItemcode,
         public ?string $accessoireLabel,

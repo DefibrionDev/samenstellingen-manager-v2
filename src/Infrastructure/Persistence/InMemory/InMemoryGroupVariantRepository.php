@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory;
 
+use Defibrion\Samenstellingen\Domain\Group\Group;
 use Defibrion\Samenstellingen\Domain\Group\GroupAccessoireRepository;
 use Defibrion\Samenstellingen\Domain\Group\GroupBaseRepository;
 use Defibrion\Samenstellingen\Domain\Group\GroupNotFoundException;
@@ -13,8 +14,10 @@ use Defibrion\Samenstellingen\Domain\Group\GroupVariantRepository;
 
 final class InMemoryGroupVariantRepository implements GroupVariantRepository
 {
+    private int $nextId = 1;
+
     /**
-     * Per groep een dictionary: key = "baseItemcode|accessoireItemcodeOrNull", value = GroupVariant.
+     * Per family-head itemcode: key = "baseId|accessoireItemcodeOrEmpty", value = GroupVariant.
      *
      * @var array<string, array<string, GroupVariant>>
      */
@@ -27,23 +30,27 @@ final class InMemoryGroupVariantRepository implements GroupVariantRepository
     ) {
     }
 
-    public function regenerateForGroup(string $groupName): void
+    public function regenerateForGroup(string $familyHeadItemcode): void
     {
-        $this->assertGroupExists($groupName);
+        $this->assertGroupExists($familyHeadItemcode);
 
-        $bases = $this->baseRepository->findAllForGroup($groupName);
-        $accessoires = $this->accessoireRepository->findAllForGroup($groupName);
+        $bases = $this->baseRepository->findAllForGroup($familyHeadItemcode);
+        $accessoires = $this->accessoireRepository->findAllForGroup($familyHeadItemcode);
 
-        $existing = $this->variantsByGroup[$groupName] ?? [];
+        $existing = $this->variantsByGroup[$familyHeadItemcode] ?? [];
         $expectedKeys = [];
 
         foreach ($bases as $base) {
-            $baseOnlyKey = $this->keyFor($base->itemcode, null);
+            if ($base->id === null) {
+                continue;
+            }
+
+            $baseOnlyKey = $this->keyFor($base->id, null);
             $expectedKeys[$baseOnlyKey] = true;
             if (!isset($existing[$baseOnlyKey])) {
                 $existing[$baseOnlyKey] = new GroupVariant(
-                    $base->itemcode,
-                    $base->languageCode,
+                    $this->nextId++,
+                    $base->id,
                     $base->name,
                     null,
                     null,
@@ -52,12 +59,12 @@ final class InMemoryGroupVariantRepository implements GroupVariantRepository
             }
 
             foreach ($accessoires as $accessoire) {
-                $key = $this->keyFor($base->itemcode, $accessoire->itemcode);
+                $key = $this->keyFor($base->id, $accessoire->itemcode);
                 $expectedKeys[$key] = true;
                 if (!isset($existing[$key])) {
                     $existing[$key] = new GroupVariant(
-                        $base->itemcode,
-                        $base->languageCode,
+                        $this->nextId++,
+                        $base->id,
                         $base->name,
                         $accessoire->itemcode,
                         $accessoire->label,
@@ -68,22 +75,21 @@ final class InMemoryGroupVariantRepository implements GroupVariantRepository
         }
 
         foreach (array_keys($existing) as $key) {
-            $key = (string) $key;
             if (!isset($expectedKeys[$key])) {
                 unset($existing[$key]);
             }
         }
 
-        $this->variantsByGroup[$groupName] = $existing;
+        $this->variantsByGroup[$familyHeadItemcode] = $existing;
     }
 
-    public function findAllForGroup(string $groupName): array
+    public function findAllForGroup(string $familyHeadItemcode): array
     {
-        $this->assertGroupExists($groupName);
+        $this->assertGroupExists($familyHeadItemcode);
 
-        $variants = array_values($this->variantsByGroup[$groupName] ?? []);
+        $variants = array_values($this->variantsByGroup[$familyHeadItemcode] ?? []);
         usort($variants, static function (GroupVariant $a, GroupVariant $b): int {
-            $byBase = strcmp($a->baseItemcode, $b->baseItemcode);
+            $byBase = $a->baseId <=> $b->baseId;
             if ($byBase !== 0) {
                 return $byBase;
             }
@@ -100,15 +106,15 @@ final class InMemoryGroupVariantRepository implements GroupVariantRepository
         return $variants;
     }
 
-    private function keyFor(string $baseItemcode, ?string $accessoireItemcode): string
+    private function keyFor(int $baseId, ?string $accessoireItemcode): string
     {
-        return $baseItemcode . '|' . ($accessoireItemcode ?? '');
+        return $baseId . '|' . ($accessoireItemcode ?? '');
     }
 
-    private function assertGroupExists(string $groupName): void
+    private function assertGroupExists(string $familyHeadItemcode): void
     {
-        if ($this->groupRepository->findByName($groupName) === null) {
-            throw GroupNotFoundException::forName($groupName);
+        if (!$this->groupRepository->findByFamilyHeadItemcode($familyHeadItemcode) instanceof Group) {
+            throw GroupNotFoundException::forFamilyHeadItemcode($familyHeadItemcode);
         }
     }
 }

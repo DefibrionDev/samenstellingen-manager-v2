@@ -18,7 +18,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(
     name: 'group:add-base',
-    description: 'Voeg een basissamenstelling (taal-specifieke AED) toe aan een bestaande groep.',
+    description: 'Voeg een base (taalvariant van de basissamenstelling) toe aan een groep. Items van de base worden apart aangemaakt via group:add-base-item.',
 )]
 final class AddBaseCommand extends Command
 {
@@ -30,23 +30,26 @@ final class AddBaseCommand extends Command
     protected function configure(): void
     {
         $this
-            ->addArgument('group', InputArgument::REQUIRED, 'De groepsnaam')
-            ->addArgument('itemcode', InputArgument::REQUIRED, 'AFAS itemcode van de basissamenstelling')
-            ->addArgument('language-code', InputArgument::REQUIRED, 'Taal-label (bv. "NL", "DE", "FR")')
-            ->addArgument('name', InputArgument::REQUIRED, 'AFAS-naam van de basissamenstelling');
+            ->addArgument(
+                'family-head-itemcode',
+                InputArgument::REQUIRED,
+                'AFAS family-head itemcode van de groep (bv. 52112)',
+            )
+            ->addArgument(
+                'name',
+                InputArgument::REQUIRED,
+                'Naam van de base (bv. "AED pakket: Reanibex 100 Semi-Auto NL incl. safeset en stickerset")',
+            );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
+        $itemcode = (string) $input->getArgument('family-head-itemcode');
+        $name = (string) $input->getArgument('name');
 
         try {
-            $base = ($this->handler)(new AddBaseToGroup(
-                (string) $input->getArgument('group'),
-                (string) $input->getArgument('itemcode'),
-                (string) $input->getArgument('language-code'),
-                (string) $input->getArgument('name'),
-            ));
+            $base = ($this->handler)(new AddBaseToGroup($itemcode, $name));
         } catch (GroupNotFoundException | BaseAlreadyExistsException $e) {
             $io->error($e->getMessage());
 
@@ -58,10 +61,9 @@ final class AddBaseCommand extends Command
         }
 
         $io->success(sprintf(
-            "Base '%s' (%s) toegevoegd aan groep '%s'.",
-            $base->itemcode,
-            $base->languageCode,
-            (string) $input->getArgument('group'),
+            "Base #%d aangemaakt: '%s'.",
+            $base->id ?? 0,
+            $base->name,
         ));
 
         return Command::SUCCESS;

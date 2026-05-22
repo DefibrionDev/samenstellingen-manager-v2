@@ -8,12 +8,12 @@ use DomainException;
 
 final class BaseAlreadyExistsException extends DomainException
 {
-    public static function forItemcodeInGroup(string $itemcode, string $groupName): self
+    public static function forNameInGroup(string $name, string $familyHeadItemcode): self
     {
         return new self(sprintf(
-            "Base met itemcode '%s' bestaat al in groep '%s'.",
-            $itemcode,
-            $groupName,
+            "Base met naam '%s' bestaat al in groep %s.",
+            $name,
+            $familyHeadItemcode,
         ));
     }
 }

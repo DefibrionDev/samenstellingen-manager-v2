@@ -7,9 +7,11 @@ namespace Defibrion\Samenstellingen\Domain\Group;
 interface GroupRepository
 {
     /**
-     * @throws GroupAlreadyExistsException als er al een groep met deze naam bestaat.
+     * @throws GroupAlreadyExistsException wanneer een groep met dezelfde naam of family-head itemcode al bestaat.
      */
     public function save(Group $group): void;
 
     public function findByName(string $name): ?Group;
+
+    public function findByFamilyHeadItemcode(string $familyHeadItemcode): ?Group;
 }

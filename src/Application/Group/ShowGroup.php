@@ -6,7 +6,7 @@ namespace Defibrion\Samenstellingen\Application\Group;
 
 final readonly class ShowGroup
 {
-    public function __construct(public string $name)
+    public function __construct(public string $familyHeadItemcode)
     {
     }
 }

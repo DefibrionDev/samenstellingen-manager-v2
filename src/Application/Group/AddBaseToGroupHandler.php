@@ -18,10 +18,12 @@ final readonly class AddBaseToGroupHandler
 
     public function __invoke(AddBaseToGroup $command): GroupBase
     {
-        $base = new GroupBase($command->itemcode, $command->languageCode, $command->name);
-        $this->repository->saveForGroup($command->groupName, $base);
-        $this->variantRepository->regenerateForGroup($command->groupName);
+        $persisted = $this->repository->saveForGroup(
+            $command->familyHeadItemcode,
+            new GroupBase(null, $command->name),
+        );
+        $this->variantRepository->regenerateForGroup($command->familyHeadItemcode);
 
-        return $base;
+        return $persisted;
     }
 }

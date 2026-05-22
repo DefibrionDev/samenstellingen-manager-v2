@@ -25,60 +25,60 @@ final class AddAccessoireToGroupHandlerTest extends TestCase
     #[Test]
     public function linksAccessoireAndRegeneratesVariants(): void
     {
-        [$groups, $bases, $accessoires, $links, $variants] = $this->repositories();
+        [$groups, $bases, $accessoires, $links, $variants] = $this->repos();
         $groups->save(new Group('Reanibex 100 Semi-Auto', '52112'));
-        $bases->saveForGroup('Reanibex 100 Semi-Auto', new GroupBase('50013', 'NL', 'AED NL'));
+        $bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL'));
         $accessoires->save(new Accessoire('60112', 'ARKY witte binnenkast'));
         $handler = new AddAccessoireToGroupHandler($links, $variants);
 
-        $handler(new AddAccessoireToGroup('Reanibex 100 Semi-Auto', '60112'));
+        $handler(new AddAccessoireToGroup('52112', '60112'));
 
-        self::assertCount(1, $links->findAllForGroup('Reanibex 100 Semi-Auto'));
+        self::assertCount(1, $links->findAllForGroup('52112'));
         // 1 base × (geen + 1 accessoire) = 2 varianten.
-        self::assertCount(2, $variants->findAllForGroup('Reanibex 100 Semi-Auto'));
+        self::assertCount(2, $variants->findAllForGroup('52112'));
     }
 
     #[Test]
     public function passesThroughGroupNotFound(): void
     {
-        [, , , $links, $variants] = $this->repositories();
+        [, , , $links, $variants] = $this->repos();
         $handler = new AddAccessoireToGroupHandler($links, $variants);
 
         $this->expectException(GroupNotFoundException::class);
 
-        $handler(new AddAccessoireToGroup('Onbekend', '60112'));
+        $handler(new AddAccessoireToGroup('99999', '60112'));
     }
 
     #[Test]
     public function passesThroughAccessoireNotFound(): void
     {
-        [$groups, , , $links, $variants] = $this->repositories();
+        [$groups, , , $links, $variants] = $this->repos();
         $groups->save(new Group('Reanibex 100 Semi-Auto', '52112'));
         $handler = new AddAccessoireToGroupHandler($links, $variants);
 
         $this->expectException(AccessoireNotFoundException::class);
 
-        $handler(new AddAccessoireToGroup('Reanibex 100 Semi-Auto', '99999'));
+        $handler(new AddAccessoireToGroup('52112', '99999'));
     }
 
     #[Test]
     public function passesThroughDuplicateLink(): void
     {
-        [$groups, , $accessoires, $links, $variants] = $this->repositories();
+        [$groups, , $accessoires, $links, $variants] = $this->repos();
         $groups->save(new Group('Reanibex 100 Semi-Auto', '52112'));
         $accessoires->save(new Accessoire('60112', 'ARKY witte binnenkast'));
         $handler = new AddAccessoireToGroupHandler($links, $variants);
-        $handler(new AddAccessoireToGroup('Reanibex 100 Semi-Auto', '60112'));
+        $handler(new AddAccessoireToGroup('52112', '60112'));
 
         $this->expectException(AccessoireAlreadyLinkedException::class);
 
-        $handler(new AddAccessoireToGroup('Reanibex 100 Semi-Auto', '60112'));
+        $handler(new AddAccessoireToGroup('52112', '60112'));
     }
 
     /**
      * @return array{0: InMemoryGroupRepository, 1: InMemoryGroupBaseRepository, 2: InMemoryAccessoireRepository, 3: InMemoryGroupAccessoireRepository, 4: InMemoryGroupVariantRepository}
      */
-    private function repositories(): array
+    private function repos(): array
     {
         $groups = new InMemoryGroupRepository();
         $bases = new InMemoryGroupBaseRepository($groups);

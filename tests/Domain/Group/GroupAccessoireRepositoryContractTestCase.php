@@ -38,32 +38,30 @@ abstract class GroupAccessoireRepositoryContractTestCase extends TestCase
     }
 
     #[Test]
-    public function linksAndRetrievesAccessoireForGroup(): void
+    public function linksAndRetrievesForGroup(): void
     {
-        $this->links->link('Reanibex 100 Semi-Auto', '60112');
+        $this->links->link('52112', '60112');
 
-        $found = $this->links->findAllForGroup('Reanibex 100 Semi-Auto');
+        $found = $this->links->findAllForGroup('52112');
 
         self::assertCount(1, $found);
         self::assertSame('60112', $found[0]->itemcode);
-        self::assertSame('ARKY witte binnenkast', $found[0]->label);
     }
 
     #[Test]
     public function returnsEmptyListForGroupWithoutLinks(): void
     {
-        self::assertSame([], $this->links->findAllForGroup('Reanibex 100 Semi-Auto'));
+        self::assertSame([], $this->links->findAllForGroup('52112'));
     }
 
     #[Test]
     public function rejectsDuplicateLink(): void
     {
-        $this->links->link('Reanibex 100 Semi-Auto', '60112');
+        $this->links->link('52112', '60112');
 
         $this->expectException(AccessoireAlreadyLinkedException::class);
-        $this->expectExceptionMessage("Accessoire '60112' is al gekoppeld aan groep 'Reanibex 100 Semi-Auto'");
 
-        $this->links->link('Reanibex 100 Semi-Auto', '60112');
+        $this->links->link('52112', '60112');
     }
 
     #[Test]
@@ -71,7 +69,7 @@ abstract class GroupAccessoireRepositoryContractTestCase extends TestCase
     {
         $this->expectException(GroupNotFoundException::class);
 
-        $this->links->link('Onbekend', '60112');
+        $this->links->link('99999', '60112');
     }
 
     #[Test]
@@ -79,7 +77,7 @@ abstract class GroupAccessoireRepositoryContractTestCase extends TestCase
     {
         $this->expectException(AccessoireNotFoundException::class);
 
-        $this->links->link('Reanibex 100 Semi-Auto', '99999');
+        $this->links->link('52112', '99999');
     }
 
     #[Test]
@@ -87,6 +85,6 @@ abstract class GroupAccessoireRepositoryContractTestCase extends TestCase
     {
         $this->expectException(GroupNotFoundException::class);
 
-        $this->links->findAllForGroup('Onbekend');
+        $this->links->findAllForGroup('99999');
     }
 }

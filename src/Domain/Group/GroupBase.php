@@ -8,29 +8,22 @@ use InvalidArgumentException;
 
 final readonly class GroupBase
 {
-    public string $itemcode;
-    public string $languageCode;
+    public ?int $id;
     public string $name;
 
-    public function __construct(string $itemcode, string $languageCode, string $name)
+    public function __construct(?int $id, string $name)
     {
-        $trimmedItemcode = trim($itemcode);
-        if ($trimmedItemcode === '') {
-            throw new InvalidArgumentException('Base itemcode mag niet leeg zijn.');
-        }
-
-        $trimmedLanguage = trim($languageCode);
-        if ($trimmedLanguage === '') {
-            throw new InvalidArgumentException('Base taalcode mag niet leeg zijn.');
-        }
-
-        $trimmedName = trim($name);
-        if ($trimmedName === '') {
+        $trimmed = trim($name);
+        if ($trimmed === '') {
             throw new InvalidArgumentException('Base naam mag niet leeg zijn.');
         }
 
-        $this->itemcode = $trimmedItemcode;
-        $this->languageCode = $trimmedLanguage;
-        $this->name = $trimmedName;
+        $this->id = $id;
+        $this->name = $trimmed;
+    }
+
+    public function withId(int $id): self
+    {
+        return new self($id, $this->name);
     }
 }

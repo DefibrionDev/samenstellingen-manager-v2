@@ -22,49 +22,45 @@ final class AddBaseToGroupHandlerTest extends TestCase
     #[Test]
     public function persistsBaseAndRegeneratesVariants(): void
     {
-        [$groups, $bases, , , $variants] = $this->repositories();
+        [$groups, $bases, , , $variants] = $this->repos();
         $groups->save(new Group('Reanibex 100 Semi-Auto', '52112'));
         $handler = new AddBaseToGroupHandler($bases, $variants);
 
-        $handler(new AddBaseToGroup(
-            'Reanibex 100 Semi-Auto',
-            '50013',
-            'NL',
-            'Reanibex 100 Semi-Automatic AED Nederlands',
-        ));
+        $persisted = $handler(new AddBaseToGroup('52112', 'AED pakket NL'));
 
-        self::assertCount(1, $bases->findAllForGroup('Reanibex 100 Semi-Auto'));
-        self::assertCount(1, $variants->findAllForGroup('Reanibex 100 Semi-Auto'));
+        self::assertNotNull($persisted->id);
+        self::assertCount(1, $bases->findAllForGroup('52112'));
+        self::assertCount(1, $variants->findAllForGroup('52112'));
     }
 
     #[Test]
     public function passesThroughGroupNotFound(): void
     {
-        [, $bases, , , $variants] = $this->repositories();
+        [, $bases, , , $variants] = $this->repos();
         $handler = new AddBaseToGroupHandler($bases, $variants);
 
         $this->expectException(GroupNotFoundException::class);
 
-        $handler(new AddBaseToGroup('Onbekend', '50013', 'NL', 'naam'));
+        $handler(new AddBaseToGroup('99999', 'naam'));
     }
 
     #[Test]
     public function passesThroughDuplicateBase(): void
     {
-        [$groups, $bases, , , $variants] = $this->repositories();
+        [$groups, $bases, , , $variants] = $this->repos();
         $groups->save(new Group('Reanibex 100 Semi-Auto', '52112'));
         $handler = new AddBaseToGroupHandler($bases, $variants);
-        $handler(new AddBaseToGroup('Reanibex 100 Semi-Auto', '50013', 'NL', 'naam'));
+        $handler(new AddBaseToGroup('52112', 'AED pakket NL'));
 
         $this->expectException(BaseAlreadyExistsException::class);
 
-        $handler(new AddBaseToGroup('Reanibex 100 Semi-Auto', '50013', 'DE', 'andere'));
+        $handler(new AddBaseToGroup('52112', 'AED pakket NL'));
     }
 
     /**
      * @return array{0: InMemoryGroupRepository, 1: InMemoryGroupBaseRepository, 2: InMemoryAccessoireRepository, 3: InMemoryGroupAccessoireRepository, 4: InMemoryGroupVariantRepository}
      */
-    private function repositories(): array
+    private function repos(): array
     {
         $groups = new InMemoryGroupRepository();
         $bases = new InMemoryGroupBaseRepository($groups);

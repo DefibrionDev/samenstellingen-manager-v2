@@ -35,11 +35,14 @@ final class TestDatabase
     {
         $pdo = self::pdo();
         $pdo->exec('DELETE FROM group_variants');
+        $pdo->exec('DELETE FROM group_base_items');
         $pdo->exec('DELETE FROM group_accessoires');
         $pdo->exec('DELETE FROM accessoires');
         $pdo->exec('DELETE FROM group_bases');
         $pdo->exec('DELETE FROM groups');
-        $pdo->exec("DELETE FROM sqlite_sequence WHERE name IN ('groups', 'accessoires', 'group_variants')");
+        $pdo->exec(
+            "DELETE FROM sqlite_sequence WHERE name IN ('groups', 'accessoires', 'group_variants', 'group_bases')"
+        );
     }
 
     private static function projectRoot(): string

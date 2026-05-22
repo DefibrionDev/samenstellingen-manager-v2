@@ -8,13 +8,14 @@ use Defibrion\Samenstellingen\Domain\Accessoire\Accessoire;
 use Defibrion\Samenstellingen\Domain\Accessoire\AccessoireNotFoundException;
 use Defibrion\Samenstellingen\Domain\Accessoire\AccessoireRepository;
 use Defibrion\Samenstellingen\Domain\Group\AccessoireAlreadyLinkedException;
+use Defibrion\Samenstellingen\Domain\Group\Group;
 use Defibrion\Samenstellingen\Domain\Group\GroupAccessoireRepository;
 use Defibrion\Samenstellingen\Domain\Group\GroupNotFoundException;
 use Defibrion\Samenstellingen\Domain\Group\GroupRepository;
 
 final class InMemoryGroupAccessoireRepository implements GroupAccessoireRepository
 {
-    /** @var array<string, array<string, true>> */
+    /** @var array<string, array<string, true>> family-head itemcode → set of accessoire itemcodes */
     private array $linksByGroup = [];
 
     public function __construct(
@@ -23,26 +24,29 @@ final class InMemoryGroupAccessoireRepository implements GroupAccessoireReposito
     ) {
     }
 
-    public function link(string $groupName, string $accessoireItemcode): void
+    public function link(string $familyHeadItemcode, string $accessoireItemcode): void
     {
-        $this->assertGroupExists($groupName);
+        $this->assertGroupExists($familyHeadItemcode);
 
         if ($this->accessoireRepository->findByItemcode($accessoireItemcode) === null) {
             throw AccessoireNotFoundException::forItemcode($accessoireItemcode);
         }
 
-        if (isset($this->linksByGroup[$groupName][$accessoireItemcode])) {
-            throw AccessoireAlreadyLinkedException::forAccessoireInGroup($accessoireItemcode, $groupName);
+        if (isset($this->linksByGroup[$familyHeadItemcode][$accessoireItemcode])) {
+            throw AccessoireAlreadyLinkedException::forAccessoireInGroup(
+                $accessoireItemcode,
+                $familyHeadItemcode,
+            );
         }
 
-        $this->linksByGroup[$groupName][$accessoireItemcode] = true;
+        $this->linksByGroup[$familyHeadItemcode][$accessoireItemcode] = true;
     }
 
-    public function findAllForGroup(string $groupName): array
+    public function findAllForGroup(string $familyHeadItemcode): array
     {
-        $this->assertGroupExists($groupName);
+        $this->assertGroupExists($familyHeadItemcode);
 
-        $itemcodes = array_keys($this->linksByGroup[$groupName] ?? []);
+        $itemcodes = array_keys($this->linksByGroup[$familyHeadItemcode] ?? []);
         $accessoires = [];
         foreach ($itemcodes as $itemcode) {
             $accessoire = $this->accessoireRepository->findByItemcode((string) $itemcode);
@@ -54,10 +58,10 @@ final class InMemoryGroupAccessoireRepository implements GroupAccessoireReposito
         return $accessoires;
     }
 
-    private function assertGroupExists(string $groupName): void
+    private function assertGroupExists(string $familyHeadItemcode): void
     {
-        if ($this->groupRepository->findByName($groupName) === null) {
-            throw GroupNotFoundException::forName($groupName);
+        if (!$this->groupRepository->findByFamilyHeadItemcode($familyHeadItemcode) instanceof Group) {
+            throw GroupNotFoundException::forFamilyHeadItemcode($familyHeadItemcode);
         }
     }
 }

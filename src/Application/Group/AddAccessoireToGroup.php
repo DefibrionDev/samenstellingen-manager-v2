@@ -7,7 +7,7 @@ namespace Defibrion\Samenstellingen\Application\Group;
 final readonly class AddAccessoireToGroup
 {
     public function __construct(
-        public string $groupName,
+        public string $familyHeadItemcode,
         public string $accessoireItemcode,
     ) {
     }

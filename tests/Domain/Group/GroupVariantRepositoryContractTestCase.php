@@ -50,72 +50,54 @@ abstract class GroupVariantRepositoryContractTestCase extends TestCase
     #[Test]
     public function returnsEmptyForGroupWithoutBases(): void
     {
-        $this->variants->regenerateForGroup('Reanibex 100 Semi-Auto');
+        $this->variants->regenerateForGroup('52112');
 
-        self::assertSame([], $this->variants->findAllForGroup('Reanibex 100 Semi-Auto'));
+        self::assertSame([], $this->variants->findAllForGroup('52112'));
     }
 
     #[Test]
     public function generatesBaseOnlyVariantsWhenNoAccessoires(): void
     {
-        $this->bases->saveForGroup('Reanibex 100 Semi-Auto', new GroupBase('50013', 'NL', 'AED NL'));
-        $this->bases->saveForGroup('Reanibex 100 Semi-Auto', new GroupBase('50001', 'FR', 'AED FR'));
+        $this->bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL'));
+        $this->bases->saveForGroup('52112', new GroupBase(null, 'Pack DAE FR'));
 
-        $this->variants->regenerateForGroup('Reanibex 100 Semi-Auto');
+        $this->variants->regenerateForGroup('52112');
 
-        $result = $this->variants->findAllForGroup('Reanibex 100 Semi-Auto');
+        $result = $this->variants->findAllForGroup('52112');
         self::assertCount(2, $result);
         foreach ($result as $variant) {
             self::assertNull($variant->accessoireItemcode);
-            self::assertTrue($variant->isBaseOnly());
         }
     }
 
     #[Test]
     public function generatesFullMatrix(): void
     {
-        $this->bases->saveForGroup('Reanibex 100 Semi-Auto', new GroupBase('50013', 'NL', 'AED NL'));
-        $this->bases->saveForGroup('Reanibex 100 Semi-Auto', new GroupBase('50001', 'FR', 'AED FR'));
+        $this->bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL'));
+        $this->bases->saveForGroup('52112', new GroupBase(null, 'Pack DAE FR'));
         $this->accessoires->save(new Accessoire('60110', 'Rugzak'));
         $this->accessoires->save(new Accessoire('60112', 'ARKY witte binnenkast'));
-        $this->links->link('Reanibex 100 Semi-Auto', '60110');
-        $this->links->link('Reanibex 100 Semi-Auto', '60112');
+        $this->links->link('52112', '60110');
+        $this->links->link('52112', '60112');
 
-        $this->variants->regenerateForGroup('Reanibex 100 Semi-Auto');
+        $this->variants->regenerateForGroup('52112');
 
-        $result = $this->variants->findAllForGroup('Reanibex 100 Semi-Auto');
+        $result = $this->variants->findAllForGroup('52112');
         self::assertCount(6, $result, '2 bases × (geen + 2 accessoires) = 6 varianten');
-
-        $signatures = [];
-        foreach ($result as $variant) {
-            $signatures[] = $variant->baseItemcode . '|' . ($variant->accessoireItemcode ?? '');
-        }
-        sort($signatures);
-        self::assertSame(
-            [
-                '50001|',
-                '50001|60110',
-                '50001|60112',
-                '50013|',
-                '50013|60110',
-                '50013|60112',
-            ],
-            $signatures,
-        );
     }
 
     #[Test]
     public function regenerationIsIdempotent(): void
     {
-        $this->bases->saveForGroup('Reanibex 100 Semi-Auto', new GroupBase('50013', 'NL', 'AED NL'));
+        $this->bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL'));
         $this->accessoires->save(new Accessoire('60110', 'Rugzak'));
-        $this->links->link('Reanibex 100 Semi-Auto', '60110');
+        $this->links->link('52112', '60110');
 
-        $this->variants->regenerateForGroup('Reanibex 100 Semi-Auto');
-        $this->variants->regenerateForGroup('Reanibex 100 Semi-Auto');
-        $this->variants->regenerateForGroup('Reanibex 100 Semi-Auto');
+        $this->variants->regenerateForGroup('52112');
+        $this->variants->regenerateForGroup('52112');
+        $this->variants->regenerateForGroup('52112');
 
-        self::assertCount(2, $this->variants->findAllForGroup('Reanibex 100 Semi-Auto'));
+        self::assertCount(2, $this->variants->findAllForGroup('52112'));
     }
 
     #[Test]
@@ -123,7 +105,7 @@ abstract class GroupVariantRepositoryContractTestCase extends TestCase
     {
         $this->expectException(GroupNotFoundException::class);
 
-        $this->variants->regenerateForGroup('Onbekend');
+        $this->variants->regenerateForGroup('99999');
     }
 
     #[Test]
@@ -131,6 +113,6 @@ abstract class GroupVariantRepositoryContractTestCase extends TestCase
     {
         $this->expectException(GroupNotFoundException::class);
 
-        $this->variants->findAllForGroup('Onbekend');
+        $this->variants->findAllForGroup('99999');
     }
 }

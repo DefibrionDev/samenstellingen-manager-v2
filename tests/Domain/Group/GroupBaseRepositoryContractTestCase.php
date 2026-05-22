@@ -33,56 +33,60 @@ abstract class GroupBaseRepositoryContractTestCase extends TestCase
     }
 
     #[Test]
-    public function savesAndRetrievesBaseForGroup(): void
+    public function savesAndAssignsId(): void
     {
-        $base = new GroupBase('50013', 'NL', 'Reanibex 100 Semi-Automatic AED Nederlands');
-        $this->bases->saveForGroup('Reanibex 100 Semi-Auto', $base);
+        $persisted = $this->bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL'));
 
-        $found = $this->bases->findAllForGroup('Reanibex 100 Semi-Auto');
-
-        self::assertCount(1, $found);
-        self::assertSame('50013', $found[0]->itemcode);
-        self::assertSame('NL', $found[0]->languageCode);
-        self::assertSame('Reanibex 100 Semi-Automatic AED Nederlands', $found[0]->name);
+        self::assertNotNull($persisted->id);
+        self::assertGreaterThan(0, $persisted->id);
+        self::assertSame('AED pakket NL', $persisted->name);
     }
 
     #[Test]
-    public function returnsEmptyListForGroupWithoutBases(): void
+    public function findsByIdAndForGroup(): void
     {
-        self::assertSame([], $this->bases->findAllForGroup('Reanibex 100 Semi-Auto'));
+        $persisted = $this->bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL'));
+
+        self::assertNotNull($persisted->id);
+        $byId = $this->bases->findById($persisted->id);
+        self::assertNotNull($byId);
+        self::assertSame('AED pakket NL', $byId->name);
+
+        $forGroup = $this->bases->findAllForGroup('52112');
+        self::assertCount(1, $forGroup);
+        self::assertSame($persisted->id, $forGroup[0]->id);
     }
 
     #[Test]
-    public function rejectsDuplicateBaseInSameGroup(): void
+    public function rejectsDuplicateNameInSameGroup(): void
     {
-        $this->bases->saveForGroup(
-            'Reanibex 100 Semi-Auto',
-            new GroupBase('50013', 'NL', 'Reanibex 100 Semi-Automatic AED Nederlands'),
-        );
+        $this->bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL'));
 
         $this->expectException(BaseAlreadyExistsException::class);
-        $this->expectExceptionMessage("Base met itemcode '50013' bestaat al in groep 'Reanibex 100 Semi-Auto'");
+        $this->expectExceptionMessage("Base met naam 'AED pakket NL' bestaat al in groep 52112");
 
-        $this->bases->saveForGroup(
-            'Reanibex 100 Semi-Auto',
-            new GroupBase('50013', 'DE', 'Reanibex 100 Semi-Automatic AED German'),
-        );
+        $this->bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL'));
     }
 
     #[Test]
     public function rejectsSaveForUnknownGroup(): void
     {
         $this->expectException(GroupNotFoundException::class);
-        $this->expectExceptionMessage("Groep 'Onbekend' niet gevonden");
 
-        $this->bases->saveForGroup('Onbekend', new GroupBase('50013', 'NL', 'naam'));
+        $this->bases->saveForGroup('99999', new GroupBase(null, 'naam'));
     }
 
     #[Test]
-    public function rejectsFindForUnknownGroup(): void
+    public function rejectsFindAllForUnknownGroup(): void
     {
         $this->expectException(GroupNotFoundException::class);
 
-        $this->bases->findAllForGroup('Onbekend');
+        $this->bases->findAllForGroup('99999');
+    }
+
+    #[Test]
+    public function returnsNullForUnknownBaseId(): void
+    {
+        self::assertNull($this->bases->findById(9999));
     }
 }

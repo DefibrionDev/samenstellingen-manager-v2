@@ -27,8 +27,12 @@ final readonly class SqliteGroupRepository implements GroupRepository
                 ':itemcode' => $group->familyHeadItemcode,
             ]);
         } catch (PDOException $e) {
-            if (str_contains($e->getMessage(), 'UNIQUE constraint failed: groups.name')) {
+            $message = $e->getMessage();
+            if (str_contains($message, 'UNIQUE constraint failed: groups.name')) {
                 throw GroupAlreadyExistsException::forName($group->name);
+            }
+            if (str_contains($message, 'UNIQUE constraint failed: groups.family_head_itemcode')) {
+                throw GroupAlreadyExistsException::forFamilyHeadItemcode($group->familyHeadItemcode);
             }
             throw $e;
         }
@@ -40,11 +44,28 @@ final readonly class SqliteGroupRepository implements GroupRepository
             'SELECT name, family_head_itemcode FROM groups WHERE name = :name'
         );
         $stmt->execute([':name' => $name]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $this->rowToGroup($stmt->fetch(PDO::FETCH_ASSOC));
+    }
+
+    public function findByFamilyHeadItemcode(string $familyHeadItemcode): ?Group
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT name, family_head_itemcode FROM groups WHERE family_head_itemcode = :itemcode'
+        );
+        $stmt->execute([':itemcode' => $familyHeadItemcode]);
+
+        return $this->rowToGroup($stmt->fetch(PDO::FETCH_ASSOC));
+    }
+
+    /**
+     * @param mixed $row
+     */
+    private function rowToGroup($row): ?Group
+    {
         if (!is_array($row)) {
             return null;
         }
-
         $name = $row['name'] ?? null;
         $itemcode = $row['family_head_itemcode'] ?? null;
         if (!is_string($name) || !is_string($itemcode)) {

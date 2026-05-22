@@ -22,57 +22,44 @@ final class AddBaseCommandTest extends TestCase
     #[Test]
     public function addsBaseToExistingGroup(): void
     {
-        [$groups, $bases, , , $variants] = $this->repositories();
+        [$groups, $bases, , , $variants] = $this->repos();
         $groups->save(new Group('Reanibex 100 Semi-Auto', '52112'));
         $tester = new CommandTester(new AddBaseCommand(new AddBaseToGroupHandler($bases, $variants)));
 
         $exitCode = $tester->execute([
-            'group' => 'Reanibex 100 Semi-Auto',
-            'itemcode' => '50013',
-            'language-code' => 'NL',
-            'name' => 'Reanibex 100 Semi-Automatic AED Nederlands',
+            'family-head-itemcode' => '52112',
+            'name' => 'AED pakket NL',
         ]);
 
         self::assertSame(Command::SUCCESS, $exitCode);
-        self::assertCount(1, $bases->findAllForGroup('Reanibex 100 Semi-Auto'));
+        self::assertStringContainsString('Base #', $tester->getDisplay());
+        self::assertCount(1, $bases->findAllForGroup('52112'));
     }
 
     #[Test]
     public function failsForUnknownGroup(): void
     {
-        [, $bases, , , $variants] = $this->repositories();
+        [, $bases, , , $variants] = $this->repos();
         $tester = new CommandTester(new AddBaseCommand(new AddBaseToGroupHandler($bases, $variants)));
 
         $exitCode = $tester->execute([
-            'group' => 'Onbekend',
-            'itemcode' => '50013',
-            'language-code' => 'NL',
+            'family-head-itemcode' => '99999',
             'name' => 'naam',
         ]);
 
         self::assertSame(Command::FAILURE, $exitCode);
-        self::assertStringContainsString("Groep 'Onbekend' niet gevonden", $tester->getDisplay());
+        self::assertStringContainsString('Geen groep gevonden', $tester->getDisplay());
     }
 
     #[Test]
-    public function failsForDuplicateBase(): void
+    public function failsForDuplicateBaseName(): void
     {
-        [$groups, $bases, , , $variants] = $this->repositories();
+        [$groups, $bases, , , $variants] = $this->repos();
         $groups->save(new Group('Reanibex 100 Semi-Auto', '52112'));
         $tester = new CommandTester(new AddBaseCommand(new AddBaseToGroupHandler($bases, $variants)));
 
-        $tester->execute([
-            'group' => 'Reanibex 100 Semi-Auto',
-            'itemcode' => '50013',
-            'language-code' => 'NL',
-            'name' => 'naam',
-        ]);
-        $exitCode = $tester->execute([
-            'group' => 'Reanibex 100 Semi-Auto',
-            'itemcode' => '50013',
-            'language-code' => 'DE',
-            'name' => 'andere',
-        ]);
+        $tester->execute(['family-head-itemcode' => '52112', 'name' => 'AED pakket NL']);
+        $exitCode = $tester->execute(['family-head-itemcode' => '52112', 'name' => 'AED pakket NL']);
 
         self::assertSame(Command::FAILURE, $exitCode);
         self::assertStringContainsString('bestaat al', $tester->getDisplay());
@@ -81,7 +68,7 @@ final class AddBaseCommandTest extends TestCase
     /**
      * @return array{0: InMemoryGroupRepository, 1: InMemoryGroupBaseRepository, 2: InMemoryAccessoireRepository, 3: InMemoryGroupAccessoireRepository, 4: InMemoryGroupVariantRepository}
      */
-    private function repositories(): array
+    private function repos(): array
     {
         $groups = new InMemoryGroupRepository();
         $bases = new InMemoryGroupBaseRepository($groups);

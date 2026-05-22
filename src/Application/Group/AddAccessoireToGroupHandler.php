@@ -17,7 +17,7 @@ final readonly class AddAccessoireToGroupHandler
 
     public function __invoke(AddAccessoireToGroup $command): void
     {
-        $this->repository->link($command->groupName, $command->accessoireItemcode);
-        $this->variantRepository->regenerateForGroup($command->groupName);
+        $this->repository->link($command->familyHeadItemcode, $command->accessoireItemcode);
+        $this->variantRepository->regenerateForGroup($command->familyHeadItemcode);
     }
 }

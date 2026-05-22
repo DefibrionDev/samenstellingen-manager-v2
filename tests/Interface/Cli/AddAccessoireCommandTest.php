@@ -23,7 +23,7 @@ final class AddAccessoireCommandTest extends TestCase
     #[Test]
     public function linksAccessoireToGroup(): void
     {
-        [$groups, , $accessoires, $links, $variants] = $this->repositories();
+        [$groups, , $accessoires, $links, $variants] = $this->repos();
         $groups->save(new Group('Reanibex 100 Semi-Auto', '52112'));
         $accessoires->save(new Accessoire('60112', 'ARKY witte binnenkast'));
         $tester = new CommandTester(
@@ -31,25 +31,25 @@ final class AddAccessoireCommandTest extends TestCase
         );
 
         $exitCode = $tester->execute([
-            'group' => 'Reanibex 100 Semi-Auto',
+            'family-head-itemcode' => '52112',
             'accessoire-itemcode' => '60112',
         ]);
 
         self::assertSame(Command::SUCCESS, $exitCode);
-        self::assertCount(1, $links->findAllForGroup('Reanibex 100 Semi-Auto'));
+        self::assertCount(1, $links->findAllForGroup('52112'));
     }
 
     #[Test]
     public function failsForUnknownAccessoire(): void
     {
-        [$groups, , , $links, $variants] = $this->repositories();
+        [$groups, , , $links, $variants] = $this->repos();
         $groups->save(new Group('Reanibex 100 Semi-Auto', '52112'));
         $tester = new CommandTester(
             new AddAccessoireCommand(new AddAccessoireToGroupHandler($links, $variants)),
         );
 
         $exitCode = $tester->execute([
-            'group' => 'Reanibex 100 Semi-Auto',
+            'family-head-itemcode' => '52112',
             'accessoire-itemcode' => '99999',
         ]);
 
@@ -60,16 +60,16 @@ final class AddAccessoireCommandTest extends TestCase
     #[Test]
     public function failsForDuplicateLink(): void
     {
-        [$groups, , $accessoires, $links, $variants] = $this->repositories();
+        [$groups, , $accessoires, $links, $variants] = $this->repos();
         $groups->save(new Group('Reanibex 100 Semi-Auto', '52112'));
         $accessoires->save(new Accessoire('60112', 'ARKY witte binnenkast'));
         $tester = new CommandTester(
             new AddAccessoireCommand(new AddAccessoireToGroupHandler($links, $variants)),
         );
 
-        $tester->execute(['group' => 'Reanibex 100 Semi-Auto', 'accessoire-itemcode' => '60112']);
+        $tester->execute(['family-head-itemcode' => '52112', 'accessoire-itemcode' => '60112']);
         $exitCode = $tester->execute([
-            'group' => 'Reanibex 100 Semi-Auto',
+            'family-head-itemcode' => '52112',
             'accessoire-itemcode' => '60112',
         ]);
 
@@ -80,7 +80,7 @@ final class AddAccessoireCommandTest extends TestCase
     /**
      * @return array{0: InMemoryGroupRepository, 1: InMemoryGroupBaseRepository, 2: InMemoryAccessoireRepository, 3: InMemoryGroupAccessoireRepository, 4: InMemoryGroupVariantRepository}
      */
-    private function repositories(): array
+    private function repos(): array
     {
         $groups = new InMemoryGroupRepository();
         $bases = new InMemoryGroupBaseRepository($groups);

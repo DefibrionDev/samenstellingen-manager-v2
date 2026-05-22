@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Defibrion\Samenstellingen\Interface\Cli;
 
 use Defibrion\Samenstellingen\Application\Group\GroupOverview;
+use Defibrion\Samenstellingen\Application\Group\GroupVariantWithBom;
 use Defibrion\Samenstellingen\Application\Group\ShowGroup;
 use Defibrion\Samenstellingen\Application\Group\ShowGroupHandler;
 use Defibrion\Samenstellingen\Domain\Group\GroupNotFoundException;
@@ -17,7 +18,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(
     name: 'group:show',
-    description: 'Toon de details van een bestaande groep, inclusief bases, accessoires en varianten.',
+    description: 'Toon de details van een groep (lookup via family-head itemcode), inclusief bases, accessoires en varianten met verwachte BOM.',
 )]
 final class ShowGroupCommand extends Command
 {
@@ -29,19 +30,19 @@ final class ShowGroupCommand extends Command
     protected function configure(): void
     {
         $this->addArgument(
-            'name',
+            'family-head-itemcode',
             InputArgument::REQUIRED,
-            'De groepsnaam (bv. "Reanibex 100 Semi-Auto")'
+            'AFAS family-head itemcode van de groep (bv. 52112)'
         );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $name = (string) $input->getArgument('name');
+        $itemcode = (string) $input->getArgument('family-head-itemcode');
 
         try {
-            $overview = ($this->handler)(new ShowGroup($name));
+            $overview = ($this->handler)(new ShowGroup($itemcode));
         } catch (GroupNotFoundException $e) {
             $io->error($e->getMessage());
 
@@ -66,12 +67,12 @@ final class ShowGroupCommand extends Command
         } else {
             $rows = [];
             foreach ($overview->bases as $base) {
-                $rows[] = [$base->itemcode, $base->languageCode, $base->name];
+                $rows[] = [(string) ($base->id ?? '?'), $base->name];
             }
-            $io->table(['Itemcode', 'Taal', 'Naam'], $rows);
+            $io->table(['ID', 'Naam'], $rows);
         }
 
-        $io->section('Accessoires');
+        $io->section('Accessoires (gekoppeld aan deze groep)');
         if ($overview->accessoires === []) {
             $io->writeln('(geen accessoires)');
         } else {
@@ -82,26 +83,44 @@ final class ShowGroupCommand extends Command
             $io->table(['Itemcode', 'Label'], $rows);
         }
 
-        $io->section('Varianten');
+        $io->section('Varianten met verwachte BOM');
         if ($overview->variants === []) {
             $io->writeln('(nog geen varianten)');
-        } else {
-            $rows = [];
-            $i = 1;
-            foreach ($overview->variants as $variant) {
-                $rows[] = [
-                    (string) $i++,
-                    $variant->baseLanguageCode,
-                    $variant->baseItemcode,
-                    $variant->accessoireItemcode ?? '—',
-                    $variant->accessoireLabel ?? '—',
-                    $variant->afasSamenstellingItemcode ?? '(nog niet bekend)',
-                ];
-            }
-            $io->table(
-                ['#', 'Taal', 'Base', 'Accessoire', 'Accessoire-label', 'AFAS-SKU'],
-                $rows,
-            );
+
+            return;
         }
+
+        foreach ($overview->variants as $i => $variantWithBom) {
+            $this->renderVariant($io, $i + 1, $variantWithBom);
+        }
+    }
+
+    private function renderVariant(SymfonyStyle $io, int $index, GroupVariantWithBom $variantWithBom): void
+    {
+        $variant = $variantWithBom->variant;
+        $header = sprintf(
+            '#%d — Base #%d (%s)%s   |   AFAS-SKU: %s',
+            $index,
+            $variant->baseId,
+            $variant->baseName,
+            $variant->accessoireItemcode !== null
+                ? sprintf(' + %s (%s)', $variant->accessoireItemcode, $variant->accessoireLabel ?? '')
+                : '',
+            $variant->afasSamenstellingItemcode ?? '(nog niet bekend)',
+        );
+        $io->writeln($header);
+
+        if ($variantWithBom->bom === []) {
+            $io->writeln('  (lege BOM — voeg eerst base-items toe)');
+            $io->newLine();
+
+            return;
+        }
+
+        $rows = [];
+        foreach ($variantWithBom->bom as $bomItem) {
+            $rows[] = [$bomItem->itemcode, $bomItem->name];
+        }
+        $io->table(['Itemcode', 'Naam'], $rows);
     }
 }

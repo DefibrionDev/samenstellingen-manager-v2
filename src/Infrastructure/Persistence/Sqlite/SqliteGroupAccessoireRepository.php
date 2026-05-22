@@ -18,9 +18,9 @@ final readonly class SqliteGroupAccessoireRepository implements GroupAccessoireR
     {
     }
 
-    public function link(string $groupName, string $accessoireItemcode): void
+    public function link(string $familyHeadItemcode, string $accessoireItemcode): void
     {
-        $groupId = $this->resolveGroupId($groupName);
+        $groupId = $this->resolveGroupId($familyHeadItemcode);
         $accessoireId = $this->resolveAccessoireId($accessoireItemcode);
 
         try {
@@ -39,16 +39,16 @@ final readonly class SqliteGroupAccessoireRepository implements GroupAccessoireR
             ) {
                 throw AccessoireAlreadyLinkedException::forAccessoireInGroup(
                     $accessoireItemcode,
-                    $groupName,
+                    $familyHeadItemcode,
                 );
             }
             throw $e;
         }
     }
 
-    public function findAllForGroup(string $groupName): array
+    public function findAllForGroup(string $familyHeadItemcode): array
     {
-        $groupId = $this->resolveGroupId($groupName);
+        $groupId = $this->resolveGroupId($familyHeadItemcode);
 
         $stmt = $this->pdo->prepare(
             'SELECT a.itemcode, a.label
@@ -61,25 +61,26 @@ final readonly class SqliteGroupAccessoireRepository implements GroupAccessoireR
 
         $accessoires = [];
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
-            if (
-                is_array($row)
-                && is_string($row['itemcode'] ?? null)
-                && is_string($row['label'] ?? null)
-            ) {
-                $accessoires[] = new Accessoire($row['itemcode'], $row['label']);
+            if (!is_array($row)) {
+                continue;
+            }
+            $itemcode = $row['itemcode'] ?? null;
+            $label = $row['label'] ?? null;
+            if (is_string($itemcode) && is_string($label)) {
+                $accessoires[] = new Accessoire($itemcode, $label);
             }
         }
 
         return $accessoires;
     }
 
-    private function resolveGroupId(string $groupName): int
+    private function resolveGroupId(string $familyHeadItemcode): int
     {
-        $stmt = $this->pdo->prepare('SELECT id FROM groups WHERE name = :name');
-        $stmt->execute([':name' => $groupName]);
+        $stmt = $this->pdo->prepare('SELECT id FROM groups WHERE family_head_itemcode = :itemcode');
+        $stmt->execute([':itemcode' => $familyHeadItemcode]);
         $id = $stmt->fetchColumn();
         if (!is_int($id)) {
-            throw GroupNotFoundException::forName($groupName);
+            throw GroupNotFoundException::forFamilyHeadItemcode($familyHeadItemcode);
         }
 
         return $id;

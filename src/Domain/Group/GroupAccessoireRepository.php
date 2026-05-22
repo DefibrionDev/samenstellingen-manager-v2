@@ -10,16 +10,16 @@ use Defibrion\Samenstellingen\Domain\Accessoire\AccessoireNotFoundException;
 interface GroupAccessoireRepository
 {
     /**
-     * @throws GroupNotFoundException               wanneer de groep niet bestaat.
-     * @throws AccessoireNotFoundException          wanneer de accessoire niet in de catalogus zit.
-     * @throws AccessoireAlreadyLinkedException     wanneer de accessoire al aan deze groep is gekoppeld.
+     * @throws GroupNotFoundException
+     * @throws AccessoireNotFoundException
+     * @throws AccessoireAlreadyLinkedException
      */
-    public function link(string $groupName, string $accessoireItemcode): void;
+    public function link(string $familyHeadItemcode, string $accessoireItemcode): void;
 
     /**
-     * @throws GroupNotFoundException wanneer de groep niet bestaat.
+     * @throws GroupNotFoundException
      *
      * @return list<Accessoire>
      */
-    public function findAllForGroup(string $groupName): array;
+    public function findAllForGroup(string $familyHeadItemcode): array;
 }
