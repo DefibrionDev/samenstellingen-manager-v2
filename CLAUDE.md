@@ -5,7 +5,7 @@ PHP 8.5 application for managing Defibrion's AED-pakket samenstellingen in AFAS,
 ## Workflow (must follow in order)
 
 1. **Ideas → `PLAN.md`.** Every idea, requirement, or design decision lands in `PLAN.md` first. Nothing implementation-related happens until the user reviews and approves the plan.
-2. **Plan → `TODO.md`.** After the user approves `PLAN.md`, translate it into checkable todos grouped under logical phases (Markdown checkboxes: `- [ ] ...`). Wait for the user to check (approve) them before writing code.
+2. **Plan → `TODO.md`.** After the user approves `PLAN.md`, translate it into checkable todos grouped under logical phases (Markdown checkboxes: `- [ ] ...`). **Stop and wait for explicit approval** of the TODO before writing any code — don't roll straight from writing the TODO into implementing it, even when the previous slices were green-lit quickly. The user reads the TODO carefully and may want to adjust scope before code lands.
 3. **One todo at a time, TDD red-green-refactor.** Pick the first unchecked todo, then:
    - **Red:** write a failing test that expresses the behavior.
    - **Green:** write the minimum code to make it pass.

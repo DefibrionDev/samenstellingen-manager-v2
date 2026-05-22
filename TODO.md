@@ -270,7 +270,43 @@ Design-keuzes:
 - [x] Refactor naar aparte `afas:pull` + lokale snapshot-tabellen (`afas_samenstellingen`, `afas_samenstelling_bom`); geen `Itemcode_Parent`-filter meer.
 - [x] Live tegen echte AFAS: `afas:pull` haalde 1894 samenstellingen op; `group:sync-afas 52112` vond AFAS-SKU `52112` voor de NL-base variant.
 - [x] `group:show 52112` toont `AFAS: ✓ matched (52112)`.
-- [ ] **Commit + push** "slice 6: AFAS-matching via lokale snapshot".
+- [x] **Commit + push** "slice 6: AFAS-matching via lokale snapshot".
+
+---
+
+## Slice 7 — bulk-import bases + accessoires uit reanibex-CSV
+
+Eindbeeld: `group:import-csv <csv-file> <family-head>` leest een CSV met `(samenstelling_itemcode, samenstelling_naam, aed_article, aed_article_naam)` rijen en:
+- Per unieke `aed_article` één base aanmaken (44 voor reanibex-semi-with-safeset.csv) met naam uit de base-only-rij.
+- Per uniek accessoire-suffix uit variant-SKUs (`52124-60110` → `60110`): catalogus-entry + link met groep.
+- Idempotent: herhalen voegt niets dubbel toe, slaat bestaande over.
+
+Design-keuzes:
+- Geen BOM auto-fill in deze slice (komt later via AFAS-snapshot-overname).
+- Accessoire-label uit `samenstelling_naam` parsen na " avec " / " + " / " with "; mislukt parsing → placeholder `"Accessoire <itemcode>"`.
+- Bestaande groep nodig — `group:create` moet vooraf gerund zijn voor het family-head.
+
+### Fase 1 — Domein
+- [x] `CsvSamenstellingenRow` value object.
+- [x] `CsvSamenstellingenReader` interface + `FileCsvSamenstellingenReader`.
+
+### Fase 2 — Application
+- [x] `ImportSamenstellingenCsv` + handler: bases per `aed_article`, accessoires uit variant-suffixes. Labels parsed via " avec " / " + " / " with " / " incl. ".
+- [x] `ImportSummary` DTO met counts.
+- [x] Idempotent (skip-counters bij her-run).
+
+### Fase 3 — CLI
+- [x] `ImportSamenstellingenCsvCommand` — `group:import-csv`.
+- [x] `bin/samenstellingen` bedraadt het commando.
+- [x] Safety in `SyncGroupAgainstAfasHandler`: lege expectedBom → meteen `no_match` (voorkomt ambigu-error tegen AFAS-rijen met lege BOM).
+
+### Fase 4 — Handmatige verificatie + commit
+- [x] `group:create "Reanibex 100 Semi-Auto" 52112`.
+- [x] `group:import-csv reanibex-semi-with-safeset.csv 52112` → 44 bases + 7 accessoires + 352 varianten (BOMs leeg).
+- [x] `group:show 52112` toont volledige matrix.
+- [x] `afas:pull` (1894 samenstellingen) + `group:sync-afas 52112`: 0 matches verwacht zolang base-items leeg zijn — slice 8 (BOM auto-fill uit AFAS-snapshot) vult dit aan.
+- [x] `make check` groen (119 tests / 248 assertions).
+- [ ] **Commit + push** "slice 7: bulk-import bases en accessoires uit CSV".
 
 ---
 

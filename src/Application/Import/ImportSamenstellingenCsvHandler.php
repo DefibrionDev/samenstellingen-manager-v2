@@ -1,0 +1,133 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Defibrion\Samenstellingen\Application\Import;
+
+use Defibrion\Samenstellingen\Domain\Accessoire\Accessoire;
+use Defibrion\Samenstellingen\Domain\Accessoire\AccessoireAlreadyExistsException;
+use Defibrion\Samenstellingen\Domain\Accessoire\AccessoireRepository;
+use Defibrion\Samenstellingen\Domain\Group\AccessoireAlreadyLinkedException;
+use Defibrion\Samenstellingen\Domain\Group\BaseAlreadyExistsException;
+use Defibrion\Samenstellingen\Domain\Group\GroupAccessoireRepository;
+use Defibrion\Samenstellingen\Domain\Group\GroupBase;
+use Defibrion\Samenstellingen\Domain\Group\GroupBaseRepository;
+use Defibrion\Samenstellingen\Domain\Group\GroupVariantRepository;
+use Defibrion\Samenstellingen\Domain\Import\CsvSamenstellingenReader;
+use Defibrion\Samenstellingen\Domain\Import\CsvSamenstellingenRow;
+
+final readonly class ImportSamenstellingenCsvHandler
+{
+    public function __construct(
+        private CsvSamenstellingenReader $reader,
+        private GroupBaseRepository $baseRepository,
+        private AccessoireRepository $accessoireRepository,
+        private GroupAccessoireRepository $linkRepository,
+        private GroupVariantRepository $variantRepository,
+    ) {
+    }
+
+    public function __invoke(ImportSamenstellingenCsv $command): ImportSummary
+    {
+        $summary = new ImportSummary();
+
+        $baseNamesByAedArticle = $this->collectBaseNamesByAedArticle($command->csvPath, $summary);
+        $accessoireLabelsByItemcode = $this->collectAccessoireLabels($command->csvPath);
+
+        foreach ($baseNamesByAedArticle as $name) {
+            try {
+                $this->baseRepository->saveForGroup(
+                    $command->familyHeadItemcode,
+                    new GroupBase(null, $name),
+                );
+                ++$summary->basesCreated;
+            } catch (BaseAlreadyExistsException) {
+                ++$summary->basesSkipped;
+            }
+        }
+
+        foreach ($accessoireLabelsByItemcode as $rawItemcode => $label) {
+            $itemcode = (string) $rawItemcode;
+            try {
+                $this->accessoireRepository->save(new Accessoire($itemcode, $label));
+                ++$summary->accessoiresCreated;
+            } catch (AccessoireAlreadyExistsException) {
+                ++$summary->accessoiresSkipped;
+            }
+
+            try {
+                $this->linkRepository->link($command->familyHeadItemcode, $itemcode);
+                ++$summary->accessoireLinksCreated;
+            } catch (AccessoireAlreadyLinkedException) {
+                ++$summary->accessoireLinksSkipped;
+            }
+        }
+
+        $this->variantRepository->regenerateForGroup($command->familyHeadItemcode);
+
+        return $summary;
+    }
+
+    /**
+     * @return array<string, string> aedArticle → base name (uit base-only-rij; valt terug op samenstelling_naam van variant als geen base-only-rij gevonden)
+     */
+    private function collectBaseNamesByAedArticle(string $csvPath, ImportSummary $summary): array
+    {
+        $baseNames = [];
+        $fallbackNames = [];
+
+        foreach ($this->reader->read($csvPath) as $row) {
+            ++$summary->rowsProcessed;
+            if ($row->aedArticle === '') {
+                continue;
+            }
+            if ($row->isBaseOnly()) {
+                $baseNames[$row->aedArticle] = $row->samenstellingNaam !== ''
+                    ? $row->samenstellingNaam
+                    : $row->aedArticleNaam;
+                continue;
+            }
+            if (!isset($fallbackNames[$row->aedArticle]) && $row->aedArticleNaam !== '') {
+                $fallbackNames[$row->aedArticle] = $row->aedArticleNaam;
+            }
+        }
+
+        foreach ($fallbackNames as $aed => $name) {
+            $baseNames[$aed] ??= $name;
+        }
+
+        return $baseNames;
+    }
+
+    /**
+     * @return array<string, string> accessoire-itemcode → label (eerste niet-lege variant-naam-suffix wint)
+     */
+    private function collectAccessoireLabels(string $csvPath): array
+    {
+        $labels = [];
+        foreach ($this->reader->read($csvPath) as $row) {
+            $accessoireItemcode = $row->extractAccessoireItemcode();
+            if ($accessoireItemcode === null || isset($labels[$accessoireItemcode])) {
+                continue;
+            }
+            $labels[$accessoireItemcode] = $this->parseAccessoireLabel($row, $accessoireItemcode);
+        }
+
+        return $labels;
+    }
+
+    private function parseAccessoireLabel(CsvSamenstellingenRow $row, string $itemcode): string
+    {
+        foreach ([' avec ', ' + ', ' with ', ' incl. '] as $delimiter) {
+            $position = strripos($row->samenstellingNaam, $delimiter);
+            if ($position !== false) {
+                $tail = trim(substr($row->samenstellingNaam, $position + strlen($delimiter)));
+                if ($tail !== '') {
+                    return $tail;
+                }
+            }
+        }
+
+        return sprintf('Accessoire %s', $itemcode);
+    }
+}

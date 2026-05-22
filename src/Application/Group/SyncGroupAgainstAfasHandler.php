@@ -41,6 +41,13 @@ final readonly class SyncGroupAgainstAfasHandler
             }
 
             $expectedBom = $this->buildExpectedBom($variant);
+            if ($expectedBom === []) {
+                // Geen items aan de base toegevoegd → geen zinvolle match mogelijk.
+                $this->variantRepository->markNoMatch($variant->id);
+                $notMatched[] = $variant;
+                continue;
+            }
+
             $matchSku = $this->matcher->findMatch($variant->id, $expectedBom, $afasSamenstellingen);
 
             if ($matchSku !== null) {
