@@ -10,35 +10,39 @@ use Defibrion\Samenstellingen\Domain\Accessoire\Accessoire;
 use Defibrion\Samenstellingen\Domain\Accessoire\AccessoireNotFoundException;
 use Defibrion\Samenstellingen\Domain\Group\AccessoireAlreadyLinkedException;
 use Defibrion\Samenstellingen\Domain\Group\Group;
+use Defibrion\Samenstellingen\Domain\Group\GroupBase;
 use Defibrion\Samenstellingen\Domain\Group\GroupNotFoundException;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryAccessoireRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryGroupAccessoireRepository;
+use Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryGroupBaseRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryGroupRepository;
+use Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryGroupVariantRepository;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class AddAccessoireToGroupHandlerTest extends TestCase
 {
     #[Test]
-    public function linksAccessoireToGroup(): void
+    public function linksAccessoireAndRegeneratesVariants(): void
     {
-        [$groups, $accessoires, $links] = $this->repositories();
+        [$groups, $bases, $accessoires, $links, $variants] = $this->repositories();
         $groups->save(new Group('Reanibex 100 Semi-Auto', '52112'));
+        $bases->saveForGroup('Reanibex 100 Semi-Auto', new GroupBase('50013', 'NL', 'AED NL'));
         $accessoires->save(new Accessoire('60112', 'ARKY witte binnenkast'));
-        $handler = new AddAccessoireToGroupHandler($links);
+        $handler = new AddAccessoireToGroupHandler($links, $variants);
 
         $handler(new AddAccessoireToGroup('Reanibex 100 Semi-Auto', '60112'));
 
-        $found = $links->findAllForGroup('Reanibex 100 Semi-Auto');
-        self::assertCount(1, $found);
-        self::assertSame('60112', $found[0]->itemcode);
+        self::assertCount(1, $links->findAllForGroup('Reanibex 100 Semi-Auto'));
+        // 1 base × (geen + 1 accessoire) = 2 varianten.
+        self::assertCount(2, $variants->findAllForGroup('Reanibex 100 Semi-Auto'));
     }
 
     #[Test]
     public function passesThroughGroupNotFound(): void
     {
-        [, , $links] = $this->repositories();
-        $handler = new AddAccessoireToGroupHandler($links);
+        [, , , $links, $variants] = $this->repositories();
+        $handler = new AddAccessoireToGroupHandler($links, $variants);
 
         $this->expectException(GroupNotFoundException::class);
 
@@ -48,9 +52,9 @@ final class AddAccessoireToGroupHandlerTest extends TestCase
     #[Test]
     public function passesThroughAccessoireNotFound(): void
     {
-        [$groups, , $links] = $this->repositories();
+        [$groups, , , $links, $variants] = $this->repositories();
         $groups->save(new Group('Reanibex 100 Semi-Auto', '52112'));
-        $handler = new AddAccessoireToGroupHandler($links);
+        $handler = new AddAccessoireToGroupHandler($links, $variants);
 
         $this->expectException(AccessoireNotFoundException::class);
 
@@ -60,10 +64,10 @@ final class AddAccessoireToGroupHandlerTest extends TestCase
     #[Test]
     public function passesThroughDuplicateLink(): void
     {
-        [$groups, $accessoires, $links] = $this->repositories();
+        [$groups, , $accessoires, $links, $variants] = $this->repositories();
         $groups->save(new Group('Reanibex 100 Semi-Auto', '52112'));
         $accessoires->save(new Accessoire('60112', 'ARKY witte binnenkast'));
-        $handler = new AddAccessoireToGroupHandler($links);
+        $handler = new AddAccessoireToGroupHandler($links, $variants);
         $handler(new AddAccessoireToGroup('Reanibex 100 Semi-Auto', '60112'));
 
         $this->expectException(AccessoireAlreadyLinkedException::class);
@@ -72,14 +76,16 @@ final class AddAccessoireToGroupHandlerTest extends TestCase
     }
 
     /**
-     * @return array{0: InMemoryGroupRepository, 1: InMemoryAccessoireRepository, 2: InMemoryGroupAccessoireRepository}
+     * @return array{0: InMemoryGroupRepository, 1: InMemoryGroupBaseRepository, 2: InMemoryAccessoireRepository, 3: InMemoryGroupAccessoireRepository, 4: InMemoryGroupVariantRepository}
      */
     private function repositories(): array
     {
         $groups = new InMemoryGroupRepository();
+        $bases = new InMemoryGroupBaseRepository($groups);
         $accessoires = new InMemoryAccessoireRepository();
         $links = new InMemoryGroupAccessoireRepository($groups, $accessoires);
+        $variants = new InMemoryGroupVariantRepository($groups, $bases, $links);
 
-        return [$groups, $accessoires, $links];
+        return [$groups, $bases, $accessoires, $links, $variants];
     }
 }

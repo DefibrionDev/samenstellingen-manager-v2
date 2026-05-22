@@ -17,7 +17,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(
     name: 'group:show',
-    description: 'Toon de details van een bestaande groep, inclusief bases en gekoppelde accessoires.',
+    description: 'Toon de details van een bestaande groep, inclusief bases, accessoires en varianten.',
 )]
 final class ShowGroupCommand extends Command
 {
@@ -80,6 +80,28 @@ final class ShowGroupCommand extends Command
                 $rows[] = [$accessoire->itemcode, $accessoire->label];
             }
             $io->table(['Itemcode', 'Label'], $rows);
+        }
+
+        $io->section('Varianten');
+        if ($overview->variants === []) {
+            $io->writeln('(nog geen varianten)');
+        } else {
+            $rows = [];
+            $i = 1;
+            foreach ($overview->variants as $variant) {
+                $rows[] = [
+                    (string) $i++,
+                    $variant->baseLanguageCode,
+                    $variant->baseItemcode,
+                    $variant->accessoireItemcode ?? '—',
+                    $variant->accessoireLabel ?? '—',
+                    $variant->afasSamenstellingItemcode ?? '(nog niet bekend)',
+                ];
+            }
+            $io->table(
+                ['#', 'Taal', 'Base', 'Accessoire', 'Accessoire-label', 'AFAS-SKU'],
+                $rows,
+            );
         }
     }
 }

@@ -8,6 +8,7 @@ use Defibrion\Samenstellingen\Domain\Group\GroupAccessoireRepository;
 use Defibrion\Samenstellingen\Domain\Group\GroupBaseRepository;
 use Defibrion\Samenstellingen\Domain\Group\GroupNotFoundException;
 use Defibrion\Samenstellingen\Domain\Group\GroupRepository;
+use Defibrion\Samenstellingen\Domain\Group\GroupVariantRepository;
 
 final readonly class ShowGroupHandler
 {
@@ -15,6 +16,7 @@ final readonly class ShowGroupHandler
         private GroupRepository $groupRepository,
         private GroupBaseRepository $baseRepository,
         private GroupAccessoireRepository $linkRepository,
+        private GroupVariantRepository $variantRepository,
     ) {
     }
 
@@ -29,6 +31,7 @@ final readonly class ShowGroupHandler
             $group,
             $this->baseRepository->findAllForGroup($query->name),
             $this->linkRepository->findAllForGroup($query->name),
+            $this->variantRepository->findAllForGroup($query->name),
         );
     }
 }

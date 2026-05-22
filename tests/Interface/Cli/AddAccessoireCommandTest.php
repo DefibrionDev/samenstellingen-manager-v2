@@ -9,7 +9,9 @@ use Defibrion\Samenstellingen\Domain\Accessoire\Accessoire;
 use Defibrion\Samenstellingen\Domain\Group\Group;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryAccessoireRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryGroupAccessoireRepository;
+use Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryGroupBaseRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryGroupRepository;
+use Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryGroupVariantRepository;
 use Defibrion\Samenstellingen\Interface\Cli\AddAccessoireCommand;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -21,12 +23,12 @@ final class AddAccessoireCommandTest extends TestCase
     #[Test]
     public function linksAccessoireToGroup(): void
     {
-        $groups = new InMemoryGroupRepository();
+        [$groups, , $accessoires, $links, $variants] = $this->repositories();
         $groups->save(new Group('Reanibex 100 Semi-Auto', '52112'));
-        $accessoires = new InMemoryAccessoireRepository();
         $accessoires->save(new Accessoire('60112', 'ARKY witte binnenkast'));
-        $links = new InMemoryGroupAccessoireRepository($groups, $accessoires);
-        $tester = new CommandTester(new AddAccessoireCommand(new AddAccessoireToGroupHandler($links)));
+        $tester = new CommandTester(
+            new AddAccessoireCommand(new AddAccessoireToGroupHandler($links, $variants)),
+        );
 
         $exitCode = $tester->execute([
             'group' => 'Reanibex 100 Semi-Auto',
@@ -40,11 +42,11 @@ final class AddAccessoireCommandTest extends TestCase
     #[Test]
     public function failsForUnknownAccessoire(): void
     {
-        $groups = new InMemoryGroupRepository();
+        [$groups, , , $links, $variants] = $this->repositories();
         $groups->save(new Group('Reanibex 100 Semi-Auto', '52112'));
-        $accessoires = new InMemoryAccessoireRepository();
-        $links = new InMemoryGroupAccessoireRepository($groups, $accessoires);
-        $tester = new CommandTester(new AddAccessoireCommand(new AddAccessoireToGroupHandler($links)));
+        $tester = new CommandTester(
+            new AddAccessoireCommand(new AddAccessoireToGroupHandler($links, $variants)),
+        );
 
         $exitCode = $tester->execute([
             'group' => 'Reanibex 100 Semi-Auto',
@@ -58,12 +60,12 @@ final class AddAccessoireCommandTest extends TestCase
     #[Test]
     public function failsForDuplicateLink(): void
     {
-        $groups = new InMemoryGroupRepository();
+        [$groups, , $accessoires, $links, $variants] = $this->repositories();
         $groups->save(new Group('Reanibex 100 Semi-Auto', '52112'));
-        $accessoires = new InMemoryAccessoireRepository();
         $accessoires->save(new Accessoire('60112', 'ARKY witte binnenkast'));
-        $links = new InMemoryGroupAccessoireRepository($groups, $accessoires);
-        $tester = new CommandTester(new AddAccessoireCommand(new AddAccessoireToGroupHandler($links)));
+        $tester = new CommandTester(
+            new AddAccessoireCommand(new AddAccessoireToGroupHandler($links, $variants)),
+        );
 
         $tester->execute(['group' => 'Reanibex 100 Semi-Auto', 'accessoire-itemcode' => '60112']);
         $exitCode = $tester->execute([
@@ -73,5 +75,19 @@ final class AddAccessoireCommandTest extends TestCase
 
         self::assertSame(Command::FAILURE, $exitCode);
         self::assertStringContainsString('al gekoppeld', $tester->getDisplay());
+    }
+
+    /**
+     * @return array{0: InMemoryGroupRepository, 1: InMemoryGroupBaseRepository, 2: InMemoryAccessoireRepository, 3: InMemoryGroupAccessoireRepository, 4: InMemoryGroupVariantRepository}
+     */
+    private function repositories(): array
+    {
+        $groups = new InMemoryGroupRepository();
+        $bases = new InMemoryGroupBaseRepository($groups);
+        $accessoires = new InMemoryAccessoireRepository();
+        $links = new InMemoryGroupAccessoireRepository($groups, $accessoires);
+        $variants = new InMemoryGroupVariantRepository($groups, $bases, $links);
+
+        return [$groups, $bases, $accessoires, $links, $variants];
     }
 }

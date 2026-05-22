@@ -1,0 +1,23 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Defibrion\Samenstellingen\Domain\Group;
+
+final readonly class GroupVariant
+{
+    public function __construct(
+        public string $baseItemcode,
+        public string $baseLanguageCode,
+        public string $baseName,
+        public ?string $accessoireItemcode,
+        public ?string $accessoireLabel,
+        public ?string $afasSamenstellingItemcode,
+    ) {
+    }
+
+    public function isBaseOnly(): bool
+    {
+        return $this->accessoireItemcode === null;
+    }
+}

@@ -13,6 +13,7 @@ use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAccessoire
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteGroupAccessoireRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteGroupBaseRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteGroupRepository;
+use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteGroupVariantRepository;
 use Defibrion\Samenstellingen\Interface\Cli\AddAccessoireCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AddBaseCommand;
 use Defibrion\Samenstellingen\Interface\Cli\CreateAccessoireCommand;
@@ -45,12 +46,18 @@ $groupRepository = new SqliteGroupRepository($pdo);
 $baseRepository = new SqliteGroupBaseRepository($pdo);
 $accessoireRepository = new SqliteAccessoireRepository($pdo);
 $linkRepository = new SqliteGroupAccessoireRepository($pdo);
+$variantRepository = new SqliteGroupVariantRepository($pdo);
 
 $createGroupHandler = new CreateGroupHandler($groupRepository);
-$showGroupHandler = new ShowGroupHandler($groupRepository, $baseRepository, $linkRepository);
-$addBaseHandler = new AddBaseToGroupHandler($baseRepository);
+$showGroupHandler = new ShowGroupHandler(
+    $groupRepository,
+    $baseRepository,
+    $linkRepository,
+    $variantRepository,
+);
+$addBaseHandler = new AddBaseToGroupHandler($baseRepository, $variantRepository);
 $createAccessoireHandler = new CreateAccessoireHandler($accessoireRepository);
-$addAccessoireHandler = new AddAccessoireToGroupHandler($linkRepository);
+$addAccessoireHandler = new AddAccessoireToGroupHandler($linkRepository, $variantRepository);
 
 $application = new Application('samenstellingen-manager');
 $application->addCommand(new CreateGroupCommand($createGroupHandler));

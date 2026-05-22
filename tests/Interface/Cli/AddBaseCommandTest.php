@@ -6,8 +6,11 @@ namespace Defibrion\Samenstellingen\Tests\Interface\Cli;
 
 use Defibrion\Samenstellingen\Application\Group\AddBaseToGroupHandler;
 use Defibrion\Samenstellingen\Domain\Group\Group;
+use Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryAccessoireRepository;
+use Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryGroupAccessoireRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryGroupBaseRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryGroupRepository;
+use Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryGroupVariantRepository;
 use Defibrion\Samenstellingen\Interface\Cli\AddBaseCommand;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -19,10 +22,9 @@ final class AddBaseCommandTest extends TestCase
     #[Test]
     public function addsBaseToExistingGroup(): void
     {
-        $groups = new InMemoryGroupRepository();
+        [$groups, $bases, , , $variants] = $this->repositories();
         $groups->save(new Group('Reanibex 100 Semi-Auto', '52112'));
-        $bases = new InMemoryGroupBaseRepository($groups);
-        $tester = new CommandTester(new AddBaseCommand(new AddBaseToGroupHandler($bases)));
+        $tester = new CommandTester(new AddBaseCommand(new AddBaseToGroupHandler($bases, $variants)));
 
         $exitCode = $tester->execute([
             'group' => 'Reanibex 100 Semi-Auto',
@@ -38,9 +40,8 @@ final class AddBaseCommandTest extends TestCase
     #[Test]
     public function failsForUnknownGroup(): void
     {
-        $groups = new InMemoryGroupRepository();
-        $bases = new InMemoryGroupBaseRepository($groups);
-        $tester = new CommandTester(new AddBaseCommand(new AddBaseToGroupHandler($bases)));
+        [, $bases, , , $variants] = $this->repositories();
+        $tester = new CommandTester(new AddBaseCommand(new AddBaseToGroupHandler($bases, $variants)));
 
         $exitCode = $tester->execute([
             'group' => 'Onbekend',
@@ -56,10 +57,9 @@ final class AddBaseCommandTest extends TestCase
     #[Test]
     public function failsForDuplicateBase(): void
     {
-        $groups = new InMemoryGroupRepository();
+        [$groups, $bases, , , $variants] = $this->repositories();
         $groups->save(new Group('Reanibex 100 Semi-Auto', '52112'));
-        $bases = new InMemoryGroupBaseRepository($groups);
-        $tester = new CommandTester(new AddBaseCommand(new AddBaseToGroupHandler($bases)));
+        $tester = new CommandTester(new AddBaseCommand(new AddBaseToGroupHandler($bases, $variants)));
 
         $tester->execute([
             'group' => 'Reanibex 100 Semi-Auto',
@@ -76,5 +76,19 @@ final class AddBaseCommandTest extends TestCase
 
         self::assertSame(Command::FAILURE, $exitCode);
         self::assertStringContainsString('bestaat al', $tester->getDisplay());
+    }
+
+    /**
+     * @return array{0: InMemoryGroupRepository, 1: InMemoryGroupBaseRepository, 2: InMemoryAccessoireRepository, 3: InMemoryGroupAccessoireRepository, 4: InMemoryGroupVariantRepository}
+     */
+    private function repositories(): array
+    {
+        $groups = new InMemoryGroupRepository();
+        $bases = new InMemoryGroupBaseRepository($groups);
+        $accessoires = new InMemoryAccessoireRepository();
+        $links = new InMemoryGroupAccessoireRepository($groups, $accessoires);
+        $variants = new InMemoryGroupVariantRepository($groups, $bases, $links);
+
+        return [$groups, $bases, $accessoires, $links, $variants];
     }
 }

@@ -128,7 +128,46 @@ Design-keuzes (zie ook §Beslissingen):
 - [x] `group:add-accessoire` werkt; onbekende accessoire → exit 1; dubbele link → exit 1.
 - [x] `group:show` toont groep + bases + accessoires. M:N geverifieerd: dezelfde accessoire 60112 aan twee groepen gekoppeld.
 - [x] `make check` is groen (73 tests / 147 assertions).
-- [ ] **Commit + push** "slice 3: bases en accessoires beheren via CLI".
+- [x] **Commit + push** "slice 3: bases en accessoires beheren via CLI".
+
+---
+
+## Slice 4 — variantmatrix automatisch genereren en tonen
+
+Eindbeeld: bij elke `group:add-base` en `group:add-accessoire` worden de relevante variant-rijen in een nieuwe `group_variants`-tabel aangemaakt. `group:show` toont de variantmatrix als extra sectie. AFAS-mapping (samenstelling-SKU, status) blijft voor later, maar de kolommen daarvoor zijn al gereserveerd.
+
+Design-keuzes:
+- Variant-rij = combinatie van één base met optioneel één accessoire. `accessoire_id = NULL` betekent base-only.
+- Auto-regenerate: handlers voor add-base en add-accessoire roepen na succesvolle save de variant-regenerator aan. Geen apart CLI-commando.
+- Idempotent: regenerate insert ontbrekende combinaties, laat bestaande staan (inclusief al toegekende AFAS-data).
+- Hard CASCADE: variant verdwijnt automatisch met zijn base of accessoire. Eventuele AFAS-koppeling gaat dan ook verloren.
+
+### Fase 1 — Migratie
+- [x] `migrations/0005_create_group_variants.sql` met composite-FK naar `group_bases` en partial unique index voor base-only rijen.
+
+### Fase 2 — Domein
+- [x] `GroupVariant` readonly value object met denormalisatie-velden (baseLanguageCode, baseName, accessoireLabel).
+- [x] `GroupVariantRepository` interface: `regenerateForGroup`, `findAllForGroup`.
+
+### Fase 3 — Repository-implementaties + contract-tests
+- [x] `InMemoryGroupVariantRepository` met cartesisch-product-berekening.
+- [x] `SqliteGroupVariantRepository` met `INSERT OR IGNORE` + JOIN-denormalisatie + orphan-cleanup.
+- [x] Gedeelde contract-testbasis (idempotentie, lege groep, volledige 6-variant matrix, GroupNotFound).
+
+### Fase 4 — Application: variants integreren in bestaande handlers
+- [x] `AddBaseToGroupHandler` roept `regenerateForGroup()` na save aan.
+- [x] `AddAccessoireToGroupHandler` idem.
+- [x] Tests uitgebreid: variant-rijen aanwezig na elke add.
+
+### Fase 5 — Show-output uitbreiden
+- [x] `GroupOverview` heeft `variants` veld.
+- [x] `ShowGroupHandler` haalt variants op.
+- [x] `ShowGroupCommand` toont "Varianten"-sectie met 6-koloms tabel + `(nog niet bekend)` placeholder voor AFAS-SKU.
+
+### Fase 6 — Handmatige verificatie + commit
+- [x] End-to-end demo: 2 bases × (geen + 2 accessoires) = 6 varianten geproduceerd zonder expliciete regenerate-stap.
+- [x] `make check` groen (85 tests / 170 assertions).
+- [ ] **Commit + push** "slice 4: variantmatrix automatisch genereren en tonen".
 
 ---
 
@@ -140,6 +179,8 @@ Design-keuzes (zie ook §Beslissingen):
 - Alle CLI-commando's gaan via de application-laag (ook reads). Eén consistent patroon: CLI → handler → repo.
 - Foreign keys in slice 3: surrogate `group_id` / `accessoire_id` (INTEGER) → `groups(id)` / `accessoires(id)`. Rename-robuust. De repository-API blijft op `string $groupName` / `string $itemcode` — de SQLite-impl vertaalt naar id.
 - Bases zijn 1:N (taal+model-specifiek per groep). Accessoires zijn M:N: eigen catalogustabel + join-tabel, zodat dezelfde accessoire (bv. ARKY witte binnenkast `60112`) bij meerdere groepen kan horen zonder duplicatie.
+- `GroupBase.itemcode` is de **AED-component itemcode** (50013 NL, 50001 FR), niet de AFAS samenstelling-SKU. De samenstelling-SKU is iets dat in AFAS bestaat en straks per variant-rij in `group_variants.afas_samenstelling_itemcode` wordt opgeslagen na een AFAS-sync.
+- Varianten = (base × {null ∪ accessoires}). Worden in `group_variants` opgeslagen zodat AFAS-metadata (SKU, status) er per rij aan kan worden gekoppeld. Auto-regenereren bij elke add-base / add-accessoire. Hard CASCADE.
 - Slice 3 modelleert bases/accessoires als losse entiteiten met eigen repositories, niet als aggregate-graph onder `Group`. Aggregate-refactor blijft optioneel voor wanneer variant-generatie zelf in scope komt.
 
 ---
