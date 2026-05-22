@@ -71,53 +71,63 @@ Eindbeeld: een CLI-commando neemt een groepsnaam en print de groep-details (naam
 
 ---
 
-## Slice 3 — bases en accessoires toevoegen aan een groep
+## Slice 3 — bases (1:N) en accessoires (M:N catalogus) beheren via CLI
 
-Eindbeeld: na `group:create` kun je met `group:add-base` en `group:add-accessoire` componenten aan een groep koppelen. `group:show` toont vervolgens ook deze koppelingen.
+Eindbeeld: na `group:create` kun je met `group:add-base` taal-specifieke bases aan een groep toevoegen, met `accessoire:create` losse accessoires in de catalogus zetten, en met `group:add-accessoire` accessoires aan groepen koppelen. `group:show` toont vervolgens beide.
 
 Design-keuzes (zie ook §Beslissingen):
-- `GroupBase` value object met `itemcode`, `languageCode`, `name`.
-- `GroupAccessoire` value object met `itemcode`, `label`.
-- Foreign key per row: surrogate `group_id` (INTEGER) → `groups(id)`. De repository-API neemt nog steeds een `string $groupName` aan; de SQLite-implementatie vertaalt die intern naar `group_id`. Zo blijft de id een infrastructure-detail.
-- Bases en accessoires krijgen ieder hun eigen repository (geen aggregate-graph in deze slice).
+- **Bases** zijn 1:N — taal+model-specifiek per groep. `GroupBase` value object met `itemcode`, `languageCode`, `name`.
+- **Accessoires** zijn M:N — een eigen catalogus + join-tabel. `Accessoire` value object met `itemcode`, `label`. Eén catalogusrij wordt aan meerdere groepen gelinkt.
+- Foreign keys gebruiken surrogate `group_id` / `accessoire_id` (INTEGER). De repository-API blijft op `string $groupName` / `string $itemcode` — SQLite-impl vertaalt naar id.
+- Aparte CLI-stap voor catalogus (`accessoire:create`) en koppeling (`group:add-accessoire`).
 
 ### Fase 1 — Migraties
-- [ ] `migrations/0002_create_group_bases.sql`: tabel `group_bases (group_id, itemcode, language_code, name)`, PK `(group_id, itemcode)`, FK `group_id → groups(id) ON DELETE CASCADE`.
-- [ ] `migrations/0003_create_group_accessoires.sql`: tabel `group_accessoires (group_id, itemcode, label)`, PK `(group_id, itemcode)`, FK `group_id → groups(id) ON DELETE CASCADE`.
+- [x] `migrations/0002_create_group_bases.sql`: tabel `group_bases (group_id, itemcode, language_code, name)`, PK `(group_id, itemcode)`, FK `group_id → groups(id) ON DELETE CASCADE`.
+- [x] `migrations/0003_create_accessoires.sql`: catalogustabel `accessoires (id PK AUTOINCREMENT, itemcode UNIQUE, label)`.
+- [x] `migrations/0004_create_group_accessoires.sql`: join-tabel `group_accessoires (group_id, accessoire_id)`, PK `(group_id, accessoire_id)`, beide FK's `ON DELETE CASCADE`.
 
 ### Fase 2 — Domein
-- [ ] `GroupBase` readonly value object in `src/Domain/Group/` met `itemcode`, `languageCode`, `name` — alle drie niet-leeg, getrimd, anders `InvalidArgumentException`.
-- [ ] `GroupAccessoire` readonly value object in `src/Domain/Group/` met `itemcode` en `label` — beide niet-leeg, getrimd.
-- [ ] `BaseAlreadyExistsException` en `AccessoireAlreadyExistsException` in `src/Domain/Group/`. (`GroupNotFoundException` bestaat al uit slice 2.)
+- [x] `GroupBase` readonly value object in `src/Domain/Group/` met `itemcode`, `languageCode`, `name` — alle drie niet-leeg, getrimd.
+- [x] `Accessoire` readonly value object in `src/Domain/Accessoire/` met `itemcode` en `label` — beide niet-leeg, getrimd.
+- [x] Exceptions:
+  - `BaseAlreadyExistsException` in `src/Domain/Group/`.
+  - `AccessoireAlreadyExistsException` in `src/Domain/Accessoire/`.
+  - `AccessoireNotFoundException` in `src/Domain/Accessoire/`.
+  - `AccessoireAlreadyLinkedException` in `src/Domain/Group/`.
 
 ### Fase 3 — Repository-contracten + in-memory fakes
-- [ ] `GroupBaseRepository` interface met `saveForGroup(string $groupName, GroupBase $base): void` (throws bij duplicate of onbekende groep) en `findAllForGroup(string $groupName): array<GroupBase>`.
-- [ ] `GroupAccessoireRepository` interface met dezelfde structuur voor accessoires.
-- [ ] `InMemoryGroupBaseRepository` en `InMemoryGroupAccessoireRepository` — checken groep-bestaan via een meegegeven `GroupRepository`.
-- [ ] Gedeelde abstracte contract-testbases per repo-type, draaien tegen in-memory én SQLite.
+- [x] `GroupBaseRepository` interface in `src/Domain/Group/`.
+- [x] `AccessoireRepository` interface in `src/Domain/Accessoire/`.
+- [x] `GroupAccessoireRepository` interface in `src/Domain/Group/`.
+- [x] In-memory implementaties voor alle drie.
+- [x] Gedeelde abstracte contract-testbases per repo-type.
 
 ### Fase 4 — SQLite-implementaties
-- [ ] `SqliteGroupBaseRepository` en `SqliteGroupAccessoireRepository`: FK-violations gemapt naar `GroupNotFoundException`, UNIQUE-violations naar de duplicate-excepties.
-- [ ] `TestDatabase::truncate()` schrapt nu ook `group_bases` en `group_accessoires`.
+- [x] `SqliteGroupBaseRepository`, `SqliteAccessoireRepository`, `SqliteGroupAccessoireRepository`.
+- [x] `TestDatabase::truncate()` schrapt ook `group_accessoires`, `accessoires`, `group_bases`.
 
 ### Fase 5 — Application use cases
-- [ ] `AddBaseToGroup` command-DTO + `AddBaseToGroupHandler` (`groupName`, `itemcode`, `languageCode`, `name`).
-- [ ] `AddAccessoireToGroup` command-DTO + `AddAccessoireToGroupHandler` (`groupName`, `itemcode`, `label`).
-- [ ] Handlers laten domein-excepties doorgaan voor CLI-mapping.
+- [x] `AddBaseToGroup` + `AddBaseToGroupHandler`.
+- [x] `CreateAccessoire` + `CreateAccessoireHandler`.
+- [x] `AddAccessoireToGroup` + `AddAccessoireToGroupHandler`.
 
 ### Fase 6 — CLI commando's
-- [ ] `AddBaseCommand` (commando `group:add-base <group> <itemcode> <language-code> <name>`) mapt excepties op exit codes met duidelijke meldingen.
-- [ ] `AddAccessoireCommand` (commando `group:add-accessoire <group> <itemcode> <label>`).
-- [ ] `bin/samenstellingen` registreert beide.
+- [x] `AddBaseCommand` — `group:add-base`.
+- [x] `CreateAccessoireCommand` — `accessoire:create`.
+- [x] `AddAccessoireCommand` — `group:add-accessoire`.
+- [x] Alle drie mappen domein-excepties op duidelijke meldingen + exit code 1.
+- [x] `bin/samenstellingen` registreert alle drie.
 
 ### Fase 7 — Show-output uitbreiden
-- [ ] `ShowGroupCommand` toont nu ook een tabel met bases (itemcode, taal, naam) en een tabel met accessoires (itemcode, label); lege groepen krijgen `(geen bases)` / `(geen accessoires)`.
+- [x] `ShowGroupHandler` retourneert nu een `GroupOverview` read-model (groep + bases + gelinkte accessoires).
+- [x] `ShowGroupCommand` rendert basistabel + bases-tabel + accessoires-tabel. Lege secties tonen `(geen bases)` / `(geen accessoires)`.
 
 ### Fase 8 — Handmatige verificatie + commit
-- [ ] `bin/samenstellingen group:add-base "Reanibex 100 Semi-Auto" 50013 NL "Reanibex 100 Semi-Automatic AED Nederlands"` slaagt; duplicate → exit 1; onbekende groep → exit 1.
-- [ ] `bin/samenstellingen group:add-accessoire "Reanibex 100 Semi-Auto" 60112 "ARKY witte binnenkast"` slaagt.
-- [ ] `bin/samenstellingen group:show "Reanibex 100 Semi-Auto"` toont de groep met bases en accessoires.
-- [ ] `make check` is groen.
+- [x] `group:add-base` werkt; duplicate → exit 1; onbekende groep → exit 1.
+- [x] `accessoire:create` werkt; duplicate → exit 1.
+- [x] `group:add-accessoire` werkt; onbekende accessoire → exit 1; dubbele link → exit 1.
+- [x] `group:show` toont groep + bases + accessoires. M:N geverifieerd: dezelfde accessoire 60112 aan twee groepen gekoppeld.
+- [x] `make check` is groen (73 tests / 147 assertions).
 - [ ] **Commit + push** "slice 3: bases en accessoires beheren via CLI".
 
 ---
@@ -126,9 +136,10 @@ Design-keuzes (zie ook §Beslissingen):
 
 - CLI-library: `symfony/console`.
 - Itemcode-normalisatie: trim-only.
-- Commando-namespace: `group:` (`group:create`, `group:show`, `group:add-base`, `group:add-accessoire`).
+- Commando-namespaces: `group:` voor alles dat een groep raakt (`group:create`, `group:show`, `group:add-base`, `group:add-accessoire`) en `accessoire:` voor catalogusbeheer (`accessoire:create`).
 - Alle CLI-commando's gaan via de application-laag (ook reads). Eén consistent patroon: CLI → handler → repo.
-- Foreign keys in slice 3: surrogate `group_id` (INTEGER) → `groups(id)`. Rename-robuust. De repository-API blijft op `string $groupName` — de SQLite-impl vertaalt naar id.
+- Foreign keys in slice 3: surrogate `group_id` / `accessoire_id` (INTEGER) → `groups(id)` / `accessoires(id)`. Rename-robuust. De repository-API blijft op `string $groupName` / `string $itemcode` — de SQLite-impl vertaalt naar id.
+- Bases zijn 1:N (taal+model-specifiek per groep). Accessoires zijn M:N: eigen catalogustabel + join-tabel, zodat dezelfde accessoire (bv. ARKY witte binnenkast `60112`) bij meerdere groepen kan horen zonder duplicatie.
 - Slice 3 modelleert bases/accessoires als losse entiteiten met eigen repositories, niet als aggregate-graph onder `Group`. Aggregate-refactor blijft optioneel voor wanneer variant-generatie zelf in scope komt.
 
 ---

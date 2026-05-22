@@ -34,7 +34,11 @@ final class TestDatabase
     public static function truncate(): void
     {
         $pdo = self::pdo();
+        $pdo->exec('DELETE FROM group_accessoires');
+        $pdo->exec('DELETE FROM accessoires');
+        $pdo->exec('DELETE FROM group_bases');
         $pdo->exec('DELETE FROM groups');
+        $pdo->exec("DELETE FROM sqlite_sequence WHERE name IN ('groups', 'accessoires')");
     }
 
     private static function projectRoot(): string

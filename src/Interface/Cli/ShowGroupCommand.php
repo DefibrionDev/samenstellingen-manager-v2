@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Defibrion\Samenstellingen\Interface\Cli;
 
+use Defibrion\Samenstellingen\Application\Group\GroupOverview;
 use Defibrion\Samenstellingen\Application\Group\ShowGroup;
 use Defibrion\Samenstellingen\Application\Group\ShowGroupHandler;
 use Defibrion\Samenstellingen\Domain\Group\GroupNotFoundException;
@@ -16,7 +17,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(
     name: 'group:show',
-    description: 'Toon de details van een bestaande groep.',
+    description: 'Toon de details van een bestaande groep, inclusief bases en gekoppelde accessoires.',
 )]
 final class ShowGroupCommand extends Command
 {
@@ -40,18 +41,45 @@ final class ShowGroupCommand extends Command
         $name = (string) $input->getArgument('name');
 
         try {
-            $group = ($this->handler)(new ShowGroup($name));
+            $overview = ($this->handler)(new ShowGroup($name));
         } catch (GroupNotFoundException $e) {
             $io->error($e->getMessage());
 
             return Command::FAILURE;
         }
 
-        $io->horizontalTable(
-            ['Naam', 'Family-head itemcode'],
-            [[$group->name, $group->familyHeadItemcode]],
-        );
+        $this->renderOverview($io, $overview);
 
         return Command::SUCCESS;
+    }
+
+    private function renderOverview(SymfonyStyle $io, GroupOverview $overview): void
+    {
+        $io->horizontalTable(
+            ['Naam', 'Family-head itemcode'],
+            [[$overview->group->name, $overview->group->familyHeadItemcode]],
+        );
+
+        $io->section('Bases');
+        if ($overview->bases === []) {
+            $io->writeln('(geen bases)');
+        } else {
+            $rows = [];
+            foreach ($overview->bases as $base) {
+                $rows[] = [$base->itemcode, $base->languageCode, $base->name];
+            }
+            $io->table(['Itemcode', 'Taal', 'Naam'], $rows);
+        }
+
+        $io->section('Accessoires');
+        if ($overview->accessoires === []) {
+            $io->writeln('(geen accessoires)');
+        } else {
+            $rows = [];
+            foreach ($overview->accessoires as $accessoire) {
+                $rows[] = [$accessoire->itemcode, $accessoire->label];
+            }
+            $io->table(['Itemcode', 'Label'], $rows);
+        }
     }
 }
