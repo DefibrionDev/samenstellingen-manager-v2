@@ -306,7 +306,56 @@ Design-keuzes:
 - [x] `group:show 52112` toont volledige matrix.
 - [x] `afas:pull` (1894 samenstellingen) + `group:sync-afas 52112`: 0 matches verwacht zolang base-items leeg zijn — slice 8 (BOM auto-fill uit AFAS-snapshot) vult dit aan.
 - [x] `make check` groen (119 tests / 248 assertions).
-- [ ] **Commit + push** "slice 7: bulk-import bases en accessoires uit CSV".
+- [x] **Commit + push** "slice 7: bulk-import bases en accessoires uit CSV".
+
+---
+
+## Slice 8 — bulk-import portal-CSV met AFAS-BOM auto-fill + duplicate-detectie
+
+Eindbeeld: `group:import-portal-csv <csv-file>` leest de "AED's portalen" CSV (kolommen `Code, Groep, Item, …`) en bouwt per CSV-rij de complete tool-state op uit de AFAS-snapshot. Daarbij detecteert `afas:pull` voortaan ook duplicates in AFAS (samenstellingen met identieke BOM) en markeert één canonical per groep.
+
+Werkverdeling per CSV-rij:
+1. Groep aanmaken (op naam uit `Groep`-kolom) als die nog niet bestaat.
+2. Find AFAS-samenstellingen (**alleen canonicals**, geen base-only met `-` in SKU) waarvan de BOM het CSV-artikel bevat.
+3. Voor elke gevonden canonical: een base aanmaken in de groep met de samenstelling-naam + alle BOM-items.
+
+Design-keuzes:
+- Duplicate-detectie bij `afas:pull`: groepeer samenstellingen op hun BOM-set; in elke set met ≥2 leden wordt de **laagste itemcode** canonical. De rest krijgt `duplicate_of_itemcode = <canonical>`.
+- Matcher en import gebruiken alleen canonicals (filtert duplicates eruit).
+- Per groep: `family_head_itemcode` = AFAS `Itemcode_Parent` van de eerste gevonden samenstelling in die groep (consistent met PLAN.md "willekeurige sibling als anker").
+- DB wordt vooraf leeggegooid: `afas:pull` blijft, maar groups/bases/accessoires/variants worden gewist.
+
+### Fase 1 — Migratie + duplicate-detectie
+- [x] `migrations/0008_afas_duplicates.sql`.
+- [x] `DuplicateDetector` domain service (gedeeld door InMemory + Sqlite repo); markeert canonical = laagste itemcode per identieke BOM-set.
+- [x] `AfasSamenstelling` value object: extra veld `duplicateOfItemcode`, helper `isCanonical()` + `bomKey()`.
+- [x] Hotfix: `AfasSamenstelling`-constructor cast itemcodes naar string voor sort (PHP-array-keys converteerden numerieke strings naar int).
+
+### Fase 2 — Canonical-only lookups
+- [x] `findAllCanonical()` + `findAllDuplicates()` op repo (InMemory + Sqlite).
+- [x] `SyncGroupAgainstAfasHandler` matcht alleen tegen canonicals.
+
+### Fase 3 — AfasSamenstellingLookup service
+- [x] `AfasSamenstellingLookup::findCanonicalBaseOnlyContaining()`.
+
+### Fase 4 — Portal-CSV reader + import-application
+- [x] `PortalCsvRow`, `PortalCsvReader`, `FilePortalCsvReader`.
+- [x] `ToolDataWiper` interface + `SqliteToolDataWiper` (wist tool-tabellen, AFAS-snapshot blijft).
+- [x] `ImportPortalCsv` + handler: groepeert per `Groep`, bepaalt family-head uit AFAS Itemcode_Parent, maakt bases + BOM-items.
+- [x] `PortalImportSummary` met counts en lijst van unresolved rijen.
+
+### Fase 5 — CLI
+- [x] `ImportPortalCsvCommand` — `group:import-portal-csv`.
+- [x] `AfasListDuplicatesCommand` — `afas:list-duplicates`.
+- [x] `bin/samenstellingen` bedraadt beide.
+
+### Fase 6 — Handmatige verificatie + commit
+- [x] `afas:pull` → 1894 samenstellingen + 146 duplicates gedetecteerd.
+- [x] `group:import-portal-csv "AED's portalen.csv"` → 22 groepen, 94 bases, 315 base-items, 33 unresolved (taal-suffix-codes die niet in AFAS-BOMs voorkomen).
+- [x] `group:sync-afas` over alle groepen: **94/94 perfecte matches**, 0 missing.
+- [x] `afas:list-duplicates` toont alle 146 duplicate-paren, inclusief gevallen waar variant-SKUs (zoals `10041-60110`) een BOM hebben die identiek is aan de base — AFAS-data-fouten die nu zichtbaar zijn.
+- [x] `make check` is groen (119 tests / 248 assertions).
+- [ ] **Commit + push** "slice 8: portal-CSV import + AFAS duplicate-detectie".
 
 ---
 

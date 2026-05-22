@@ -24,7 +24,7 @@ final readonly class SyncGroupAgainstAfasHandler
     public function __invoke(SyncGroupAgainstAfas $command): SyncSummary
     {
         $variants = $this->variantRepository->findAllForGroup($command->familyHeadItemcode);
-        $afasSamenstellingen = $this->afasRepository->findAll();
+        $afasSamenstellingen = $this->afasRepository->findAllCanonical();
 
         if ($afasSamenstellingen === []) {
             throw new RuntimeException(

@@ -11,6 +11,7 @@ final readonly class AfasSamenstelling
     public string $itemcode;
     public string $name;
     public ?string $itemcodeParent;
+    public ?string $duplicateOfItemcode;
 
     /** @var list<string> Gesorteerd, gededupliceerd. */
     public array $bomItemcodes;
@@ -23,6 +24,7 @@ final readonly class AfasSamenstelling
         string $name,
         ?string $itemcodeParent,
         array $bomItemcodes,
+        ?string $duplicateOfItemcode = null,
     ) {
         $trimmedItemcode = trim($itemcode);
         if ($trimmedItemcode === '') {
@@ -30,21 +32,36 @@ final readonly class AfasSamenstelling
         }
 
         $normalised = [];
+        $seen = [];
         foreach ($bomItemcodes as $code) {
-            $trimmed = trim($code);
-            if ($trimmed !== '') {
-                $normalised[$trimmed] = true;
+            $trimmed = trim((string) $code);
+            if ($trimmed === '' || isset($seen[$trimmed])) {
+                continue;
             }
+            $normalised[] = $trimmed;
+            $seen[$trimmed] = true;
         }
-        $normalisedKeys = array_keys($normalised);
-        sort($normalisedKeys);
+        sort($normalised);
+        $normalisedKeys = $normalised;
 
         $trimmedParent = $itemcodeParent !== null ? trim($itemcodeParent) : null;
+        $trimmedDuplicateOf = $duplicateOfItemcode !== null ? trim($duplicateOfItemcode) : null;
 
         $this->itemcode = $trimmedItemcode;
         $this->name = trim($name);
         $this->itemcodeParent = ($trimmedParent === null || $trimmedParent === '') ? null : $trimmedParent;
         $this->bomItemcodes = $normalisedKeys;
+        $this->duplicateOfItemcode = ($trimmedDuplicateOf === null || $trimmedDuplicateOf === '') ? null : $trimmedDuplicateOf;
+    }
+
+    public function isCanonical(): bool
+    {
+        return $this->duplicateOfItemcode === null;
+    }
+
+    public function isBaseOnly(): bool
+    {
+        return !str_contains($this->itemcode, '-');
     }
 
     /**
@@ -53,15 +70,22 @@ final readonly class AfasSamenstelling
     public function bomMatches(array $expectedBomItemcodes): bool
     {
         $expected = [];
+        $seen = [];
         foreach ($expectedBomItemcodes as $code) {
-            $trimmed = trim($code);
-            if ($trimmed !== '') {
-                $expected[$trimmed] = true;
+            $trimmed = trim((string) $code);
+            if ($trimmed === '' || isset($seen[$trimmed])) {
+                continue;
             }
+            $expected[] = $trimmed;
+            $seen[$trimmed] = true;
         }
-        $expectedKeys = array_keys($expected);
-        sort($expectedKeys);
+        sort($expected);
 
-        return $expectedKeys === $this->bomItemcodes;
+        return $expected === $this->bomItemcodes;
+    }
+
+    public function bomKey(): string
+    {
+        return implode(',', $this->bomItemcodes);
     }
 }

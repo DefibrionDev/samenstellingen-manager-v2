@@ -7,7 +7,8 @@ namespace Defibrion\Samenstellingen\Domain\Afas;
 interface AfasSamenstellingenRepository
 {
     /**
-     * Vervang de hele lokale snapshot atomisch met de meegegeven samenstellingen.
+     * Vervang de hele lokale snapshot atomisch. Detecteert intern duplicates (identieke BOMs):
+     * laagste itemcode wordt canonical, rest krijgt `duplicateOfItemcode` ingevuld.
      *
      * @param list<AfasSamenstelling> $samenstellingen
      */
@@ -17,6 +18,20 @@ interface AfasSamenstellingenRepository
      * @return list<AfasSamenstelling>
      */
     public function findAll(): array;
+
+    /**
+     * Alleen canonicals (duplicate_of_itemcode IS NULL).
+     *
+     * @return list<AfasSamenstelling>
+     */
+    public function findAllCanonical(): array;
+
+    /**
+     * Alleen duplicates (duplicate_of_itemcode IS NOT NULL).
+     *
+     * @return list<AfasSamenstelling>
+     */
+    public function findAllDuplicates(): array;
 
     public function countSnapshot(): int;
 }

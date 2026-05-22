@@ -11,11 +11,15 @@ use Defibrion\Samenstellingen\Application\Group\AddBaseToGroupHandler;
 use Defibrion\Samenstellingen\Application\Group\CreateGroupHandler;
 use Defibrion\Samenstellingen\Application\Group\ShowGroupHandler;
 use Defibrion\Samenstellingen\Application\Group\SyncGroupAgainstAfasHandler;
+use Defibrion\Samenstellingen\Application\Import\ImportPortalCsvHandler;
 use Defibrion\Samenstellingen\Application\Import\ImportSamenstellingenCsvHandler;
+use Defibrion\Samenstellingen\Domain\Afas\AfasSamenstellingLookup;
 use Defibrion\Samenstellingen\Domain\Afas\VariantMatcher;
 use Defibrion\Samenstellingen\Infrastructure\Afas\Http\AfasClientFactory;
 use Defibrion\Samenstellingen\Infrastructure\Afas\Http\HttpAfasSamenstellingenFetcher;
 use Defibrion\Samenstellingen\Infrastructure\Import\FileCsvSamenstellingenReader;
+use Defibrion\Samenstellingen\Infrastructure\Import\FilePortalCsvReader;
+use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteToolDataWiper;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\Migrator;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAccessoireRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAfasSamenstellingenRepository;
@@ -27,9 +31,11 @@ use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteGroupVaria
 use Defibrion\Samenstellingen\Interface\Cli\AddAccessoireCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AddBaseCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AddBaseItemCommand;
+use Defibrion\Samenstellingen\Interface\Cli\AfasListDuplicatesCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AfasPullCommand;
 use Defibrion\Samenstellingen\Interface\Cli\CreateAccessoireCommand;
 use Defibrion\Samenstellingen\Interface\Cli\CreateGroupCommand;
+use Defibrion\Samenstellingen\Interface\Cli\ImportPortalCsvCommand;
 use Defibrion\Samenstellingen\Interface\Cli\ImportSamenstellingenCsvCommand;
 use Defibrion\Samenstellingen\Interface\Cli\ShowGroupCommand;
 use Defibrion\Samenstellingen\Interface\Cli\SyncGroupAgainstAfasCommand;
@@ -89,6 +95,15 @@ $importCsvHandler = new ImportSamenstellingenCsvHandler(
     $linkRepository,
     $variantRepository,
 );
+$importPortalCsvHandler = new ImportPortalCsvHandler(
+    new FilePortalCsvReader(),
+    new SqliteToolDataWiper($pdo),
+    $groupRepository,
+    $baseRepository,
+    $baseItemRepository,
+    $variantRepository,
+    new AfasSamenstellingLookup($afasSamenstellingenRepository),
+);
 
 $application = new Application('samenstellingen-manager');
 $application->addCommand(new CreateGroupCommand($createGroupHandler));
@@ -98,6 +113,8 @@ $application->addCommand(new AddBaseItemCommand($addBaseItemHandler));
 $application->addCommand(new CreateAccessoireCommand($createAccessoireHandler));
 $application->addCommand(new AddAccessoireCommand($addAccessoireHandler));
 $application->addCommand(new ImportSamenstellingenCsvCommand($importCsvHandler));
+$application->addCommand(new ImportPortalCsvCommand($importPortalCsvHandler));
+$application->addCommand(new AfasListDuplicatesCommand($afasSamenstellingenRepository));
 $application->addCommand(new SyncGroupAgainstAfasCommand($syncHandler));
 
 // `afas:pull` heeft credentials nodig en bouwt zelf z'n fetcher.

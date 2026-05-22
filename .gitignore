@@ -4,6 +4,9 @@
 *.sqlite
 *.sqlite-journal
 *.csv
+*.xlsx
+*.xls
+.~lock.*
 .env
 .phpunit.result.cache
 .phpunit.cache/

@@ -1,0 +1,170 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Defibrion\Samenstellingen\Application\Import;
+
+use Defibrion\Samenstellingen\Domain\Afas\AfasSamenstellingLookup;
+use Defibrion\Samenstellingen\Domain\Group\BaseAlreadyExistsException;
+use Defibrion\Samenstellingen\Domain\Group\BaseItemAlreadyExistsException;
+use Defibrion\Samenstellingen\Domain\Group\Group;
+use Defibrion\Samenstellingen\Domain\Group\GroupAlreadyExistsException;
+use Defibrion\Samenstellingen\Domain\Group\GroupBase;
+use Defibrion\Samenstellingen\Domain\Group\GroupBaseItem;
+use Defibrion\Samenstellingen\Domain\Group\GroupBaseItemRepository;
+use Defibrion\Samenstellingen\Domain\Group\GroupBaseRepository;
+use Defibrion\Samenstellingen\Domain\Group\GroupRepository;
+use Defibrion\Samenstellingen\Domain\Group\GroupVariantRepository;
+use Defibrion\Samenstellingen\Domain\Import\PortalCsvReader;
+use Defibrion\Samenstellingen\Domain\Tool\ToolDataWiper;
+
+final readonly class ImportPortalCsvHandler
+{
+    public function __construct(
+        private PortalCsvReader $reader,
+        private ToolDataWiper $wiper,
+        private GroupRepository $groupRepository,
+        private GroupBaseRepository $baseRepository,
+        private GroupBaseItemRepository $baseItemRepository,
+        private GroupVariantRepository $variantRepository,
+        private AfasSamenstellingLookup $lookup,
+    ) {
+    }
+
+    public function __invoke(ImportPortalCsv $command): PortalImportSummary
+    {
+        $summary = new PortalImportSummary();
+
+        // Stap 1: groepeer CSV-rijen per Groep en wis de tool-state.
+        $rowsByGroep = $this->groupRows($command->csvPath, $summary);
+        $this->wiper->wipe();
+
+        // Stap 2: per groep aanmaken + bases + base-items uit AFAS.
+        foreach ($rowsByGroep as $groep => $rows) {
+            $familyHead = $this->resolveFamilyHead($rows);
+            if ($familyHead === null) {
+                foreach ($rows as $row) {
+                    $summary->unresolved[] = [
+                        'groep' => $groep,
+                        'code' => $row['code'],
+                        'reason' => 'Geen AFAS-samenstelling gevonden voor enige article-code in deze groep — groep niet aangemaakt.',
+                    ];
+                }
+                continue;
+            }
+
+            try {
+                $this->groupRepository->save(new Group($groep, $familyHead));
+                ++$summary->groupsCreated;
+            } catch (GroupAlreadyExistsException) {
+                // Wipe + nieuwe import zou geen duplicates moeten geven; defensief overslaan.
+            }
+
+            foreach ($rows as $row) {
+                $this->importRow($groep, $familyHead, $row, $summary);
+            }
+
+            $this->variantRepository->regenerateForGroup($familyHead);
+        }
+
+        return $summary;
+    }
+
+    /**
+     * @return array<string, list<array{code: string, item: string}>>
+     */
+    private function groupRows(string $csvPath, PortalImportSummary $summary): array
+    {
+        $rowsByGroep = [];
+        foreach ($this->reader->read($csvPath) as $row) {
+            ++$summary->rowsProcessed;
+            if (!$row->hasGroep()) {
+                ++$summary->rowsSkippedNoGroep;
+                continue;
+            }
+            $rowsByGroep[$row->groep][] = ['code' => $row->code, 'item' => $row->item];
+        }
+
+        return $rowsByGroep;
+    }
+
+    /**
+     * Family-head van een groep: AFAS Itemcode_Parent van de eerste resolveerbare
+     * samenstelling. Bij geen resolveerbare rijen: null (groep wordt overgeslagen).
+     *
+     * @param list<array{code: string, item: string}> $rows
+     */
+    private function resolveFamilyHead(array $rows): ?string
+    {
+        foreach ($rows as $row) {
+            $candidates = $this->lookup->findCanonicalBaseOnlyContaining($row['code']);
+            foreach ($candidates as $candidate) {
+                $parent = $candidate->itemcodeParent;
+                if ($parent !== null) {
+                    return $parent;
+                }
+
+                return $candidate->itemcode;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array{code: string, item: string} $row
+     */
+    private function importRow(string $groep, string $familyHead, array $row, PortalImportSummary $summary): void
+    {
+        $candidates = $this->lookup->findCanonicalBaseOnlyContaining($row['code']);
+        if ($candidates === []) {
+            $summary->unresolved[] = [
+                'groep' => $groep,
+                'code' => $row['code'],
+                'reason' => 'Geen canonical base-only AFAS-samenstelling gevonden waarvan BOM dit artikel bevat.',
+            ];
+
+            return;
+        }
+
+        foreach ($candidates as $samenstelling) {
+            $persisted = null;
+            try {
+                $persisted = $this->baseRepository->saveForGroup(
+                    $familyHead,
+                    new GroupBase(null, $samenstelling->name),
+                );
+                ++$summary->basesCreated;
+            } catch (BaseAlreadyExistsException) {
+                $persisted = $this->findExistingBase($familyHead, $samenstelling->name);
+            }
+
+            if ($persisted?->id === null) {
+                continue;
+            }
+
+            foreach ($samenstelling->bomItemcodes as $itemcode) {
+                try {
+                    $this->baseItemRepository->saveForBase(
+                        $persisted->id,
+                        new GroupBaseItem($itemcode, $itemcode),
+                    );
+                    ++$summary->baseItemsCreated;
+                } catch (BaseItemAlreadyExistsException) {
+                    // Reeds aanwezig, overslaan.
+                }
+            }
+        }
+    }
+
+    private function findExistingBase(string $familyHead, string $name): ?GroupBase
+    {
+        foreach ($this->baseRepository->findAllForGroup($familyHead) as $base) {
+            if ($base->name === $name) {
+                return $base;
+            }
+        }
+
+        return null;
+    }
+}
