@@ -1,0 +1,57 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Defibrion\Samenstellingen\Interface\Cli;
+
+use Defibrion\Samenstellingen\Application\Group\ShowGroup;
+use Defibrion\Samenstellingen\Application\Group\ShowGroupHandler;
+use Defibrion\Samenstellingen\Domain\Group\GroupNotFoundException;
+use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Style\SymfonyStyle;
+
+#[AsCommand(
+    name: 'group:show',
+    description: 'Toon de details van een bestaande groep.',
+)]
+final class ShowGroupCommand extends Command
+{
+    public function __construct(private readonly ShowGroupHandler $handler)
+    {
+        parent::__construct();
+    }
+
+    protected function configure(): void
+    {
+        $this->addArgument(
+            'name',
+            InputArgument::REQUIRED,
+            'De groepsnaam (bv. "Reanibex 100 Semi-Auto")'
+        );
+    }
+
+    protected function execute(InputInterface $input, OutputInterface $output): int
+    {
+        $io = new SymfonyStyle($input, $output);
+        $name = (string) $input->getArgument('name');
+
+        try {
+            $group = ($this->handler)(new ShowGroup($name));
+        } catch (GroupNotFoundException $e) {
+            $io->error($e->getMessage());
+
+            return Command::FAILURE;
+        }
+
+        $io->horizontalTable(
+            ['Naam', 'Family-head itemcode'],
+            [[$group->name, $group->familyHeadItemcode]],
+        );
+
+        return Command::SUCCESS;
+    }
+}
