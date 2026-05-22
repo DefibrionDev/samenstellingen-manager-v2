@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Defibrion\Samenstellingen\Application\Import;
 
+use Defibrion\Samenstellingen\Domain\Afas\AfasSamenstelling;
 use Defibrion\Samenstellingen\Domain\Afas\AfasSamenstellingLookup;
 use Defibrion\Samenstellingen\Domain\Group\BaseAlreadyExistsException;
 use Defibrion\Samenstellingen\Domain\Group\BaseItemAlreadyExistsException;
@@ -97,7 +98,7 @@ final readonly class ImportPortalCsvHandler
     private function resolveFamilyHead(array $rows): ?string
     {
         foreach ($rows as $row) {
-            $candidates = $this->lookup->findCanonicalBaseOnlyContaining($row['code']);
+            $candidates = $this->sellableCandidatesFor($row['code']);
             foreach ($candidates as $candidate) {
                 $parent = $candidate->itemcodeParent;
                 if ($parent !== null) {
@@ -112,16 +113,45 @@ final readonly class ImportPortalCsvHandler
     }
 
     /**
+     * "Verkoopbare" samenstellingen: BOM moet zowel reanimatiekit (70112) bevatten
+     * als minstens één stickerset (itemcode begint met `81`). Daarmee filtert
+     * de import "kale" base-only samenstellingen die Defibrion niet verkoopt eruit.
+     *
+     * @return list<AfasSamenstelling>
+     */
+    private function sellableCandidatesFor(string $articleCode): array
+    {
+        $candidates = $this->lookup->findCanonicalBaseOnlyContaining($articleCode);
+
+        return array_values(array_filter(
+            $candidates,
+            static function (AfasSamenstelling $s): bool {
+                $bom = $s->bomItemcodes;
+                if (!in_array('70112', $bom, true)) {
+                    return false;
+                }
+                foreach ($bom as $code) {
+                    if (str_starts_with($code, '81')) {
+                        return true;
+                    }
+                }
+
+                return false;
+            },
+        ));
+    }
+
+    /**
      * @param array{code: string, item: string} $row
      */
     private function importRow(string $groep, string $familyHead, array $row, PortalImportSummary $summary): void
     {
-        $candidates = $this->lookup->findCanonicalBaseOnlyContaining($row['code']);
+        $candidates = $this->sellableCandidatesFor($row['code']);
         if ($candidates === []) {
             $summary->unresolved[] = [
                 'groep' => $groep,
                 'code' => $row['code'],
-                'reason' => 'Geen canonical base-only AFAS-samenstelling gevonden waarvan BOM dit artikel bevat.',
+                'reason' => 'Geen verkoopbare AFAS-samenstelling gevonden (BOM moet zowel reanimatiekit 70112 als een stickerset 81xxx bevatten).',
             ];
 
             return;

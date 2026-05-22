@@ -355,7 +355,7 @@ Design-keuzes:
 - [x] `group:sync-afas` over alle groepen: **94/94 perfecte matches**, 0 missing.
 - [x] `afas:list-duplicates` toont alle 146 duplicate-paren, inclusief gevallen waar variant-SKUs (zoals `10041-60110`) een BOM hebben die identiek is aan de base — AFAS-data-fouten die nu zichtbaar zijn.
 - [x] `make check` is groen (119 tests / 248 assertions).
-- [ ] **Commit + push** "slice 8: portal-CSV import + AFAS duplicate-detectie".
+- [x] **Commit + push** "slice 8: portal-CSV import + AFAS duplicate-detectie".
 
 ---
 
