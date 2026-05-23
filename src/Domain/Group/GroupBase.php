@@ -10,19 +10,23 @@ final readonly class GroupBase
 {
     public ?int $id;
     public string $name;
-    public ?string $languageCode;
+    public string $languageCode;
 
-    public function __construct(?int $id, string $name, ?string $languageCode = null)
+    public function __construct(?int $id, string $name, string $languageCode)
     {
-        $trimmed = trim($name);
-        if ($trimmed === '') {
+        $trimmedName = trim($name);
+        if ($trimmedName === '') {
             throw new InvalidArgumentException('Base naam mag niet leeg zijn.');
         }
 
-        $trimmedLanguage = $languageCode !== null ? trim($languageCode) : null;
+        $trimmedLanguage = trim($languageCode);
+        if ($trimmedLanguage === '') {
+            throw new InvalidArgumentException('Base taal-code mag niet leeg zijn.');
+        }
+
         $this->id = $id;
-        $this->name = $trimmed;
-        $this->languageCode = ($trimmedLanguage === null || $trimmedLanguage === '') ? null : $trimmedLanguage;
+        $this->name = $trimmedName;
+        $this->languageCode = $trimmedLanguage;
     }
 
     public function withId(int $id): self

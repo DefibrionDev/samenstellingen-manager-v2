@@ -24,7 +24,7 @@ final class AddBaseItemHandlerTest extends TestCase
         $groups = new InMemoryGroupRepository();
         $groups->save(new Group('Reanibex 100 Semi-Auto', '52112'));
         $bases = new InMemoryGroupBaseRepository($groups);
-        $persisted = $bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL'));
+        $persisted = $bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL', 'NL'));
         $items = new InMemoryGroupBaseItemRepository($bases);
         $handler = new AddBaseItemHandler($items);
 
@@ -54,7 +54,7 @@ final class AddBaseItemHandlerTest extends TestCase
         $groups = new InMemoryGroupRepository();
         $groups->save(new Group('Reanibex 100 Semi-Auto', '52112'));
         $bases = new InMemoryGroupBaseRepository($groups);
-        $persisted = $bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL'));
+        $persisted = $bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL', 'NL'));
         self::assertNotNull($persisted->id);
         $items = new InMemoryGroupBaseItemRepository($bases);
         $handler = new AddBaseItemHandler($items);

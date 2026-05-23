@@ -26,7 +26,7 @@ final class AddBaseToGroupHandlerTest extends TestCase
         $groups->save(new Group('Reanibex 100 Semi-Auto', '52112'));
         $handler = new AddBaseToGroupHandler($bases, $variants);
 
-        $persisted = $handler(new AddBaseToGroup('52112', 'AED pakket NL'));
+        $persisted = $handler(new AddBaseToGroup('52112', 'AED pakket NL', 'NL'));
 
         self::assertNotNull($persisted->id);
         self::assertCount(1, $bases->findAllForGroup('52112'));
@@ -41,7 +41,7 @@ final class AddBaseToGroupHandlerTest extends TestCase
 
         $this->expectException(GroupNotFoundException::class);
 
-        $handler(new AddBaseToGroup('99999', 'naam'));
+        $handler(new AddBaseToGroup('99999', 'naam', 'NL'));
     }
 
     #[Test]
@@ -50,11 +50,11 @@ final class AddBaseToGroupHandlerTest extends TestCase
         [$groups, $bases, , , $variants] = $this->repos();
         $groups->save(new Group('Reanibex 100 Semi-Auto', '52112'));
         $handler = new AddBaseToGroupHandler($bases, $variants);
-        $handler(new AddBaseToGroup('52112', 'AED pakket NL'));
+        $handler(new AddBaseToGroup('52112', 'AED pakket NL', 'NL'));
 
         $this->expectException(BaseAlreadyExistsException::class);
 
-        $handler(new AddBaseToGroup('52112', 'AED pakket NL'));
+        $handler(new AddBaseToGroup('52112', 'AED pakket NL', 'NL'));
     }
 
     /**

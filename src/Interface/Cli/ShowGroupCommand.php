@@ -69,7 +69,7 @@ final class ShowGroupCommand extends Command
             foreach ($overview->bases as $base) {
                 $rows[] = [
                     (string) ($base->id ?? '?'),
-                    $base->languageCode ?? '—',
+                    $base->languageCode,
                     $base->name,
                 ];
             }

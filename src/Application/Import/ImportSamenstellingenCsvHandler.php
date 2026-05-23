@@ -38,7 +38,7 @@ final readonly class ImportSamenstellingenCsvHandler
             try {
                 $this->baseRepository->saveForGroup(
                     $command->familyHeadItemcode,
-                    new GroupBase(null, $name),
+                    new GroupBase(null, $name, $this->detectLanguage($name)),
                 );
                 ++$summary->basesCreated;
             } catch (BaseAlreadyExistsException) {
@@ -129,5 +129,44 @@ final readonly class ImportSamenstellingenCsvHandler
         }
 
         return sprintf('Accessoire %s', $itemcode);
+    }
+
+    /**
+     * Legacy slice 7-importer: detecteer taal uit AED-component-naam.
+     * Voor "echte" imports gebruikt de gebruiker `group:import-portal-csv` met `Taal`-kolom.
+     */
+    private function detectLanguage(string $name): string
+    {
+        $patterns = [
+            'NL' => '/\b(Nederlands|NL)\b/i',
+            'FR' => '/\b(French|FR|francais|française)\b/iu',
+            'DE' => '/\b(German|DE|Deutsch)\b/i',
+            'EN' => '/\b(English|EN)\b/i',
+            'UK' => '/\bUK\b/i',
+            'ES' => '/\b(Spanish|ES|Español)\b/iu',
+            'IT' => '/\b(Italian|IT)\b/i',
+            'SE' => '/\b(Swedish|SE)\b/i',
+            'NO' => '/\b(Norwegian|NO)\b/i',
+            'DK' => '/\b(Danish|DK)\b/i',
+            'FI' => '/\b(Finnish|FI)\b/i',
+            'PL' => '/\b(Polish|PL)\b/i',
+            'CZ' => '/\b(Czech|CZ)\b/i',
+            'HU' => '/\b(Hungarian|HU)\b/i',
+            'EL' => '/\b(Greek|EL|GR)\b/i',
+            'HR' => '/\b(Croatian|HR|Kroatian)\b/i',
+            'SK' => '/\b(Slovak|SK)\b/i',
+            'SL' => '/\b(Slovenian|SL)\b/i',
+            'LV' => '/\b(Latvian|LV)\b/i',
+            'LT' => '/\b(Lithuanian|LT)\b/i',
+            'RO' => '/\b(Romanian|RO)\b/i',
+            'WAL' => '/\bWAL\b/i',
+        ];
+        foreach ($patterns as $code => $regex) {
+            if (preg_match($regex, $name) === 1) {
+                return $code;
+            }
+        }
+
+        return 'NL';
     }
 }

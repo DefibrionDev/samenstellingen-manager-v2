@@ -58,8 +58,8 @@ abstract class GroupVariantRepositoryContractTestCase extends TestCase
     #[Test]
     public function generatesBaseOnlyVariantsWhenNoAccessoires(): void
     {
-        $this->bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL'));
-        $this->bases->saveForGroup('52112', new GroupBase(null, 'Pack DAE FR'));
+        $this->bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL', 'NL'));
+        $this->bases->saveForGroup('52112', new GroupBase(null, 'Pack DAE FR', 'FR'));
 
         $this->variants->regenerateForGroup('52112');
 
@@ -73,8 +73,8 @@ abstract class GroupVariantRepositoryContractTestCase extends TestCase
     #[Test]
     public function generatesFullMatrix(): void
     {
-        $this->bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL'));
-        $this->bases->saveForGroup('52112', new GroupBase(null, 'Pack DAE FR'));
+        $this->bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL', 'NL'));
+        $this->bases->saveForGroup('52112', new GroupBase(null, 'Pack DAE FR', 'FR'));
         $this->accessoires->save(new Accessoire('60110', 'Rugzak'));
         $this->accessoires->save(new Accessoire('60112', 'ARKY witte binnenkast'));
         $this->links->link('52112', '60110');
@@ -89,7 +89,7 @@ abstract class GroupVariantRepositoryContractTestCase extends TestCase
     #[Test]
     public function regenerationIsIdempotent(): void
     {
-        $this->bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL'));
+        $this->bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL', 'NL'));
         $this->accessoires->save(new Accessoire('60110', 'Rugzak'));
         $this->links->link('52112', '60110');
 

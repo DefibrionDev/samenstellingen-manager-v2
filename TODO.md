@@ -414,7 +414,7 @@ Design-keuzes:
 ### Fase 6 — Handmatige verificatie + commit
 - [x] `group:show 52112` toont taal-kolom (lege voor bestaande data, gevuld na re-import met `Taal`-kolom in CSV).
 - [x] `make check` groen (119 tests / 248 assertions).
-- [ ] **Commit + push** "slice 11: taal-veld op bases + Taal-kolom in portal-CSV".
+- [x] **Commit + push** "slice 11: taal-veld op bases + Taal-kolom in portal-CSV".
 
 ---
 

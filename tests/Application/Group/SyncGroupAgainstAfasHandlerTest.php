@@ -37,7 +37,7 @@ final class SyncGroupAgainstAfasHandlerTest extends TestCase
         $variants = new InMemoryGroupVariantRepository($groups, $bases, $links);
         $afasRepo = new InMemoryAfasSamenstellingenRepository();
 
-        $base = $bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL'));
+        $base = $bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL', 'NL'));
         self::assertNotNull($base->id);
         $baseItems->saveForBase($base->id, new GroupBaseItem('50013', 'AED NL'));
         $baseItems->saveForBase($base->id, new GroupBaseItem('50015', 'Electrode'));

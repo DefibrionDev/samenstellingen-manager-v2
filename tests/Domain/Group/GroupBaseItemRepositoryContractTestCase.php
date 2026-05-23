@@ -35,7 +35,7 @@ abstract class GroupBaseItemRepositoryContractTestCase extends TestCase
         $this->items = $repos['items'];
 
         $this->groups->save(new Group('Reanibex 100 Semi-Auto', '52112'));
-        $persisted = $this->bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL'));
+        $persisted = $this->bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL', 'NL'));
         self::assertNotNull($persisted->id);
         $this->baseId = $persisted->id;
     }

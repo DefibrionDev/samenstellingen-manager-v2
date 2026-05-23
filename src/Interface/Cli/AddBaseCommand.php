@@ -13,7 +13,6 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
@@ -41,11 +40,10 @@ final class AddBaseCommand extends Command
                 InputArgument::REQUIRED,
                 'Naam van de base (bv. "AED pakket: Reanibex 100 Semi-Auto NL incl. safeset en stickerset")',
             )
-            ->addOption(
-                'language',
-                'l',
-                InputOption::VALUE_REQUIRED,
-                'Taal-code (NL, FR, DE, UK, EN, WAL, …) — leeg = onbekend/neutraal',
+            ->addArgument(
+                'language-code',
+                InputArgument::REQUIRED,
+                'Taal-code (NL, FR, DE, UK, EN, WAL, …)',
             );
     }
 
@@ -54,8 +52,7 @@ final class AddBaseCommand extends Command
         $io = new SymfonyStyle($input, $output);
         $itemcode = (string) $input->getArgument('family-head-itemcode');
         $name = (string) $input->getArgument('name');
-        $languageOption = $input->getOption('language');
-        $language = is_string($languageOption) && trim($languageOption) !== '' ? trim($languageOption) : null;
+        $language = (string) $input->getArgument('language-code');
 
         try {
             $base = ($this->handler)(new AddBaseToGroup($itemcode, $name, $language));
@@ -70,9 +67,10 @@ final class AddBaseCommand extends Command
         }
 
         $io->success(sprintf(
-            "Base #%d aangemaakt: '%s'.",
+            "Base #%d aangemaakt: '%s' (%s).",
             $base->id ?? 0,
             $base->name,
+            $base->languageCode,
         ));
 
         return Command::SUCCESS;

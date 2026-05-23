@@ -35,7 +35,7 @@ abstract class GroupBaseRepositoryContractTestCase extends TestCase
     #[Test]
     public function savesAndAssignsId(): void
     {
-        $persisted = $this->bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL'));
+        $persisted = $this->bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL', 'NL'));
 
         self::assertNotNull($persisted->id);
         self::assertGreaterThan(0, $persisted->id);
@@ -45,7 +45,7 @@ abstract class GroupBaseRepositoryContractTestCase extends TestCase
     #[Test]
     public function findsByIdAndForGroup(): void
     {
-        $persisted = $this->bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL'));
+        $persisted = $this->bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL', 'NL'));
 
         self::assertNotNull($persisted->id);
         $byId = $this->bases->findById($persisted->id);
@@ -60,12 +60,12 @@ abstract class GroupBaseRepositoryContractTestCase extends TestCase
     #[Test]
     public function rejectsDuplicateNameInSameGroup(): void
     {
-        $this->bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL'));
+        $this->bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL', 'NL'));
 
         $this->expectException(BaseAlreadyExistsException::class);
         $this->expectExceptionMessage("Base met naam 'AED pakket NL' bestaat al in groep 52112");
 
-        $this->bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL'));
+        $this->bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL', 'NL'));
     }
 
     #[Test]
@@ -73,7 +73,7 @@ abstract class GroupBaseRepositoryContractTestCase extends TestCase
     {
         $this->expectException(GroupNotFoundException::class);
 
-        $this->bases->saveForGroup('99999', new GroupBase(null, 'naam'));
+        $this->bases->saveForGroup('99999', new GroupBase(null, 'naam', 'NL'));
     }
 
     #[Test]

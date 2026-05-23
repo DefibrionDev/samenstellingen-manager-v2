@@ -27,7 +27,7 @@ final class AddAccessoireToGroupHandlerTest extends TestCase
     {
         [$groups, $bases, $accessoires, $links, $variants] = $this->repos();
         $groups->save(new Group('Reanibex 100 Semi-Auto', '52112'));
-        $bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL'));
+        $bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL', 'NL'));
         $accessoires->save(new Accessoire('60112', 'ARKY witte binnenkast'));
         $handler = new AddAccessoireToGroupHandler($links, $variants);
 

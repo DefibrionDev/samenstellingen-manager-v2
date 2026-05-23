@@ -72,7 +72,7 @@ final readonly class ImportPortalCsvHandler
     }
 
     /**
-     * @return array<string, list<array{code: string, item: string, language: ?string}>>
+     * @return array<string, list<array{code: string, item: string, language: string}>>
      */
     private function groupRows(string $csvPath, PortalImportSummary $summary): array
     {
@@ -83,10 +83,19 @@ final readonly class ImportPortalCsvHandler
                 ++$summary->rowsSkippedNoGroep;
                 continue;
             }
+            $language = $row->languageCode();
+            if ($language === null) {
+                $summary->unresolved[] = [
+                    'groep' => $row->groep,
+                    'code' => $row->code,
+                    'reason' => "Geen taal opgegeven in CSV-kolom 'Taal' — taal is verplicht voor een base.",
+                ];
+                continue;
+            }
             $rowsByGroep[$row->groep][] = [
                 'code' => $row->code,
                 'item' => $row->item,
-                'language' => $row->languageCode(),
+                'language' => $language,
             ];
         }
 
@@ -97,7 +106,7 @@ final readonly class ImportPortalCsvHandler
      * Family-head van een groep: AFAS Itemcode_Parent van de eerste resolveerbare
      * samenstelling. Bij geen resolveerbare rijen: null (groep wordt overgeslagen).
      *
-     * @param list<array{code: string, item: string, language: ?string}> $rows
+     * @param list<array{code: string, item: string, language: string}> $rows
      */
     private function resolveFamilyHead(array $rows): ?string
     {
@@ -146,7 +155,7 @@ final readonly class ImportPortalCsvHandler
     }
 
     /**
-     * @param array{code: string, item: string, language: ?string} $row
+     * @param array{code: string, item: string, language: string} $row
      */
     private function importRow(string $groep, string $familyHead, array $row, PortalImportSummary $summary): void
     {

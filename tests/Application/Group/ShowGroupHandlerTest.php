@@ -27,7 +27,7 @@ final class ShowGroupHandlerTest extends TestCase
     {
         [$groups, $bases, $baseItems, $accessoires, $links, $variants] = $this->repos();
         $groups->save(new Group('Reanibex 100 Semi-Auto', '52112'));
-        $persistedBase = $bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL'));
+        $persistedBase = $bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL', 'NL'));
         self::assertNotNull($persistedBase->id);
         $baseItems->saveForBase($persistedBase->id, new GroupBaseItem('50013', 'AED Nederlands'));
         $baseItems->saveForBase($persistedBase->id, new GroupBaseItem('50015', 'Electrode'));

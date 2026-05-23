@@ -29,6 +29,7 @@ final class AddBaseCommandTest extends TestCase
         $exitCode = $tester->execute([
             'family-head-itemcode' => '52112',
             'name' => 'AED pakket NL',
+            'language-code' => 'NL',
         ]);
 
         self::assertSame(Command::SUCCESS, $exitCode);
@@ -45,6 +46,7 @@ final class AddBaseCommandTest extends TestCase
         $exitCode = $tester->execute([
             'family-head-itemcode' => '99999',
             'name' => 'naam',
+            'language-code' => 'NL',
         ]);
 
         self::assertSame(Command::FAILURE, $exitCode);
@@ -58,8 +60,8 @@ final class AddBaseCommandTest extends TestCase
         $groups->save(new Group('Reanibex 100 Semi-Auto', '52112'));
         $tester = new CommandTester(new AddBaseCommand(new AddBaseToGroupHandler($bases, $variants)));
 
-        $tester->execute(['family-head-itemcode' => '52112', 'name' => 'AED pakket NL']);
-        $exitCode = $tester->execute(['family-head-itemcode' => '52112', 'name' => 'AED pakket NL']);
+        $tester->execute(['family-head-itemcode' => '52112', 'name' => 'AED pakket NL', 'language-code' => 'NL']);
+        $exitCode = $tester->execute(['family-head-itemcode' => '52112', 'name' => 'AED pakket NL', 'language-code' => 'NL']);
 
         self::assertSame(Command::FAILURE, $exitCode);
         self::assertStringContainsString('bestaat al', $tester->getDisplay());

@@ -28,7 +28,7 @@ final class ShowGroupCommandTest extends TestCase
     {
         [$groups, $bases, $baseItems, $accessoires, $links, $variants] = $this->repos();
         $groups->save(new Group('Reanibex 100 Semi-Auto', '52112'));
-        $base = $bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL'));
+        $base = $bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL', 'NL'));
         self::assertNotNull($base->id);
         $baseItems->saveForBase($base->id, new GroupBaseItem('50013', 'AED Nederlands'));
         $baseItems->saveForBase($base->id, new GroupBaseItem('50015', 'Electrode'));

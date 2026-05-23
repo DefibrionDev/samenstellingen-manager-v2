@@ -86,11 +86,12 @@ final readonly class SqliteGroupBaseRepository implements GroupBaseRepository
         $id = $row['id'] ?? null;
         $name = $row['name'] ?? null;
         $language = $row['language_code'] ?? null;
-        if (!is_int($id) || !is_string($name)) {
+        if (!is_int($id) || !is_string($name) || !is_string($language) || trim($language) === '') {
+            // Legacy rij zonder taal — overslaan (taal is verplicht sinds slice 11-fix).
             return null;
         }
 
-        return new GroupBase($id, $name, is_string($language) ? $language : null);
+        return new GroupBase($id, $name, $language);
     }
 
     private function resolveGroupId(string $familyHeadItemcode): int
