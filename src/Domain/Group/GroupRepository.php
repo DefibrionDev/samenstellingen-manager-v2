@@ -14,4 +14,9 @@ interface GroupRepository
     public function findByName(string $name): ?Group;
 
     public function findByFamilyHeadItemcode(string $familyHeadItemcode): ?Group;
+
+    /**
+     * @return list<Group>
+     */
+    public function findAll(): array;
 }

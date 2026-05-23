@@ -359,6 +359,29 @@ Design-keuzes:
 
 ---
 
+## Slice 10 — export missing-list als CSV (actie-lijst voor AFAS-team)
+
+Eindbeeld: `audit:export-missing <output.csv>` schrijft alle variant-rijen met `afas_status = 'no_match'` naar een CSV. Per ontbrekende variant alles wat het AFAS-team nodig heeft om hem aan te maken: groep, base-naam, base AFAS-SKU, accessoire-info, en de complete verwachte BOM.
+
+CSV-kolommen:
+- `groep` — naam van de groep
+- `base_naam` — AFAS-naam van de base-samenstelling
+- `base_afas_sku` — AFAS-SKU van de matched base-only variant (zodat AFAS-team weet wat te dupliceren)
+- `accessoire_itemcode`, `accessoire_label`
+- `verwachte_bom` — komma-gescheiden itemcodes (base-items + accessoire)
+- `verwachte_sku_voorstel` — `{base_afas_sku}-{accessoire_itemcode}` (naamconventie, ter suggestie)
+
+### Fase 1 — Implementatie + verificatie
+- [x] `MissingVariantRow` DTO en `ListMissingVariants` query + handler in `src/Application/Audit/`.
+- [x] `GroupRepository::findAll()` toegevoegd (InMemory + Sqlite).
+- [x] CLI command `ExportMissingVariantsCommand` — `audit:export-missing <output.csv>` schrijft de CSV.
+- [x] `bin/samenstellingen` bedraadt.
+- [x] Live verificatie: 232 ontbrekende varianten geëxporteerd; CSV bevat groep / base / base_afas_sku / accessoire / verwachte BOM / verwachte SKU-voorstel.
+- [x] `make check` is groen (119 tests / 248 assertions).
+- [ ] **Commit + push** "slice 10: export missing-list als CSV".
+
+---
+
 ## Beslissingen
 
 - CLI-library: `symfony/console`.

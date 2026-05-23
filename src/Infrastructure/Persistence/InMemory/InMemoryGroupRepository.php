@@ -37,4 +37,12 @@ final class InMemoryGroupRepository implements GroupRepository
     {
         return $this->byFamilyHead[$familyHeadItemcode] ?? null;
     }
+
+    public function findAll(): array
+    {
+        $groups = array_values($this->byName);
+        usort($groups, static fn (Group $a, Group $b): int => strcmp($a->name, $b->name));
+
+        return $groups;
+    }
 }

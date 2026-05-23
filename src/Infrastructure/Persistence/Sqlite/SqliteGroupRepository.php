@@ -58,6 +58,24 @@ final readonly class SqliteGroupRepository implements GroupRepository
         return $this->rowToGroup($stmt->fetch(PDO::FETCH_ASSOC));
     }
 
+    public function findAll(): array
+    {
+        $stmt = $this->pdo->query('SELECT name, family_head_itemcode FROM groups ORDER BY name');
+        if ($stmt === false) {
+            return [];
+        }
+
+        $groups = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $group = $this->rowToGroup($row);
+            if ($group !== null) {
+                $groups[] = $group;
+            }
+        }
+
+        return $groups;
+    }
+
     /**
      * @param mixed $row
      */
