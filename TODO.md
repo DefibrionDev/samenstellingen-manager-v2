@@ -592,7 +592,7 @@ Reden: nu moet je na pull/import handmatig `group:sync-afas` per groep draaien (
 ### Fase 4 — Lint, live, commit
 - [x] `make check` groen (169 tests / 404 assertions).
 - [x] Live: `group:import-portal-csv` rapporteert "Auto-sync: 21 groepen verwerkt → 60 matched, 0 no_match"; `/groups/.../variants` toont groene matched-chips zonder handmatige sync.
-- [ ] **Commit + push** "slice 16: auto-sync na afas:pull en portal-CSV-import".
+- [x] **Commit + push** "slice 16: auto-sync na afas:pull en portal-CSV-import".
 
 ---
 
