@@ -42,6 +42,7 @@ final class TestDatabase
         $pdo->exec('DELETE FROM accessoires');
         $pdo->exec('DELETE FROM group_bases');
         $pdo->exec('DELETE FROM groups');
+        $pdo->exec('DELETE FROM bom_blacklist');
         $pdo->exec(
             "DELETE FROM sqlite_sequence
              WHERE name IN ('groups', 'accessoires', 'group_variants', 'group_bases', 'afas_samenstellingen')"

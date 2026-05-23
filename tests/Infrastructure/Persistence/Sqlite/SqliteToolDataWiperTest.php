@@ -67,6 +67,17 @@ final class SqliteToolDataWiperTest extends TestCase
         self::assertSame(1, $this->countRows($pdo, 'afas_samenstellingen'));
     }
 
+    #[Test]
+    public function leavesBomBlacklistIntact(): void
+    {
+        $pdo = TestDatabase::pdo();
+        $pdo->exec("INSERT INTO bom_blacklist (itemcode, reason) VALUES ('81311', 'Waalse stickerset')");
+
+        (new SqliteToolDataWiper($pdo))->wipe();
+
+        self::assertSame(1, $this->countRows($pdo, 'bom_blacklist'));
+    }
+
     private function countRows(PDO $pdo, string $table): int
     {
         $stmt = $pdo->query(sprintf('SELECT COUNT(*) FROM %s', $table));

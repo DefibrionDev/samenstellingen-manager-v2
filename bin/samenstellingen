@@ -4,6 +4,8 @@
 declare(strict_types=1);
 
 use Defibrion\Samenstellingen\Application\Accessoire\CreateAccessoireHandler;
+use Defibrion\Samenstellingen\Application\Afas\BlacklistBomCodeHandler;
+use Defibrion\Samenstellingen\Application\Afas\ListBomBlacklistHandler;
 use Defibrion\Samenstellingen\Application\Afas\PullAfasSamenstellingenHandler;
 use Defibrion\Samenstellingen\Application\Audit\ListMissingVariantsHandler;
 use Defibrion\Samenstellingen\Application\Group\AddAccessoireToGroupHandler;
@@ -24,6 +26,7 @@ use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteToolDataWi
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\Migrator;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAccessoireRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAfasSamenstellingenRepository;
+use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteBomBlacklistRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteGroupAccessoireRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteGroupBaseItemRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteGroupBaseRepository;
@@ -34,11 +37,13 @@ use Defibrion\Samenstellingen\Interface\Cli\AddBaseCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AddBaseItemCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AfasListDuplicatesCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AfasPullCommand;
+use Defibrion\Samenstellingen\Interface\Cli\BlacklistBomCommand;
 use Defibrion\Samenstellingen\Interface\Cli\CreateAccessoireCommand;
 use Defibrion\Samenstellingen\Interface\Cli\CreateGroupCommand;
 use Defibrion\Samenstellingen\Interface\Cli\ExportMissingVariantsCommand;
 use Defibrion\Samenstellingen\Interface\Cli\ImportPortalCsvCommand;
 use Defibrion\Samenstellingen\Interface\Cli\ImportSamenstellingenCsvCommand;
+use Defibrion\Samenstellingen\Interface\Cli\ListBomBlacklistCommand;
 use Defibrion\Samenstellingen\Interface\Cli\ShowGroupCommand;
 use Defibrion\Samenstellingen\Interface\Cli\SyncGroupAgainstAfasCommand;
 use Symfony\Component\Console\Application;
@@ -71,6 +76,7 @@ $accessoireRepository = new SqliteAccessoireRepository($pdo);
 $linkRepository = new SqliteGroupAccessoireRepository($pdo);
 $variantRepository = new SqliteGroupVariantRepository($pdo);
 $afasSamenstellingenRepository = new SqliteAfasSamenstellingenRepository($pdo);
+$bomBlacklistRepository = new SqliteBomBlacklistRepository($pdo);
 
 $createGroupHandler = new CreateGroupHandler($groupRepository);
 $showGroupHandler = new ShowGroupHandler(
@@ -106,7 +112,10 @@ $importPortalCsvHandler = new ImportPortalCsvHandler(
     $variantRepository,
     new AfasSamenstellingLookup($afasSamenstellingenRepository),
     $accessoireRepository,
+    $bomBlacklistRepository,
 );
+$blacklistBomHandler = new BlacklistBomCodeHandler($bomBlacklistRepository);
+$listBomBlacklistHandler = new ListBomBlacklistHandler($bomBlacklistRepository);
 $listMissingHandler = new ListMissingVariantsHandler(
     $groupRepository,
     $variantRepository,
@@ -123,6 +132,8 @@ $application->addCommand(new AddAccessoireCommand($addAccessoireHandler));
 $application->addCommand(new ImportSamenstellingenCsvCommand($importCsvHandler));
 $application->addCommand(new ImportPortalCsvCommand($importPortalCsvHandler));
 $application->addCommand(new AfasListDuplicatesCommand($afasSamenstellingenRepository));
+$application->addCommand(new BlacklistBomCommand($blacklistBomHandler));
+$application->addCommand(new ListBomBlacklistCommand($listBomBlacklistHandler));
 $application->addCommand(new ExportMissingVariantsCommand($listMissingHandler));
 $application->addCommand(new SyncGroupAgainstAfasCommand($syncHandler));
 

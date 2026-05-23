@@ -8,6 +8,7 @@ use Defibrion\Samenstellingen\Domain\Accessoire\Accessoire;
 use Defibrion\Samenstellingen\Domain\Accessoire\AccessoireRepository;
 use Defibrion\Samenstellingen\Domain\Afas\AfasSamenstelling;
 use Defibrion\Samenstellingen\Domain\Afas\AfasSamenstellingLookup;
+use Defibrion\Samenstellingen\Domain\Afas\BomBlacklistRepository;
 use Defibrion\Samenstellingen\Domain\Group\BaseAlreadyExistsException;
 use Defibrion\Samenstellingen\Domain\Group\BaseItemAlreadyExistsException;
 use Defibrion\Samenstellingen\Domain\Group\Group;
@@ -33,16 +34,17 @@ final readonly class ImportPortalCsvHandler
         private GroupVariantRepository $variantRepository,
         private AfasSamenstellingLookup $lookup,
         private AccessoireRepository $accessoireRepository,
+        private BomBlacklistRepository $bomBlacklistRepository,
     ) {
     }
 
     public function __invoke(ImportPortalCsv $command): PortalImportSummary
     {
-        $accessoireItemcodes = $this->loadAccessoireItemcodes();
+        $blockedBomCodes = $this->loadBlockedBomCodes();
 
         $summary = new PortalImportSummary();
         $rowsByGroep = $this->groupRows($command->csvPath, $summary);
-        $this->prevalidateResolvable($rowsByGroep, $accessoireItemcodes, $summary);
+        $this->prevalidateResolvable($rowsByGroep, $blockedBomCodes, $summary);
 
         // Bij ook maar één onresolveerbare rij: STOP. Geen wipe, geen import.
         if ($summary->unresolved !== []) {
@@ -52,7 +54,7 @@ final readonly class ImportPortalCsvHandler
         $this->wiper->wipe();
 
         foreach ($rowsByGroep as $groep => $rows) {
-            $familyHead = $this->resolveFamilyHead($rows, $accessoireItemcodes);
+            $familyHead = $this->resolveFamilyHead($rows, $blockedBomCodes);
             if ($familyHead === null) {
                 continue;
             }
@@ -65,7 +67,7 @@ final readonly class ImportPortalCsvHandler
             }
 
             foreach ($rows as $row) {
-                $this->importRow($groep, $familyHead, $row, $accessoireItemcodes, $summary);
+                $this->importRow($groep, $familyHead, $row, $blockedBomCodes, $summary);
             }
 
             $this->variantRepository->regenerateForGroup($familyHead);
@@ -75,9 +77,14 @@ final readonly class ImportPortalCsvHandler
     }
 
     /**
+     * Codes die — als ze in een AFAS-samenstelling's BOM staan — die samenstelling
+     * diskwalificeren als base-kandidaat. Combineert de geregistreerde accessoires
+     * (variant-markers in de matrix) met de aparte BOM-blacklist (codes die om
+     * andere redenen geen base mogen aanduiden, bv. Waalse stickerset).
+     *
      * @return list<string>
      */
-    private function loadAccessoireItemcodes(): array
+    private function loadBlockedBomCodes(): array
     {
         $accessoires = $this->accessoireRepository->findAll();
         if ($accessoires === []) {
@@ -88,18 +95,23 @@ final readonly class ImportPortalCsvHandler
             );
         }
 
-        return array_map(static fn (Accessoire $a) => $a->itemcode, $accessoires);
+        $codes = array_map(static fn (Accessoire $a) => $a->itemcode, $accessoires);
+        foreach ($this->bomBlacklistRepository->findAll() as $entry) {
+            $codes[] = $entry->itemcode;
+        }
+
+        return array_values(array_unique($codes));
     }
 
     /**
      * @param array<string, list<array{code: string, item: string, language: string}>> $rowsByGroep
-     * @param list<string> $accessoireItemcodes
+     * @param list<string> $blockedBomCodes
      */
-    private function prevalidateResolvable(array $rowsByGroep, array $accessoireItemcodes, PortalImportSummary $summary): void
+    private function prevalidateResolvable(array $rowsByGroep, array $blockedBomCodes, PortalImportSummary $summary): void
     {
         foreach ($rowsByGroep as $groep => $rows) {
             foreach ($rows as $row) {
-                $candidates = $this->sellableCandidatesFor($row['code'], $accessoireItemcodes);
+                $candidates = $this->sellableCandidatesFor($row['code'], $blockedBomCodes);
 
                 if ($candidates === []) {
                     $summary->unresolved[] = [
@@ -159,12 +171,12 @@ final readonly class ImportPortalCsvHandler
 
     /**
      * @param list<array{code: string, item: string, language: string}> $rows
-     * @param list<string> $accessoireItemcodes
+     * @param list<string> $blockedBomCodes
      */
-    private function resolveFamilyHead(array $rows, array $accessoireItemcodes): ?string
+    private function resolveFamilyHead(array $rows, array $blockedBomCodes): ?string
     {
         foreach ($rows as $row) {
-            $candidates = $this->sellableCandidatesFor($row['code'], $accessoireItemcodes);
+            $candidates = $this->sellableCandidatesFor($row['code'], $blockedBomCodes);
             foreach ($candidates as $candidate) {
                 $parent = $candidate->itemcodeParent;
                 if ($parent !== null) {
@@ -182,12 +194,12 @@ final readonly class ImportPortalCsvHandler
      * "Verkoopbare" base-samenstellingen: BOM bevat article-code + reanimatiekit (70112)
      * + stickerset (81xxx) en GEEN geregistreerde accessoire.
      *
-     * @param list<string> $accessoireItemcodes
+     * @param list<string> $blockedBomCodes
      * @return list<AfasSamenstelling>
      */
-    private function sellableCandidatesFor(string $articleCode, array $accessoireItemcodes): array
+    private function sellableCandidatesFor(string $articleCode, array $blockedBomCodes): array
     {
-        $bases = $this->lookup->findCanonicalBasesContaining($articleCode, $accessoireItemcodes);
+        $bases = $this->lookup->findCanonicalBasesContaining($articleCode, $blockedBomCodes);
 
         return array_values(array_filter(
             $bases,
@@ -209,11 +221,11 @@ final readonly class ImportPortalCsvHandler
 
     /**
      * @param array{code: string, item: string, language: string} $row
-     * @param list<string> $accessoireItemcodes
+     * @param list<string> $blockedBomCodes
      */
-    private function importRow(string $groep, string $familyHead, array $row, array $accessoireItemcodes, PortalImportSummary $summary): void
+    private function importRow(string $groep, string $familyHead, array $row, array $blockedBomCodes, PortalImportSummary $summary): void
     {
-        $candidates = $this->sellableCandidatesFor($row['code'], $accessoireItemcodes);
+        $candidates = $this->sellableCandidatesFor($row['code'], $blockedBomCodes);
         if ($candidates === []) {
             // Pre-validate had dit moeten vangen; defensief overslaan.
             return;

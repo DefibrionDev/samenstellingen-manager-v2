@@ -450,6 +450,40 @@ Achtergrond: wij definiëren de basisitems én de accessoires zelf — die catal
 
 ---
 
+## Slice 12.1 — BOM-blacklist als extra base-disqualifier
+
+Eindbeeld: naast de accessoires-catalogus kan de user losse BOM-itemcodes blacklisten. Een AFAS-samenstelling wiens BOM een geblackliste itemcode bevat, telt niet meer als base-kandidaat. Eerste use case: de Waalse stickerset `81311` — voor onze portal-CSV is dat geen base-taal, dus 11135 (BOM `… 81311 …`) hoort niet als kandidaat te verschijnen tegenover 11132 (FR-stickerset).
+
+Mechanisme is parallel aan accessoires: een lijst geblockeerde BOM-codes wordt samen met de accessoire-codes aan `findCanonicalBasesContaining` gevoed. Lookup-API blijft ongewijzigd; alleen de handler combineert de twee bronnen.
+
+### Fase 1 — Schema + domain
+- [x] Migration `0010_bom_blacklist.sql`: tabel `bom_blacklist (itemcode TEXT PRIMARY KEY, reason TEXT NOT NULL)`.
+- [x] `BomBlacklistEntry` value object (`itemcode`, `reason`).
+- [x] `BomBlacklistRepository` interface + `BomCodeAlreadyBlacklistedException`.
+
+### Fase 2 — Persistence + contracttest
+- [x] `InMemoryBomBlacklistRepository`.
+- [x] `SqliteBomBlacklistRepository`.
+- [x] `BomBlacklistRepositoryContractTestCase` (save, find, findAll, duplicate-error).
+- [x] `SqliteToolDataWiper` laat `bom_blacklist` met rust (geen wijziging nodig — wiper noemt de tabel niet, dus 'ie blijft automatisch staan; getest in `SqliteToolDataWiperTest::leavesBomBlacklistIntact`).
+
+### Fase 3 — CLI
+- [x] `BlacklistBomCommand` — `samenstelling:blacklist-bom <itemcode> '<reden>'`.
+- [x] `ListBomBlacklistCommand` — `samenstelling:list-blacklist` (toont tabel).
+
+### Fase 4 — Integratie in portal-import
+- [x] `ImportPortalCsvHandler` krijgt `BomBlacklistRepository` injected; combineert accessoire-codes + blacklist-codes tot `blockedBomCodes`.
+- [x] Test: na blacklisten van 81311 verdwijnt 11135 als kandidaat voor article 10132 (`blacklistedBomCodeRemovesCandidateFromAmbiguity`).
+
+### Fase 5 — Tests, lint, live-run
+- [x] `make check` groen (147 tests / 323 assertions).
+- [x] Live: `samenstelling:blacklist-bom 81311 …` + 60511/60123/60612 als accessoire toegevoegd → ambiguïteiten gedaald van 17 naar 6 (totaal unresolved 42 → 32).
+
+### Fase 6 — Commit + push
+- [ ] **Commit + push** "slice 12.1: BOM-blacklist als extra base-disqualifier".
+
+---
+
 ## Slice 13 — `afas:create-missing` met per-taal naam-templating + dry-run default
 
 Eindbeeld: `afas:create-missing [--apply] [--limit=N]` itereert over alle variant-rijen met `afas_status='no_match'` en construeert per rij een `FbComposition`-payload. Gebruikt `base.language_code` (uit slice 11) om de variant-naam te bouwen volgens AFAS-conventie per taal.
