@@ -100,6 +100,20 @@ final class ImportPortalCsvCommand extends Command
             ],
         );
 
+        $sync = $summary->sync;
+        if ($sync !== null && $sync->groupsProcessed > 0) {
+            $io->writeln(sprintf(
+                'Auto-sync: %d groepen verwerkt → <info>%d matched</info>, <comment>%d no_match</comment>.',
+                $sync->groupsProcessed,
+                $sync->matched,
+                $sync->noMatch,
+            ));
+        } elseif ($sync !== null && $sync->groupsSkipped > 0) {
+            foreach ($sync->skipReasons as $reason) {
+                $io->writeln('<comment>Auto-sync overgeslagen:</comment> ' . $reason);
+            }
+        }
+
         $io->success(sprintf("Import van '%s' afgerond.", $csvPath));
 
         return Command::SUCCESS;

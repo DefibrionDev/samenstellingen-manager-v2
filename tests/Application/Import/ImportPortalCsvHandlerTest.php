@@ -210,6 +210,18 @@ final class ImportPortalCsvHandlerTest extends TestCase
      */
     private function makeHandler(array $bag, PortalCsvReader $reader): ImportPortalCsvHandler
     {
+        $syncHandler = new \Defibrion\Samenstellingen\Application\Group\SyncGroupAgainstAfasHandler(
+            $bag['variants'],
+            $bag['baseItems'],
+            $bag['afas'],
+            new \Defibrion\Samenstellingen\Domain\Afas\VariantMatcher(),
+        );
+        $syncAll = new \Defibrion\Samenstellingen\Application\Group\SyncAllGroupsHandler(
+            $bag['groups'],
+            $syncHandler,
+            $bag['afas'],
+        );
+
         return new ImportPortalCsvHandler(
             $reader,
             $bag['wiper'],
@@ -220,6 +232,7 @@ final class ImportPortalCsvHandlerTest extends TestCase
             $bag['lookup'],
             $bag['accessoires'],
             $bag['blacklist'],
+            $syncAll,
         );
     }
 

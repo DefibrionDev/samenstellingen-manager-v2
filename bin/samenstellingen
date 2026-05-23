@@ -13,6 +13,7 @@ use Defibrion\Samenstellingen\Application\Group\AddBaseItemHandler;
 use Defibrion\Samenstellingen\Application\Group\AddBaseToGroupHandler;
 use Defibrion\Samenstellingen\Application\Group\CreateGroupHandler;
 use Defibrion\Samenstellingen\Application\Group\ShowGroupHandler;
+use Defibrion\Samenstellingen\Application\Group\SyncAllGroupsHandler;
 use Defibrion\Samenstellingen\Application\Group\SyncGroupAgainstAfasHandler;
 use Defibrion\Samenstellingen\Application\Import\ImportPortalCsvHandler;
 use Defibrion\Samenstellingen\Application\Import\ImportSamenstellingenCsvHandler;
@@ -91,6 +92,11 @@ $syncHandler = new SyncGroupAgainstAfasHandler(
     $afasSamenstellingenRepository,
     new VariantMatcher(),
 );
+$syncAllGroupsHandler = new SyncAllGroupsHandler(
+    $groupRepository,
+    $syncHandler,
+    $afasSamenstellingenRepository,
+);
 $importCsvHandler = new ImportSamenstellingenCsvHandler(
     new FileCsvSamenstellingenReader(),
     $baseRepository,
@@ -108,6 +114,7 @@ $importPortalCsvHandler = new ImportPortalCsvHandler(
     new AfasSamenstellingLookup($afasSamenstellingenRepository),
     $accessoireRepository,
     $bomBlacklistRepository,
+    $syncAllGroupsHandler,
 );
 $blacklistBomHandler = new BlacklistBomCodeHandler($bomBlacklistRepository);
 $listBomBlacklistHandler = new ListBomBlacklistHandler($bomBlacklistRepository);
@@ -144,6 +151,7 @@ if ($hasAfasCreds) {
         $afasSamenstellingenRepository,
         $articlesFetcher,
         $afasArticleRepository,
+        $syncAllGroupsHandler,
     );
     $application->addCommand(new AfasPullCommand($pullHandler));
 }

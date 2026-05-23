@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Defibrion\Samenstellingen\Application\Import;
 
+use Defibrion\Samenstellingen\Application\Group\SyncAllGroups;
+use Defibrion\Samenstellingen\Application\Group\SyncAllGroupsHandler;
 use Defibrion\Samenstellingen\Domain\Accessoire\Accessoire;
 use Defibrion\Samenstellingen\Domain\Accessoire\AccessoireRepository;
 use Defibrion\Samenstellingen\Domain\Afas\AfasSamenstelling;
@@ -35,6 +37,7 @@ final readonly class ImportPortalCsvHandler
         private AfasSamenstellingLookup $lookup,
         private AccessoireRepository $accessoireRepository,
         private BomBlacklistRepository $bomBlacklistRepository,
+        private SyncAllGroupsHandler $syncAllGroups,
     ) {
     }
 
@@ -70,6 +73,10 @@ final readonly class ImportPortalCsvHandler
 
             $this->variantRepository->regenerateForGroup($familyHead);
         }
+
+        // Na import → match alle varianten meteen tegen de huidige AFAS-snapshot.
+        // Bij lege snapshot rapporteert SyncAllGroupsHandler dat in z'n summary.
+        $summary->sync = ($this->syncAllGroups)(new SyncAllGroups());
 
         return $summary;
     }

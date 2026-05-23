@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Defibrion\Samenstellingen\Application\Afas;
 
+use Defibrion\Samenstellingen\Application\Group\SyncAllGroups;
+use Defibrion\Samenstellingen\Application\Group\SyncAllGroupsHandler;
 use Defibrion\Samenstellingen\Domain\Afas\AfasArticleRepository;
 use Defibrion\Samenstellingen\Domain\Afas\AfasArticlesFetcher;
 use Defibrion\Samenstellingen\Domain\Afas\AfasSamenstellingenFetcher;
@@ -16,6 +18,7 @@ final readonly class PullAfasSamenstellingenHandler
         private AfasSamenstellingenRepository $repository,
         private AfasArticlesFetcher $articlesFetcher,
         private AfasArticleRepository $articleRepository,
+        private SyncAllGroupsHandler $syncAllGroups,
     ) {
     }
 
@@ -27,6 +30,15 @@ final readonly class PullAfasSamenstellingenHandler
         $articles = $this->articlesFetcher->fetchAll();
         $this->articleRepository->replaceSnapshot($articles);
 
-        return new PullAfasSamenstellingenResult(count($samenstellingen), count($articles));
+        // Verse snapshot → variant-match-status meteen opnieuw berekenen,
+        // anders blijft de UI (en de missing-variants pagina) stale tot iemand
+        // handmatig `group:sync-afas` per groep draait.
+        $syncSummary = ($this->syncAllGroups)(new SyncAllGroups());
+
+        return new PullAfasSamenstellingenResult(
+            count($samenstellingen),
+            count($articles),
+            $syncSummary,
+        );
     }
 }

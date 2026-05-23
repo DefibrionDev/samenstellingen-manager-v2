@@ -569,6 +569,33 @@ Strict read-only. Geen mutaties.
 
 ---
 
+## Slice 16 — Auto-sync na `afas:pull` en `group:import-portal-csv`
+
+Eindbeeld: na een verse AFAS-snapshot (`afas:pull`) of een portal-CSV-import (`group:import-portal-csv`) wordt direct `group:sync-afas` voor alle groepen uitgevoerd, zodat de `afas_status` op de varianten en daarmee de missing-variants pagina onmiddellijk actueel is. Geen extra flag — gebeurt vanzelf.
+
+Reden: nu moet je na pull/import handmatig `group:sync-afas` per groep draaien (en het CLI-commando bestaat alleen per groep). Voor de UI betekent dit dat /missing en de varianten-tab stale staan tot je de sync uitvoert. Eén implicietere call lost dat op.
+
+### Fase 1 — Domein + handler
+- [x] `SyncAllGroupsHandler` itereert over alle groepen en delegeert naar `SyncGroupAgainstAfasHandler`.
+- [x] `SyncAllSummary` met `groupsProcessed`, `matched`, `noMatch`, `groupsSkipped`, `skipReasons`.
+- [x] Defensief: lege snapshot → summary met `groupsSkipped` + reden, geen throw.
+- [x] Unit-test met InMemory-repos (3 scenarios).
+
+### Fase 2 — Integratie in `afas:pull`
+- [x] `PullAfasSamenstellingenHandler` roept `SyncAllGroupsHandler` aan; `PullAfasSamenstellingenResult` heeft nu `SyncAllSummary`.
+- [x] `AfasPullCommand` toont matched/no_match totalen.
+
+### Fase 3 — Integratie in `group:import-portal-csv`
+- [x] `ImportPortalCsvHandler` roept na de variant-regeneratie `SyncAllGroupsHandler` aan; `PortalImportSummary` heeft optionele `sync`.
+- [x] `ImportPortalCsvCommand` toont de sync-output.
+
+### Fase 4 — Lint, live, commit
+- [x] `make check` groen (169 tests / 404 assertions).
+- [x] Live: `group:import-portal-csv` rapporteert "Auto-sync: 21 groepen verwerkt → 60 matched, 0 no_match"; `/groups/.../variants` toont groene matched-chips zonder handmatige sync.
+- [ ] **Commit + push** "slice 16: auto-sync na afas:pull en portal-CSV-import".
+
+---
+
 ## Slice 13 — `afas:create-missing` met per-taal naam-templating + dry-run default
 
 Eindbeeld: `afas:create-missing [--apply] [--limit=N]` itereert over alle variant-rijen met `afas_status='no_match'` en construeert per rij een `FbComposition`-payload. Gebruikt `base.language_code` (uit slice 11) om de variant-naam te bouwen volgens AFAS-conventie per taal.

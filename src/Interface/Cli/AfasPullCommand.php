@@ -36,6 +36,20 @@ final class AfasPullCommand extends Command
             $result->articles,
         ));
 
+        $sync = $result->sync;
+        if ($sync->groupsProcessed > 0) {
+            $io->writeln(sprintf(
+                'Auto-sync: %d groepen verwerkt → <info>%d matched</info>, <comment>%d no_match</comment>.',
+                $sync->groupsProcessed,
+                $sync->matched,
+                $sync->noMatch,
+            ));
+        } elseif ($sync->groupsSkipped > 0) {
+            foreach ($sync->skipReasons as $reason) {
+                $io->writeln('<comment>Auto-sync overgeslagen:</comment> ' . $reason);
+            }
+        }
+
         return Command::SUCCESS;
     }
 }

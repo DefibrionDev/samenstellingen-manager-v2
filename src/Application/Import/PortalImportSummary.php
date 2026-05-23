@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Defibrion\Samenstellingen\Application\Import;
 
+use Defibrion\Samenstellingen\Application\Group\SyncAllSummary;
+
 final class PortalImportSummary
 {
     public int $rowsProcessed = 0;
@@ -14,4 +16,6 @@ final class PortalImportSummary
 
     /** @var list<array{groep: string, code: string, reason: string}> */
     public array $unresolved = [];
+
+    public ?SyncAllSummary $sync = null;
 }
