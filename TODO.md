@@ -446,7 +446,7 @@ Achtergrond: wij definiëren de basisitems én de accessoires zelf — die catal
 - [x] Live: 7 standaard accessoires (60110, 60112, 60122, 60212, 60213, 60222, 60223) toegevoegd; `group:import-portal-csv` rapporteert 42 unresolved (25 geen kandidaat, 17 ambigu) en laat DB onveranderd.
 
 ### Fase 6 — Commit + push
-- [ ] **Commit + push** "slice 12: accessoires-catalogus drijft base/variant-detectie + ambiguïteit-check".
+- [x] **Commit + push** "slice 12: accessoires-catalogus drijft base/variant-detectie + ambiguïteit-check".
 
 ---
 
