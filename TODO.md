@@ -616,9 +616,9 @@ De UI blijft read-only (zie CLAUDE.md). De accessoires-catalogus-pagina krijgt e
 - [x] AccessoiresList toont inline-tekst die naar `accessoire:create`/`accessoire:delete` verwijst.
 
 ### Fase 4 — Lint, live, commit
-- [ ] `make check` + vitest groen.
-- [ ] Live: `php bin/samenstellingen accessoire:delete <code>` — controleer cascade in DB + UI refresht na een handmatige reload.
-- [ ] **Commit + push** "slice 17: accessoire:delete via CLI + read-only-UI principe vastgelegd in CLAUDE.md/PLAN.md".
+- [x] `make check` (175 tests / 414 assertions) + vitest (5 tests) groen.
+- [x] Live: `accessoire:delete 91116` ruimt op + UI toont nu de inline-hint en geen 91116 meer.
+- [x] **Commit + push** "slice 17: accessoire:delete via CLI + read-only-UI principe vastgelegd in CLAUDE.md/PLAN.md".
 
 ---
 
