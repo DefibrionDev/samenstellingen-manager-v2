@@ -32,6 +32,7 @@ beforeEach(() => {
             id: 1,
             name: 'AED pakket NL',
             languageCode: 'NL',
+            afasItemcode: '11142',
             items: [
               { itemcode: '50013', label: 'AED NL' },
               { itemcode: '70112', label: 'Reanimatiekit' },
@@ -47,12 +48,14 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-test('toont base als accordion en klapt items uit', async () => {
+test('toont base als accordion met afas-itemcode en klapt items uit', async () => {
   renderAt('/groups/52112');
 
-  await waitFor(() => expect(screen.getByText('Reanibex 100 Semi-Auto')).toBeInTheDocument());
+  await waitFor(() => expect(screen.getByRole('heading', { name: 'Reanibex 100 Semi-Auto' })).toBeInTheDocument());
   const baseHeader = screen.getByText('AED pakket NL');
   expect(baseHeader).toBeInTheDocument();
+  // AFAS-SKU staat in de accordion-summary, naast de naam.
+  expect(screen.getByText('11142')).toBeInTheDocument();
 
   fireEvent.click(baseHeader);
   await waitFor(() => expect(screen.getByText('50013')).toBeInTheDocument());

@@ -45,6 +45,7 @@ final readonly class ShowGroupController
                 'id' => $base->id,
                 'name' => $base->name,
                 'languageCode' => $base->languageCode,
+                'afasItemcode' => $base->afasItemcode,
                 'items' => $items,
             ];
         }

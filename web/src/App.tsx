@@ -14,9 +14,6 @@ export function App() {
           >
             Samenstellingen Manager
           </Typography>
-          <Typography variant="caption" color="text.secondary">
-            read-only viewer
-          </Typography>
         </Toolbar>
       </AppBar>
       <Container component="main" maxWidth="lg" sx={{ py: 4, flexGrow: 1 }}>

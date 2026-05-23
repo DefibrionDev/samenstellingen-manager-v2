@@ -14,6 +14,7 @@ export interface GroupBase {
   id: number;
   name: string;
   languageCode: string;
+  afasItemcode: string | null;
   items: BaseItem[];
 }
 

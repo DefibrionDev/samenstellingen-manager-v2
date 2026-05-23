@@ -23,13 +23,14 @@ final readonly class SqliteGroupBaseRepository implements GroupBaseRepository
 
         try {
             $stmt = $this->pdo->prepare(
-                'INSERT INTO group_bases (group_id, name, language_code)
-                 VALUES (:group_id, :name, :language_code)'
+                'INSERT INTO group_bases (group_id, name, language_code, afas_itemcode)
+                 VALUES (:group_id, :name, :language_code, :afas_itemcode)'
             );
             $stmt->execute([
                 ':group_id' => $groupId,
                 ':name' => $base->name,
                 ':language_code' => $base->languageCode,
+                ':afas_itemcode' => $base->afasItemcode,
             ]);
         } catch (PDOException $e) {
             if (
@@ -47,7 +48,7 @@ final readonly class SqliteGroupBaseRepository implements GroupBaseRepository
     public function findById(int $baseId): ?GroupBase
     {
         $stmt = $this->pdo->prepare(
-            'SELECT id, name, language_code FROM group_bases WHERE id = :id'
+            'SELECT id, name, language_code, afas_itemcode FROM group_bases WHERE id = :id'
         );
         $stmt->execute([':id' => $baseId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -60,7 +61,7 @@ final readonly class SqliteGroupBaseRepository implements GroupBaseRepository
         $groupId = $this->resolveGroupId($familyHeadItemcode);
 
         $stmt = $this->pdo->prepare(
-            'SELECT id, name, language_code FROM group_bases WHERE group_id = :group_id ORDER BY id'
+            'SELECT id, name, language_code, afas_itemcode FROM group_bases WHERE group_id = :group_id ORDER BY id'
         );
         $stmt->execute([':group_id' => $groupId]);
 
@@ -91,7 +92,10 @@ final readonly class SqliteGroupBaseRepository implements GroupBaseRepository
             return null;
         }
 
-        return new GroupBase($id, $name, $language);
+        $afasRaw = $row['afas_itemcode'] ?? null;
+        $afas = is_string($afasRaw) ? $afasRaw : null;
+
+        return new GroupBase($id, $name, $language, $afas);
     }
 
     private function resolveGroupId(string $familyHeadItemcode): int

@@ -237,7 +237,7 @@ final readonly class ImportPortalCsvHandler
             try {
                 $persisted = $this->baseRepository->saveForGroup(
                     $familyHead,
-                    new GroupBase(null, $samenstelling->name, $row['language']),
+                    new GroupBase(null, $samenstelling->name, $row['language'], $samenstelling->itemcode),
                 );
                 ++$summary->basesCreated;
             } catch (BaseAlreadyExistsException) {

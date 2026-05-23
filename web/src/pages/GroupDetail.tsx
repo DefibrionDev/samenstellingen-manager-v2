@@ -41,7 +41,7 @@ export function GroupDetail() {
         <MuiLink component={RouterLink} to="/" underline="hover" color="inherit">
           Groepen
         </MuiLink>
-        <Typography color="text.primary">{familyHead}</Typography>
+        <Typography color="text.primary">{data?.name ?? familyHead}</Typography>
       </Breadcrumbs>
 
       {isLoading || !data ? (
@@ -62,6 +62,14 @@ export function GroupDetail() {
               <Accordion key={base.id} disableGutters>
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                   <Stack direction="row" spacing={2} alignItems="center" sx={{ width: '100%' }}>
+                    {base.afasItemcode && (
+                      <Typography
+                        component="code"
+                        sx={{ fontFamily: 'monospace', color: 'text.secondary', minWidth: '6ch' }}
+                      >
+                        {base.afasItemcode}
+                      </Typography>
+                    )}
                     <Typography sx={{ flexGrow: 1 }}>{base.name}</Typography>
                     <Chip label={base.languageCode} size="small" />
                     <Typography variant="caption" color="text.secondary">

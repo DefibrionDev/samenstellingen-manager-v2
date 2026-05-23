@@ -56,8 +56,8 @@ final class ApiTest extends TestCase
         $items = new SqliteGroupBaseItemRepository($pdo);
 
         $groups->save(new Group('Reanibex 100 Semi-Auto', '52112'));
-        $baseNl = $bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL', 'NL'));
-        $baseFr = $bases->saveForGroup('52112', new GroupBase(null, 'Pack DAE FR', 'FR'));
+        $baseNl = $bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL', 'NL', '52112'));
+        $baseFr = $bases->saveForGroup('52112', new GroupBase(null, 'Pack DAE FR', 'FR', '52124'));
         self::assertNotNull($baseNl->id);
         self::assertNotNull($baseFr->id);
         $items->saveForBase($baseNl->id, new GroupBaseItem('50013', 'AED NL'));
@@ -75,6 +75,7 @@ final class ApiTest extends TestCase
             static fn ($b) => $b['languageCode'] === 'NL',
         ))[0];
         self::assertSame('AED pakket NL', $nl['name']);
+        self::assertSame('52112', $nl['afasItemcode']);
         self::assertCount(1, $nl['items']);
         self::assertSame('50013', $nl['items'][0]['itemcode']);
         self::assertSame('AED NL', $nl['items'][0]['label']);

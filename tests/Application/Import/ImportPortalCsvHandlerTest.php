@@ -166,6 +166,26 @@ final class ImportPortalCsvHandlerTest extends TestCase
     }
 
     #[Test]
+    public function storesAfasItemcodeOnBase(): void
+    {
+        $bag = $this->emptyBag();
+        $bag['accessoires']->save(new Accessoire('60110', 'EHBO-Rugzak'));
+        $bag['afas']->replaceSnapshot([
+            new AfasSamenstelling('11142', 'AED pakket NL', null, ['50013', '70112', '81111']),
+        ]);
+
+        $reader = $this->reader([
+            new PortalCsvRow('50013', 'Reanibex 100 Semi-Auto', 'AED NL', '', 'NL'),
+        ]);
+
+        $this->makeHandler($bag, $reader)(new ImportPortalCsv('/irrelevant.csv'));
+
+        $bases = $bag['bases']->findAllForGroup('11142');
+        self::assertCount(1, $bases);
+        self::assertSame('11142', $bases[0]->afasItemcode);
+    }
+
+    #[Test]
     public function languageSuffixedBaseResolvesUnambiguously(): void
     {
         $bag = $this->emptyBag();

@@ -11,8 +11,9 @@ final readonly class GroupBase
     public ?int $id;
     public string $name;
     public string $languageCode;
+    public ?string $afasItemcode;
 
-    public function __construct(?int $id, string $name, string $languageCode)
+    public function __construct(?int $id, string $name, string $languageCode, ?string $afasItemcode = null)
     {
         $trimmedName = trim($name);
         if ($trimmedName === '') {
@@ -24,13 +25,16 @@ final readonly class GroupBase
             throw new InvalidArgumentException('Base taal-code mag niet leeg zijn.');
         }
 
+        $trimmedAfas = $afasItemcode !== null ? trim($afasItemcode) : null;
+
         $this->id = $id;
         $this->name = $trimmedName;
         $this->languageCode = $trimmedLanguage;
+        $this->afasItemcode = ($trimmedAfas === null || $trimmedAfas === '') ? null : $trimmedAfas;
     }
 
     public function withId(int $id): self
     {
-        return new self($id, $this->name, $this->languageCode);
+        return new self($id, $this->name, $this->languageCode, $this->afasItemcode);
     }
 }
