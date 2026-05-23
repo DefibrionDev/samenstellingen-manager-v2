@@ -594,7 +594,7 @@ Strict read-only. Geen mutaties van AFAS/DB. Auth niet nodig (lokaal, single use
 - [x] `make ui` — combineert containers + Vite dev-server.
 - [x] README-sectie met quickstart.
 - [x] `make check` groen (151 PHP-tests / 347 assertions) en `npm --prefix web run test` groen (2 vitest tests).
-- [ ] **Commit + push** "slice 14: web UI read-only viewer".
+- [x] **Commit + push** "slice 14: web UI read-only viewer".
 
 ---
 
