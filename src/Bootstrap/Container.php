@@ -6,6 +6,7 @@ namespace Defibrion\Samenstellingen\Bootstrap;
 
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\Migrator;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAccessoireRepository;
+use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAfasArticleRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAfasSamenstellingenRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteBomBlacklistRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteGroupAccessoireRepository;
@@ -29,6 +30,7 @@ class Container
     private ?SqliteGroupAccessoireRepository $linkRepository = null;
     private ?SqliteGroupVariantRepository $variantRepository = null;
     private ?SqliteAfasSamenstellingenRepository $afasSamenstellingenRepository = null;
+    private ?SqliteAfasArticleRepository $afasArticleRepository = null;
     private ?SqliteBomBlacklistRepository $bomBlacklistRepository = null;
 
     public function __construct(
@@ -91,5 +93,10 @@ class Container
     public function bomBlacklistRepository(): SqliteBomBlacklistRepository
     {
         return $this->bomBlacklistRepository ??= new SqliteBomBlacklistRepository($this->pdo());
+    }
+
+    public function afasArticleRepository(): SqliteAfasArticleRepository
+    {
+        return $this->afasArticleRepository ??= new SqliteAfasArticleRepository($this->pdo());
     }
 }

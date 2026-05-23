@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Defibrion\Samenstellingen\Tests\Interface\Http;
 
+use Defibrion\Samenstellingen\Domain\Afas\AfasArticle;
 use Defibrion\Samenstellingen\Domain\Group\Group;
 use Defibrion\Samenstellingen\Domain\Group\GroupBase;
 use Defibrion\Samenstellingen\Domain\Group\GroupBaseItem;
+use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAfasArticleRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteGroupBaseItemRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteGroupBaseRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteGroupRepository;
@@ -60,8 +62,15 @@ final class ApiTest extends TestCase
         $baseFr = $bases->saveForGroup('52112', new GroupBase(null, 'Pack DAE FR', 'FR', '52124'));
         self::assertNotNull($baseNl->id);
         self::assertNotNull($baseFr->id);
-        $items->saveForBase($baseNl->id, new GroupBaseItem('50013', 'AED NL'));
-        $items->saveForBase($baseFr->id, new GroupBaseItem('50001', 'DAE FR'));
+        $items->saveForBase($baseNl->id, new GroupBaseItem('50013', '50013'));
+        $items->saveForBase($baseFr->id, new GroupBaseItem('50001', '50001'));
+
+        // Snapshot van AFAS-artikelnamen: labels worden hieruit gejoint.
+        $articles = new SqliteAfasArticleRepository($pdo);
+        $articles->replaceSnapshot([
+            new AfasArticle('50013', 'AED Nederlands'),
+            new AfasArticle('50001', 'DAE Français'),
+        ]);
 
         $response = $this->call('GET', '/api/groups/52112');
 
@@ -78,7 +87,7 @@ final class ApiTest extends TestCase
         self::assertSame('52112', $nl['afasItemcode']);
         self::assertCount(1, $nl['items']);
         self::assertSame('50013', $nl['items'][0]['itemcode']);
-        self::assertSame('AED NL', $nl['items'][0]['label']);
+        self::assertSame('AED Nederlands', $nl['items'][0]['label']);
     }
 
     #[Test]

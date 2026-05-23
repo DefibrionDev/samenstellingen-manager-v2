@@ -28,9 +28,13 @@ final class AfasPullCommand extends Command
         $io = new SymfonyStyle($input, $output);
         $io->writeln('Bezig met ophalen uit AFAS… (kan even duren bij grote dumps)');
 
-        $count = ($this->handler)(new PullAfasSamenstellingen());
+        $result = ($this->handler)(new PullAfasSamenstellingen());
 
-        $io->success(sprintf('%d AFAS-samenstellingen opgeslagen in de lokale snapshot.', $count));
+        $io->success(sprintf(
+            '%d samenstellingen + %d artikelen opgeslagen in de lokale snapshot.',
+            $result->samenstellingen,
+            $result->articles,
+        ));
 
         return Command::SUCCESS;
     }

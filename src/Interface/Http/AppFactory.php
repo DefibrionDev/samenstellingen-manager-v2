@@ -30,6 +30,7 @@ final class AppFactory
             $container->groupRepository(),
             $container->baseRepository(),
             $container->baseItemRepository(),
+            $container->afasArticleRepository(),
         );
 
         $app->get('/api/groups', $list);

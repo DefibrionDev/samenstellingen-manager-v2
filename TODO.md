@@ -503,6 +503,30 @@ Reden: voor de huidige AFAS-staat blijven er altijd wat onopgeloste codes over (
 
 ---
 
+## Slice 12.4 — AFAS-artikel-snapshot voor BOM-labels
+
+Eindbeeld: de BOM-tabel in de UI toont per itemcode de échte AFAS-naam (nu staat label==itemcode na de portal-CSV-import). De fetcher heeft `Get_Artikelen` al in handen — we hoeven alleen de namen apart te bewaren en in de show-controller te joinen.
+
+### Fase 1 — Schema + domain
+- [x] Migration `0012_afas_articles.sql`: tabel `afas_articles (itemcode TEXT PRIMARY KEY, name TEXT NOT NULL)`.
+- [x] `AfasArticle` value-object + `AfasArticleRepository` interface met `replaceSnapshot(list<AfasArticle>)` + `findByItemcode(string)`.
+- [x] InMemory + Sqlite + contracttest (`INSERT OR REPLACE` om duplicate itemcodes uit AFAS af te vangen).
+
+### Fase 2 — Sync
+- [x] `AfasArticlesFetcher`-interface + `HttpAfasArticlesFetcher` (hergebruikt `AfasHttpClient`).
+- [x] `afas:pull` sync ook artikel-namen (samen met de samenstellingen-snapshot); output toont aantal.
+
+### Fase 3 — Resolveer in show-controller
+- [x] `ShowGroupController` haalt label op via `AfasArticleRepository`; fallback op itemcode als artikel niet bekend is.
+- [x] ApiTest bijwerken.
+
+### Fase 4 — Lint + live + commit
+- [x] `make check` groen (160 tests / 368 assertions).
+- [x] `afas:pull` levert 1894 samenstellingen + 11318 artikelen; browser toont echte AFAS-namen in BOM-tabel.
+- [ ] **Commit + push** "slice 12.4: AFAS-artikel-snapshot voor BOM-labels".
+
+---
+
 ## Slice 13 — `afas:create-missing` met per-taal naam-templating + dry-run default
 
 Eindbeeld: `afas:create-missing [--apply] [--limit=N]` itereert over alle variant-rijen met `afas_status='no_match'` en construeert per rij een `FbComposition`-payload. Gebruikt `base.language_code` (uit slice 11) om de variant-naam te bouwen volgens AFAS-conventie per taal.

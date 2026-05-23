@@ -19,6 +19,7 @@ use Defibrion\Samenstellingen\Application\Import\ImportSamenstellingenCsvHandler
 use Defibrion\Samenstellingen\Domain\Afas\AfasSamenstellingLookup;
 use Defibrion\Samenstellingen\Domain\Afas\VariantMatcher;
 use Defibrion\Samenstellingen\Infrastructure\Afas\Http\AfasClientFactory;
+use Defibrion\Samenstellingen\Infrastructure\Afas\Http\HttpAfasArticlesFetcher;
 use Defibrion\Samenstellingen\Infrastructure\Afas\Http\HttpAfasSamenstellingenFetcher;
 use Defibrion\Samenstellingen\Infrastructure\Import\FileCsvSamenstellingenReader;
 use Defibrion\Samenstellingen\Infrastructure\Import\FilePortalCsvReader;
@@ -70,6 +71,7 @@ $linkRepository = $container->linkRepository();
 $variantRepository = $container->variantRepository();
 $afasSamenstellingenRepository = $container->afasSamenstellingenRepository();
 $bomBlacklistRepository = $container->bomBlacklistRepository();
+$afasArticleRepository = $container->afasArticleRepository();
 
 $createGroupHandler = new CreateGroupHandler($groupRepository);
 $showGroupHandler = new ShowGroupHandler(
@@ -134,8 +136,15 @@ $application->addCommand(new SyncGroupAgainstAfasCommand($syncHandler));
 $hasAfasCreds = is_string($_ENV['AFAS_BASE_URL'] ?? null) && ($_ENV['AFAS_BASE_URL'] ?? '') !== ''
     && is_string($_ENV['AFAS_TOKEN'] ?? null) && ($_ENV['AFAS_TOKEN'] ?? '') !== '';
 if ($hasAfasCreds) {
-    $fetcher = new HttpAfasSamenstellingenFetcher(AfasClientFactory::fromEnv());
-    $pullHandler = new PullAfasSamenstellingenHandler($fetcher, $afasSamenstellingenRepository);
+    $afasClient = AfasClientFactory::fromEnv();
+    $fetcher = new HttpAfasSamenstellingenFetcher($afasClient);
+    $articlesFetcher = new HttpAfasArticlesFetcher($afasClient);
+    $pullHandler = new PullAfasSamenstellingenHandler(
+        $fetcher,
+        $afasSamenstellingenRepository,
+        $articlesFetcher,
+        $afasArticleRepository,
+    );
     $application->addCommand(new AfasPullCommand($pullHandler));
 }
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Defibrion\Samenstellingen\Interface\Http;
 
+use Defibrion\Samenstellingen\Domain\Afas\AfasArticleRepository;
 use Defibrion\Samenstellingen\Domain\Group\GroupBaseItemRepository;
 use Defibrion\Samenstellingen\Domain\Group\GroupBaseRepository;
 use Defibrion\Samenstellingen\Domain\Group\GroupRepository;
@@ -16,6 +17,7 @@ final readonly class ShowGroupController
         private GroupRepository $groups,
         private GroupBaseRepository $bases,
         private GroupBaseItemRepository $items,
+        private AfasArticleRepository $articles,
     ) {
     }
 
@@ -35,9 +37,13 @@ final readonly class ShowGroupController
             $items = [];
             if ($base->id !== null) {
                 foreach ($this->items->findAllForBase($base->id) as $item) {
+                    $afasArticle = $this->articles->findByItemcode($item->itemcode);
+                    $label = $afasArticle !== null && $afasArticle->name !== ''
+                        ? $afasArticle->name
+                        : $item->name;
                     $items[] = [
                         'itemcode' => $item->itemcode,
-                        'label' => $item->name,
+                        'label' => $label,
                     ];
                 }
             }
