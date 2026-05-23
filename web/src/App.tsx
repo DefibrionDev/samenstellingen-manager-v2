@@ -7,6 +7,7 @@ const navLinks = [
   { to: '/blacklist', label: 'Blacklist' },
   { to: '/missing', label: 'Missing' },
   { to: '/name-drift', label: 'Name drift' },
+  { to: '/suspicious-bases', label: 'Suspicious' },
 ];
 
 export function App() {

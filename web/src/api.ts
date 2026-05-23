@@ -52,6 +52,14 @@ export interface GroupVariantRow {
   afasStatus: string | null;
 }
 
+export interface SuspiciousBaseRow {
+  afasItemcode: string;
+  name: string;
+  expectedAccessoireItemcode: string;
+  expectedAccessoireLabel: string;
+  bom: string[];
+}
+
 export interface NameDriftRow {
   afasItemcode: string;
   groupName: string;
@@ -85,4 +93,5 @@ export const api = {
     jsonGet<GroupVariantRow[]>(`/api/groups/${encodeURIComponent(familyHead)}/variants`),
   listMissingVariants: () => jsonGet<MissingVariantRow[]>('/api/missing-variants'),
   listNameDrift: () => jsonGet<NameDriftRow[]>('/api/name-drift'),
+  listSuspiciousBases: () => jsonGet<SuspiciousBaseRow[]>('/api/suspicious-bases'),
 };

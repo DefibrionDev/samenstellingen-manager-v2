@@ -6,6 +6,7 @@ namespace Defibrion\Samenstellingen\Interface\Http;
 
 use Defibrion\Samenstellingen\Application\Audit\ListMissingVariantsHandler;
 use Defibrion\Samenstellingen\Application\Audit\NameAuditHandler;
+use Defibrion\Samenstellingen\Application\Audit\SuspiciousBaseAuditHandler;
 use Defibrion\Samenstellingen\Bootstrap\Container;
 use Defibrion\Samenstellingen\Domain\Naming\VariantNamingPolicy;
 use Psr\Container\ContainerInterface;
@@ -68,6 +69,12 @@ final class AppFactory
                 new VariantNamingPolicy(),
             ),
         );
+        $listSuspiciousBases = new ListSuspiciousBasesController(
+            new SuspiciousBaseAuditHandler(
+                $container->afasSamenstellingenRepository(),
+                $container->accessoireRepository(),
+            ),
+        );
         $app->get('/api/groups', $listGroups);
         $app->get('/api/groups/{familyHead}', $showGroup);
         $app->get('/api/groups/{familyHead}/accessoires', $listGroupAccessoires);
@@ -76,6 +83,7 @@ final class AppFactory
         $app->get('/api/bom-blacklist', $listBlacklist);
         $app->get('/api/missing-variants', $listMissing);
         $app->get('/api/name-drift', $listNameDrift);
+        $app->get('/api/suspicious-bases', $listSuspiciousBases);
 
         return $app;
     }

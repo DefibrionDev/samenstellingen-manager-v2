@@ -12,6 +12,7 @@ import { GroupDetail } from './pages/GroupDetail';
 import { MissingVariants } from './pages/MissingVariants';
 import { NameDrift } from './pages/NameDrift';
 import { NotFound } from './pages/NotFound';
+import { SuspiciousBases } from './pages/SuspiciousBases';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, refetchOnWindowFocus: false } },
@@ -31,6 +32,7 @@ const router = createBrowserRouter([
       { path: 'blacklist', element: <BlacklistList /> },
       { path: 'missing', element: <MissingVariants /> },
       { path: 'name-drift', element: <NameDrift /> },
+      { path: 'suspicious-bases', element: <SuspiciousBases /> },
       { path: '*', element: <NotFound /> },
     ],
   },

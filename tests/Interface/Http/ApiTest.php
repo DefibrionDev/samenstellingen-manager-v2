@@ -205,6 +205,30 @@ final class ApiTest extends TestCase
     }
 
     #[Test]
+    public function listsSuspiciousBases(): void
+    {
+        $pdo = TestDatabase::pdo();
+        $accessoires = new SqliteAccessoireRepository($pdo);
+        $afasRepo = new \Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAfasSamenstellingenRepository($pdo);
+        $accessoires->save(new Accessoire('60110', 'EHBO-Rugzak'));
+        $afasRepo->replaceSnapshot([
+            new \Defibrion\Samenstellingen\Domain\Afas\AfasSamenstelling(
+                '11683-60110',
+                'Zoll AED Plus + ARKY Backpack',
+                '11683',
+                ['10683', '70112', '81511'],
+            ),
+        ]);
+
+        $response = $this->call('GET', '/api/suspicious-bases');
+
+        self::assertSame(200, $response['status']);
+        self::assertCount(1, $response['body']);
+        self::assertSame('11683-60110', $response['body'][0]['afasItemcode']);
+        self::assertSame('60110', $response['body'][0]['expectedAccessoireItemcode']);
+    }
+
+    #[Test]
     public function listsNameDriftForMismatchedAfasName(): void
     {
         $pdo = TestDatabase::pdo();

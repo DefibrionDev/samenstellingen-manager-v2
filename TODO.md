@@ -663,6 +663,32 @@ Drift-soorten die we expliciet vangen:
 
 ---
 
+## Slice 19 — Suspicious-base audit (SKU-suffix matcht accessoire maar BOM mist die accessoire)
+
+Eindbeeld: detecteer AFAS-samenstellingen waarvan de SKU eindigt op een geregistreerde accessoire-itemcode (`11683-60110`, `11650-60110`) maar wier BOM die accessoire **niet** bevat. Zulke samenstellingen zien er semantisch uit als varianten (base + accessoire) maar zijn in AFAS opgebouwd als base. Onze portal-CSV-import filtert op BOM-content, dus deze gevallen passeren als base — read-only audit signaleert ze.
+
+Eerste hit (gedetecteerd in slice 18-context): `11683-60110` en `11650-60110` — beide Zoll AED Plus-bases met "+ ARKY Backpack" in de naam, maar zonder `60110` in de BOM.
+
+### Fase 1 — Domain + Application
+- [x] `SuspiciousBaseRow` value-object.
+- [x] `SuspiciousBaseAuditHandler` parseert SKU op `…-NNNNN`, vergelijkt met accessoires-catalogus + BOM.
+- [x] 4 handler-tests.
+
+### Fase 2 — CLI
+- [x] `AuditSuspiciousBasesCommand` — `audit:suspicious-bases`. Exit 1 bij hits.
+
+### Fase 3 — HTTP + UI
+- [x] `GET /api/suspicious-bases` + integratie-test.
+- [x] AppBar krijgt `Suspicious`-link.
+- [x] `SuspiciousBases.tsx` + Vitest.
+
+### Fase 4 — Lint + live + commit
+- [x] `make check` (196 / 455) + vitest (7) groen.
+- [x] Live: 10 verdachte bases (5 Zoll AED Plus + 4 Mindray Beneheart + 1 Reanibex). UI toont alle.
+- [ ] **Commit + push** "slice 19: suspicious-base audit (SKU-suffix-vs-BOM consistentie)".
+
+---
+
 ## Slice 13 — `afas:create-missing` met per-taal naam-templating + dry-run default
 
 Eindbeeld: `afas:create-missing [--apply] [--limit=N]` itereert over alle variant-rijen met `afas_status='no_match'` en construeert per rij een `FbComposition`-payload. Gebruikt `base.language_code` (uit slice 11) om de variant-naam te bouwen volgens AFAS-conventie per taal.

@@ -10,6 +10,7 @@ use Defibrion\Samenstellingen\Application\Afas\ListBomBlacklistHandler;
 use Defibrion\Samenstellingen\Application\Afas\PullAfasSamenstellingenHandler;
 use Defibrion\Samenstellingen\Application\Audit\ListMissingVariantsHandler;
 use Defibrion\Samenstellingen\Application\Audit\NameAuditHandler;
+use Defibrion\Samenstellingen\Application\Audit\SuspiciousBaseAuditHandler;
 use Defibrion\Samenstellingen\Application\Group\AddAccessoireToGroupHandler;
 use Defibrion\Samenstellingen\Application\Group\AddBaseItemHandler;
 use Defibrion\Samenstellingen\Application\Group\AddBaseToGroupHandler;
@@ -44,6 +45,7 @@ use Defibrion\Samenstellingen\Interface\Cli\AfasListDuplicatesCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AfasPullCommand;
 use Defibrion\Samenstellingen\Interface\Cli\BlacklistBomCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AuditNamesCommand;
+use Defibrion\Samenstellingen\Interface\Cli\AuditSuspiciousBasesCommand;
 use Defibrion\Samenstellingen\Interface\Cli\CreateAccessoireCommand;
 use Defibrion\Samenstellingen\Interface\Cli\DeleteAccessoireCommand;
 use Defibrion\Samenstellingen\Interface\Cli\CreateGroupCommand;
@@ -142,6 +144,10 @@ $nameAuditHandler = new NameAuditHandler(
     $afasSamenstellingenRepository,
     new VariantNamingPolicy(),
 );
+$suspiciousBaseAuditHandler = new SuspiciousBaseAuditHandler(
+    $afasSamenstellingenRepository,
+    $accessoireRepository,
+);
 
 $application = new Application('samenstellingen-manager');
 $application->addCommand(new CreateGroupCommand($createGroupHandler));
@@ -158,6 +164,7 @@ $application->addCommand(new BlacklistBomCommand($blacklistBomHandler));
 $application->addCommand(new ListBomBlacklistCommand($listBomBlacklistHandler));
 $application->addCommand(new ExportMissingVariantsCommand($listMissingHandler));
 $application->addCommand(new AuditNamesCommand($nameAuditHandler));
+$application->addCommand(new AuditSuspiciousBasesCommand($suspiciousBaseAuditHandler));
 $application->addCommand(new SyncGroupAgainstAfasCommand($syncHandler));
 
 // `afas:pull` heeft credentials nodig en bouwt zelf z'n fetcher.
