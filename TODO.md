@@ -685,7 +685,7 @@ Eerste hit (gedetecteerd in slice 18-context): `11683-60110` en `11650-60110` â€
 ### Fase 4 â€” Lint + live + commit
 - [x] `make check` (196 / 455) + vitest (7) groen.
 - [x] Live: 10 verdachte bases (5 Zoll AED Plus + 4 Mindray Beneheart + 1 Reanibex). UI toont alle.
-- [ ] **Commit + push** "slice 19: suspicious-base audit (SKU-suffix-vs-BOM consistentie)".
+- [x] **Commit + push** "slice 19: suspicious-base audit (SKU-suffix-vs-BOM consistentie)".
 
 ---
 
