@@ -41,7 +41,7 @@ export function App() {
           </Stack>
         </Toolbar>
       </AppBar>
-      <Container component="main" maxWidth="lg" sx={{ py: 4, flexGrow: 1 }}>
+      <Container component="main" maxWidth={false} sx={{ py: 4, flexGrow: 1 }}>
         <Outlet />
       </Container>
     </Box>
