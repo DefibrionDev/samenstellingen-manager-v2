@@ -523,7 +523,7 @@ Eindbeeld: de BOM-tabel in de UI toont per itemcode de échte AFAS-naam (nu staa
 ### Fase 4 — Lint + live + commit
 - [x] `make check` groen (160 tests / 368 assertions).
 - [x] `afas:pull` levert 1894 samenstellingen + 11318 artikelen; browser toont echte AFAS-namen in BOM-tabel.
-- [ ] **Commit + push** "slice 12.4: AFAS-artikel-snapshot voor BOM-labels".
+- [x] **Commit + push** "slice 12.4: AFAS-artikel-snapshot voor BOM-labels".
 
 ---
 
