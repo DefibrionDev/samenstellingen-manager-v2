@@ -565,7 +565,7 @@ Strict read-only. Geen mutaties.
 - [x] `make check` groen (166 PHP-tests / 394 assertions).
 - [x] `npm --prefix web run test` groen (5 Vitest-tests).
 - [x] Live in browser: alle nieuwe pagina's + tabs renderen correct met echte data.
-- [ ] **Commit + push** "slice 15: web UI fase 2 (catalogi + groep-tabs + missing-variants)".
+- [x] **Commit + push** "slice 15: web UI fase 2 (catalogi + groep-tabs + missing-variants)".
 
 ---
 
