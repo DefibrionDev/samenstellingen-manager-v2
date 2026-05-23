@@ -46,7 +46,8 @@ final readonly class FilePortalCsvReader implements PortalCsvReader
             $groepIdx = $colIndex['Groep'] ?? null;
             $itemIdx = $colIndex['Item'] ?? null;
             $merkIdx = $colIndex['Merknaam'] ?? null;
-            $taalIdx = $colIndex['Taal'] ?? null;
+            // Taal-kolom: accepteer 'Taal', 'NL' of 'Language' als header.
+            $taalIdx = $colIndex['Taal'] ?? $colIndex['NL'] ?? $colIndex['Language'] ?? null;
 
             if ($codeIdx === null || $groepIdx === null || $itemIdx === null) {
                 throw new RuntimeException(
