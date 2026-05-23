@@ -480,7 +480,7 @@ Mechanisme is parallel aan accessoires: een lijst geblockeerde BOM-codes wordt s
 - [x] Live: `samenstelling:blacklist-bom 81311 …` + 60511/60123/60612 als accessoire toegevoegd → ambiguïteiten gedaald van 17 naar 6 (totaal unresolved 42 → 32).
 
 ### Fase 6 — Commit + push
-- [ ] **Commit + push** "slice 12.1: BOM-blacklist als extra base-disqualifier".
+- [x] **Commit + push** "slice 12.1: BOM-blacklist als extra base-disqualifier".
 
 ---
 
