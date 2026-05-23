@@ -224,3 +224,91 @@ Eindbeeld: een lokaal te starten browser-UI bovenop dezelfde SQLite-database, vo
 - **Slice 14 (A5)** — opruimen: error-boundaries, empty states, 404-page, loading-spinners. `make ui` als één-commando-start.
 
 Iedere sub-slice gaat via z'n eigen TDD-cyclus (PHPUnit voor de backend; Vitest + React Testing Library voor de frontend).
+
+---
+
+## 11. Web UI — fase 2 (resterende read-only data)
+
+Na slice 14 staan groepen-lijst, groep-detail (bases + BOM-tabel met echte AFAS-namen) en het basis-skelet er. Wat nog niet zichtbaar is in de UI maar wél in de DB staat:
+
+| Data | Bron | Waar tonen |
+|---|---|---|
+| Accessoires-catalogus | `accessoires` | top-level pagina |
+| Gekoppelde accessoires per groep | `group_accessoires` | tab in groep-detail |
+| Gegenereerde varianten + AFAS-match | `group_variants` | tab in groep-detail |
+| BOM-blacklist | `bom_blacklist` | top-level pagina |
+| AFAS-samenstellingen snapshot + duplicates | `afas_samenstellingen` | (open punt — eigen UX) |
+| Missing variants ("no_match") | berekend uit `group_variants` | (open punt — al CLI/CSV) |
+
+### Navigatie
+
+AppBar (MUI) krijgt drie links: **Groepen**, **Accessoires**, **Blacklist**. Groep-detail krijgt MUI `Tabs` met **Bases** (huidig), **Accessoires** en **Varianten**.
+
+```
+┌───────────────────────────────────────────────────────────────┐
+│  Samenstellingen Manager   Groepen · Accessoires · Blacklist  │
+├───────────────────────────────────────────────────────────────┤
+│  Groepen / AED Samaritan PAD 350P                             │
+│                                                                │
+│  ┌──────────────────────────────────────────────────────────┐ │
+│  │ AED Samaritan PAD 350P                                   │ │
+│  │ family-head 10013 · 4 bases · 5 accessoires · 20 varianten│ │
+│  └──────────────────────────────────────────────────────────┘ │
+│  [ Bases ] [ Accessoires ] [ Varianten ]                      │
+│  …                                                             │
+└───────────────────────────────────────────────────────────────┘
+```
+
+### Pagina's
+
+1. **Accessoires-catalogus** (`/accessoires`)
+   - MUI DataGrid met `itemcode`, `label` (en eventueel "in N groepen gebruikt" als secundaire kolom).
+   - Search/filter via DataGrid.
+2. **BOM-blacklist** (`/blacklist`)
+   - Tabel `itemcode` + `reason` (vaak één regel tekst).
+3. **Groep-detail tabs**
+   - **Bases** — huidige Accordion.
+   - **Accessoires** — lijst van de aan de groep gekoppelde accessoires (subset van de catalogus).
+   - **Varianten** — tabel per (base × accessoire) met kolommen: base-naam, taal, accessoire (of `—` voor base-only), AFAS-SKU, AFAS-status. Sorteren/filteren op status zodat je "no_match"-rijen snel boven krijgt.
+
+### API-endpoints (Slim)
+
+Voorgestelde nieuwe routes — controllers in `src/Interface/Http/`:
+
+```
+GET  /api/accessoires
+     → [{itemcode, label, groupCount?}]
+GET  /api/bom-blacklist
+     → [{itemcode, reason}]
+GET  /api/groups/{familyHead}/accessoires
+     → [{itemcode, label}]
+GET  /api/groups/{familyHead}/variants
+     → [{
+         baseId, baseName, languageCode,
+         accessoireItemcode|null, accessoireLabel|null,
+         afasSamenstellingItemcode|null, afasStatus|null
+       }]
+```
+
+Alternatief: alles op `/api/groups/{familyHead}` plakken (één call, makkelijker voor UI, minder REST-y). Zie open punt 1.
+
+### Buiten scope (eerste iteratie)
+- Mutaties (toevoegen/verwijderen) — blijven op CLI.
+- AFAS-samenstellingen-snapshot tonen (1894 items, eigen UX-puzzel).
+- Missing-variants pagina (audit-output is al CLI/CSV-route).
+
+### Open punten
+
+1. **Endpoint-shape**: aparte sub-resources (`/api/groups/{id}/accessoires`, `/api/groups/{id}/variants`) of alles op `/api/groups/{id}` plakken? Sub-resources is REST-er en cachet beter (TanStack Query kan onafhankelijk staleness beheren), één-call is simpeler in de UI. Mijn voorkeur: **aparte sub-resources** — past bij hoe TanStack Query werkt en houdt show-controller klein.
+2. **AFAS-snapshot in deze ronde meenemen?** Zou nuttig zijn voor "welke AFAS-samenstelling matcht met variant X", maar 1894 rijen heeft eigen UX-vereisten (search, paging). Mijn voorstel: **niet in deze slice**, eerst de drie hoofdviews afronden.
+3. **Missing-variants UI?** Al beschikbaar als CSV via `audit:export-missing`. UI-versie zou dezelfde data zijn met een knop "exporteer als CSV". Mijn voorstel: **niet in deze slice**, hooguit een latere mini-slice die de variant-tab een filter "alleen no_match" geeft.
+
+### Voorgestelde sub-slices (na akkoord)
+
+- **Slice 15 (B1)** — AppBar-navigatie + accessoires-catalogus-pagina (`/api/accessoires` + `/accessoires`).
+- **Slice 15 (B2)** — BOM-blacklist-pagina (`/api/bom-blacklist` + `/blacklist`).
+- **Slice 15 (B3)** — groep-detail-tab "Accessoires" + endpoint.
+- **Slice 15 (B4)** — groep-detail-tab "Varianten" + endpoint, met status-filter.
+- **Slice 15 (B5)** — refactor: tabs-routing (`/groups/:familyHead/bases|accessoires|variants`) zodat tabs bookmarkable zijn, en een "summary line" met counts op de groep-detail-header.
+
+Iedere sub-slice volgt het slice 14-patroon: PHP-test → controller → frontend type → vitest → live-verificatie.

@@ -5,8 +5,11 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import CssBaseline from '@mui/material/CssBaseline';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { App } from './App';
+import { AccessoiresList } from './pages/AccessoiresList';
+import { BlacklistList } from './pages/BlacklistList';
 import { GroupsList } from './pages/GroupsList';
 import { GroupDetail } from './pages/GroupDetail';
+import { MissingVariants } from './pages/MissingVariants';
 import { NotFound } from './pages/NotFound';
 
 const queryClient = new QueryClient({
@@ -22,6 +25,10 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <GroupsList /> },
       { path: 'groups/:familyHead', element: <GroupDetail /> },
+      { path: 'groups/:familyHead/:tab', element: <GroupDetail /> },
+      { path: 'accessoires', element: <AccessoiresList /> },
+      { path: 'blacklist', element: <BlacklistList /> },
+      { path: 'missing', element: <MissingVariants /> },
       { path: '*', element: <NotFound /> },
     ],
   },

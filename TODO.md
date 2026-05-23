@@ -527,6 +527,48 @@ Eindbeeld: de BOM-tabel in de UI toont per itemcode de échte AFAS-naam (nu staa
 
 ---
 
+## Slice 15 — Web UI fase 2 (resterende read-only data)
+
+Eindbeeld: alles wat we via de CLI uitlezen is ook via de UI inzichtelijk — accessoires-catalogus, BOM-blacklist, gekoppelde accessoires per groep, gegenereerde varianten met AFAS-status, en (met name!) een top-level missing-variants pagina voor het AFAS-team.
+
+Beslissingen (uit PLAN.md §11): sub-resources voor groep-data, AFAS-snapshot niet nu, missing-variants pagina wél.
+
+Strict read-only. Geen mutaties.
+
+### Sub-slice B1 — AppBar-navigatie + groep-detail tabs-skeleton
+- [x] AppBar krijgt links: Groepen, Accessoires, Blacklist, Missing (actieve link gemarkeerd).
+- [x] React Router: route `/groups/:familyHead/:tab?` met `bases` als default; tabs zijn bookmarkable.
+- [x] MUI `Tabs` in `GroupDetail.tsx` — alle drie tabs actief.
+
+### Sub-slice B2 — Accessoires-catalogus
+- [x] `GET /api/accessoires` + controller + ApiTest.
+- [x] `web/src/pages/AccessoiresList.tsx` op `/accessoires` + Vitest-test.
+
+### Sub-slice B3 — BOM-blacklist
+- [x] `GET /api/bom-blacklist` + controller + ApiTest.
+- [x] `web/src/pages/BlacklistList.tsx` op `/blacklist` + Vitest-test.
+
+### Sub-slice B4 — Groep-detail tab "Accessoires"
+- [x] `GET /api/groups/{familyHead}/accessoires` + controller + ApiTest (incl. 404 voor onbekende groep).
+- [x] `AccessoiresTab` in `GroupDetail` met empty-state Alert.
+
+### Sub-slice B5 — Groep-detail tab "Varianten"
+- [x] `GET /api/groups/{familyHead}/variants` + controller + ApiTest.
+- [x] `VariantsTab` met DataGrid + status-chip (matched/no_match/no_local).
+
+### Sub-slice B6 — Missing-variants top-level pagina ⭐
+- [x] `GET /api/missing-variants` controller; hergebruikt `ListMissingVariantsHandler`.
+- [x] `web/src/pages/MissingVariants.tsx` op `/missing` met DataGrid + "Exporteer CSV"-knop (frontend-side blob-download).
+- [x] Vitest-test op rendering en export-knop-state.
+
+### Fase Afronding
+- [x] `make check` groen (166 PHP-tests / 394 assertions).
+- [x] `npm --prefix web run test` groen (5 Vitest-tests).
+- [x] Live in browser: alle nieuwe pagina's + tabs renderen correct met echte data.
+- [ ] **Commit + push** "slice 15: web UI fase 2 (catalogi + groep-tabs + missing-variants)".
+
+---
+
 ## Slice 13 — `afas:create-missing` met per-taal naam-templating + dry-run default
 
 Eindbeeld: `afas:create-missing [--apply] [--limit=N]` itereert over alle variant-rijen met `afas_status='no_match'` en construeert per rij een `FbComposition`-payload. Gebruikt `base.language_code` (uit slice 11) om de variant-naam te bouwen volgens AFAS-conventie per taal.
