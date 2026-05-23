@@ -499,7 +499,7 @@ Reden: voor de huidige AFAS-staat blijven er altijd wat onopgeloste codes over (
 ### Fase 2 — Lint + live + commit
 - [x] `make check` groen (148 tests / 328 assertions).
 - [x] Live: import importeert 21 groepen + 60 bases + 224 base-items, rapporteert 28 unresolved als warning, exit 0.
-- [ ] **Commit + push** "slice 12.2: import-portal-csv non-blocking".
+- [x] **Commit + push** "slice 12.2: import-portal-csv non-blocking".
 
 ---
 
