@@ -35,8 +35,6 @@ final class ImportPortalCsvCommand extends Command
         $io = new SymfonyStyle($input, $output);
         $csvPath = (string) $input->getArgument('csv-file');
 
-        $io->warning('Tool-data wordt gewist (groups/bases/items/accessoires/variants). AFAS-snapshot blijft staan.');
-
         try {
             $summary = ($this->handler)(new ImportPortalCsv($csvPath));
         } catch (RuntimeException $e) {
@@ -50,24 +48,37 @@ final class ImportPortalCsvCommand extends Command
             $summary->rowsProcessed,
             $summary->rowsSkippedNoGroep,
         ));
+
+        // Bij onresolveerbare rijen: geen import uitgevoerd, alleen lijst tonen.
+        if ($summary->unresolved !== []) {
+            $io->error(sprintf(
+                '%d rij(en) konden niet worden gemapt naar een verkoopbare AFAS-samenstelling. Geen import uitgevoerd — DB is onveranderd.',
+                count($summary->unresolved),
+            ));
+
+            $rows = [];
+            foreach ($summary->unresolved as $entry) {
+                $rows[] = [$entry['groep'], $entry['code'], $entry['reason']];
+            }
+            $io->section('Article-codes zonder geschikte AFAS-basis-samenstelling');
+            $io->table(['Groep', 'Code', 'Reden'], $rows);
+
+            $io->writeln(sprintf(
+                '<comment>Actie:</comment> maak voor bovenstaande %d article-code(s) eerst een complete AFAS-samenstelling aan (BOM met reanimatiekit 70112 + stickerset 81xxx), draai daarna `afas:pull` en herstart de import.',
+                count($summary->unresolved),
+            ));
+
+            return Command::FAILURE;
+        }
+
         $io->table(
             ['Categorie', 'Aantal'],
             [
                 ['Groepen aangemaakt', (string) $summary->groupsCreated],
                 ['Bases aangemaakt', (string) $summary->basesCreated],
                 ['Base-items aangemaakt', (string) $summary->baseItemsCreated],
-                ['Niet-resolveerbare rijen', (string) count($summary->unresolved)],
             ],
         );
-
-        if ($summary->unresolved !== []) {
-            $io->section('Niet-resolveerbare rijen (geen canonical AFAS-samenstelling met deze code in BOM)');
-            $rows = [];
-            foreach ($summary->unresolved as $entry) {
-                $rows[] = [$entry['groep'], $entry['code'], $entry['reason']];
-            }
-            $io->table(['Groep', 'Code', 'Reden'], $rows);
-        }
 
         $io->success(sprintf("Import van '%s' afgerond.", $csvPath));
 

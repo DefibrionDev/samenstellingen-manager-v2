@@ -36,21 +36,22 @@ final readonly class ImportPortalCsvHandler
     {
         $summary = new PortalImportSummary();
 
-        // Stap 1: groepeer CSV-rijen per Groep en wis de tool-state.
+        // Stap 1: groepeer CSV-rijen per Groep en valideer.
         $rowsByGroep = $this->groupRows($command->csvPath, $summary);
+        $this->prevalidateResolvable($rowsByGroep, $summary);
+
+        // Bij ook maar één onresolveerbare rij: STOP. Geen wipe, geen import.
+        if ($summary->unresolved !== []) {
+            return $summary;
+        }
+
+        // Stap 2: wis tool-data en importeer.
         $this->wiper->wipe();
 
-        // Stap 2: per groep aanmaken + bases + base-items uit AFAS.
         foreach ($rowsByGroep as $groep => $rows) {
             $familyHead = $this->resolveFamilyHead($rows);
             if ($familyHead === null) {
-                foreach ($rows as $row) {
-                    $summary->unresolved[] = [
-                        'groep' => $groep,
-                        'code' => $row['code'],
-                        'reason' => 'Geen AFAS-samenstelling gevonden voor enige article-code in deze groep — groep niet aangemaakt.',
-                    ];
-                }
+                // Onverwacht na prevalidatie; defensief overslaan.
                 continue;
             }
 
@@ -69,6 +70,28 @@ final readonly class ImportPortalCsvHandler
         }
 
         return $summary;
+    }
+
+    /**
+     * Controleer vooraf dat elke gegroepeerde CSV-rij minstens één verkoopbare
+     * AFAS-samenstelling oplevert. Voegt niet-resolveerbare rijen toe aan
+     * `$summary->unresolved` zodat de aanroeper kan beslissen wel/niet te importeren.
+     *
+     * @param array<string, list<array{code: string, item: string, language: string}>> $rowsByGroep
+     */
+    private function prevalidateResolvable(array $rowsByGroep, PortalImportSummary $summary): void
+    {
+        foreach ($rowsByGroep as $groep => $rows) {
+            foreach ($rows as $row) {
+                if ($this->sellableCandidatesFor($row['code']) === []) {
+                    $summary->unresolved[] = [
+                        'groep' => $groep,
+                        'code' => $row['code'],
+                        'reason' => 'Geen verkoopbare AFAS-samenstelling gevonden (BOM moet zowel reanimatiekit 70112 als een stickerset 81xxx bevatten).',
+                    ];
+                }
+            }
+        }
     }
 
     /**
