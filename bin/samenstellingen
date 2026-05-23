@@ -4,6 +4,7 @@
 declare(strict_types=1);
 
 use Defibrion\Samenstellingen\Application\Accessoire\CreateAccessoireHandler;
+use Defibrion\Samenstellingen\Application\Accessoire\DeleteAccessoireHandler;
 use Defibrion\Samenstellingen\Application\Afas\BlacklistBomCodeHandler;
 use Defibrion\Samenstellingen\Application\Afas\ListBomBlacklistHandler;
 use Defibrion\Samenstellingen\Application\Afas\PullAfasSamenstellingenHandler;
@@ -41,6 +42,7 @@ use Defibrion\Samenstellingen\Interface\Cli\AfasListDuplicatesCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AfasPullCommand;
 use Defibrion\Samenstellingen\Interface\Cli\BlacklistBomCommand;
 use Defibrion\Samenstellingen\Interface\Cli\CreateAccessoireCommand;
+use Defibrion\Samenstellingen\Interface\Cli\DeleteAccessoireCommand;
 use Defibrion\Samenstellingen\Interface\Cli\CreateGroupCommand;
 use Defibrion\Samenstellingen\Interface\Cli\ExportMissingVariantsCommand;
 use Defibrion\Samenstellingen\Interface\Cli\ImportPortalCsvCommand;
@@ -85,6 +87,12 @@ $showGroupHandler = new ShowGroupHandler(
 $addBaseHandler = new AddBaseToGroupHandler($baseRepository, $variantRepository);
 $addBaseItemHandler = new AddBaseItemHandler($baseItemRepository);
 $createAccessoireHandler = new CreateAccessoireHandler($accessoireRepository);
+$deleteAccessoireHandler = new DeleteAccessoireHandler(
+    $accessoireRepository,
+    $groupRepository,
+    $linkRepository,
+    $variantRepository,
+);
 $addAccessoireHandler = new AddAccessoireToGroupHandler($linkRepository, $variantRepository);
 $syncHandler = new SyncGroupAgainstAfasHandler(
     $variantRepository,
@@ -130,6 +138,7 @@ $application->addCommand(new ShowGroupCommand($showGroupHandler));
 $application->addCommand(new AddBaseCommand($addBaseHandler));
 $application->addCommand(new AddBaseItemCommand($addBaseItemHandler));
 $application->addCommand(new CreateAccessoireCommand($createAccessoireHandler));
+$application->addCommand(new DeleteAccessoireCommand($deleteAccessoireHandler));
 $application->addCommand(new AddAccessoireCommand($addAccessoireHandler));
 $application->addCommand(new ImportSamenstellingenCsvCommand($importCsvHandler));
 $application->addCommand(new ImportPortalCsvCommand($importPortalCsvHandler));

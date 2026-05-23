@@ -56,7 +56,6 @@ final class AppFactory
                 $container->baseItemRepository(),
             ),
         );
-
         $app->get('/api/groups', $listGroups);
         $app->get('/api/groups/{familyHead}', $showGroup);
         $app->get('/api/groups/{familyHead}/accessoires', $listGroupAccessoires);

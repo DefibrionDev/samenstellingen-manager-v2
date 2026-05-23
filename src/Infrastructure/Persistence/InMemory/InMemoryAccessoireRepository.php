@@ -6,6 +6,7 @@ namespace Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory;
 
 use Defibrion\Samenstellingen\Domain\Accessoire\Accessoire;
 use Defibrion\Samenstellingen\Domain\Accessoire\AccessoireAlreadyExistsException;
+use Defibrion\Samenstellingen\Domain\Accessoire\AccessoireNotFoundException;
 use Defibrion\Samenstellingen\Domain\Accessoire\AccessoireRepository;
 
 final class InMemoryAccessoireRepository implements AccessoireRepository
@@ -30,5 +31,13 @@ final class InMemoryAccessoireRepository implements AccessoireRepository
     public function findAll(): array
     {
         return array_values($this->byItemcode);
+    }
+
+    public function delete(string $itemcode): void
+    {
+        if (!isset($this->byItemcode[$itemcode])) {
+            throw AccessoireNotFoundException::forItemcode($itemcode);
+        }
+        unset($this->byItemcode[$itemcode]);
     }
 }

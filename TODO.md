@@ -596,6 +596,32 @@ Reden: nu moet je na pull/import handmatig `group:sync-afas` per groep draaien (
 
 ---
 
+## Slice 17 — Accessoire verwijderen (CLI-only)
+
+Eindbeeld: een accessoire is verwijderbaar via `accessoire:delete <itemcode>` op de CLI. De FK-cascade ruimt groepskoppelingen en bijbehorende varianten op; daarna regenereert de handler de variant-matrix voor elke betroffen groep zodat tellers kloppen.
+
+De UI blijft read-only (zie CLAUDE.md). De accessoires-catalogus-pagina krijgt een inline-verwijzing naar de CLI-commando's in plaats van een delete-knop.
+
+### Fase 1 — Domein + delete-handler
+- [x] `AccessoireRepository::delete(string $itemcode): void` (throwt `AccessoireNotFoundException`).
+- [x] InMemory + Sqlite + uitgebreide contracttest.
+- [x] `DeleteAccessoireHandler` + `DeleteAccessoire` command + variant-regeneratie voor gekoppelde groepen.
+- [x] Handler-test.
+
+### Fase 2 — CLI
+- [x] `DeleteAccessoireCommand` — `accessoire:delete <itemcode>` met success-output incl. lijst betroffen groepen.
+- [x] `bin/samenstellingen` wiring.
+
+### Fase 3 — UI-hint (geen mutatie)
+- [x] AccessoiresList toont inline-tekst die naar `accessoire:create`/`accessoire:delete` verwijst.
+
+### Fase 4 — Lint, live, commit
+- [ ] `make check` + vitest groen.
+- [ ] Live: `php bin/samenstellingen accessoire:delete <code>` — controleer cascade in DB + UI refresht na een handmatige reload.
+- [ ] **Commit + push** "slice 17: accessoire:delete via CLI + read-only-UI principe vastgelegd in CLAUDE.md/PLAN.md".
+
+---
+
 ## Slice 13 — `afas:create-missing` met per-taal naam-templating + dry-run default
 
 Eindbeeld: `afas:create-missing [--apply] [--limit=N]` itereert over alle variant-rijen met `afas_status='no_match'` en construeert per rij een `FbComposition`-payload. Gebruikt `base.language_code` (uit slice 11) om de variant-naam te bouwen volgens AFAS-conventie per taal.

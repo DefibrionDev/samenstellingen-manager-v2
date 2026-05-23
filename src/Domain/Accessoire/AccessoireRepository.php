@@ -17,4 +17,9 @@ interface AccessoireRepository
      * @return list<Accessoire>
      */
     public function findAll(): array;
+
+    /**
+     * @throws AccessoireNotFoundException wanneer de itemcode niet in de catalogus staat.
+     */
+    public function delete(string $itemcode): void;
 }

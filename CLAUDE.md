@@ -49,6 +49,7 @@ PHP 8.5 application for managing Defibrion's AED-pakket samenstellingen in AFAS,
 - **Per-language naming templates are the source of truth, not the current AFAS data.** AFAS contains drift (typos, casing, missing prefixes — see `PLAN.md` §9.1). The tool normalises *toward* the templates, never the reverse. Templates only change with explicit user approval.
 - **Never drop or recreate a database without explicit user consent — including the local SQLite snapshot.** The snapshot can take minutes to rebuild from AFAS and may hold the state used by a pending bulk operation. Read-only inspection is fine without asking.
 - **Family-head is a family-tag, not a parent.** `Itemcode_Parent` in AFAS points to an arbitrary sibling that anchors the family. All bases and variants of a group share the same family-head itemcode. Audits depend on this invariant.
+- **The web UI is strict read-only.** Every mutation — catalogus-CRUD, blacklist-CRUD, AFAS-syncs, imports, wipes, variant-generatie — gaat via de CLI. De UI biedt geen knoppen, formulieren of HTTP-mutatie-endpoints (`POST`/`PUT`/`PATCH`/`DELETE`). Reden: het audit-spoor zit in `git log` + shell-history, niet in een vluchtige browser-sessie; de blast-radius blijft klein; en mutaties houden hun bestaande dry-run-/confirmation-flow (`--apply` etc.). Wanneer een lees-pagina iets toont dat eruitziet alsof het beheerd moet worden, voeg dan een inline-verwijzing toe naar het CLI-commando in plaats van een UI-actie te bouwen.
 
 ## Files Claude should keep up to date
 

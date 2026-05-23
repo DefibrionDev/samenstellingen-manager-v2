@@ -6,6 +6,7 @@ namespace Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite;
 
 use Defibrion\Samenstellingen\Domain\Accessoire\Accessoire;
 use Defibrion\Samenstellingen\Domain\Accessoire\AccessoireAlreadyExistsException;
+use Defibrion\Samenstellingen\Domain\Accessoire\AccessoireNotFoundException;
 use Defibrion\Samenstellingen\Domain\Accessoire\AccessoireRepository;
 use PDO;
 use PDOException;
@@ -52,6 +53,15 @@ final readonly class SqliteAccessoireRepository implements AccessoireRepository
         }
 
         return new Accessoire($itemcodeValue, $labelValue);
+    }
+
+    public function delete(string $itemcode): void
+    {
+        $stmt = $this->pdo->prepare('DELETE FROM accessoires WHERE itemcode = :itemcode');
+        $stmt->execute([':itemcode' => $itemcode]);
+        if ($stmt->rowCount() === 0) {
+            throw AccessoireNotFoundException::forItemcode($itemcode);
+        }
     }
 
     public function findAll(): array

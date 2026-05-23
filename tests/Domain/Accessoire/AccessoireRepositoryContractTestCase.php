@@ -6,6 +6,7 @@ namespace Defibrion\Samenstellingen\Tests\Domain\Accessoire;
 
 use Defibrion\Samenstellingen\Domain\Accessoire\Accessoire;
 use Defibrion\Samenstellingen\Domain\Accessoire\AccessoireAlreadyExistsException;
+use Defibrion\Samenstellingen\Domain\Accessoire\AccessoireNotFoundException;
 use Defibrion\Samenstellingen\Domain\Accessoire\AccessoireRepository;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -66,5 +67,26 @@ abstract class AccessoireRepositoryContractTestCase extends TestCase
         self::assertContains('60110', $codes);
         self::assertContains('60112', $codes);
         self::assertContains('60113', $codes);
+    }
+
+    #[Test]
+    public function deleteRemovesAccessoire(): void
+    {
+        $repo = $this->makeRepository();
+        $repo->save(new Accessoire('60112', 'ARKY witte binnenkast'));
+
+        $repo->delete('60112');
+
+        self::assertNull($repo->findByItemcode('60112'));
+        self::assertSame([], $repo->findAll());
+    }
+
+    #[Test]
+    public function deleteThrowsForUnknownItemcode(): void
+    {
+        $repo = $this->makeRepository();
+
+        $this->expectException(AccessoireNotFoundException::class);
+        $repo->delete('99999');
     }
 }

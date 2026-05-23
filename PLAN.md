@@ -149,7 +149,9 @@ Naast structurele BOM-consistentie ook prijsbeheer voor de hele matrix van samen
 
 ## 10. Web UI — read-only viewer (concept)
 
-Eindbeeld: een lokaal te starten browser-UI bovenop dezelfde SQLite-database, voor inspectie van de geïmporteerde groepen / bases / items. Eerste versie is **strikt read-only** — geen mutaties van AFAS, geen wipe, geen accessoire-management. Mutaties blijven op de CLI tot het lees-pad uitgehard is. Optioneel een tab met de unresolved-rijen van de laatste import (handig om snel te zien wat in AFAS opgepoetst moet worden).
+Eindbeeld: een lokaal te starten browser-UI bovenop dezelfde SQLite-database, voor inspectie van de geïmporteerde groepen / bases / items.
+
+**Vaste regel — geldt voor élke iteratie**: de UI is **strikt read-only**. Geen catalogus-CRUD, geen blacklist-CRUD, geen AFAS-mutaties, geen wipe, geen import-trigger, geen variant-generatie. Geen `POST`/`PUT`/`PATCH`/`DELETE`-endpoints — de API biedt alleen `GET`. Mutaties gebeuren via de CLI; daar zit het audit-spoor (git history + shell-history) en daar staat de dry-run-/confirmation-flow voor AFAS-writes (`--apply`). Wanneer een lees-pagina iets toont dat eruitziet alsof het beheerd moet worden, krijgt 'ie een inline-verwijzing naar het CLI-commando in plaats van een UI-actie. Zie CLAUDE.md voor de operationele regel.
 
 ### Pagina-flow
 1. **Home / `/`** — lijst van groepen.

@@ -23,6 +23,10 @@ export function AccessoiresList() {
       <Typography variant="h5" component="h1">
         Accessoires-catalogus
       </Typography>
+      <Typography variant="body2" color="text.secondary">
+        Beheren via <code>bin/samenstellingen accessoire:create &lt;itemcode&gt; '&lt;label&gt;'</code>
+        {' '}of <code>accessoire:delete &lt;itemcode&gt;</code>.
+      </Typography>
       {isLoading ? (
         <Skeleton variant="rectangular" height={400} />
       ) : (
