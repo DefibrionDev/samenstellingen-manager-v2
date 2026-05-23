@@ -46,11 +46,9 @@ final readonly class ImportPortalCsvHandler
         $rowsByGroep = $this->groupRows($command->csvPath, $summary);
         $this->prevalidateResolvable($rowsByGroep, $blockedBomCodes, $summary);
 
-        // Bij ook maar één onresolveerbare rij: STOP. Geen wipe, geen import.
-        if ($summary->unresolved !== []) {
-            return $summary;
-        }
-
+        // Non-blocking: unresolved rijen blijven in het rapport, maar de resolveerbare
+        // rijen worden gewoon geïmporteerd. importRow/resolveFamilyHead negeren rijen
+        // met 0 of >1 kandidaten.
         $this->wiper->wipe();
 
         foreach ($rowsByGroep as $groep => $rows) {
@@ -177,14 +175,17 @@ final readonly class ImportPortalCsvHandler
     {
         foreach ($rows as $row) {
             $candidates = $this->sellableCandidatesFor($row['code'], $blockedBomCodes);
-            foreach ($candidates as $candidate) {
-                $parent = $candidate->itemcodeParent;
-                if ($parent !== null) {
-                    return $parent;
-                }
-
-                return $candidate->itemcode;
+            if (count($candidates) !== 1) {
+                // Onresolveerbare (0) en ambigue (>1) rijen kunnen geen family-head bepalen.
+                continue;
             }
+            $candidate = $candidates[0];
+            $parent = $candidate->itemcodeParent;
+            if ($parent !== null) {
+                return $parent;
+            }
+
+            return $candidate->itemcode;
         }
 
         return null;
@@ -226,8 +227,8 @@ final readonly class ImportPortalCsvHandler
     private function importRow(string $groep, string $familyHead, array $row, array $blockedBomCodes, PortalImportSummary $summary): void
     {
         $candidates = $this->sellableCandidatesFor($row['code'], $blockedBomCodes);
-        if ($candidates === []) {
-            // Pre-validate had dit moeten vangen; defensief overslaan.
+        // Sla onresolveerbare (0) en ambigue (>1) rijen over — die staan al in summary->unresolved.
+        if (count($candidates) !== 1) {
             return;
         }
 

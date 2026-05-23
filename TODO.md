@@ -484,6 +484,25 @@ Mechanisme is parallel aan accessoires: een lijst geblockeerde BOM-codes wordt s
 
 ---
 
+## Slice 12.2 — `group:import-portal-csv` non-blocking
+
+Eindbeeld: dezelfde rapportage van onresolveerbare/ambigue rijen, maar de import blokkeert niet meer. Wel-resolveerbare rijen (exact 1 base-kandidaat) worden geïmporteerd; rijen met 0 of >1 kandidaten blijven in het rapport staan en worden overgeslagen. CLI eindigt met SUCCESS in plaats van FAILURE (tenzij accessoires-catalog leeg is — dat blijft een harde fout).
+
+Reden: voor de huidige AFAS-staat blijven er altijd wat onopgeloste codes over (ambigue duplicates, codes zonder pakket). Door alles wat wel werkt direct te importeren krijgen we incrementele voortgang, en blijft het rapport als action-item-lijst staan.
+
+### Fase 1 — Gedrag + tests
+- [x] Test: bij mix resolveerbare + unresolved rijen worden de resolveerbare geïmporteerd, het rapport blijft compleet (`importsResolvableRowsAlongsideUnresolvedReport`).
+- [x] `ImportPortalCsvHandler` verwijdert de early-return op `unresolved !== []`. `importRow` en `resolveFamilyHead` importeren alleen bij `count($candidates) === 1`.
+- [x] CLI rapporteert unresolved als warning (geen FAILURE).
+- [x] Bestaande tests aanpassen aan nieuwe semantiek (geen wijziging nodig — bestaande unresolved-tests verwachten al `basesCreated === 0` voor groepen waar elke rij unresolved is).
+
+### Fase 2 — Lint + live + commit
+- [x] `make check` groen (148 tests / 328 assertions).
+- [x] Live: import importeert 21 groepen + 60 bases + 224 base-items, rapporteert 28 unresolved als warning, exit 0.
+- [ ] **Commit + push** "slice 12.2: import-portal-csv non-blocking".
+
+---
+
 ## Slice 13 — `afas:create-missing` met per-taal naam-templating + dry-run default
 
 Eindbeeld: `afas:create-missing [--apply] [--limit=N]` itereert over alle variant-rijen met `afas_status='no_match'` en construeert per rij een `FbComposition`-payload. Gebruikt `base.language_code` (uit slice 11) om de variant-naam te bouwen volgens AFAS-conventie per taal.

@@ -135,6 +135,37 @@ final class ImportPortalCsvHandlerTest extends TestCase
     }
 
     #[Test]
+    public function importsResolvableRowsAlongsideUnresolvedReport(): void
+    {
+        // Twee rijen in twee groepen: één resolveerbaar, één ambigu.
+        // Verwacht: resolveerbare wordt geïmporteerd, ambigue blijft in rapport.
+        $bag = $this->emptyBag();
+        $bag['accessoires']->save(new Accessoire('60110', 'EHBO-Rugzak'));
+        $bag['afas']->replaceSnapshot([
+            // Resolveerbaar: één unieke base voor article 50013.
+            new AfasSamenstelling('11142', 'AED pakket NL', null, ['50013', '70112', '81111']),
+            new AfasSamenstelling('11142-60110', 'Variant met rugzak', '11142', ['50013', '60110', '70112', '81111']),
+            // Ambigu: twee bases voor article 60013.
+            new AfasSamenstelling('12001', 'Andere AED NL', null, ['60013', '70112', '81111']),
+            new AfasSamenstelling('12002', 'Andere AED NL alt', null, ['60013', '70112', '81111', '90099']),
+        ]);
+
+        $reader = $this->reader([
+            new PortalCsvRow('50013', 'Resolveerbaar', 'AED NL', '', 'NL'),
+            new PortalCsvRow('60013', 'Ambigu', 'AED NL', '', 'NL'),
+        ]);
+
+        $summary = $this->makeHandler($bag, $reader)(new ImportPortalCsv('/irrelevant.csv'));
+
+        self::assertCount(1, $summary->unresolved);
+        self::assertSame('60013', $summary->unresolved[0]['code']);
+        self::assertStringContainsString('Ambigu', $summary->unresolved[0]['reason']);
+        // De resolveerbare rij is wél geïmporteerd ondanks de ambigue tweede rij.
+        self::assertSame(1, $summary->groupsCreated);
+        self::assertSame(1, $summary->basesCreated);
+    }
+
+    #[Test]
     public function languageSuffixedBaseResolvesUnambiguously(): void
     {
         $bag = $this->emptyBag();

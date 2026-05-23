@@ -49,7 +49,6 @@ final class ImportPortalCsvCommand extends Command
             $summary->rowsSkippedNoGroep,
         ));
 
-        // Bij onresolveerbare rijen: geen import uitgevoerd, alleen lijst tonen.
         if ($summary->unresolved !== []) {
             $ambiguous = 0;
             $missing = 0;
@@ -61,8 +60,8 @@ final class ImportPortalCsvCommand extends Command
                 }
             }
 
-            $io->error(sprintf(
-                '%d rij(en) konden niet worden gemapt: %d zonder base-kandidaat, %d ambigu in AFAS. Geen import uitgevoerd — DB is onveranderd.',
+            $io->warning(sprintf(
+                '%d rij(en) overgeslagen: %d zonder base-kandidaat, %d ambigu in AFAS. Resolveerbare rijen zijn wel geïmporteerd.',
                 count($summary->unresolved),
                 $missing,
                 $ambiguous,
@@ -75,7 +74,7 @@ final class ImportPortalCsvCommand extends Command
             $io->section('Onresolveerbare article-codes');
             $io->table(['Groep', 'Code', 'Reden'], $rows);
 
-            $io->writeln('<comment>Actie:</comment>');
+            $io->writeln('<comment>Actie voor de volgende ronde:</comment>');
             if ($missing > 0) {
                 $io->writeln(sprintf(
                     '  • Voor %d code(s) zonder kandidaat: maak in AFAS een base-samenstelling aan (BOM met article, reanimatiekit 70112 en stickerset 81xxx, zonder geregistreerde accessoire).',
@@ -84,13 +83,12 @@ final class ImportPortalCsvCommand extends Command
             }
             if ($ambiguous > 0) {
                 $io->writeln(sprintf(
-                    '  • Voor %d ambigue code(s): los de duplicate base-samenstellingen op in AFAS (verwijder de overbodige of corrigeer de BOM).',
+                    '  • Voor %d ambigue code(s): los de duplicate base-samenstellingen op in AFAS (verwijder de overbodige of corrigeer de BOM) of breid de accessoires-catalogus/BOM-blacklist uit.',
                     $ambiguous,
                 ));
             }
             $io->writeln('  • Draai daarna `afas:pull` en herhaal de import.');
-
-            return Command::FAILURE;
+            $io->newLine();
         }
 
         $io->table(
