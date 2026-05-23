@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Defibrion\Samenstellingen\Tests\Support;
 
+use Defibrion\Samenstellingen\Bootstrap\Container;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\Migrator;
 use PDO;
 
 final class TestDatabase
 {
     private static ?PDO $pdo = null;
+    private static ?Container $container = null;
 
     public static function pdo(): PDO
     {
@@ -47,6 +49,27 @@ final class TestDatabase
             "DELETE FROM sqlite_sequence
              WHERE name IN ('groups', 'accessoires', 'group_variants', 'group_bases', 'afas_samenstellingen')"
         );
+    }
+
+    public static function container(): Container
+    {
+        if (self::$container === null) {
+            $pdo = self::pdo();
+            $container = new class (self::projectRoot() . '/tmp/test.sqlite', self::projectRoot() . '/migrations', $pdo) extends Container {
+                public function __construct(string $dbPath, string $migrationsDir, private PDO $injectedPdo)
+                {
+                    parent::__construct($dbPath, $migrationsDir);
+                }
+
+                public function pdo(): PDO
+                {
+                    return $this->injectedPdo;
+                }
+            };
+            self::$container = $container;
+        }
+
+        return self::$container;
     }
 
     private static function projectRoot(): string

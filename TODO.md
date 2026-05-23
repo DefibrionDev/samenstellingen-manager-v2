@@ -550,6 +550,54 @@ Bekende onzekerheden:
 
 ---
 
+## Slice 14 — Web UI (read-only viewer)
+
+Eindbeeld: een lokaal te starten browser-UI bovenop dezelfde SQLite-database. Twee pagina's via React Router — een groepen-lijst en een groep-detail met uitklapbare base-Accordion. Backend = Slim 4 PHP-API achter nginx + php-fpm (Docker compose voor de containers, Vite dev-server op host voor de frontend). Frontend = React + TypeScript + MUI v6.
+
+**Beslissingen** (uit PLAN.md §10):
+- MUI only (geen Tailwind).
+- React Router voor `/` en `/groups/:familyHead`.
+- nginx + php-fpm via `docker-compose.yml`.
+- Geen issues-tab in eerste versie.
+
+Strict read-only. Geen mutaties van AFAS/DB. Auth niet nodig (lokaal, single user).
+
+### Fase 1 — Bootstrap-refactor + minimale PHP API
+- [x] Composer-dep `slim/slim ^4` + `slim/psr7`.
+- [x] Gedeelde bootstrap: `src/Bootstrap/Container.php` waar zowel CLI als HTTP de repos uit halen. Refactor `bin/samenstellingen`; CLI-gedrag onveranderd.
+- [x] `src/Interface/Http/ListGroupsController` — `GET /api/groups` → `[{familyHead, name, baseCount, baseItemCount}]`.
+- [x] `src/Interface/Http/ShowGroupController` — `GET /api/groups/{familyHead}` → `{familyHead, name, bases: [{id, name, languageCode, items: [{itemcode, label}]}]}`.
+- [x] `public/index.php` front-controller die Slim opbouwt (relatieve DB-paden ankeren aan project-root).
+- [x] Integratie-tests in `tests/Interface/Http/ApiTest.php` die Slim in-process booten via `TestDatabase::container()`.
+
+### Fase 2 — Lokale serve-stack (nginx + php-fpm + docker-compose)
+- [x] `docker/nginx.conf` — root `public/`, `/api/*` via `fastcgi_pass` naar fpm.
+- [x] `docker/Dockerfile.fpm` — `php:8.5-fpm-alpine` + sqlite3-extensie + composer.
+- [x] `docker-compose.yml` — services `web` (nginx) op :8080 + `fpm`, bind-mount op de repo.
+- [x] `make ui-up` / `make ui-down` / `make ui-logs`-targets.
+
+### Fase 3 — Vite + React + MUI skelet + groepen-lijst
+- [x] `web/` directory met `package.json`, `vite.config.ts`, `tsconfig.json`.
+- [x] Deps: React 18, React Router 6, MUI v6 + DataGrid, TanStack Query, Vitest + Testing Library.
+- [x] Vite-proxy: `/api/*` → `http://localhost:8080`.
+- [x] `web/src/main.tsx` — RouterProvider + QueryClientProvider + ThemeProvider.
+- [x] `web/src/pages/GroupsList.tsx` — DataGrid met klik-naar-detail.
+- [x] Vitest-test `GroupsList.test.tsx`.
+
+### Fase 4 — Groep-detail-pagina
+- [x] `web/src/pages/GroupDetail.tsx` met breadcrumb, MUI Accordion, BOM-tabel.
+- [x] Loading skeleton + error-state (MUI Alert).
+- [x] Vitest-test `GroupDetail.test.tsx`.
+
+### Fase 5 — Afronding
+- [x] 404-page voor onbekende routes (`web/src/pages/NotFound.tsx`).
+- [x] `make ui` — combineert containers + Vite dev-server.
+- [x] README-sectie met quickstart.
+- [x] `make check` groen (151 PHP-tests / 347 assertions) en `npm --prefix web run test` groen (2 vitest tests).
+- [ ] **Commit + push** "slice 14: web UI read-only viewer".
+
+---
+
 ## Beslissingen
 
 - CLI-library: `symfony/console`.

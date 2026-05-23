@@ -144,3 +144,83 @@ Naast structurele BOM-consistentie ook prijsbeheer voor de hele matrix van samen
 3. **Sync/Tonen-strategie**: alle varianten altijd Sync+Tonen, of soms alleen de "vlaggenschip"-variant?
 4. **SKU-collisions**: 8 accessoires × N talen × M groepen → groeit dit ooit boven het AFAS-itemcode-veld (lengte)?
 5. **Andere merken**: gebruiken Defibtech / Prestan ook de `{base}-{acc}` SKU-conventie, of een andere?
+
+---
+
+## 10. Web UI — read-only viewer (concept)
+
+Eindbeeld: een lokaal te starten browser-UI bovenop dezelfde SQLite-database, voor inspectie van de geïmporteerde groepen / bases / items. Eerste versie is **strikt read-only** — geen mutaties van AFAS, geen wipe, geen accessoire-management. Mutaties blijven op de CLI tot het lees-pad uitgehard is. Optioneel een tab met de unresolved-rijen van de laatste import (handig om snel te zien wat in AFAS opgepoetst moet worden).
+
+### Pagina-flow
+1. **Home / `/`** — lijst van groepen.
+   - Kolommen: naam, family-head itemcode, aantal bases, totaal aantal base-items.
+   - Zoek/filter-veld op naam.
+   - Klik op rij → detail-pagina.
+2. **Groep-detail / `/groups/{familyHead}`** — bovenaan groepsnaam + family-head; daaronder een Accordion-lijst van bases.
+   - Per base zichtbaar: naam, taal-code, aantal items.
+   - Open je een base, dan zie je de BOM-items als tabel: `itemcode | label`.
+   - Optioneel later: een variant-matrix-tab per groep (base × accessoire).
+
+### Beslissingen (bevestigd)
+- **Componenten/styling**: **MUI only** (Material-UI). Geen Tailwind, geen Headless UI. MUI levert Accordion, Table en Layout-primitives out-of-the-box.
+- **Routing**: **React Router** met `/` en `/groups/:familyHead`. Maakt bookmarken/sharen mogelijk.
+- **Webserver**: **nginx + php-fpm**. Niet de ingebouwde `php -S`. Lokaal via een minimale `docker-compose.yml` (nginx + php-fpm-container met bind-mount op de repo) zodat geen system-config aangepast hoeft te worden. Native nginx blijft mogelijk via een voorbeeld-config.
+- **Issues-tab**: **nog niet** in eerste versie. Misschien later als losse pagina.
+
+### Architectuur
+
+```
+┌─────────────────────────────────────┐
+│   React-app (Vite, in web/)         │
+│   ↳ TypeScript                      │
+│   ↳ MUI                             │
+│   ↳ React Router (/, /groups/:id)   │
+│   ↳ TanStack Query voor fetch+cache │
+└────────────┬────────────────────────┘
+             │ fetch JSON (proxy in dev,
+             │ same-origin in prod-build)
+┌────────────▼────────────────────────┐
+│   nginx (port 8080)                 │
+│   ↳ /            → public/index.html│
+│   ↳ /assets/*    → public/assets/*  │
+│   ↳ /api/*       → fastcgi → fpm    │
+└────────────┬────────────────────────┘
+             │ FastCGI
+┌────────────▼────────────────────────┐
+│   php-fpm                           │
+│   ↳ public/index.php (front-ctrl)   │
+│   ↳ src/Interface/Http/             │
+│     ↳ ListGroupsController          │
+│     ↳ ShowGroupController           │
+│   ↳ Hergebruikt bestaande repos     │
+└────────────┬────────────────────────┘
+             │ PDO
+┌────────────▼────────────────────────┐
+│   tmp/samenstellingen.sqlite        │
+│   (zelfde DB als de CLI)            │
+└─────────────────────────────────────┘
+```
+
+- **Backend**: minimale PHP-router (Slim 4 — bewezen, kleine footprint) achter een `public/index.php` front-controller. Geen ORM — bestaande repositories volstaan. Nieuwe directory `src/Interface/Http/` met controllers parallel aan `src/Interface/Cli/`. Container/bootstrap uitfactoren naar een gedeelde `bootstrap.php` zodat zowel CLI als HTTP dezelfde repo-construeer-code gebruiken.
+- **Frontend**: React + Vite + TypeScript. MUI v6 (incl. `@mui/icons-material`, `@mui/x-data-grid` voor de groepenlijst — DataGrid heeft search/sort gratis). TanStack Query voor caching + retries.
+- **Build**: `npm run build` plaatst de bundle in `public/assets/` en een `public/index.html`. nginx serveert die statisch en routet `/api/*` naar php-fpm.
+- **Dev-modus**: Vite dev-server op :5173 met proxy van `/api/*` naar nginx op :8080. Hot-reload voor TSX; PHP-changes worden direct opgepakt door fpm.
+- **Containers**: `docker-compose.yml` met twee services (nginx + php-fpm:8.5-alpine), bind-mount op de repo en `tmp/samenstellingen.sqlite`. Vite blijft op de host (snel + native node).
+- **Lokaal starten**: nieuwe `make ui`-target start `docker compose up -d` + `npm --prefix web run dev`. Stoppen met `make ui-stop`.
+
+### Wat doelbewust *buiten* scope blijft (eerste versie)
+- Authenticatie (lokale tool, single user).
+- Inline bewerken van groepen/bases.
+- Triggeren van AFAS-sync / import / wipe via de UI — blijft op de CLI om de blast-radius klein te houden en het audit-spoor in `git log` te behouden.
+- Realtime updates / websockets — refresh-knop volstaat.
+- Issues-tab / unresolved-rapport in UI (komt later eventueel).
+
+### Fasering
+
+- **Slice 14 (A1)** — bootstrap-refactor + minimal PHP API (`GET /api/groups`, `GET /api/groups/{familyHead}`). Slim 4 + PSR-7. Integratie-tests via PHPUnit (boot Slim in-process, call routes, assert JSON).
+- **Slice 14 (A2)** — `docker-compose.yml` (nginx + php-fpm) + voorbeeld-`nginx.conf`. `make ui-up` / `make ui-down`. README-snippet.
+- **Slice 14 (A3)** — Vite + React + MUI skelet in `web/`. Groepen-lijst-pagina (`/`) met DataGrid tegen `/api/groups`. Search/filter gratis via DataGrid.
+- **Slice 14 (A4)** — Groep-detail-pagina (`/groups/:familyHead`) met breadcrumb, MUI Accordion per base, uitgeklapte BOM-tabel.
+- **Slice 14 (A5)** — opruimen: error-boundaries, empty states, 404-page, loading-spinners. `make ui` als één-commando-start.
+
+Iedere sub-slice gaat via z'n eigen TDD-cyclus (PHPUnit voor de backend; Vitest + React Testing Library voor de frontend).

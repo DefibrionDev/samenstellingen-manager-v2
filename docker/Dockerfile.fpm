@@ -1,0 +1,16 @@
+FROM php:8.5-fpm-alpine
+
+RUN apk add --no-cache sqlite-libs git unzip \
+    && docker-php-ext-install pdo pdo_mysql 2>/dev/null || true \
+    && docker-php-ext-enable pdo_sqlite
+
+# Composer (statisch via official installer)
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+WORKDIR /var/www
+
+# Dependencies komen via bind-mount in dev. Voor een gesealde image:
+# COPY composer.json composer.lock ./
+# RUN composer install --no-dev --no-progress --prefer-dist --optimize-autoloader
+
+CMD ["php-fpm", "-F"]

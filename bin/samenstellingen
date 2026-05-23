@@ -58,25 +58,18 @@ if (file_exists($projectRoot . '/.env')) {
 }
 
 $dbPath = $_ENV['SAMENSTELLINGEN_DB_PATH'] ?? $projectRoot . '/tmp/samenstellingen.sqlite';
-$dbDir = dirname($dbPath);
-if (!is_dir($dbDir)) {
-    mkdir($dbDir, 0o755, true);
-}
 
-$pdo = new PDO('sqlite:' . $dbPath);
-$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-$pdo->exec('PRAGMA foreign_keys = ON');
+$container = new \Defibrion\Samenstellingen\Bootstrap\Container($dbPath, $projectRoot . '/migrations');
+$pdo = $container->pdo();
 
-(new Migrator($pdo, $projectRoot . '/migrations'))->migrate();
-
-$groupRepository = new SqliteGroupRepository($pdo);
-$baseRepository = new SqliteGroupBaseRepository($pdo);
-$baseItemRepository = new SqliteGroupBaseItemRepository($pdo);
-$accessoireRepository = new SqliteAccessoireRepository($pdo);
-$linkRepository = new SqliteGroupAccessoireRepository($pdo);
-$variantRepository = new SqliteGroupVariantRepository($pdo);
-$afasSamenstellingenRepository = new SqliteAfasSamenstellingenRepository($pdo);
-$bomBlacklistRepository = new SqliteBomBlacklistRepository($pdo);
+$groupRepository = $container->groupRepository();
+$baseRepository = $container->baseRepository();
+$baseItemRepository = $container->baseItemRepository();
+$accessoireRepository = $container->accessoireRepository();
+$linkRepository = $container->linkRepository();
+$variantRepository = $container->variantRepository();
+$afasSamenstellingenRepository = $container->afasSamenstellingenRepository();
+$bomBlacklistRepository = $container->bomBlacklistRepository();
 
 $createGroupHandler = new CreateGroupHandler($groupRepository);
 $showGroupHandler = new ShowGroupHandler(

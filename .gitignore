@@ -1,6 +1,11 @@
 /vendor/
 /tmp/*
 !/tmp/.gitkeep
+# Frontend build-output — gegenereerd door `npm --prefix web run build`.
+/public/index.html
+/public/assets/
+/web/node_modules/
+/web/dist/
 *.sqlite
 *.sqlite-journal
 *.csv

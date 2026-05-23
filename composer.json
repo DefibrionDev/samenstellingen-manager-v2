@@ -8,6 +8,8 @@
         "ext-pdo": "*",
         "ext-pdo_sqlite": "*",
         "guzzlehttp/guzzle": "^7.10",
+        "slim/psr7": "^1.6",
+        "slim/slim": "^4.14",
         "symfony/console": "^8.0",
         "symfony/dotenv": "^8.0"
     },
