@@ -67,9 +67,13 @@ final class ShowGroupCommand extends Command
         } else {
             $rows = [];
             foreach ($overview->bases as $base) {
-                $rows[] = [(string) ($base->id ?? '?'), $base->name];
+                $rows[] = [
+                    (string) ($base->id ?? '?'),
+                    $base->languageCode ?? '—',
+                    $base->name,
+                ];
             }
-            $io->table(['ID', 'Naam'], $rows);
+            $io->table(['ID', 'Taal', 'Naam'], $rows);
         }
 
         $io->section('Accessoires (gekoppeld aan deze groep)');

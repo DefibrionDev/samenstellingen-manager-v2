@@ -23,11 +23,13 @@ final readonly class SqliteGroupBaseRepository implements GroupBaseRepository
 
         try {
             $stmt = $this->pdo->prepare(
-                'INSERT INTO group_bases (group_id, name) VALUES (:group_id, :name)'
+                'INSERT INTO group_bases (group_id, name, language_code)
+                 VALUES (:group_id, :name, :language_code)'
             );
             $stmt->execute([
                 ':group_id' => $groupId,
                 ':name' => $base->name,
+                ':language_code' => $base->languageCode,
             ]);
         } catch (PDOException $e) {
             if (
@@ -44,19 +46,13 @@ final readonly class SqliteGroupBaseRepository implements GroupBaseRepository
 
     public function findById(int $baseId): ?GroupBase
     {
-        $stmt = $this->pdo->prepare('SELECT id, name FROM group_bases WHERE id = :id');
+        $stmt = $this->pdo->prepare(
+            'SELECT id, name, language_code FROM group_bases WHERE id = :id'
+        );
         $stmt->execute([':id' => $baseId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        if (!is_array($row)) {
-            return null;
-        }
-        $id = $row['id'] ?? null;
-        $name = $row['name'] ?? null;
-        if (!is_int($id) || !is_string($name)) {
-            return null;
-        }
 
-        return new GroupBase($id, $name);
+        return is_array($row) ? $this->rowToBase($row) : null;
     }
 
     public function findAllForGroup(string $familyHeadItemcode): array
@@ -64,7 +60,7 @@ final readonly class SqliteGroupBaseRepository implements GroupBaseRepository
         $groupId = $this->resolveGroupId($familyHeadItemcode);
 
         $stmt = $this->pdo->prepare(
-            'SELECT id, name FROM group_bases WHERE group_id = :group_id ORDER BY id'
+            'SELECT id, name, language_code FROM group_bases WHERE group_id = :group_id ORDER BY id'
         );
         $stmt->execute([':group_id' => $groupId]);
 
@@ -73,14 +69,28 @@ final readonly class SqliteGroupBaseRepository implements GroupBaseRepository
             if (!is_array($row)) {
                 continue;
             }
-            $id = $row['id'] ?? null;
-            $name = $row['name'] ?? null;
-            if (is_int($id) && is_string($name)) {
-                $bases[] = new GroupBase($id, $name);
+            $base = $this->rowToBase($row);
+            if ($base !== null) {
+                $bases[] = $base;
             }
         }
 
         return $bases;
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private function rowToBase(array $row): ?GroupBase
+    {
+        $id = $row['id'] ?? null;
+        $name = $row['name'] ?? null;
+        $language = $row['language_code'] ?? null;
+        if (!is_int($id) || !is_string($name)) {
+            return null;
+        }
+
+        return new GroupBase($id, $name, is_string($language) ? $language : null);
     }
 
     private function resolveGroupId(string $familyHeadItemcode): int

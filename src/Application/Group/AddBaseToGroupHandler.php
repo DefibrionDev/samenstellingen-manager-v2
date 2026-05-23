@@ -20,7 +20,7 @@ final readonly class AddBaseToGroupHandler
     {
         $persisted = $this->repository->saveForGroup(
             $command->familyHeadItemcode,
-            new GroupBase(null, $command->name),
+            new GroupBase(null, $command->name, $command->languageCode),
         );
         $this->variantRepository->regenerateForGroup($command->familyHeadItemcode);
 

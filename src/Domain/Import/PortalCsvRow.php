@@ -11,11 +11,19 @@ final readonly class PortalCsvRow
         public string $groep,
         public string $item,
         public string $merknaam,
+        public string $taal = '',
     ) {
     }
 
     public function hasGroep(): bool
     {
         return $this->groep !== '';
+    }
+
+    public function languageCode(): ?string
+    {
+        $trimmed = trim($this->taal);
+
+        return $trimmed === '' ? null : $trimmed;
     }
 }

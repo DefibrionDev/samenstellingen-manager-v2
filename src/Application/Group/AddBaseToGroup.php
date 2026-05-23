@@ -9,6 +9,7 @@ final readonly class AddBaseToGroup
     public function __construct(
         public string $familyHeadItemcode,
         public string $name,
+        public ?string $languageCode = null,
     ) {
     }
 }

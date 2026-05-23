@@ -46,6 +46,7 @@ final readonly class FilePortalCsvReader implements PortalCsvReader
             $groepIdx = $colIndex['Groep'] ?? null;
             $itemIdx = $colIndex['Item'] ?? null;
             $merkIdx = $colIndex['Merknaam'] ?? null;
+            $taalIdx = $colIndex['Taal'] ?? null;
 
             if ($codeIdx === null || $groepIdx === null || $itemIdx === null) {
                 throw new RuntimeException(
@@ -58,10 +59,11 @@ final readonly class FilePortalCsvReader implements PortalCsvReader
                 $groep = self::cell($row, $groepIdx);
                 $item = self::cell($row, $itemIdx);
                 $merknaam = $merkIdx !== null ? self::cell($row, $merkIdx) : '';
+                $taal = $taalIdx !== null ? self::cell($row, $taalIdx) : '';
                 if ($code === '') {
                     continue;
                 }
-                yield new PortalCsvRow($code, $groep, $item, $merknaam);
+                yield new PortalCsvRow($code, $groep, $item, $merknaam, $taal);
             }
         } finally {
             fclose($handle);

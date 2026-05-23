@@ -378,7 +378,90 @@ CSV-kolommen:
 - [x] `bin/samenstellingen` bedraadt.
 - [x] Live verificatie: 232 ontbrekende varianten geëxporteerd; CSV bevat groep / base / base_afas_sku / accessoire / verwachte BOM / verwachte SKU-voorstel.
 - [x] `make check` is groen (119 tests / 248 assertions).
-- [ ] **Commit + push** "slice 10: export missing-list als CSV".
+- [x] **Commit + push** "slice 10: export missing-list als CSV".
+
+---
+
+## Slice 11 — taal-veld op `group_bases` + `Taal`-kolom in portal-CSV
+
+Eindbeeld: elke base krijgt een expliciete `language_code` (NL/FR/DE/UK/EN/WAL/…), gevoed door een nieuwe `Taal`-kolom in de portal-CSV. Items binnen een base houden géén taal (taal-neutraal qua schema). Accessoires blijven taal-neutraal (één label, één rij). `group:show` toont de taal-kolom op de Bases-sectie. Geen wijzigingen aan AFAS-schrijven nog — dat komt in slice 12.
+
+Design-keuzes:
+- Taal is een eigenschap van de **base als geheel**, niet van individuele items.
+- Bron van waarheid: `Taal`-kolom in `AED's portalen.csv`. Geen auto-detectie (te onbetrouwbaar bij naam-drift).
+- Bij meerdere bases per CSV-rij (bv. één CSV-rij voor article 50013 resolveert naar AFAS-SKU 51013 én 52112): alle resulterende bases erven dezelfde taal uit de CSV-rij.
+- Bestaande tests aanpassen voor de nieuwe constructor-parameter.
+
+### Fase 1 — Migratie + domein
+- [x] `migrations/0009_base_language.sql`.
+- [x] `GroupBase` value object: `?string $languageCode` (3e optioneel arg).
+
+### Fase 2 — Repository + persistence
+- [x] `SqliteGroupBaseRepository` schrijft + leest `language_code`. InMemory blijft transparant via VO.
+
+### Fase 3 — Application
+- [x] `AddBaseToGroup` DTO + handler zetten taal door naar repo.
+- [x] `AddBaseCommand` CLI heeft `--language|-l` option (optioneel; leeg = onbekend).
+
+### Fase 4 — Portal-CSV uitbreiding
+- [x] `PortalCsvRow.taal` + helper `languageCode(): ?string`.
+- [x] `FilePortalCsvReader` leest `Taal`-kolom (optioneel — fallback null als niet aanwezig).
+- [x] `ImportPortalCsvHandler` zet `row.languageCode()` op alle aangemaakte bases voor die CSV-rij.
+
+### Fase 5 — Show-output uitbreiden
+- [x] `ShowGroupCommand` Bases-sectie toont `ID | Taal | Naam` (— bij null).
+
+### Fase 6 — Handmatige verificatie + commit
+- [x] `group:show 52112` toont taal-kolom (lege voor bestaande data, gevuld na re-import met `Taal`-kolom in CSV).
+- [x] `make check` groen (119 tests / 248 assertions).
+- [ ] **Commit + push** "slice 11: taal-veld op bases + Taal-kolom in portal-CSV".
+
+---
+
+## Slice 12 — `afas:create-missing` met per-taal naam-templating + dry-run default
+
+Eindbeeld: `afas:create-missing [--apply] [--limit=N]` itereert over alle variant-rijen met `afas_status='no_match'` en construeert per rij een `FbComposition`-payload. Gebruikt `base.language_code` (uit slice 11) om de variant-naam te bouwen volgens AFAS-conventie per taal.
+
+**Default = dry-run** (CLAUDE.md regel). `--apply` schrijft écht naar AFAS.
+
+Per-taal naam-templates (heuristiek op base.name):
+- NL: vervang ` incl.safeset en stickerset` door ` met {accessoire.label}` (of ` met  …` als de bron al een dubbele spatie heeft).
+- FR: vervang ` avec safesett et signalétique` (of ` avec safeset et signalétique`) door `  avec {accessoire.label}` (dubbele spatie, conform AFAS).
+- DE/EN/UK: append `+ {accessoire.label}` (uit AFAS-conventie van Philips/Cardiac-bases).
+- Onbekend / NULL: fallback `"{base.name} + {accessoire.label}"`.
+
+Bekende onzekerheden:
+- Exacte FbComposition INSERT-payload-shape (BOM-lines onder `Objects`/`FbCompositionLines`?).
+- Free field UUIDs voor `Itemcode_Parent`, `Sync_Reseller_NL`, `Tonen_Reseller_NL` hergebruiken uit afas-connector-tools.
+
+### Fase 1 — Domein + writer-abstractie
+- [ ] `NewAfasSamenstelling` value object: `itemcode`, `name`, `itemcodeParent`, `syncResellerNl`, `tonenResellerNl`, `bomItemcodes`.
+- [ ] `AfasSamenstellingenWriter` interface met `create(NewAfasSamenstelling): void`.
+- [ ] `AfasWriteFailedException`.
+
+### Fase 2 — Naam-templating
+- [ ] `VariantNamingPolicy` domain service: `name(GroupBase $base, Accessoire $accessoire): string`. Past per-taal regels toe op basis van `$base->languageCode`.
+
+### Fase 3 — Writer-implementaties
+- [ ] `LoggingDryRunWriter` (print payload).
+- [ ] `HttpAfasSamenstellingenWriter` (echte call). Hergebruikt UUIDs uit afas-connector-tools (`U298663…` voor Itemcode_Parent etc.).
+- [ ] `InMemoryAfasSamenstellingenWriter` (tests).
+
+### Fase 4 — Application
+- [ ] `CreateMissingSamenstellingen` + handler. Itereert missing variants, gebruikt `VariantNamingPolicy`, roept writer aan.
+- [ ] `CreateMissingSummary` met counts en errors.
+
+### Fase 5 — CLI
+- [ ] `CreateMissingAfasCommand` — `afas:create-missing [--apply] [--limit=N]`.
+- [ ] Default dry-run; `--apply` switcht naar HttpWriter + vraagt confirmation.
+
+### Fase 6 — Handmatige verificatie + commit
+- [ ] Dry-run check: payloads ogen goed (NL/FR namen kloppen met AFAS-conventie).
+- [ ] `--apply --limit=1` op één veilige rij, controle in AFAS.
+- [ ] Stapsgewijs opschalen.
+- [ ] Na succesvolle apply: `afas:pull` + `group:sync-afas`; missing-count daalt.
+- [ ] `make check` is groen.
+- [ ] **Commit + push** "slice 12: afas:create-missing met per-taal naam-templating".
 
 ---
 
