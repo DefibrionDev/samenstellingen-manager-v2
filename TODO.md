@@ -622,6 +622,47 @@ De UI blijft read-only (zie CLAUDE.md). De accessoires-catalogus-pagina krijgt e
 
 ---
 
+## Slice 18 — Name sanity check (audit op base- en variant-namen)
+
+Eindbeeld: per gematchte AFAS-samenstelling (base + variant) bouwt de tool de **verwachte naam** volgens de canonieke template uit PLAN.md §9.1, vergelijkt strikt (byte-equal) met de werkelijke naam in `afas_samenstellingen.name`, en rapporteert drift. Read-only — geen rename-actie in deze slice (komt later in slice 13 / `afas:rename-drift` of vergelijkbaar).
+
+Drift-soorten die we expliciet vangen:
+- prefix-casing (`AED Pakket:` vs `AED pakket:`)
+- modeltype-spelling (`Vol-automaat`, `Halfautomatisch`, `Semi-Automatique` met hoofdletter A)
+- taal-suffix met haakjes (`(FR)` vs `FR`)
+- ontbrekende, fout gespelde of omgekeerde safeset/stickerset-staart
+- typo's (`safesett`, `incl.safeset` zonder spatie, dubbele spaties)
+- variant met `safeset`-staart in plaats van `incl. {accessoire}`
+- ontbrekend prefix bij oudere SKUs
+- mismatched taal-spelling (`Kroatian`, `French`)
+
+### Fase 1 — Domein: `VariantNamingPolicy`
+- [x] `VariantNamingPolicy::expectedName(Group, GroupBase, ?Accessoire)`.
+- [x] Vijf taal-templates volgens §9.1 (NL/FR/DE/DA/EN). Compound-codes (`NL/FR`) → eerste segment beslist.
+- [x] `Group::modelName` nullable veld + migration 0013.
+- [x] 11 unit-tests (base/variant × 5 talen + edge cases).
+
+### Fase 2 — Application: `NameAuditHandler`
+- [x] `NameAuditHandler` itereert over `matched`-varianten en vergelijkt strict.
+- [x] `NameDriftRow` value-object.
+- [x] 4 handler-tests (no-drift, drift-base, drift-variant, skip-zonder-model_name).
+
+### Fase 3 — CLI: `audit:names`
+- [x] `AuditNamesCommand` met `--limit=N`, exit 1 bij drift.
+- [x] Live: 270 drift-rijen geconstateerd.
+
+### Fase 4 — HTTP + UI
+- [x] `GET /api/name-drift` + integratie-test.
+- [x] AppBar krijgt `Name drift`-link.
+- [x] `NameDrift.tsx` + Vitest.
+
+### Fase 5 — Tests + lint + live + commit
+- [x] `make check` (191 tests / 444 assertions) + vitest (6 tests) groen.
+- [x] Live: 270 drift-rijen tonen prefix-casing (`AED Pakket:` ipv `AED pakket:`), FR-bases zonder `Pack DAE:`, verkorte accessoire-suffixen (`met witte binnenkast` ipv `incl. ARKY metalen binnenkast wit met alarm`).
+- [ ] **Commit + push** "slice 18: name sanity check (audit) — base + variant naam-templates per taal".
+
+---
+
 ## Slice 13 — `afas:create-missing` met per-taal naam-templating + dry-run default
 
 Eindbeeld: `afas:create-missing [--apply] [--limit=N]` itereert over alle variant-rijen met `afas_status='no_match'` en construeert per rij een `FbComposition`-payload. Gebruikt `base.language_code` (uit slice 11) om de variant-naam te bouwen volgens AFAS-conventie per taal.

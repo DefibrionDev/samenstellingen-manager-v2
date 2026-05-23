@@ -121,24 +121,44 @@ Naast structurele BOM-consistentie ook prijsbeheer voor de hele matrix van samen
 
 ## 9. Open vragen
 
-1. ~~**Naam-template** voor varianten~~ — *grotendeels beantwoord door `reanibex-semi-with-safeset.csv`*: er zijn **per-taal templates**, allemaal volgens dezelfde structuur maar met taal-eigen woorden:
-   - NL: `AED pakket: Reanibex 100 Semi-Automatic AED NL {(radio)} incl. safeset en stickerset`
-   - FR: `Pack DAE: Reanibex 100 Semi-automatique (FR) {(radio)} avec safeset et signalétique`
-   - DE/DA: `AED Package: Reanibex 100 Semi-Automatic AED {Language} {(radio)} incl. stickerset and safeset`
-   - EN/overig: `AED Package: Reanibex 100 Semi-Automatic AED {Language} {(radio)} incl. safeset`
+1. ✅ **Naam-template** voor bases en varianten — *vastgelegd na inspectie van de AFAS-snapshot (1894 samenstellingen)*. Voor elke taal volgt de naam dit patroon:
 
-   Voor varianten met accessoire vervangt het `incl./avec ...` deel door `incl./avec {accessoire-label}`. Resterende open punten: officiële template per taal vastleggen (de data bevat inconsistenties — zie hieronder), en bevestigen of accessoire-variant óók het safeset-deel laat vallen of behoudt.
+   ```
+   {Prefix}: {Model} {ModelType} {Lang} {Radio?} {Inhoud}
+   ```
 
-   Ontdekte extra dimensie: **radio-varianten** (`WIFI`, `SIGFOX`, `GPS + WIFI + SIGFOX`) zitten in zowel AED-component als naam. Past binnen huidig model — elke (taal × radio) is gewoon een aparte base.
+   Waarbij de slot-waardes per taal:
 
-   Gevonden inconsistenties in bestaande data (door audit af te vangen via template-match + normalisatie):
-   - Typo `safesett` (52124).
-   - Spacing `incl.safeset` zonder spatie; dubbele spaties in FR varianten.
-   - Case-drift `Semi-Automatic` ↔ `Semi-automatic` binnen één taal.
-   - Ontbrekend `AED Package:`-prefix bij oudere SKUs (52101, 52102, 52103, 52106, 52108).
-   - Spelling `Kroatian` vs `Croatian`; `FR` vs `French`.
-   - Afwijkende inhoud-suffix bij 52199/52198/52200 (`incl. electrodes, battery and safeset`).
-   - 51013 vs 52112 beide gekoppeld aan NL met verschillende naam — mogelijk legacy duplicate.
+   | Taal | `{Prefix}` | `{ModelType: semi/full}` | `{Lang}` | `{Inhoud}` |
+   |---|---|---|---|---|
+   | **NL** | `AED pakket` | `semi-automaat` / `volautomaat` | `NL` | `incl. safeset en stickerset` |
+   | **FR** | `Pack DAE` | `Semi-automatique` / `Entièrement automatique` | `FR` | `avec safeset et signalétique` |
+   | **DE** | `AED package` | `Semi-Automatic` / `Fully-Automatic` | `DE` | `incl. safeset and stickerset` |
+   | **DA** | `AED package` | `Semi-Automatic` / `Fully-Automatic` | `DA` | `incl. safeset and stickerset` |
+   | **EN** | `AED package` | `Semi-Automatic` / `Fully-Automatic` | `EN` | `incl. safeset and stickerset` |
+
+   De `{ModelType}`-keuze per taal volgt de **meest voorkomende AFAS-conventie** (gemeten 2026): NL `semi-automaat` 238×, FR `Semi-automatique` 27×, EN/DE/DA `Semi-Automatic` 444× / `Fully-Automatic` 399×. Afwijkende historische schrijfwijzen (`Vol-automaat`, `Halfautomatisch`, `Fully-automatic`, `Semi-Automatique` met hoofdletter A) zijn drift.
+
+   `{Lang}` is **kaal**, dus géén haakjes — ook FR krijgt `FR`, niet `(FR)`. Eerste woord van de zin behoudt z'n eigen casing (NL `AED`, FR `Pack`, EN `AED`); het package-woord erna is lowercase (`pakket`, `DAE`, `package`).
+
+   Voor **varianten met accessoire**: het `{Inhoud}`-staartstuk wordt vervangen door `incl. {accessoire-label}` (NL/DE/DA/EN) of `avec {accessoire-label}` (FR). Het safeset-stickerset-deel vervalt dus bij accessoire-varianten.
+
+   **Voorbeeld base (NL)**: `AED pakket: Reanibex 100 semi-automaat NL incl. safeset en stickerset`
+   **Voorbeeld variant (NL + ARKY witte binnenkast)**: `AED pakket: Reanibex 100 semi-automaat NL incl. ARKY metalen binnenkast wit met alarm`
+
+   **Extra dimensie**: radio-varianten (`WIFI`, `SIGFOX`, `GPS + WIFI + SIGFOX`, `3G`, `USB`) zitten optioneel tussen `{Lang}` en `{Inhoud}`. Past binnen het model — elke (taal × radio) is een aparte base.
+
+   **Open detail**: `{Model}` is per-groep gespecificeerd (`Reanibex 100`, `LIFEPAK CR2`, `Heartsine Samaritan PAD 350P` etc.). Sommige model-namen hebben al `AED` ingebakken (`AED Samaritan PAD 350P`) wat tot dubbele `AED` in de volle naam leidt. Voor de audit (slice 18) bepalen we `{Model}` per groep — initieel afgeleid uit de huidige base-namen door de bekende slots eraf te trimmen.
+
+   **Drift die de audit moet vangen** (alle case-sensitive, geen normalisatie):
+   - prefix-casing: `AED Pakket:` vs `AED pakket:`
+   - modeltype-spelling: `Vol-automaat`, `Halfautomatisch`, `Semi-Automatique` (hoofdletter A in FR)
+   - taal-suffix met haakjes: `(FR)`, `(NL)`
+   - ontbrekende of omgekeerde safeset/stickerset-staart
+   - typo's (`safesett`, `incl.safeset` zonder spatie, dubbele spaties)
+   - mismatched accessoire-suffix (variant heeft `incl. safeset en stickerset` in plaats van `incl. {accessoire-label}`)
+   - ontbrekend prefix (oudere SKUs zoals 52101–52108)
+   - taal-spelling: `Kroatian` vs `Croatian`, `French` vs `FR`
 
 2. **Prijs**: zit prijs op de samenstelling zelf of wordt die berekend uit componenten? Welke AFAS-velden / prijslijst-structuur is leidend (zie §8)?
 3. **Sync/Tonen-strategie**: alle varianten altijd Sync+Tonen, of soms alleen de "vlaggenschip"-variant?

@@ -205,6 +205,49 @@ final class ApiTest extends TestCase
     }
 
     #[Test]
+    public function listsNameDriftForMismatchedAfasName(): void
+    {
+        $pdo = TestDatabase::pdo();
+        $groups = new SqliteGroupRepository($pdo);
+        $bases = new SqliteGroupBaseRepository($pdo);
+        $variants = new SqliteGroupVariantRepository($pdo);
+
+        $groups->save(new \Defibrion\Samenstellingen\Domain\Group\Group(
+            'Reanibex',
+            '52112',
+            'Reanibex 100 semi-automaat',
+        ));
+        $base = $bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL', 'NL', '52112'));
+        self::assertNotNull($base->id);
+        $variants->regenerateForGroup('52112');
+
+        $afasRepo = new \Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAfasSamenstellingenRepository($pdo);
+        $afasRepo->replaceSnapshot([
+            new \Defibrion\Samenstellingen\Domain\Afas\AfasSamenstelling(
+                '52112',
+                'AED Pakket: Reanibex 100 semi-automaat NL incl. safeset en stickerset', // verkeerde casing
+                null,
+                ['50013'],
+            ),
+        ]);
+        foreach ($variants->findAllForGroup('52112') as $v) {
+            if ($v->id !== null && $v->accessoireItemcode === null) {
+                $variants->markMatched($v->id, '52112');
+            }
+        }
+
+        $response = $this->call('GET', '/api/name-drift');
+
+        self::assertSame(200, $response['status']);
+        self::assertCount(1, $response['body']);
+        self::assertSame('52112', $response['body'][0]['afasItemcode']);
+        self::assertSame(
+            'AED pakket: Reanibex 100 semi-automaat NL incl. safeset en stickerset',
+            $response['body'][0]['expected'],
+        );
+    }
+
+    #[Test]
     public function listsGroupVariants(): void
     {
         $pdo = TestDatabase::pdo();

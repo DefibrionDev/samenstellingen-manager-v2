@@ -20,11 +20,12 @@ final readonly class SqliteGroupRepository implements GroupRepository
     {
         try {
             $stmt = $this->pdo->prepare(
-                'INSERT INTO groups (name, family_head_itemcode) VALUES (:name, :itemcode)'
+                'INSERT INTO groups (name, family_head_itemcode, model_name) VALUES (:name, :itemcode, :model)'
             );
             $stmt->execute([
                 ':name' => $group->name,
                 ':itemcode' => $group->familyHeadItemcode,
+                ':model' => $group->modelName,
             ]);
         } catch (PDOException $e) {
             $message = $e->getMessage();
@@ -41,7 +42,7 @@ final readonly class SqliteGroupRepository implements GroupRepository
     public function findByName(string $name): ?Group
     {
         $stmt = $this->pdo->prepare(
-            'SELECT name, family_head_itemcode FROM groups WHERE name = :name'
+            'SELECT name, family_head_itemcode, model_name FROM groups WHERE name = :name'
         );
         $stmt->execute([':name' => $name]);
 
@@ -51,7 +52,7 @@ final readonly class SqliteGroupRepository implements GroupRepository
     public function findByFamilyHeadItemcode(string $familyHeadItemcode): ?Group
     {
         $stmt = $this->pdo->prepare(
-            'SELECT name, family_head_itemcode FROM groups WHERE family_head_itemcode = :itemcode'
+            'SELECT name, family_head_itemcode, model_name FROM groups WHERE family_head_itemcode = :itemcode'
         );
         $stmt->execute([':itemcode' => $familyHeadItemcode]);
 
@@ -60,7 +61,7 @@ final readonly class SqliteGroupRepository implements GroupRepository
 
     public function findAll(): array
     {
-        $stmt = $this->pdo->query('SELECT name, family_head_itemcode FROM groups ORDER BY name');
+        $stmt = $this->pdo->query('SELECT name, family_head_itemcode, model_name FROM groups ORDER BY name');
         if ($stmt === false) {
             return [];
         }
@@ -89,7 +90,9 @@ final readonly class SqliteGroupRepository implements GroupRepository
         if (!is_string($name) || !is_string($itemcode)) {
             return null;
         }
+        $model = $row['model_name'] ?? null;
+        $modelStr = is_string($model) ? $model : null;
 
-        return new Group($name, $itemcode);
+        return new Group($name, $itemcode, $modelStr);
     }
 }

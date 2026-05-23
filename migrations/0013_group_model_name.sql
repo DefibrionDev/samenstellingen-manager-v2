@@ -1,0 +1,1 @@
+ALTER TABLE groups ADD COLUMN model_name TEXT NULL;

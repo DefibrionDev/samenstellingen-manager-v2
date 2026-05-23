@@ -6,6 +6,7 @@ const navLinks = [
   { to: '/accessoires', label: 'Accessoires' },
   { to: '/blacklist', label: 'Blacklist' },
   { to: '/missing', label: 'Missing' },
+  { to: '/name-drift', label: 'Name drift' },
 ];
 
 export function App() {

@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Defibrion\Samenstellingen\Interface\Http;
 
 use Defibrion\Samenstellingen\Application\Audit\ListMissingVariantsHandler;
+use Defibrion\Samenstellingen\Application\Audit\NameAuditHandler;
 use Defibrion\Samenstellingen\Bootstrap\Container;
+use Defibrion\Samenstellingen\Domain\Naming\VariantNamingPolicy;
 use Psr\Container\ContainerInterface;
 use Slim\App;
 use Slim\Factory\AppFactory as SlimAppFactory;
@@ -56,6 +58,16 @@ final class AppFactory
                 $container->baseItemRepository(),
             ),
         );
+        $listNameDrift = new ListNameDriftController(
+            new NameAuditHandler(
+                $container->groupRepository(),
+                $container->baseRepository(),
+                $container->variantRepository(),
+                $container->accessoireRepository(),
+                $container->afasSamenstellingenRepository(),
+                new VariantNamingPolicy(),
+            ),
+        );
         $app->get('/api/groups', $listGroups);
         $app->get('/api/groups/{familyHead}', $showGroup);
         $app->get('/api/groups/{familyHead}/accessoires', $listGroupAccessoires);
@@ -63,6 +75,7 @@ final class AppFactory
         $app->get('/api/accessoires', $listAccessoires);
         $app->get('/api/bom-blacklist', $listBlacklist);
         $app->get('/api/missing-variants', $listMissing);
+        $app->get('/api/name-drift', $listNameDrift);
 
         return $app;
     }

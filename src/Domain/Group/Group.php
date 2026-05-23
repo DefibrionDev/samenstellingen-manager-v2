@@ -10,8 +10,9 @@ final readonly class Group
 {
     public string $name;
     public string $familyHeadItemcode;
+    public ?string $modelName;
 
-    public function __construct(string $name, string $familyHeadItemcode)
+    public function __construct(string $name, string $familyHeadItemcode, ?string $modelName = null)
     {
         $trimmedName = trim($name);
         if ($trimmedName === '') {
@@ -23,7 +24,10 @@ final readonly class Group
             throw new InvalidArgumentException('Family-head itemcode mag niet leeg zijn.');
         }
 
+        $trimmedModel = $modelName !== null ? trim($modelName) : null;
+
         $this->name = $trimmedName;
         $this->familyHeadItemcode = $trimmedItemcode;
+        $this->modelName = ($trimmedModel === null || $trimmedModel === '') ? null : $trimmedModel;
     }
 }

@@ -52,6 +52,18 @@ export interface GroupVariantRow {
   afasStatus: string | null;
 }
 
+export interface NameDriftRow {
+  afasItemcode: string;
+  groupName: string;
+  familyHead: string;
+  baseName: string;
+  languageCode: string;
+  accessoireItemcode: string | null;
+  accessoireLabel: string | null;
+  expected: string;
+  actual: string;
+}
+
 export interface MissingVariantRow {
   groupName: string;
   baseName: string;
@@ -72,4 +84,5 @@ export const api = {
   listGroupVariants: (familyHead: string) =>
     jsonGet<GroupVariantRow[]>(`/api/groups/${encodeURIComponent(familyHead)}/variants`),
   listMissingVariants: () => jsonGet<MissingVariantRow[]>('/api/missing-variants'),
+  listNameDrift: () => jsonGet<NameDriftRow[]>('/api/name-drift'),
 };

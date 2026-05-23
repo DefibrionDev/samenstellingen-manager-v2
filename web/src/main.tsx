@@ -10,6 +10,7 @@ import { BlacklistList } from './pages/BlacklistList';
 import { GroupsList } from './pages/GroupsList';
 import { GroupDetail } from './pages/GroupDetail';
 import { MissingVariants } from './pages/MissingVariants';
+import { NameDrift } from './pages/NameDrift';
 import { NotFound } from './pages/NotFound';
 
 const queryClient = new QueryClient({
@@ -29,6 +30,7 @@ const router = createBrowserRouter([
       { path: 'accessoires', element: <AccessoiresList /> },
       { path: 'blacklist', element: <BlacklistList /> },
       { path: 'missing', element: <MissingVariants /> },
+      { path: 'name-drift', element: <NameDrift /> },
       { path: '*', element: <NotFound /> },
     ],
   },
