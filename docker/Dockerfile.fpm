@@ -1,8 +1,10 @@
 FROM php:8.5-fpm-alpine
 
-RUN apk add --no-cache sqlite-libs git unzip \
-    && docker-php-ext-install pdo pdo_mysql 2>/dev/null || true \
-    && docker-php-ext-enable pdo_sqlite
+# pdo + pdo_sqlite (sqlite-dev voor de extensie-build; sqlite-libs voor runtime).
+RUN apk add --no-cache --virtual .build-deps $PHPIZE_DEPS sqlite-dev \
+    && apk add --no-cache sqlite-libs git unzip \
+    && docker-php-ext-install pdo pdo_sqlite \
+    && apk del .build-deps
 
 # Composer (statisch via official installer)
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
