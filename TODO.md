@@ -659,7 +659,7 @@ Drift-soorten die we expliciet vangen:
 ### Fase 5 — Tests + lint + live + commit
 - [x] `make check` (191 tests / 444 assertions) + vitest (6 tests) groen.
 - [x] Live: 270 drift-rijen tonen prefix-casing (`AED Pakket:` ipv `AED pakket:`), FR-bases zonder `Pack DAE:`, verkorte accessoire-suffixen (`met witte binnenkast` ipv `incl. ARKY metalen binnenkast wit met alarm`).
-- [ ] **Commit + push** "slice 18: name sanity check (audit) — base + variant naam-templates per taal".
+- [x] **Commit + push** "slice 18: name sanity check (audit) — base + variant naam-templates per taal".
 
 ---
 
