@@ -51,22 +51,44 @@ final class ImportPortalCsvCommand extends Command
 
         // Bij onresolveerbare rijen: geen import uitgevoerd, alleen lijst tonen.
         if ($summary->unresolved !== []) {
+            $ambiguous = 0;
+            $missing = 0;
+            foreach ($summary->unresolved as $entry) {
+                if (str_starts_with($entry['reason'], 'Ambigu')) {
+                    ++$ambiguous;
+                } else {
+                    ++$missing;
+                }
+            }
+
             $io->error(sprintf(
-                '%d rij(en) konden niet worden gemapt naar een verkoopbare AFAS-samenstelling. Geen import uitgevoerd — DB is onveranderd.',
+                '%d rij(en) konden niet worden gemapt: %d zonder base-kandidaat, %d ambigu in AFAS. Geen import uitgevoerd — DB is onveranderd.',
                 count($summary->unresolved),
+                $missing,
+                $ambiguous,
             ));
 
             $rows = [];
             foreach ($summary->unresolved as $entry) {
                 $rows[] = [$entry['groep'], $entry['code'], $entry['reason']];
             }
-            $io->section('Article-codes zonder geschikte AFAS-basis-samenstelling');
+            $io->section('Onresolveerbare article-codes');
             $io->table(['Groep', 'Code', 'Reden'], $rows);
 
-            $io->writeln(sprintf(
-                '<comment>Actie:</comment> maak voor bovenstaande %d article-code(s) eerst een complete AFAS-samenstelling aan (BOM met reanimatiekit 70112 + stickerset 81xxx), draai daarna `afas:pull` en herstart de import.',
-                count($summary->unresolved),
-            ));
+            $io->writeln('<comment>Actie:</comment>');
+            if ($missing > 0) {
+                $io->writeln(sprintf(
+                    '  • Voor %d code(s) zonder kandidaat: maak in AFAS een base-samenstelling aan (BOM met article, reanimatiekit 70112 en stickerset 81xxx, zonder geregistreerde accessoire).',
+                    $missing,
+                ));
+            }
+            if ($ambiguous > 0) {
+                $io->writeln(sprintf(
+                    '  • Voor %d ambigue code(s): los de duplicate base-samenstellingen op in AFAS (verwijder de overbodige of corrigeer de BOM).',
+                    $ambiguous,
+                ));
+            }
+            $io->writeln('  • Draai daarna `afas:pull` en herhaal de import.');
 
             return Command::FAILURE;
         }

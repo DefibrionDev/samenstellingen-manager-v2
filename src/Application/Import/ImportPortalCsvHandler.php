@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Defibrion\Samenstellingen\Application\Import;
 
+use Defibrion\Samenstellingen\Domain\Accessoire\Accessoire;
+use Defibrion\Samenstellingen\Domain\Accessoire\AccessoireRepository;
 use Defibrion\Samenstellingen\Domain\Afas\AfasSamenstelling;
 use Defibrion\Samenstellingen\Domain\Afas\AfasSamenstellingLookup;
 use Defibrion\Samenstellingen\Domain\Group\BaseAlreadyExistsException;
@@ -18,6 +20,7 @@ use Defibrion\Samenstellingen\Domain\Group\GroupRepository;
 use Defibrion\Samenstellingen\Domain\Group\GroupVariantRepository;
 use Defibrion\Samenstellingen\Domain\Import\PortalCsvReader;
 use Defibrion\Samenstellingen\Domain\Tool\ToolDataWiper;
+use RuntimeException;
 
 final readonly class ImportPortalCsvHandler
 {
@@ -29,29 +32,28 @@ final readonly class ImportPortalCsvHandler
         private GroupBaseItemRepository $baseItemRepository,
         private GroupVariantRepository $variantRepository,
         private AfasSamenstellingLookup $lookup,
+        private AccessoireRepository $accessoireRepository,
     ) {
     }
 
     public function __invoke(ImportPortalCsv $command): PortalImportSummary
     {
-        $summary = new PortalImportSummary();
+        $accessoireItemcodes = $this->loadAccessoireItemcodes();
 
-        // Stap 1: groepeer CSV-rijen per Groep en valideer.
+        $summary = new PortalImportSummary();
         $rowsByGroep = $this->groupRows($command->csvPath, $summary);
-        $this->prevalidateResolvable($rowsByGroep, $summary);
+        $this->prevalidateResolvable($rowsByGroep, $accessoireItemcodes, $summary);
 
         // Bij ook maar één onresolveerbare rij: STOP. Geen wipe, geen import.
         if ($summary->unresolved !== []) {
             return $summary;
         }
 
-        // Stap 2: wis tool-data en importeer.
         $this->wiper->wipe();
 
         foreach ($rowsByGroep as $groep => $rows) {
-            $familyHead = $this->resolveFamilyHead($rows);
+            $familyHead = $this->resolveFamilyHead($rows, $accessoireItemcodes);
             if ($familyHead === null) {
-                // Onverwacht na prevalidatie; defensief overslaan.
                 continue;
             }
 
@@ -59,11 +61,11 @@ final readonly class ImportPortalCsvHandler
                 $this->groupRepository->save(new Group($groep, $familyHead));
                 ++$summary->groupsCreated;
             } catch (GroupAlreadyExistsException) {
-                // Wipe + nieuwe import zou geen duplicates moeten geven; defensief overslaan.
+                // Defensief: na wipe niet te verwachten.
             }
 
             foreach ($rows as $row) {
-                $this->importRow($groep, $familyHead, $row, $summary);
+                $this->importRow($groep, $familyHead, $row, $accessoireItemcodes, $summary);
             }
 
             $this->variantRepository->regenerateForGroup($familyHead);
@@ -73,21 +75,51 @@ final readonly class ImportPortalCsvHandler
     }
 
     /**
-     * Controleer vooraf dat elke gegroepeerde CSV-rij minstens één verkoopbare
-     * AFAS-samenstelling oplevert. Voegt niet-resolveerbare rijen toe aan
-     * `$summary->unresolved` zodat de aanroeper kan beslissen wel/niet te importeren.
-     *
-     * @param array<string, list<array{code: string, item: string, language: string}>> $rowsByGroep
+     * @return list<string>
      */
-    private function prevalidateResolvable(array $rowsByGroep, PortalImportSummary $summary): void
+    private function loadAccessoireItemcodes(): array
+    {
+        $accessoires = $this->accessoireRepository->findAll();
+        if ($accessoires === []) {
+            throw new RuntimeException(
+                'De accessoires-catalogus is leeg. Definieer eerst de accessoires '
+                . "via `bin/samenstellingen accessoire:create <itemcode> '<label>'` voordat de portal-CSV geïmporteerd kan worden — "
+                . 'zonder catalogus kan de tool base-samenstellingen niet onderscheiden van varianten.'
+            );
+        }
+
+        return array_map(static fn (Accessoire $a) => $a->itemcode, $accessoires);
+    }
+
+    /**
+     * @param array<string, list<array{code: string, item: string, language: string}>> $rowsByGroep
+     * @param list<string> $accessoireItemcodes
+     */
+    private function prevalidateResolvable(array $rowsByGroep, array $accessoireItemcodes, PortalImportSummary $summary): void
     {
         foreach ($rowsByGroep as $groep => $rows) {
             foreach ($rows as $row) {
-                if ($this->sellableCandidatesFor($row['code']) === []) {
+                $candidates = $this->sellableCandidatesFor($row['code'], $accessoireItemcodes);
+
+                if ($candidates === []) {
                     $summary->unresolved[] = [
                         'groep' => $groep,
                         'code' => $row['code'],
-                        'reason' => 'Geen verkoopbare AFAS-samenstelling gevonden (BOM moet zowel reanimatiekit 70112 als een stickerset 81xxx bevatten).',
+                        'reason' => 'Geen base-samenstelling gevonden (BOM moet article-code, reanimatiekit 70112 en een stickerset 81xxx bevatten, en mag geen geregistreerde accessoire bevatten).',
+                    ];
+                    continue;
+                }
+
+                if (count($candidates) > 1) {
+                    $codes = array_map(static fn (AfasSamenstelling $s) => $s->itemcode, $candidates);
+                    $summary->unresolved[] = [
+                        'groep' => $groep,
+                        'code' => $row['code'],
+                        'reason' => sprintf(
+                            'Ambigu: AFAS bevat %d base-kandidaten (%s) — los op in AFAS voordat de import opnieuw draait.',
+                            count($candidates),
+                            implode(', ', $codes),
+                        ),
                     ];
                 }
             }
@@ -126,15 +158,13 @@ final readonly class ImportPortalCsvHandler
     }
 
     /**
-     * Family-head van een groep: AFAS Itemcode_Parent van de eerste resolveerbare
-     * samenstelling. Bij geen resolveerbare rijen: null (groep wordt overgeslagen).
-     *
      * @param list<array{code: string, item: string, language: string}> $rows
+     * @param list<string> $accessoireItemcodes
      */
-    private function resolveFamilyHead(array $rows): ?string
+    private function resolveFamilyHead(array $rows, array $accessoireItemcodes): ?string
     {
         foreach ($rows as $row) {
-            $candidates = $this->sellableCandidatesFor($row['code']);
+            $candidates = $this->sellableCandidatesFor($row['code'], $accessoireItemcodes);
             foreach ($candidates as $candidate) {
                 $parent = $candidate->itemcodeParent;
                 if ($parent !== null) {
@@ -149,18 +179,18 @@ final readonly class ImportPortalCsvHandler
     }
 
     /**
-     * "Verkoopbare" samenstellingen: BOM moet zowel reanimatiekit (70112) bevatten
-     * als minstens één stickerset (itemcode begint met `81`). Daarmee filtert
-     * de import "kale" base-only samenstellingen die Defibrion niet verkoopt eruit.
+     * "Verkoopbare" base-samenstellingen: BOM bevat article-code + reanimatiekit (70112)
+     * + stickerset (81xxx) en GEEN geregistreerde accessoire.
      *
+     * @param list<string> $accessoireItemcodes
      * @return list<AfasSamenstelling>
      */
-    private function sellableCandidatesFor(string $articleCode): array
+    private function sellableCandidatesFor(string $articleCode, array $accessoireItemcodes): array
     {
-        $candidates = $this->lookup->findCanonicalBaseOnlyContaining($articleCode);
+        $bases = $this->lookup->findCanonicalBasesContaining($articleCode, $accessoireItemcodes);
 
         return array_values(array_filter(
-            $candidates,
+            $bases,
             static function (AfasSamenstelling $s): bool {
                 $bom = $s->bomItemcodes;
                 if (!in_array('70112', $bom, true)) {
@@ -179,17 +209,13 @@ final readonly class ImportPortalCsvHandler
 
     /**
      * @param array{code: string, item: string, language: string} $row
+     * @param list<string> $accessoireItemcodes
      */
-    private function importRow(string $groep, string $familyHead, array $row, PortalImportSummary $summary): void
+    private function importRow(string $groep, string $familyHead, array $row, array $accessoireItemcodes, PortalImportSummary $summary): void
     {
-        $candidates = $this->sellableCandidatesFor($row['code']);
+        $candidates = $this->sellableCandidatesFor($row['code'], $accessoireItemcodes);
         if ($candidates === []) {
-            $summary->unresolved[] = [
-                'groep' => $groep,
-                'code' => $row['code'],
-                'reason' => 'Geen verkoopbare AFAS-samenstelling gevonden (BOM moet zowel reanimatiekit 70112 als een stickerset 81xxx bevatten).',
-            ];
-
+            // Pre-validate had dit moeten vangen; defensief overslaan.
             return;
         }
 

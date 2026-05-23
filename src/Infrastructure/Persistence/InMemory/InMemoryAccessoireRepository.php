@@ -26,4 +26,9 @@ final class InMemoryAccessoireRepository implements AccessoireRepository
     {
         return $this->byItemcode[$itemcode] ?? null;
     }
+
+    public function findAll(): array
+    {
+        return array_values($this->byItemcode);
+    }
 }

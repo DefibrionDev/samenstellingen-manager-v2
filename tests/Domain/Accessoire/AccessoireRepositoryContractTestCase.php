@@ -44,4 +44,27 @@ abstract class AccessoireRepositoryContractTestCase extends TestCase
 
         $repo->save(new Accessoire('60112', 'iets anders'));
     }
+
+    #[Test]
+    public function findAllReturnsEmptyListWhenCatalogueEmpty(): void
+    {
+        self::assertSame([], $this->makeRepository()->findAll());
+    }
+
+    #[Test]
+    public function findAllReturnsAllAccessoires(): void
+    {
+        $repo = $this->makeRepository();
+        $repo->save(new Accessoire('60110', 'ARKY oranje buitenkast'));
+        $repo->save(new Accessoire('60112', 'ARKY witte binnenkast'));
+        $repo->save(new Accessoire('60113', 'Defibtech reservebatterij'));
+
+        $all = $repo->findAll();
+        $codes = array_map(static fn (Accessoire $a) => $a->itemcode, $all);
+
+        self::assertCount(3, $all);
+        self::assertContains('60110', $codes);
+        self::assertContains('60112', $codes);
+        self::assertContains('60113', $codes);
+    }
 }

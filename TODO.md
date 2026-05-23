@@ -418,7 +418,39 @@ Design-keuzes:
 
 ---
 
-## Slice 12 — `afas:create-missing` met per-taal naam-templating + dry-run default
+## Slice 12 — Accessoires-catalogus drijft base/variant-detectie + ambiguïteit-check
+
+Eindbeeld: bij portal-CSV-import is "base vs variant" niet meer een SKU-heuristiek (taal-suffix `-FR` vs accessoire-suffix `-60110`), maar gebruikt de tool de geregistreerde accessoires (`accessoires.itemcode`) als filter. Een AFAS-samenstelling is een **variant** als z'n BOM een geregistreerde accessoire bevat, anders een **base**. Levert één article-code méér dan één base-kandidaat op, dan stopt de import met een ambiguïteit-rapport (welke AFAS-samenstellingen kwalificeren beide).
+
+Achtergrond: wij definiëren de basisitems én de accessoires zelf — die catalog is de ground truth. De huidige `isBaseOnly()`-SKU-heuristiek raadt en raakt op edge cases mis. Bij ambiguïteit weigert de tool een tie-breaker te kiezen; de user lost het op in AFAS (dubbele samenstelling weghalen, BOM corrigeren) en draait dan opnieuw.
+
+### Fase 1 — AccessoireRepository::findAll() + wipe spaart catalogus
+- [x] `AccessoireRepository::findAll(): list<Accessoire>` — interface, InMemory, Sqlite, contracttest.
+- [x] `SqliteToolDataWiper` laat tabel `accessoires` met rust (`group_accessoires` verdwijnt al via CASCADE op `groups`).
+
+### Fase 2 — Lookup: accessoires-lijst als variant-filter
+- [x] Vervang `AfasSamenstellingLookup::findCanonicalBaseOnlyContaining()` door `findCanonicalBasesContaining(string $articleCode, list<string> $accessoireItemcodes): list<AfasSamenstelling>`. Base = canonical + BOM bevat article-code + GEEN van de accessoire-codes.
+- [x] Verwijder `AfasSamenstelling::isBaseOnly()` — niet meer in gebruik.
+
+### Fase 3 — Import-handler met accessoires-injectie + ambiguïteit-check
+- [x] `ImportPortalCsvHandler` krijgt `AccessoireRepository` injected.
+- [x] Bij start: laad alle accessoire-itemcodes; lege catalogus → `RuntimeException` met instructie "definieer eerst de accessoires via `accessoire:create` voordat de portal-CSV geïmporteerd kan worden".
+- [x] Pre-validate per CSV-rij: 0 kandidaten → unresolved (reden "geen base"); >1 kandidaten → unresolved (reden "ambiguïteit: AFAS bevat meerdere base-kandidaten A, B").
+
+### Fase 4 — CLI-rapportage
+- [x] CLI-output benoemt beide failure-modes (geen kandidaat / ambigu) en actie-tekst verwijst naar AFAS-opschoning voor ambigue gevallen.
+
+### Fase 5 — Tests, lint, live-run
+- [x] Bestaande tests aanpassen aan nieuwe signatures (lookup-method, handler-constructor).
+- [x] `make check` groen (135 tests / 299 assertions).
+- [x] Live: 7 standaard accessoires (60110, 60112, 60122, 60212, 60213, 60222, 60223) toegevoegd; `group:import-portal-csv` rapporteert 42 unresolved (25 geen kandidaat, 17 ambigu) en laat DB onveranderd.
+
+### Fase 6 — Commit + push
+- [ ] **Commit + push** "slice 12: accessoires-catalogus drijft base/variant-detectie + ambiguïteit-check".
+
+---
+
+## Slice 13 — `afas:create-missing` met per-taal naam-templating + dry-run default
 
 Eindbeeld: `afas:create-missing [--apply] [--limit=N]` itereert over alle variant-rijen met `afas_status='no_match'` en construeert per rij een `FbComposition`-payload. Gebruikt `base.language_code` (uit slice 11) om de variant-naam te bouwen volgens AFAS-conventie per taal.
 

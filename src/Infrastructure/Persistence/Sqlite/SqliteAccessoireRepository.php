@@ -53,4 +53,27 @@ final readonly class SqliteAccessoireRepository implements AccessoireRepository
 
         return new Accessoire($itemcodeValue, $labelValue);
     }
+
+    public function findAll(): array
+    {
+        $stmt = $this->pdo->query('SELECT itemcode, label FROM accessoires ORDER BY itemcode');
+        if ($stmt === false) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $itemcode = $row['itemcode'] ?? null;
+            $label = $row['label'] ?? null;
+            if (!is_string($itemcode) || !is_string($label)) {
+                continue;
+            }
+            $result[] = new Accessoire($itemcode, $label);
+        }
+
+        return $result;
+    }
 }

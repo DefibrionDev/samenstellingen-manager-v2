@@ -59,11 +59,6 @@ final readonly class AfasSamenstelling
         return $this->duplicateOfItemcode === null;
     }
 
-    public function isBaseOnly(): bool
-    {
-        return !str_contains($this->itemcode, '-');
-    }
-
     /**
      * @param list<string> $expectedBomItemcodes
      */

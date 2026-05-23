@@ -12,4 +12,9 @@ interface AccessoireRepository
     public function save(Accessoire $accessoire): void;
 
     public function findByItemcode(string $itemcode): ?Accessoire;
+
+    /**
+     * @return list<Accessoire>
+     */
+    public function findAll(): array;
 }

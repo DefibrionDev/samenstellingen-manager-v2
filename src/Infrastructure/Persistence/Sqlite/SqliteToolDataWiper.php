@@ -20,12 +20,11 @@ final readonly class SqliteToolDataWiper implements ToolDataWiper
             $this->pdo->exec('DELETE FROM group_variants');
             $this->pdo->exec('DELETE FROM group_base_items');
             $this->pdo->exec('DELETE FROM group_accessoires');
-            $this->pdo->exec('DELETE FROM accessoires');
             $this->pdo->exec('DELETE FROM group_bases');
             $this->pdo->exec('DELETE FROM groups');
             $this->pdo->exec(
                 "DELETE FROM sqlite_sequence
-                 WHERE name IN ('groups', 'accessoires', 'group_variants', 'group_bases')"
+                 WHERE name IN ('groups', 'group_variants', 'group_bases')"
             );
             $this->pdo->commit();
         } catch (\Throwable $e) {
