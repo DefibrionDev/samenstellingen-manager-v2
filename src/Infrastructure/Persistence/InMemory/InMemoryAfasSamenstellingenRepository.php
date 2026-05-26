@@ -50,4 +50,15 @@ final class InMemoryAfasSamenstellingenRepository implements AfasSamenstellingen
     {
         return count($this->samenstellingen);
     }
+
+    public function findByItemcode(string $itemcode): ?AfasSamenstelling
+    {
+        foreach ($this->samenstellingen as $samenstelling) {
+            if ($samenstelling->itemcode === $itemcode) {
+                return $samenstelling;
+            }
+        }
+
+        return null;
+    }
 }

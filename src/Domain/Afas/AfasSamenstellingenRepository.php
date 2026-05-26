@@ -34,4 +34,6 @@ interface AfasSamenstellingenRepository
     public function findAllDuplicates(): array;
 
     public function countSnapshot(): int;
+
+    public function findByItemcode(string $itemcode): ?AfasSamenstelling;
 }

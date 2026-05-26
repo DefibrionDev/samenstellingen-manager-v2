@@ -707,6 +707,30 @@ Compound talen (`NL/EN`, `NL/EN/FR`, `DE/EN/FR`) behouden de sticker-eis: data t
 
 ---
 
+## Slice 22 — `group:add-base-from-afas` (handmatige base-koppeling)
+
+Eindbeeld: workaround voor ambigue portal-CSV-import-gevallen. De user kan met één CLI-commando expliciet zeggen: "voor groep X, gebruik AFAS-samenstelling Y als base in taal Z" — naam + BOM komen uit de lokale snapshot.
+
+Use case (bijv.): article 10650 levert 2 base-kandidaten (`11650` echt en `11650-60110` waar `60110` ontbreekt in BOM). De import skipt 'm. Met `group:add-base-from-afas 11683 11650 FR` zet de user de juiste base zelf vast.
+
+```
+group:add-base-from-afas <family-head> <afas-itemcode> <language>
+```
+
+### Fase 1 — Domain + handler
+- [x] `AddBaseFromAfas` + `AddBaseFromAfasHandler` + `AfasSamenstellingNotInSnapshotException`.
+- [x] `AfasSamenstellingenRepository::findByItemcode` (InMemory + Sqlite).
+- [x] Handler-tests: success, onbekende groep, onbekende AFAS-SKU, duplicate base.
+
+### Fase 2 — CLI
+- [x] `AddBaseFromAfasCommand` — `group:add-base-from-afas <family-head> <afas-itemcode> <language>`.
+
+### Fase 3 — Lint + live
+- [x] `make check` groen (209 tests / 492 assertions).
+- [x] Live: `group:add-base-from-afas 11683 11650 FR` voegt base #75 toe met AFAS-SKU `11650` + 4 BOM-items + regenereert variant-matrix.
+
+---
+
 ## Slice 20 — Reconciliation in portal-CSV-import (vervang wipe)
 
 Eindbeeld: portal-CSV-import is idempotent. Bestaande groepen behouden hun `model_name` en `group_accessoires` over imports heen; alleen groepen die niet meer in de CSV staan worden opgeruimd. Geen `ToolDataWiper` meer in de import-flow.

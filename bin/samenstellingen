@@ -12,6 +12,7 @@ use Defibrion\Samenstellingen\Application\Audit\ListMissingVariantsHandler;
 use Defibrion\Samenstellingen\Application\Audit\NameAuditHandler;
 use Defibrion\Samenstellingen\Application\Audit\SuspiciousBaseAuditHandler;
 use Defibrion\Samenstellingen\Application\Group\AddAccessoireToGroupHandler;
+use Defibrion\Samenstellingen\Application\Group\AddBaseFromAfasHandler;
 use Defibrion\Samenstellingen\Application\Group\AddBaseItemHandler;
 use Defibrion\Samenstellingen\Application\Group\AddBaseToGroupHandler;
 use Defibrion\Samenstellingen\Application\Group\CreateGroupHandler;
@@ -39,6 +40,7 @@ use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteGroupRepos
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteGroupVariantRepository;
 use Defibrion\Samenstellingen\Interface\Cli\AddAccessoireCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AddBaseCommand;
+use Defibrion\Samenstellingen\Interface\Cli\AddBaseFromAfasCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AddBaseItemCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AfasListDuplicatesCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AfasPullCommand;
@@ -89,6 +91,13 @@ $showGroupHandler = new ShowGroupHandler(
     $variantRepository,
 );
 $addBaseHandler = new AddBaseToGroupHandler($baseRepository, $variantRepository);
+$addBaseFromAfasHandler = new AddBaseFromAfasHandler(
+    $groupRepository,
+    $baseRepository,
+    $baseItemRepository,
+    $variantRepository,
+    $afasSamenstellingenRepository,
+);
 $addBaseItemHandler = new AddBaseItemHandler($baseItemRepository);
 $createAccessoireHandler = new CreateAccessoireHandler($accessoireRepository);
 $deleteAccessoireHandler = new DeleteAccessoireHandler(
@@ -151,6 +160,7 @@ $application = new Application('samenstellingen-manager');
 $application->addCommand(new CreateGroupCommand($createGroupHandler));
 $application->addCommand(new ShowGroupCommand($showGroupHandler));
 $application->addCommand(new AddBaseCommand($addBaseHandler));
+$application->addCommand(new AddBaseFromAfasCommand($addBaseFromAfasHandler));
 $application->addCommand(new AddBaseItemCommand($addBaseItemHandler));
 $application->addCommand(new CreateAccessoireCommand($createAccessoireHandler));
 $application->addCommand(new DeleteAccessoireCommand($deleteAccessoireHandler));

@@ -148,6 +148,47 @@ final readonly class SqliteAfasSamenstellingenRepository implements AfasSamenste
         return $result;
     }
 
+    public function findByItemcode(string $itemcode): ?AfasSamenstelling
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT id, itemcode, name, itemcode_parent, duplicate_of_itemcode
+             FROM afas_samenstellingen
+             WHERE itemcode = :itemcode'
+        );
+        $stmt->execute([':itemcode' => $itemcode]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($row)) {
+            return null;
+        }
+        $id = $row['id'] ?? null;
+        $code = $row['itemcode'] ?? null;
+        $name = $row['name'] ?? null;
+        $parent = $row['itemcode_parent'] ?? null;
+        $duplicateOf = $row['duplicate_of_itemcode'] ?? null;
+        if (!is_int($id) || !is_string($code) || !is_string($name)) {
+            return null;
+        }
+
+        $bomStmt = $this->pdo->prepare(
+            'SELECT component_itemcode FROM afas_samenstelling_bom WHERE afas_samenstelling_id = :id'
+        );
+        $bomStmt->execute([':id' => $id]);
+        $bom = [];
+        foreach ($bomStmt->fetchAll(PDO::FETCH_COLUMN) as $component) {
+            if (is_string($component)) {
+                $bom[] = $component;
+            }
+        }
+
+        return new AfasSamenstelling(
+            $code,
+            $name,
+            is_string($parent) ? $parent : null,
+            $bom,
+            is_string($duplicateOf) ? $duplicateOf : null,
+        );
+    }
+
     public function countSnapshot(): int
     {
         $stmt = $this->pdo->query('SELECT COUNT(*) FROM afas_samenstellingen');

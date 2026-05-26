@@ -46,6 +46,7 @@ Bootstrap van een groep: gegeven een family-head-itemcode, haal alle samenstelli
 Concrete CLI-commando's worden later bepaald. De tool moet in elk geval het volgende kunnen:
 
 - **Groepen beheren**: aanmaken, tonen, lijst, bases en accessoires toevoegen/verwijderen.
+- **Handmatig base linken aan AFAS-samenstelling**: voor ambigue gevallen die portal-CSV-import niet kan resolven, een commando dat een specifieke AFAS-samenstelling (via z'n itemcode) als base aan een groep koppelt en de BOM uit de snapshot overneemt — workaround voor data-drift die AFAS-side opgelost moet worden maar nog niet kan (slice 22).
 - **Importeren uit AFAS**: een groep bootstrappen vanuit een bestaand family-head-itemcode.
 - **AFAS spiegelen**: lokale snapshot van samenstellingen + BOMs verversen.
 - **Auditeren**: diff tussen groepsdefinitie en AFAS-werkelijkheid (zie §5).
