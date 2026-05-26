@@ -731,6 +731,47 @@ group:add-base-from-afas <family-head> <afas-itemcode> <language>
 
 ---
 
+## Slice 23 — Portal-CSV-import respecteert handmatig vastgezette base
+
+Eindbeeld: als de portal-CSV-import voor een article meerdere base-kandidaten vindt **én** de user heeft al een base in onze tool waarvan `afas_itemcode` matched met één van die kandidaten, dan kiest de import die. Ambiguïteit-rapport voor die rij verdwijnt.
+
+Reden: na slice 22 kan de user via `group:add-base-from-afas` expliciet een keuze maken voor ambigue gevallen. De prevalidate-stap zag die keuze niet en bleef "ambigu" rapporteren — misleidend.
+
+### Fase 1 — Repository + handler
+- [x] `GroupBaseRepository::findAllAfasItemcodes()` (InMemory + Sqlite + contracttest).
+- [x] `ImportPortalCsvHandler` laadt de set + filtert na `sellableCandidatesFor`.
+- [x] Test: ambigu lost op door pinned base (`pinnedBaseResolvesAmbiguity`).
+
+### Fase 2 — Live
+- [x] Live: filter werkt; voor 10650 blijven echter 2 gepinde SKU's (`11650` + `11650-60110` uit een eerdere import) → terecht nog ambigu. Vraagt aparte cleanup (slice 24 `group:remove-base`?).
+
+---
+
+## Slice 24 — `group:remove-base` (CLI om base handmatig te verwijderen)
+
+Eindbeeld: één CLI-commando om een base uit een groep te verwijderen. Cascade ruimt base-items + bijbehorende varianten op. Variant-matrix wordt na verwijdering geregenereerd zodat tellers kloppen. Read-only UI blijft (CLAUDE.md).
+
+Use case: opschoning na slice-19 `audit:suspicious-bases` aanwijst welke bases eigenlijk varianten zijn (zoals base #59 `11650-60110` "Zoll AED Plus Automatique FR+ ARKY Backpack" naast de echte base #75 `11650`). Onmisbaar voor:
+- Slice 23's pinned-resolutie werkt pas als impasses worden opgeruimd.
+- Onbedoelde duplicate bases in een groep+taal (12 paren bestaan al in de huidige DB).
+
+Symmetrisch met `accessoire:delete` (slice 17) en `group:add-base-from-afas` (slice 22).
+
+### Fase 1 — Repository + handler
+- [x] `GroupBaseRepository::delete(int)` + `findFamilyHeadForBase(int)` op interface.
+- [x] InMemory + Sqlite + contracttest.
+- [x] `RemoveBase` + `RemoveBaseResult` + `RemoveBaseHandler` (throwt `BaseNotFoundException` voor onbekende id).
+- [x] 2 handler-tests (success-path + onbekende id).
+
+### Fase 2 — CLI
+- [x] `RemoveBaseCommand` — `group:remove-base <base-id>` met foutmelding voor onbekende of niet-numerieke id.
+
+### Fase 3 — Lint + live
+- [x] `make check` groen (218 tests / 511 assertions).
+- [x] Live: `group:remove-base 59` ruimt de oude `11650-60110`-base op; herimport rapporteert 0 ambigu (slice 23 pinning resolved 10650), unresolved 16 → 14, 333 matched / 266 no_match.
+
+---
+
 ## Slice 20 — Reconciliation in portal-CSV-import (vervang wipe)
 
 Eindbeeld: portal-CSV-import is idempotent. Bestaande groepen behouden hun `model_name` en `group_accessoires` over imports heen; alleen groepen die niet meer in de CSV staan worden opgeruimd. Geen `ToolDataWiper` meer in de import-flow.

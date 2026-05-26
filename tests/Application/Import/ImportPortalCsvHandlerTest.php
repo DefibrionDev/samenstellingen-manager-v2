@@ -335,6 +335,31 @@ final class ImportPortalCsvHandlerTest extends TestCase
     }
 
     #[Test]
+    public function pinnedBaseResolvesAmbiguity(): void
+    {
+        // Twee kandidaten in AFAS-snapshot voor article 50013, dus normaal "ambigu".
+        // Maar de user heeft al een base in de tool die SKU 11142 expliciet kiest
+        // (via group:add-base-from-afas). De prevalidate moet die keuze respecteren
+        // en niet meer als ambigu melden.
+        $bag = $this->emptyBag();
+        $bag['accessoires']->save(new Accessoire('60110', 'EHBO-Rugzak'));
+        $bag['afas']->replaceSnapshot([
+            new AfasSamenstelling('11142', 'AED pakket NL', null, ['50013', '70112', '81111']),
+            new AfasSamenstelling('11145', 'AED pakket NL alt', null, ['50013', '70112', '81111', '90099']),
+        ]);
+        $bag['groups']->save(new \Defibrion\Samenstellingen\Domain\Group\Group('Reanibex', '11142'));
+        $bag['bases']->saveForGroup('11142', new \Defibrion\Samenstellingen\Domain\Group\GroupBase(null, 'Handmatig gepind', 'NL', '11142'));
+
+        $reader = $this->reader([
+            new PortalCsvRow('50013', 'Reanibex', 'AED NL', '', 'NL'),
+        ]);
+
+        $summary = $this->makeHandler($bag, $reader)(new ImportPortalCsv('/irrelevant.csv'));
+
+        self::assertSame([], $summary->unresolved, 'Ambiguïteit moet opgelost zijn door pinned SKU 11142');
+    }
+
+    #[Test]
     public function languageSuffixedBaseResolvesUnambiguously(): void
     {
         $bag = $this->emptyBag();

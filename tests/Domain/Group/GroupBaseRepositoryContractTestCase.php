@@ -89,4 +89,36 @@ abstract class GroupBaseRepositoryContractTestCase extends TestCase
     {
         self::assertNull($this->bases->findById(9999));
     }
+
+    #[Test]
+    public function deleteRemovesBase(): void
+    {
+        $persisted = $this->bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL', 'NL'));
+        self::assertNotNull($persisted->id);
+
+        $this->bases->delete($persisted->id);
+
+        self::assertNull($this->bases->findById($persisted->id));
+        self::assertSame([], $this->bases->findAllForGroup('52112'));
+    }
+
+    #[Test]
+    public function deleteIsIdempotentForUnknownId(): void
+    {
+        $this->bases->delete(9999);
+        self::assertNull($this->bases->findById(9999));
+    }
+
+    #[Test]
+    public function findAllAfasItemcodesReturnsOnlyNonNullValues(): void
+    {
+        $this->bases->saveForGroup('52112', new GroupBase(null, 'AED NL', 'NL', '52112'));
+        $this->bases->saveForGroup('52112', new GroupBase(null, 'Pack DAE FR', 'FR', '52124'));
+        $this->bases->saveForGroup('52112', new GroupBase(null, 'AED zonder SKU', 'DE', null));
+
+        $codes = $this->bases->findAllAfasItemcodes();
+        sort($codes);
+
+        self::assertSame(['52112', '52124'], $codes);
+    }
 }

@@ -79,6 +79,45 @@ final readonly class SqliteGroupBaseRepository implements GroupBaseRepository
         return $bases;
     }
 
+    public function delete(int $baseId): void
+    {
+        $stmt = $this->pdo->prepare('DELETE FROM group_bases WHERE id = :id');
+        $stmt->execute([':id' => $baseId]);
+    }
+
+    public function findFamilyHeadForBase(int $baseId): ?string
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT g.family_head_itemcode
+               FROM groups g
+               JOIN group_bases b ON b.group_id = g.id
+              WHERE b.id = :id'
+        );
+        $stmt->execute([':id' => $baseId]);
+        $value = $stmt->fetchColumn();
+
+        return is_string($value) ? $value : null;
+    }
+
+    public function findAllAfasItemcodes(): array
+    {
+        $stmt = $this->pdo->query(
+            'SELECT DISTINCT afas_itemcode FROM group_bases WHERE afas_itemcode IS NOT NULL'
+        );
+        if ($stmt === false) {
+            return [];
+        }
+
+        $codes = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $value) {
+            if (is_string($value) && $value !== '') {
+                $codes[] = $value;
+            }
+        }
+
+        return $codes;
+    }
+
     /**
      * @param array<string, mixed> $row
      */

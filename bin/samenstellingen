@@ -15,6 +15,7 @@ use Defibrion\Samenstellingen\Application\Group\AddAccessoireToGroupHandler;
 use Defibrion\Samenstellingen\Application\Group\AddBaseFromAfasHandler;
 use Defibrion\Samenstellingen\Application\Group\AddBaseItemHandler;
 use Defibrion\Samenstellingen\Application\Group\AddBaseToGroupHandler;
+use Defibrion\Samenstellingen\Application\Group\RemoveBaseHandler;
 use Defibrion\Samenstellingen\Application\Group\CreateGroupHandler;
 use Defibrion\Samenstellingen\Application\Group\ShowGroupHandler;
 use Defibrion\Samenstellingen\Application\Group\SyncAllGroupsHandler;
@@ -42,6 +43,7 @@ use Defibrion\Samenstellingen\Interface\Cli\AddAccessoireCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AddBaseCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AddBaseFromAfasCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AddBaseItemCommand;
+use Defibrion\Samenstellingen\Interface\Cli\RemoveBaseCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AfasListDuplicatesCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AfasPullCommand;
 use Defibrion\Samenstellingen\Interface\Cli\BlacklistBomCommand;
@@ -91,6 +93,7 @@ $showGroupHandler = new ShowGroupHandler(
     $variantRepository,
 );
 $addBaseHandler = new AddBaseToGroupHandler($baseRepository, $variantRepository);
+$removeBaseHandler = new RemoveBaseHandler($baseRepository, $variantRepository);
 $addBaseFromAfasHandler = new AddBaseFromAfasHandler(
     $groupRepository,
     $baseRepository,
@@ -162,6 +165,7 @@ $application->addCommand(new CreateGroupCommand($createGroupHandler));
 $application->addCommand(new ShowGroupCommand($showGroupHandler));
 $application->addCommand(new AddBaseCommand($addBaseHandler));
 $application->addCommand(new AddBaseFromAfasCommand($addBaseFromAfasHandler));
+$application->addCommand(new RemoveBaseCommand($removeBaseHandler));
 $application->addCommand(new AddBaseItemCommand($addBaseItemHandler));
 $application->addCommand(new CreateAccessoireCommand($createAccessoireHandler));
 $application->addCommand(new DeleteAccessoireCommand($deleteAccessoireHandler));

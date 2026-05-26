@@ -65,6 +65,41 @@ final class InMemoryGroupBaseRepository implements GroupBaseRepository
         return $bases;
     }
 
+    public function delete(int $baseId): void
+    {
+        $base = $this->byId[$baseId] ?? null;
+        if ($base === null) {
+            return;
+        }
+        unset($this->byId[$baseId]);
+        foreach ($this->byFamilyHead as $familyHead => $ids) {
+            $this->byFamilyHead[$familyHead] = array_values(array_filter($ids, static fn (int $id) => $id !== $baseId));
+        }
+    }
+
+    public function findFamilyHeadForBase(int $baseId): ?string
+    {
+        foreach ($this->byFamilyHead as $familyHead => $ids) {
+            if (in_array($baseId, $ids, true)) {
+                return (string) $familyHead;
+            }
+        }
+
+        return null;
+    }
+
+    public function findAllAfasItemcodes(): array
+    {
+        $codes = [];
+        foreach ($this->byId as $base) {
+            if ($base->afasItemcode !== null) {
+                $codes[] = $base->afasItemcode;
+            }
+        }
+
+        return array_values(array_unique($codes));
+    }
+
     private function assertGroupExists(string $familyHeadItemcode): void
     {
         if (!$this->groupRepository->findByFamilyHeadItemcode($familyHeadItemcode) instanceof Group) {

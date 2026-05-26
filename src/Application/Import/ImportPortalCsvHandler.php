@@ -51,10 +51,15 @@ final readonly class ImportPortalCsvHandler
     public function __invoke(ImportPortalCsv $command): PortalImportSummary
     {
         $blockedBomCodes = $this->loadBlockedBomCodes();
+        // Bases die de user handmatig heeft gepind (via group:add-base-from-afas of
+        // via een eerdere portal-CSV-import) — gebruikt om ambigue article-rijen op te
+        // lossen: als precies één van de kandidaten al gepind is in onze tool, kiezen
+        // we die ipv ambigu te rapporteren.
+        $pinnedAfasCodes = $this->baseRepository->findAllAfasItemcodes();
 
         $summary = new PortalImportSummary();
         $rowsByGroep = $this->groupRows($command->csvPath, $summary);
-        $this->prevalidateResolvable($rowsByGroep, $blockedBomCodes, $summary);
+        $this->prevalidateResolvable($rowsByGroep, $blockedBomCodes, $pinnedAfasCodes, $summary);
 
         // Idempotent reconciliation — geen wipe meer.
         // 1) Bouw target-set van family-heads die de CSV oplevert.
@@ -64,7 +69,7 @@ final readonly class ImportPortalCsvHandler
         // 4) Regenereer variants per geraakte groep zodat de matrix klopt.
         $resolvedFamilyHeads = [];
         foreach ($rowsByGroep as $rows) {
-            $familyHead = $this->resolveFamilyHead($rows, $blockedBomCodes);
+            $familyHead = $this->resolveFamilyHead($rows, $blockedBomCodes, $pinnedAfasCodes);
             if ($familyHead !== null) {
                 $resolvedFamilyHeads[] = $familyHead;
             }
@@ -72,7 +77,7 @@ final readonly class ImportPortalCsvHandler
         $this->reconcileOrphanGroups($resolvedFamilyHeads);
 
         foreach ($rowsByGroep as $groep => $rows) {
-            $familyHead = $this->resolveFamilyHead($rows, $blockedBomCodes);
+            $familyHead = $this->resolveFamilyHead($rows, $blockedBomCodes, $pinnedAfasCodes);
             if ($familyHead === null) {
                 continue;
             }
@@ -87,7 +92,7 @@ final readonly class ImportPortalCsvHandler
             }
 
             foreach ($rows as $row) {
-                $this->importRow($groep, $familyHead, $row, $blockedBomCodes, $summary);
+                $this->importRow($groep, $familyHead, $row, $blockedBomCodes, $pinnedAfasCodes, $summary);
             }
 
             $this->variantRepository->regenerateForGroup($familyHead);
@@ -146,12 +151,13 @@ final readonly class ImportPortalCsvHandler
     /**
      * @param array<string, list<array{code: string, item: string, language: string}>> $rowsByGroep
      * @param list<string> $blockedBomCodes
+     * @param list<string> $pinnedAfasCodes
      */
-    private function prevalidateResolvable(array $rowsByGroep, array $blockedBomCodes, PortalImportSummary $summary): void
+    private function prevalidateResolvable(array $rowsByGroep, array $blockedBomCodes, array $pinnedAfasCodes, PortalImportSummary $summary): void
     {
         foreach ($rowsByGroep as $groep => $rows) {
             foreach ($rows as $row) {
-                $candidates = $this->sellableCandidatesFor($row['code'], $blockedBomCodes, $row['language']);
+                $candidates = $this->sellableCandidatesFor($row['code'], $blockedBomCodes, $row['language'], $pinnedAfasCodes);
 
                 if ($candidates === []) {
                     $summary->unresolved[] = [
@@ -216,10 +222,15 @@ final readonly class ImportPortalCsvHandler
      * @param list<array{code: string, item: string, language: string}> $rows
      * @param list<string> $blockedBomCodes
      */
-    private function resolveFamilyHead(array $rows, array $blockedBomCodes): ?string
+    /**
+     * @param list<array{code: string, item: string, language: string}> $rows
+     * @param list<string> $blockedBomCodes
+     * @param list<string> $pinnedAfasCodes
+     */
+    private function resolveFamilyHead(array $rows, array $blockedBomCodes, array $pinnedAfasCodes): ?string
     {
         foreach ($rows as $row) {
-            $candidates = $this->sellableCandidatesFor($row['code'], $blockedBomCodes, $row['language']);
+            $candidates = $this->sellableCandidatesFor($row['code'], $blockedBomCodes, $row['language'], $pinnedAfasCodes);
             if (count($candidates) !== 1) {
                 // Onresolveerbare (0) en ambigue (>1) rijen kunnen geen family-head bepalen.
                 continue;
@@ -248,12 +259,17 @@ final readonly class ImportPortalCsvHandler
      * @param list<string> $blockedBomCodes
      * @return list<AfasSamenstelling>
      */
-    private function sellableCandidatesFor(string $articleCode, array $blockedBomCodes, string $language): array
+    /**
+     * @param list<string> $blockedBomCodes
+     * @param list<string> $pinnedAfasCodes
+     * @return list<AfasSamenstelling>
+     */
+    private function sellableCandidatesFor(string $articleCode, array $blockedBomCodes, string $language, array $pinnedAfasCodes): array
     {
         $bases = $this->lookup->findCanonicalBasesContaining($articleCode, $blockedBomCodes);
         $stickerRequired = !$this->isEnglishOnlyLanguage($language);
 
-        return array_values(array_filter(
+        $candidates = array_values(array_filter(
             $bases,
             static function (AfasSamenstelling $s) use ($stickerRequired): bool {
                 $bom = $s->bomItemcodes;
@@ -272,6 +288,21 @@ final readonly class ImportPortalCsvHandler
                 return false;
             },
         ));
+
+        // Bij ambiguïteit: als precies één kandidaat al gepind is (handmatig vastgezet
+        // via group:add-base-from-afas of vorige import), respecteer die keuze.
+        if (count($candidates) > 1 && $pinnedAfasCodes !== []) {
+            $pinned = array_fill_keys($pinnedAfasCodes, true);
+            $matching = array_values(array_filter(
+                $candidates,
+                static fn (AfasSamenstelling $s): bool => isset($pinned[$s->itemcode]),
+            ));
+            if (count($matching) === 1) {
+                return $matching;
+            }
+        }
+
+        return $candidates;
     }
 
     private function isEnglishOnlyLanguage(string $language): bool
@@ -283,9 +314,14 @@ final readonly class ImportPortalCsvHandler
      * @param array{code: string, item: string, language: string} $row
      * @param list<string> $blockedBomCodes
      */
-    private function importRow(string $groep, string $familyHead, array $row, array $blockedBomCodes, PortalImportSummary $summary): void
+    /**
+     * @param array{code: string, item: string, language: string} $row
+     * @param list<string> $blockedBomCodes
+     * @param list<string> $pinnedAfasCodes
+     */
+    private function importRow(string $groep, string $familyHead, array $row, array $blockedBomCodes, array $pinnedAfasCodes, PortalImportSummary $summary): void
     {
-        $candidates = $this->sellableCandidatesFor($row['code'], $blockedBomCodes, $row['language']);
+        $candidates = $this->sellableCandidatesFor($row['code'], $blockedBomCodes, $row['language'], $pinnedAfasCodes);
         // Sla onresolveerbare (0) en ambigue (>1) rijen over — die staan al in summary->unresolved.
         if (count($candidates) !== 1) {
             return;
