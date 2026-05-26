@@ -16,3 +16,4 @@
 .phpunit.result.cache
 .phpunit.cache/
 .php-cs-fixer.cache
+output.txt
