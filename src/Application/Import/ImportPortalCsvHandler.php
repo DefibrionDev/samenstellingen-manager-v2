@@ -8,6 +8,7 @@ use Defibrion\Samenstellingen\Application\Group\SyncAllGroups;
 use Defibrion\Samenstellingen\Application\Group\SyncAllGroupsHandler;
 use Defibrion\Samenstellingen\Domain\Accessoire\Accessoire;
 use Defibrion\Samenstellingen\Domain\Accessoire\AccessoireRepository;
+use Defibrion\Samenstellingen\Domain\Afas\AfasArticleRepository;
 use Defibrion\Samenstellingen\Domain\Afas\AfasSamenstelling;
 use Defibrion\Samenstellingen\Domain\Afas\AfasSamenstellingLookup;
 use Defibrion\Samenstellingen\Domain\Afas\BomBlacklistRepository;
@@ -36,7 +37,15 @@ final readonly class ImportPortalCsvHandler
         private AccessoireRepository $accessoireRepository,
         private BomBlacklistRepository $bomBlacklistRepository,
         private SyncAllGroupsHandler $syncAllGroups,
+        private AfasArticleRepository $afasArticles,
     ) {
+    }
+
+    private function articleNameFor(string $itemcode): string
+    {
+        $article = $this->afasArticles->findByItemcode($itemcode);
+
+        return $article === null ? '' : $article->name;
     }
 
     public function __invoke(ImportPortalCsv $command): PortalImportSummary
@@ -148,6 +157,7 @@ final readonly class ImportPortalCsvHandler
                     $summary->unresolved[] = [
                         'groep' => $groep,
                         'code' => $row['code'],
+                        'articleName' => $this->articleNameFor($row['code']),
                         'reason' => 'Geen base-samenstelling gevonden (BOM moet article-code, reanimatiekit 70112 en een stickerset 81xxx bevatten, en mag geen geregistreerde accessoire bevatten).',
                     ];
                     continue;
@@ -158,6 +168,7 @@ final readonly class ImportPortalCsvHandler
                     $summary->unresolved[] = [
                         'groep' => $groep,
                         'code' => $row['code'],
+                        'articleName' => $this->articleNameFor($row['code']),
                         'reason' => sprintf(
                             'Ambigu: AFAS bevat %d base-kandidaten (%s) — los op in AFAS voordat de import opnieuw draait.',
                             count($candidates),
@@ -186,6 +197,7 @@ final readonly class ImportPortalCsvHandler
                 $summary->unresolved[] = [
                     'groep' => $row->groep,
                     'code' => $row->code,
+                    'articleName' => $this->articleNameFor($row->code),
                     'reason' => "Geen taal opgegeven in CSV-kolom 'Taal' — taal is verplicht voor een base.",
                 ];
                 continue;

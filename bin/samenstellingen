@@ -135,6 +135,7 @@ $importPortalCsvHandler = new ImportPortalCsvHandler(
     $accessoireRepository,
     $bomBlacklistRepository,
     $syncAllGroupsHandler,
+    $afasArticleRepository,
 );
 $blacklistBomHandler = new BlacklistBomCodeHandler($bomBlacklistRepository);
 $listBomBlacklistHandler = new ListBomBlacklistHandler($bomBlacklistRepository);

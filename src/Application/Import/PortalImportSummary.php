@@ -14,7 +14,7 @@ final class PortalImportSummary
     public int $basesCreated = 0;
     public int $baseItemsCreated = 0;
 
-    /** @var list<array{groep: string, code: string, reason: string}> */
+    /** @var list<array{groep: string, code: string, articleName: string, reason: string}> */
     public array $unresolved = [];
 
     public ?SyncAllSummary $sync = null;

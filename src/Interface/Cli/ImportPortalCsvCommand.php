@@ -69,10 +69,10 @@ final class ImportPortalCsvCommand extends Command
 
             $rows = [];
             foreach ($summary->unresolved as $entry) {
-                $rows[] = [$entry['groep'], $entry['code'], $entry['reason']];
+                $rows[] = [$entry['code'], $entry['articleName'], $entry['reason']];
             }
             $io->section('Onresolveerbare article-codes');
-            $io->table(['Groep', 'Code', 'Reden'], $rows);
+            $io->table(['Code', 'AFAS-artikel', 'Reden'], $rows);
 
             $io->writeln('<comment>Actie voor de volgende ronde:</comment>');
             if ($missing > 0) {

@@ -381,6 +381,7 @@ final class ImportPortalCsvHandlerTest extends TestCase
             $bag['accessoires'],
             $bag['blacklist'],
             $syncAll,
+            $bag['articles'],
         );
     }
 
@@ -407,6 +408,7 @@ final class ImportPortalCsvHandlerTest extends TestCase
         $links = new InMemoryGroupAccessoireRepository($groups, $accessoires);
         $variants = new InMemoryGroupVariantRepository($groups, $bases, $links);
         $afas = new InMemoryAfasSamenstellingenRepository();
+        $articles = new \Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryAfasArticleRepository();
 
         return [
             'groups' => $groups,
@@ -417,6 +419,7 @@ final class ImportPortalCsvHandlerTest extends TestCase
             'links' => $links,
             'blacklist' => $blacklist,
             'afas' => $afas,
+            'articles' => $articles,
             'lookup' => new AfasSamenstellingLookup($afas),
         ];
     }
