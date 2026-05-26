@@ -271,6 +271,70 @@ final class ImportPortalCsvHandlerTest extends TestCase
     }
 
     #[Test]
+    public function acceptsPureEnglishBaseWithoutStickerset(): void
+    {
+        // AFAS heeft geen aparte EN-stickerset; pure EN-bases hebben alleen 70112 + article.
+        $bag = $this->emptyBag();
+        $bag['accessoires']->save(new Accessoire('60110', 'EHBO-Rugzak'));
+        $bag['afas']->replaceSnapshot([
+            new AfasSamenstelling('11100', 'Zoll AED Plus EN', null, ['11000', '70112']), // geen 81xxx
+        ]);
+        $reader = $this->reader([
+            new PortalCsvRow('11000', 'Zoll', 'AED EN', '', 'EN'),
+        ]);
+
+        $summary = $this->makeHandler($bag, $reader)(new ImportPortalCsv('/irrelevant.csv'));
+
+        self::assertSame([], $summary->unresolved);
+        self::assertSame(1, $summary->basesCreated);
+    }
+
+    #[Test]
+    public function stillRejectsNonEnglishBaseWithoutStickerset(): void
+    {
+        // NL-bases MOETEN sticker hebben — anders blijven we ze als incompleet zien.
+        $bag = $this->emptyBag();
+        $bag['accessoires']->save(new Accessoire('60110', 'EHBO-Rugzak'));
+        $bag['afas']->replaceSnapshot([
+            new AfasSamenstelling('11100', 'Iets NL', null, ['11000', '70112']), // geen 81xxx
+        ]);
+        $reader = $this->reader([
+            new PortalCsvRow('11000', 'Zoll', 'AED NL', '', 'NL'),
+        ]);
+
+        $summary = $this->makeHandler($bag, $reader)(new ImportPortalCsv('/irrelevant.csv'));
+
+        self::assertCount(1, $summary->unresolved);
+        self::assertSame('11000', $summary->unresolved[0]['code']);
+        self::assertStringContainsString('Geen base', $summary->unresolved[0]['reason']);
+    }
+
+    #[Test]
+    public function compoundLanguageStillRequiresStickerset(): void
+    {
+        // NL/EN-compound bases hebben in AFAS gewoon de NL-stickerset → vereisten blijven.
+        $bag = $this->emptyBag();
+        $bag['accessoires']->save(new Accessoire('60110', 'EHBO-Rugzak'));
+        $bag['afas']->replaceSnapshot([
+            // Met sticker (correct compound) — moet accepteren
+            new AfasSamenstelling('11142', 'AED pakket NL/EN', null, ['50013', '70112', '81111']),
+            // Zonder sticker — moet afwijzen, want compound is geen pure EN
+            new AfasSamenstelling('22222', 'Iets NL/EN zonder sticker', null, ['60013', '70112']),
+        ]);
+        $reader = $this->reader([
+            new PortalCsvRow('50013', 'Lifepak CR2', 'AED NL/EN', '', 'NL/EN'),
+            new PortalCsvRow('60013', 'Iets anders', 'AED NL/EN', '', 'NL/EN'),
+        ]);
+
+        $summary = $this->makeHandler($bag, $reader)(new ImportPortalCsv('/irrelevant.csv'));
+
+        // 11142 wordt geïmporteerd; 22222 belandt in unresolved want geen sticker bij compound
+        self::assertSame(1, $summary->basesCreated);
+        self::assertCount(1, $summary->unresolved);
+        self::assertSame('60013', $summary->unresolved[0]['code']);
+    }
+
+    #[Test]
     public function languageSuffixedBaseResolvesUnambiguously(): void
     {
         $bag = $this->emptyBag();

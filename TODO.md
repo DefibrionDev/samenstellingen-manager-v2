@@ -689,6 +689,24 @@ Eerste hit (gedetecteerd in slice 18-context): `11683-60110` en `11650-60110` �
 
 ---
 
+## Slice 21 — EN/UK-bases zonder stickerset accepteren
+
+Eindbeeld: portal-CSV-import wijst pure EN/UK-bases niet meer af om de stickerset-eis. AFAS heeft simpelweg geen Engelse stickerset — Engelse bases hebben alleen `70112` (reanimatiekit) + article-code in hun BOM, en dat is daar de norm.
+
+Compound talen (`NL/EN`, `NL/EN/FR`, `DE/EN/FR`) behouden de sticker-eis: data toont dat die bases gewoon `81111`/`81211` etc. in BOM hebben.
+
+### Fase 1 — Filter aanpassing + tests
+- [x] `ImportPortalCsvHandler::sellableCandidatesFor` krijgt extra `$language`-parameter.
+- [x] Voor `language === 'EN'` of `'UK'`: sticker-eis (`81xxx`) vervalt; `70112` blijft verplicht.
+- [x] Compound (`NL/EN` etc.): sticker-eis blijft.
+- [x] 3 nieuwe tests: pure-EN accept, NL afwijzen zonder sticker, compound NL/EN sticker-eis behouden.
+
+### Fase 2 — Lint + live
+- [x] `make check` groen (205 tests / 480 assertions).
+- [x] Live: 28 → 16 unresolved (14 EN-bases lossen op); 22 groepen / 339 matched / 260 no_match.
+
+---
+
 ## Slice 20 — Reconciliation in portal-CSV-import (vervang wipe)
 
 Eindbeeld: portal-CSV-import is idempotent. Bestaande groepen behouden hun `model_name` en `group_accessoires` over imports heen; alleen groepen die niet meer in de CSV staan worden opgeruimd. Geen `ToolDataWiper` meer in de import-flow.

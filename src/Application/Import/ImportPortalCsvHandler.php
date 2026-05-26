@@ -142,7 +142,7 @@ final readonly class ImportPortalCsvHandler
     {
         foreach ($rowsByGroep as $groep => $rows) {
             foreach ($rows as $row) {
-                $candidates = $this->sellableCandidatesFor($row['code'], $blockedBomCodes);
+                $candidates = $this->sellableCandidatesFor($row['code'], $blockedBomCodes, $row['language']);
 
                 if ($candidates === []) {
                     $summary->unresolved[] = [
@@ -207,7 +207,7 @@ final readonly class ImportPortalCsvHandler
     private function resolveFamilyHead(array $rows, array $blockedBomCodes): ?string
     {
         foreach ($rows as $row) {
-            $candidates = $this->sellableCandidatesFor($row['code'], $blockedBomCodes);
+            $candidates = $this->sellableCandidatesFor($row['code'], $blockedBomCodes, $row['language']);
             if (count($candidates) !== 1) {
                 // Onresolveerbare (0) en ambigue (>1) rijen kunnen geen family-head bepalen.
                 continue;
@@ -228,19 +228,28 @@ final readonly class ImportPortalCsvHandler
      * "Verkoopbare" base-samenstellingen: BOM bevat article-code + reanimatiekit (70112)
      * + stickerset (81xxx) en GEEN geregistreerde accessoire.
      *
+     * Uitzondering: pure EN/UK-bases hebben in AFAS geen aparte stickerset (er bestaat
+     * geen Engelse stickerset). Voor `language === 'EN'` of `'UK'` vervalt de 81xxx-eis;
+     * 70112 blijft verplicht. Compound talen (`NL/EN`, `NL/EN/FR`, ...) behouden de
+     * sticker-eis omdat compound bases in AFAS gewoon de NL-stickerset hebben.
+     *
      * @param list<string> $blockedBomCodes
      * @return list<AfasSamenstelling>
      */
-    private function sellableCandidatesFor(string $articleCode, array $blockedBomCodes): array
+    private function sellableCandidatesFor(string $articleCode, array $blockedBomCodes, string $language): array
     {
         $bases = $this->lookup->findCanonicalBasesContaining($articleCode, $blockedBomCodes);
+        $stickerRequired = !$this->isEnglishOnlyLanguage($language);
 
         return array_values(array_filter(
             $bases,
-            static function (AfasSamenstelling $s): bool {
+            static function (AfasSamenstelling $s) use ($stickerRequired): bool {
                 $bom = $s->bomItemcodes;
                 if (!in_array('70112', $bom, true)) {
                     return false;
+                }
+                if (!$stickerRequired) {
+                    return true;
                 }
                 foreach ($bom as $code) {
                     if (str_starts_with($code, '81')) {
@@ -253,13 +262,18 @@ final readonly class ImportPortalCsvHandler
         ));
     }
 
+    private function isEnglishOnlyLanguage(string $language): bool
+    {
+        return $language === 'EN' || $language === 'UK';
+    }
+
     /**
      * @param array{code: string, item: string, language: string} $row
      * @param list<string> $blockedBomCodes
      */
     private function importRow(string $groep, string $familyHead, array $row, array $blockedBomCodes, PortalImportSummary $summary): void
     {
-        $candidates = $this->sellableCandidatesFor($row['code'], $blockedBomCodes);
+        $candidates = $this->sellableCandidatesFor($row['code'], $blockedBomCodes, $row['language']);
         // Sla onresolveerbare (0) en ambigue (>1) rijen over — die staan al in summary->unresolved.
         if (count($candidates) !== 1) {
             return;
