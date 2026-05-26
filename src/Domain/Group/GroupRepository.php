@@ -19,4 +19,11 @@ interface GroupRepository
      * @return list<Group>
      */
     public function findAll(): array;
+
+    /**
+     * Verwijder een groep + alles wat eraan hangt (cascade via FK: bases, base-items,
+     * variants, group_accessoires-koppelingen). De accessoires-catalogus blijft.
+     * Idempotent: onbekende family-head is no-op.
+     */
+    public function delete(string $familyHeadItemcode): void;
 }

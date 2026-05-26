@@ -45,4 +45,13 @@ final class InMemoryGroupRepository implements GroupRepository
 
         return $groups;
     }
+
+    public function delete(string $familyHeadItemcode): void
+    {
+        $group = $this->byFamilyHead[$familyHeadItemcode] ?? null;
+        if ($group === null) {
+            return; // idempotent — onbekende family-head is no-op
+        }
+        unset($this->byFamilyHead[$familyHeadItemcode], $this->byName[$group->name]);
+    }
 }

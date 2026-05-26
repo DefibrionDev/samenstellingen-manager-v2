@@ -12,7 +12,7 @@ PHP 8.5 application for managing Defibrion's AED-pakket samenstellingen in AFAS,
    - **Refactor:** clean up while tests stay green.
 4. **Verify by actually running.** Run the full test suite *and* exercise the feature manually (CLI, audit against a real AFAS snapshot, etc.) before claiming success. Type checks and green tests alone are not proof the feature works.
 5. **Mark and move on.** Tick the todo in `TODO.md`, then pick the next one.
-6. **Per-phase commit + push.** When all todos in a phase are checked, `git commit` with a clear message and `git push`. No commits mid-phase unless the user asks.
+6. **Per-phase commit + push.** When all todos in a phase are checked, `git commit` with a clear message and `git push`. No commits mid-phase unless the user asks. The commit + push step is *the end of the phase* — don't add it as a separate checkbox-item in `TODO.md` ("- [ ] Commit + push" is redundant noise). A phase is done when its real todos are checked and the commit is on the remote.
 
 ## Code rules
 

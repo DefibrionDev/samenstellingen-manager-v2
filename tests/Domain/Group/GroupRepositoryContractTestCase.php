@@ -73,4 +73,25 @@ abstract class GroupRepositoryContractTestCase extends TestCase
 
         $repo->save(new Group('Andere groep', '52112'));
     }
+
+    #[Test]
+    public function deleteRemovesGroup(): void
+    {
+        $repo = $this->repository();
+        $repo->save(new Group('Reanibex', '52112'));
+
+        $repo->delete('52112');
+
+        self::assertNull($repo->findByFamilyHeadItemcode('52112'));
+    }
+
+    #[Test]
+    public function deleteIsIdempotentForUnknownFamilyHead(): void
+    {
+        $repo = $this->repository();
+
+        $repo->delete('99999');
+
+        self::assertSame([], $repo->findAll());
+    }
 }

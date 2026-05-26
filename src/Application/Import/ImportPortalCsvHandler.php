@@ -22,14 +22,12 @@ use Defibrion\Samenstellingen\Domain\Group\GroupBaseRepository;
 use Defibrion\Samenstellingen\Domain\Group\GroupRepository;
 use Defibrion\Samenstellingen\Domain\Group\GroupVariantRepository;
 use Defibrion\Samenstellingen\Domain\Import\PortalCsvReader;
-use Defibrion\Samenstellingen\Domain\Tool\ToolDataWiper;
 use RuntimeException;
 
 final readonly class ImportPortalCsvHandler
 {
     public function __construct(
         private PortalCsvReader $reader,
-        private ToolDataWiper $wiper,
         private GroupRepository $groupRepository,
         private GroupBaseRepository $baseRepository,
         private GroupBaseItemRepository $baseItemRepository,
@@ -49,10 +47,20 @@ final readonly class ImportPortalCsvHandler
         $rowsByGroep = $this->groupRows($command->csvPath, $summary);
         $this->prevalidateResolvable($rowsByGroep, $blockedBomCodes, $summary);
 
-        // Non-blocking: unresolved rijen blijven in het rapport, maar de resolveerbare
-        // rijen worden gewoon geïmporteerd. importRow/resolveFamilyHead negeren rijen
-        // met 0 of >1 kandidaten.
-        $this->wiper->wipe();
+        // Idempotent reconciliation — geen wipe meer.
+        // 1) Bouw target-set van family-heads die de CSV oplevert.
+        // 2) Verwijder groepen die NIET in de target-set staan (cascade ruimt op).
+        // 3) Per CSV-groep: insert als 'ie niet bestaat; bestaande blijft met haar
+        //    model_name + group_accessoires. Bases zijn ook insert-if-not-exists.
+        // 4) Regenereer variants per geraakte groep zodat de matrix klopt.
+        $resolvedFamilyHeads = [];
+        foreach ($rowsByGroep as $rows) {
+            $familyHead = $this->resolveFamilyHead($rows, $blockedBomCodes);
+            if ($familyHead !== null) {
+                $resolvedFamilyHeads[] = $familyHead;
+            }
+        }
+        $this->reconcileOrphanGroups($resolvedFamilyHeads);
 
         foreach ($rowsByGroep as $groep => $rows) {
             $familyHead = $this->resolveFamilyHead($rows, $blockedBomCodes);
@@ -60,11 +68,13 @@ final readonly class ImportPortalCsvHandler
                 continue;
             }
 
-            try {
-                $this->groupRepository->save(new Group($groep, $familyHead));
-                ++$summary->groupsCreated;
-            } catch (GroupAlreadyExistsException) {
-                // Defensief: na wipe niet te verwachten.
+            if ($this->groupRepository->findByFamilyHeadItemcode($familyHead) === null) {
+                try {
+                    $this->groupRepository->save(new Group($groep, $familyHead));
+                    ++$summary->groupsCreated;
+                } catch (GroupAlreadyExistsException) {
+                    // Mogelijk als de groep-naam botst met een bestaande andere groep.
+                }
             }
 
             foreach ($rows as $row) {
@@ -79,6 +89,22 @@ final readonly class ImportPortalCsvHandler
         $summary->sync = ($this->syncAllGroups)(new SyncAllGroups());
 
         return $summary;
+    }
+
+    /**
+     * Verwijder groepen waarvan de family-head niet meer in de huidige CSV staat.
+     * Cascade ruimt bases/items/variants/group_accessoires van die groep op.
+     *
+     * @param list<string> $targetFamilyHeads
+     */
+    private function reconcileOrphanGroups(array $targetFamilyHeads): void
+    {
+        $target = array_fill_keys($targetFamilyHeads, true);
+        foreach ($this->groupRepository->findAll() as $group) {
+            if (!isset($target[$group->familyHeadItemcode])) {
+                $this->groupRepository->delete($group->familyHeadItemcode);
+            }
+        }
     }
 
     /**

@@ -59,6 +59,15 @@ final readonly class SqliteGroupRepository implements GroupRepository
         return $this->rowToGroup($stmt->fetch(PDO::FETCH_ASSOC));
     }
 
+    public function delete(string $familyHeadItemcode): void
+    {
+        $stmt = $this->pdo->prepare(
+            'DELETE FROM groups WHERE family_head_itemcode = :itemcode'
+        );
+        $stmt->execute([':itemcode' => $familyHeadItemcode]);
+        // Idempotent: rowCount kan 0 zijn als de groep niet bestond.
+    }
+
     public function findAll(): array
     {
         $stmt = $this->pdo->query('SELECT name, family_head_itemcode, model_name FROM groups ORDER BY name');

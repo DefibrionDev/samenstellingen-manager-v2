@@ -28,7 +28,6 @@ use Defibrion\Samenstellingen\Infrastructure\Afas\Http\HttpAfasArticlesFetcher;
 use Defibrion\Samenstellingen\Infrastructure\Afas\Http\HttpAfasSamenstellingenFetcher;
 use Defibrion\Samenstellingen\Infrastructure\Import\FileCsvSamenstellingenReader;
 use Defibrion\Samenstellingen\Infrastructure\Import\FilePortalCsvReader;
-use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteToolDataWiper;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\Migrator;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAccessoireRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAfasSamenstellingenRepository;
@@ -119,7 +118,6 @@ $importCsvHandler = new ImportSamenstellingenCsvHandler(
 );
 $importPortalCsvHandler = new ImportPortalCsvHandler(
     new FilePortalCsvReader(),
-    new SqliteToolDataWiper($pdo),
     $groupRepository,
     $baseRepository,
     $baseItemRepository,

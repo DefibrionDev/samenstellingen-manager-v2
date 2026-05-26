@@ -12,7 +12,6 @@ use Defibrion\Samenstellingen\Domain\Afas\AfasSamenstellingLookup;
 use Defibrion\Samenstellingen\Domain\Afas\BomBlacklistEntry;
 use Defibrion\Samenstellingen\Domain\Import\PortalCsvReader;
 use Defibrion\Samenstellingen\Domain\Import\PortalCsvRow;
-use Defibrion\Samenstellingen\Domain\Tool\ToolDataWiper;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryAccessoireRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryAfasSamenstellingenRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryBomBlacklistRepository;
@@ -186,6 +185,92 @@ final class ImportPortalCsvHandlerTest extends TestCase
     }
 
     #[Test]
+    public function secondImportIsIdempotentAndPreservesUserDefinedConfig(): void
+    {
+        $bag = $this->emptyBag();
+        $bag['accessoires']->save(new Accessoire('60110', 'EHBO-Rugzak'));
+        $bag['afas']->replaceSnapshot([
+            new AfasSamenstelling('11142', 'AED pakket NL', null, ['50013', '70112', '81111']),
+        ]);
+        $reader = $this->reader([
+            new PortalCsvRow('50013', 'Reanibex 100 Semi-Auto', 'AED NL', '', 'NL'),
+        ]);
+
+        // 1) Eerste import — groep + base aangemaakt.
+        $this->makeHandler($bag, $reader)(new ImportPortalCsv('/irrelevant.csv'));
+
+        // 2) User-defined config bovenop de geïmporteerde groep:
+        //    a) model_name op de groep (slice 18 seed)
+        //    b) accessoire-koppeling
+        $existing = $bag['groups']->findByFamilyHeadItemcode('11142');
+        self::assertNotNull($existing);
+        // InMemoryGroupRepository: vervang via opnieuw save met model_name.
+        // (Simuleert wat slice 18's SQL UPDATE deed.)
+        $bag['groups']->delete('11142');
+        $bag['groups']->save(new \Defibrion\Samenstellingen\Domain\Group\Group(
+            $existing->name,
+            $existing->familyHeadItemcode,
+            'Reanibex 100 semi-automaat',
+        ));
+        $bag['links']->link('11142', '60110');
+
+        // Baseline na seed: 1 koppeling, model_name gevuld.
+        self::assertCount(1, $bag['links']->findAllForGroup('11142'));
+        $afterSeed = $bag['groups']->findByFamilyHeadItemcode('11142');
+        self::assertNotNull($afterSeed);
+        self::assertSame('Reanibex 100 semi-automaat', $afterSeed->modelName);
+
+        // 3) Tweede import — identieke CSV — moet idempotent zijn.
+        $summary = $this->makeHandler($bag, $reader)(new ImportPortalCsv('/irrelevant.csv'));
+
+        self::assertSame(0, $summary->groupsCreated, 'Geen nieuwe groep — bestaande wordt herkend');
+        self::assertSame(0, $summary->basesCreated, 'Geen nieuwe base — bestaande wordt herkend');
+        // model_name moet overleven
+        $afterReimport = $bag['groups']->findByFamilyHeadItemcode('11142');
+        self::assertNotNull($afterReimport);
+        self::assertSame(
+            'Reanibex 100 semi-automaat',
+            $afterReimport->modelName,
+            'model_name moet behouden blijven over herimport',
+        );
+        // accessoire-koppeling moet overleven
+        self::assertCount(
+            1,
+            $bag['links']->findAllForGroup('11142'),
+            'group_accessoires-koppeling moet behouden blijven over herimport'
+        );
+    }
+
+    #[Test]
+    public function removesGroupsThatNoLongerAppearInCsv(): void
+    {
+        // Eerste import zet twee groepen op.
+        $bag = $this->emptyBag();
+        $bag['accessoires']->save(new Accessoire('60110', 'EHBO-Rugzak'));
+        $bag['afas']->replaceSnapshot([
+            new AfasSamenstelling('11142', 'AED pakket NL', null, ['50013', '70112', '81111']),
+            new AfasSamenstelling('22222', 'Andere AED', null, ['60013', '70112', '81111']),
+        ]);
+        $reader = $this->reader([
+            new PortalCsvRow('50013', 'Reanibex', 'AED NL', '', 'NL'),
+            new PortalCsvRow('60013', 'Andere groep', 'AED NL', '', 'NL'),
+        ]);
+        $this->makeHandler($bag, $reader)(new ImportPortalCsv('/irrelevant.csv'));
+        self::assertCount(2, $bag['groups']->findAll());
+
+        // Tweede import — CSV bevat alleen de eerste groep nog.
+        $shrunkReader = $this->reader([
+            new PortalCsvRow('50013', 'Reanibex', 'AED NL', '', 'NL'),
+        ]);
+        $this->makeHandler($bag, $shrunkReader)(new ImportPortalCsv('/irrelevant.csv'));
+
+        // 'Andere groep' is weggevallen → opgeruimd.
+        self::assertCount(1, $bag['groups']->findAll());
+        self::assertNotNull($bag['groups']->findByFamilyHeadItemcode('11142'));
+        self::assertNull($bag['groups']->findByFamilyHeadItemcode('22222'));
+    }
+
+    #[Test]
     public function languageSuffixedBaseResolvesUnambiguously(): void
     {
         $bag = $this->emptyBag();
@@ -224,7 +309,6 @@ final class ImportPortalCsvHandlerTest extends TestCase
 
         return new ImportPortalCsvHandler(
             $reader,
-            $bag['wiper'],
             $bag['groups'],
             $bag['bases'],
             $bag['baseItems'],
@@ -238,13 +322,13 @@ final class ImportPortalCsvHandlerTest extends TestCase
 
     /**
      * @return array{
-     *     wiper: ToolDataWiper,
      *     groups: InMemoryGroupRepository,
      *     bases: InMemoryGroupBaseRepository,
      *     baseItems: InMemoryGroupBaseItemRepository,
      *     variants: InMemoryGroupVariantRepository,
      *     accessoires: InMemoryAccessoireRepository,
      *     blacklist: InMemoryBomBlacklistRepository,
+     *     links: InMemoryGroupAccessoireRepository,
      *     afas: InMemoryAfasSamenstellingenRepository,
      *     lookup: AfasSamenstellingLookup
      * }
@@ -259,19 +343,14 @@ final class ImportPortalCsvHandlerTest extends TestCase
         $links = new InMemoryGroupAccessoireRepository($groups, $accessoires);
         $variants = new InMemoryGroupVariantRepository($groups, $bases, $links);
         $afas = new InMemoryAfasSamenstellingenRepository();
-        $wiper = new class () implements ToolDataWiper {
-            public function wipe(): void
-            {
-            }
-        };
 
         return [
-            'wiper' => $wiper,
             'groups' => $groups,
             'bases' => $bases,
             'baseItems' => $baseItems,
             'variants' => $variants,
             'accessoires' => $accessoires,
+            'links' => $links,
             'blacklist' => $blacklist,
             'afas' => $afas,
             'lookup' => new AfasSamenstellingLookup($afas),
