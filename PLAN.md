@@ -335,3 +335,83 @@ Alternatief: alles op `/api/groups/{familyHead}` plakken (één call, makkelijke
 - **Slice 15 (B5)** — refactor: tabs-routing (`/groups/:familyHead/bases|accessoires|variants`) zodat tabs bookmarkable zijn, en een "summary line" met counts op de groep-detail-header.
 
 Iedere sub-slice volgt het slice 14-patroon: PHP-test → controller → frontend type → vitest → live-verificatie.
+
+---
+
+## 12. Prijs-data + validatie (concept)
+
+Eindbeeld: voor elke base + variant kennen we de actieve prijs per prijslijst en per debiteur, plus eventuele staffels. De accessoire-toeslag is een **delta** op de base-prijs. **De ground truth ligt in onze tool**, niet in AFAS: bij `accessoire:create` geeft de gebruiker expliciet op wat de delta in euro is. De audit controleert vervolgens of AFAS dezelfde delta hanteert over alle bases × prijslijsten. Read-only: prijs-mutaties blijven in AFAS — de tool detecteert alleen wat afwijkt.
+
+### Bronnen uit AFAS (live geverifieerd via `/metainfo`)
+
+| Connector | Inhoud |
+|---|---|
+| **`Get_Prijzen`** | Per (`Itemcode`, `Prijslijst`, `Debiteur`) één rij met `Verkoopprijs`, `Staffelprijs`, `Actieprijs`, `Begindatum`, `Einddatum`, `Valuta`, `Eenheid`. `Debiteur` leeg ⇒ prijslijst-prijs; gevuld ⇒ klant-specifieke override. Hoofdbron. |
+| `Get_Prijslijsten` | Prijslijst-namen (al gebruikt in slice 15-context, 28 prijslijsten waaronder Basisprijslijst (incl/excl BTW), Dealers FR, ARKY Dealers, klant-specifieke zoals Farys/IOK/…) |
+| `easylinq_debtor` | Debiteur-stamdata (`debtorId`, `name`, …) — nodig om klant-prijzen in de UI leesbaar te maken |
+
+Snapshot is historisch: voor één itemcode kunnen 20+ rijen bestaan met overlappende `Begindatum..Einddatum`-periodes. De tool bewaart **alleen de actieve** rijen (`Einddatum` leeg of ≥ vandaag).
+
+### Schema-wijzigingen
+
+**Accessoires krijgen een delta-kolom** (canonieke toeslag t.o.v. base-prijs):
+
+```sql
+ALTER TABLE accessoires ADD COLUMN delta_cents INTEGER NOT NULL DEFAULT 0;
+```
+
+Bedrag opgeslagen in **cents** (integer) — geen float-rounding-problemen bij geld. Domain-property `Accessoire.deltaCents: int`. CLI's accepteren euro-input (`79`, `79.50`, `79,50`) en converteren naar cents. UI/API tonen euro-formaat.
+
+Eén vast bedrag per accessoire (geldt over alle bases en alle prijslijsten). Bestaande 9 accessoires krijgen `0` als migratie-default; in te vullen via een nieuw `accessoire:set-delta <itemcode> <eur>` commando. Nieuwe accessoires aanmaken via `accessoire:create` vereist de delta als 3e argument.
+
+Als later blijkt dat delta's structureel afwijken per prijslijst (dealers met andere marge), breiden we uit naar een base-delta + per-prijslijst override (optie C uit de spar-discussie). Voor MVP: één getal.
+
+**Snapshot-tabel voor AFAS-prijzen:**
+
+```sql
+afas_prijzen (
+  itemcode         TEXT NOT NULL,
+  prijslijst_id    TEXT NOT NULL,
+  debiteur_id      TEXT NULL,     -- leeg = prijslijst-prijs
+  verkoopprijs     REAL NOT NULL,
+  staffel_aantal   INT  NULL,     -- NULL = basisstaffel (vanaf 1)
+  geldig_van       TEXT NOT NULL,
+  geldig_tot       TEXT NULL,     -- NULL = open einde
+  PRIMARY KEY (itemcode, prijslijst_id, debiteur_id, staffel_aantal, geldig_van)
+);
+```
+
+Bij `afas:pull` wordt deze tabel net als `afas_samenstellingen` en `afas_articles` volledig vervangen (idempotent snapshot-pattern). `ToolDataWiper` raakt 'm niet aan, zelfde behandeling als de andere AFAS-tabellen.
+
+### Prijs-lookup voor "wat kost X voor klant Y in een offerte vandaag?"
+
+3-tier fallback (volgens user's bevestiging):
+
+1. Klant-specifieke rij voor (itemcode, debiteur_id = Y), actief vandaag.
+2. Anders: rij voor (itemcode, prijslijst_id = de prijslijst van Y), actief.
+3. Anders: basisprijslijst.
+4. Anders: geen prijs — audit-melding.
+
+Met staffels: per stap kiezen we de juiste staffel-rij op basis van het bestelde aantal.
+
+### Eén audit: `audit:prices`
+
+Rapporteert per variant twee soorten drift in dezelfde tabel:
+
+- **accessoire-toeslag-drift**: voor elke (base, accessoire, prijslijst) check of `AFAS-prijs(base+accessoire) - AFAS-prijs(base) === accessoires.delta_eur`. Wijkt af → drift. Voorbeeld: `accessoires.delta_eur` voor ARKY witte binnenkast (60112) = €295; AFAS toont voor Heartsine NL `prijs(11142-60112) - prijs(11142) = €301` → Heartsine NL staat in de drift-lijst voor 60112. Verwachte delta komt uit onze tool, werkelijke delta uit AFAS.
+- **missende prijslijst**: een variant mist een prijs in een prijslijst waar z'n base wél in staat. Suggereert dat de variant na laatste prijsronde nog niet ge-update is in AFAS.
+
+Output-kolommen: `groep | base | accessoire | prijslijst | verwachte_delta | werkelijke_delta | status (toeslag-drift / missing)`. CLI + UI-pagina + CSV-export, in dezelfde stijl als `audit:names` en `audit:suspicious-bases`.
+
+### Slices (na akkoord op concrete TODO)
+
+- **Slice 25** — `accessoires.delta_eur`-kolom (migration + domain + repo). `accessoire:create` krijgt verplichte 3e arg `<delta-eur>`. Nieuw `accessoire:set-delta <itemcode> <eur>` om bestaande in te vullen. Bestaande 9 accessoires staan op `0` na migratie. UI accessoires-pagina toont de delta-kolom.
+- **Slice 26** — Snapshot `afas_prijzen` + integratie in `afas:pull` + UI-pagina (`/prices/{itemcode}` of als tab op groep-detail).
+- **Slice 27** — `audit:prices` (accessoire-toeslag-drift + missende prijslijst in één), CLI + read-only UI + CSV. Gebruikt `accessoires.delta_eur` als ground truth.
+
+### Open punten (niet blokkerend voor het concept, op te lossen tijdens slice 25)
+
+1. **Relevante prijslijsten**: 13× `NIET GEBRUIKEN`-prijslijsten uitsluiten. Hardcoded of via een `is_actief`-vlag op `afas_prijslijsten`? Voorlopig: substring-filter op `NIET GEBRUIKEN`.
+2. **Verkooprelatie ↔ prijslijst**: waar staat de koppeling "klant Y zit op prijslijst Z"? Te onderzoeken in `easylinq_debtor` of `easylink_verkooprelatie`.
+3. **Historie**: alleen actieve rijen bewaren of ook oude voor latere "prijs-ontwikkeling"-views? Voorstel: alleen actief; historie pas later als business-case ontstaat.
+4. **Staffels**: lijkt `Staffelprijs=1` = vanaf 1 stuk (basisstaffel) en hogere aantallen aparte rijen. Bevestigen tijdens slice 25-implementatie.

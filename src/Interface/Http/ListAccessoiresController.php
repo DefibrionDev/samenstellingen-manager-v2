@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Defibrion\Samenstellingen\Interface\Http;
 
 use Defibrion\Samenstellingen\Domain\Accessoire\AccessoireRepository;
+use Defibrion\Samenstellingen\Domain\Money\EuroParser;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -21,6 +22,8 @@ final readonly class ListAccessoiresController
             $payload[] = [
                 'itemcode' => $accessoire->itemcode,
                 'label' => $accessoire->label,
+                'deltaCents' => $accessoire->deltaCents,
+                'deltaEur' => EuroParser::formatCents($accessoire->deltaCents),
             ];
         }
         usort($payload, static fn ($a, $b) => strcmp($a['itemcode'], $b['itemcode']));

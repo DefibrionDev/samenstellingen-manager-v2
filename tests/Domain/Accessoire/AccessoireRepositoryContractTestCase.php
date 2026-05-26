@@ -89,4 +89,50 @@ abstract class AccessoireRepositoryContractTestCase extends TestCase
         $this->expectException(AccessoireNotFoundException::class);
         $repo->delete('99999');
     }
+
+    #[Test]
+    public function persistsAndReadsDeltaCents(): void
+    {
+        $repo = $this->makeRepository();
+        $repo->save(new Accessoire('60110', 'EHBO-Rugzak', 7900));
+
+        $found = $repo->findByItemcode('60110');
+
+        self::assertNotNull($found);
+        self::assertSame(7900, $found->deltaCents);
+    }
+
+    #[Test]
+    public function defaultDeltaIsZero(): void
+    {
+        $repo = $this->makeRepository();
+        $repo->save(new Accessoire('60110', 'EHBO-Rugzak'));
+
+        $found = $repo->findByItemcode('60110');
+        self::assertNotNull($found);
+        self::assertSame(0, $found->deltaCents);
+    }
+
+    #[Test]
+    public function updateDeltaChangesDeltaWithoutTouchingLabel(): void
+    {
+        $repo = $this->makeRepository();
+        $repo->save(new Accessoire('60110', 'EHBO-Rugzak', 0));
+
+        $repo->updateDelta('60110', 7900);
+
+        $found = $repo->findByItemcode('60110');
+        self::assertNotNull($found);
+        self::assertSame(7900, $found->deltaCents);
+        self::assertSame('EHBO-Rugzak', $found->label);
+    }
+
+    #[Test]
+    public function updateDeltaThrowsForUnknownItemcode(): void
+    {
+        $repo = $this->makeRepository();
+
+        $this->expectException(AccessoireNotFoundException::class);
+        $repo->updateDelta('99999', 100);
+    }
 }

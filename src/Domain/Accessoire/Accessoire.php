@@ -10,8 +10,9 @@ final readonly class Accessoire
 {
     public string $itemcode;
     public string $label;
+    public int $deltaCents;
 
-    public function __construct(string $itemcode, string $label)
+    public function __construct(string $itemcode, string $label, int $deltaCents = 0)
     {
         $trimmedItemcode = trim($itemcode);
         if ($trimmedItemcode === '') {
@@ -23,7 +24,15 @@ final readonly class Accessoire
             throw new InvalidArgumentException('Accessoire label mag niet leeg zijn.');
         }
 
+        if ($deltaCents < 0) {
+            throw new InvalidArgumentException(sprintf(
+                'Accessoire delta mag niet negatief zijn (%d cents). Negatieve toeslag = korting; later apart modelleren.',
+                $deltaCents,
+            ));
+        }
+
         $this->itemcode = $trimmedItemcode;
         $this->label = $trimmedLabel;
+        $this->deltaCents = $deltaCents;
     }
 }

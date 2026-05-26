@@ -35,6 +35,8 @@ async function jsonGet<T>(path: string): Promise<T> {
 export interface Accessoire {
   itemcode: string;
   label: string;
+  deltaCents?: number;
+  deltaEur?: string;
 }
 
 export interface BlacklistEntry {

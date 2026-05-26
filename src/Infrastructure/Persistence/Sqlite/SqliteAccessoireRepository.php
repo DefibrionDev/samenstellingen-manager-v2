@@ -21,11 +21,12 @@ final readonly class SqliteAccessoireRepository implements AccessoireRepository
     {
         try {
             $stmt = $this->pdo->prepare(
-                'INSERT INTO accessoires (itemcode, label) VALUES (:itemcode, :label)'
+                'INSERT INTO accessoires (itemcode, label, delta_cents) VALUES (:itemcode, :label, :delta)'
             );
             $stmt->execute([
                 ':itemcode' => $accessoire->itemcode,
                 ':label' => $accessoire->label,
+                ':delta' => $accessoire->deltaCents,
             ]);
         } catch (PDOException $e) {
             if (str_contains($e->getMessage(), 'UNIQUE constraint failed: accessoires.itemcode')) {
@@ -38,7 +39,7 @@ final readonly class SqliteAccessoireRepository implements AccessoireRepository
     public function findByItemcode(string $itemcode): ?Accessoire
     {
         $stmt = $this->pdo->prepare(
-            'SELECT itemcode, label FROM accessoires WHERE itemcode = :itemcode'
+            'SELECT itemcode, label, delta_cents FROM accessoires WHERE itemcode = :itemcode'
         );
         $stmt->execute([':itemcode' => $itemcode]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -52,7 +53,7 @@ final readonly class SqliteAccessoireRepository implements AccessoireRepository
             return null;
         }
 
-        return new Accessoire($itemcodeValue, $labelValue);
+        return new Accessoire($itemcodeValue, $labelValue, $this->intFromRow($row, 'delta_cents'));
     }
 
     public function delete(string $itemcode): void
@@ -64,9 +65,30 @@ final readonly class SqliteAccessoireRepository implements AccessoireRepository
         }
     }
 
+    public function updateDelta(string $itemcode, int $deltaCents): void
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE accessoires SET delta_cents = :delta WHERE itemcode = :itemcode'
+        );
+        $stmt->execute([':itemcode' => $itemcode, ':delta' => $deltaCents]);
+        if ($stmt->rowCount() === 0) {
+            throw AccessoireNotFoundException::forItemcode($itemcode);
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private function intFromRow(array $row, string $key): int
+    {
+        $value = $row[$key] ?? null;
+
+        return is_int($value) ? $value : (is_string($value) ? (int) $value : 0);
+    }
+
     public function findAll(): array
     {
-        $stmt = $this->pdo->query('SELECT itemcode, label FROM accessoires ORDER BY itemcode');
+        $stmt = $this->pdo->query('SELECT itemcode, label, delta_cents FROM accessoires ORDER BY itemcode');
         if ($stmt === false) {
             return [];
         }
@@ -81,7 +103,7 @@ final readonly class SqliteAccessoireRepository implements AccessoireRepository
             if (!is_string($itemcode) || !is_string($label)) {
                 continue;
             }
-            $result[] = new Accessoire($itemcode, $label);
+            $result[] = new Accessoire($itemcode, $label, $this->intFromRow($row, 'delta_cents'));
         }
 
         return $result;

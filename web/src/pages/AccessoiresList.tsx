@@ -6,6 +6,14 @@ import { api, Accessoire } from '../api';
 const columns: GridColDef<Accessoire>[] = [
   { field: 'itemcode', headerName: 'Itemcode', width: 140 },
   { field: 'label', headerName: 'Label', flex: 1, minWidth: 320 },
+  {
+    field: 'deltaEur',
+    headerName: 'Toeslag',
+    width: 140,
+    align: 'right',
+    headerAlign: 'right',
+    valueGetter: (_, row) => row.deltaEur ?? '€ 0,00',
+  },
 ];
 
 export function AccessoiresList() {
@@ -24,8 +32,9 @@ export function AccessoiresList() {
         Accessoires-catalogus
       </Typography>
       <Typography variant="body2" color="text.secondary">
-        Beheren via <code>bin/samenstellingen accessoire:create &lt;itemcode&gt; '&lt;label&gt;'</code>
-        {' '}of <code>accessoire:delete &lt;itemcode&gt;</code>.
+        Beheren via <code>accessoire:create &lt;itemcode&gt; '&lt;label&gt;' &lt;delta-eur&gt;</code>,
+        {' '}<code>accessoire:set-delta &lt;itemcode&gt; &lt;eur&gt;</code> of
+        {' '}<code>accessoire:delete &lt;itemcode&gt;</code>.
       </Typography>
       {isLoading ? (
         <Skeleton variant="rectangular" height={400} />

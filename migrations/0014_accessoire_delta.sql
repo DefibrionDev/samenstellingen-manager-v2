@@ -1,0 +1,1 @@
+ALTER TABLE accessoires ADD COLUMN delta_cents INTEGER NOT NULL DEFAULT 0;

@@ -772,6 +772,35 @@ Symmetrisch met `accessoire:delete` (slice 17) en `group:add-base-from-afas` (sl
 
 ---
 
+## Slice 25 — Accessoire-delta verplicht maken
+
+Eindbeeld: elke accessoire heeft een canonieke prijs-toeslag (`delta_eur`) die de tool als ground truth gebruikt voor de price-audit (slice 27). Bij `accessoire:create` verplicht; bestaande 9 accessoires staan op `0` na migratie en worden via een nieuw `accessoire:set-delta`-commando bijgewerkt. UI toont de delta-kolom.
+
+### Fase 1 — Schema + domain
+- [x] Migration `0014_accessoire_delta.sql` (`delta_cents INTEGER NOT NULL DEFAULT 0`).
+- [x] `Accessoire` value-object krijgt `int $deltaCents` met `>=0`-validatie.
+- [x] `EuroParser` domain-service met 20 unit-tests (parses + format).
+- [x] InMemory + Sqlite repo's; uitgebreide contracttest (persistence, default-0, `updateDelta`).
+
+### Fase 2 — Application + CLI
+- [x] `CreateAccessoire` + handler nemen `deltaCents` mee.
+- [x] `accessoire:create` verplicht 3e arg `<delta-eur>`; parser via `EuroParser`.
+- [x] `SetAccessoireDelta` + `SetAccessoireDeltaHandler` (3 handler-tests).
+- [x] `accessoire:set-delta <itemcode> <eur>` CLI.
+- [x] Bestaande `CreateAccessoireCommandTest` bijgewerkt voor nieuwe verplichte arg.
+
+### Fase 3 — UI + HTTP
+- [x] `GET /api/accessoires` levert `deltaCents` (int) + `deltaEur` (display "€ 79,50").
+- [x] `AccessoiresList`-pagina: extra kolom "Toeslag" rechts-uitgelijnd.
+- [x] Vitest update.
+- [x] Helper-tekst in pagina wijst naar nieuwe CLI's.
+
+### Fase 4 — Lint + live
+- [x] `make check` + vitest groen (250 PHP + 7 vitest).
+- [x] Migratie live gerund: alle 11 bestaande accessoires staan op 0. Invullen via `accessoire:set-delta` is volgende stap door user.
+
+---
+
 ## Slice 20 — Reconciliation in portal-CSV-import (vervang wipe)
 
 Eindbeeld: portal-CSV-import is idempotent. Bestaande groepen behouden hun `model_name` en `group_accessoires` over imports heen; alleen groepen die niet meer in de CSV staan worden opgeruimd. Geen `ToolDataWiper` meer in de import-flow.

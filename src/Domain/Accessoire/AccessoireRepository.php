@@ -22,4 +22,11 @@ interface AccessoireRepository
      * @throws AccessoireNotFoundException wanneer de itemcode niet in de catalogus staat.
      */
     public function delete(string $itemcode): void;
+
+    /**
+     * Wijzig alleen de delta van een bestaande accessoire.
+     *
+     * @throws AccessoireNotFoundException wanneer de itemcode niet bestaat.
+     */
+    public function updateDelta(string $itemcode, int $deltaCents): void;
 }

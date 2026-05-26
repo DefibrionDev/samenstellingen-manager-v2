@@ -40,4 +40,13 @@ final class InMemoryAccessoireRepository implements AccessoireRepository
         }
         unset($this->byItemcode[$itemcode]);
     }
+
+    public function updateDelta(string $itemcode, int $deltaCents): void
+    {
+        $existing = $this->byItemcode[$itemcode] ?? null;
+        if ($existing === null) {
+            throw AccessoireNotFoundException::forItemcode($itemcode);
+        }
+        $this->byItemcode[$itemcode] = new Accessoire($existing->itemcode, $existing->label, $deltaCents);
+    }
 }

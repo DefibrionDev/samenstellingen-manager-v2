@@ -5,6 +5,7 @@ declare(strict_types=1);
 
 use Defibrion\Samenstellingen\Application\Accessoire\CreateAccessoireHandler;
 use Defibrion\Samenstellingen\Application\Accessoire\DeleteAccessoireHandler;
+use Defibrion\Samenstellingen\Application\Accessoire\SetAccessoireDeltaHandler;
 use Defibrion\Samenstellingen\Application\Afas\BlacklistBomCodeHandler;
 use Defibrion\Samenstellingen\Application\Afas\ListBomBlacklistHandler;
 use Defibrion\Samenstellingen\Application\Afas\PullAfasSamenstellingenHandler;
@@ -51,6 +52,7 @@ use Defibrion\Samenstellingen\Interface\Cli\AuditNamesCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AuditSuspiciousBasesCommand;
 use Defibrion\Samenstellingen\Interface\Cli\CreateAccessoireCommand;
 use Defibrion\Samenstellingen\Interface\Cli\DeleteAccessoireCommand;
+use Defibrion\Samenstellingen\Interface\Cli\SetAccessoireDeltaCommand;
 use Defibrion\Samenstellingen\Interface\Cli\CreateGroupCommand;
 use Defibrion\Samenstellingen\Interface\Cli\ExportMissingVariantsCommand;
 use Defibrion\Samenstellingen\Interface\Cli\ImportPortalCsvCommand;
@@ -103,6 +105,7 @@ $addBaseFromAfasHandler = new AddBaseFromAfasHandler(
 );
 $addBaseItemHandler = new AddBaseItemHandler($baseItemRepository);
 $createAccessoireHandler = new CreateAccessoireHandler($accessoireRepository);
+$setAccessoireDeltaHandler = new SetAccessoireDeltaHandler($accessoireRepository);
 $deleteAccessoireHandler = new DeleteAccessoireHandler(
     $accessoireRepository,
     $groupRepository,
@@ -169,6 +172,7 @@ $application->addCommand(new RemoveBaseCommand($removeBaseHandler));
 $application->addCommand(new AddBaseItemCommand($addBaseItemHandler));
 $application->addCommand(new CreateAccessoireCommand($createAccessoireHandler));
 $application->addCommand(new DeleteAccessoireCommand($deleteAccessoireHandler));
+$application->addCommand(new SetAccessoireDeltaCommand($setAccessoireDeltaHandler));
 $application->addCommand(new AddAccessoireCommand($addAccessoireHandler));
 $application->addCommand(new ImportSamenstellingenCsvCommand($importCsvHandler));
 $application->addCommand(new ImportPortalCsvCommand($importPortalCsvHandler));

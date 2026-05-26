@@ -15,7 +15,7 @@ final readonly class CreateAccessoireHandler
 
     public function __invoke(CreateAccessoire $command): Accessoire
     {
-        $accessoire = new Accessoire($command->itemcode, $command->label);
+        $accessoire = new Accessoire($command->itemcode, $command->label, $command->deltaCents);
         $this->repository->save($accessoire);
 
         return $accessoire;
