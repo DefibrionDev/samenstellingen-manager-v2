@@ -8,6 +8,8 @@ use Defibrion\Samenstellingen\Application\Group\SyncAllGroups;
 use Defibrion\Samenstellingen\Application\Group\SyncAllGroupsHandler;
 use Defibrion\Samenstellingen\Domain\Afas\AfasArticleRepository;
 use Defibrion\Samenstellingen\Domain\Afas\AfasArticlesFetcher;
+use Defibrion\Samenstellingen\Domain\Afas\AfasPrijsRepository;
+use Defibrion\Samenstellingen\Domain\Afas\AfasPrijzenFetcher;
 use Defibrion\Samenstellingen\Domain\Afas\AfasSamenstellingenFetcher;
 use Defibrion\Samenstellingen\Domain\Afas\AfasSamenstellingenRepository;
 
@@ -19,6 +21,8 @@ final readonly class PullAfasSamenstellingenHandler
         private AfasArticlesFetcher $articlesFetcher,
         private AfasArticleRepository $articleRepository,
         private SyncAllGroupsHandler $syncAllGroups,
+        private AfasPrijzenFetcher $prijzenFetcher,
+        private AfasPrijsRepository $prijsRepository,
     ) {
     }
 
@@ -30,15 +34,17 @@ final readonly class PullAfasSamenstellingenHandler
         $articles = $this->articlesFetcher->fetchAll();
         $this->articleRepository->replaceSnapshot($articles);
 
-        // Verse snapshot → variant-match-status meteen opnieuw berekenen,
-        // anders blijft de UI (en de missing-variants pagina) stale tot iemand
-        // handmatig `group:sync-afas` per groep draait.
+        $prijzen = $this->prijzenFetcher->fetchActive();
+        $this->prijsRepository->replaceSnapshot($prijzen);
+
+        // Verse snapshot → variant-match-status meteen opnieuw berekenen.
         $syncSummary = ($this->syncAllGroups)(new SyncAllGroups());
 
         return new PullAfasSamenstellingenResult(
             count($samenstellingen),
             count($articles),
             $syncSummary,
+            count($prijzen),
         );
     }
 }

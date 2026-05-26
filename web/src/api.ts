@@ -96,4 +96,16 @@ export const api = {
   listMissingVariants: () => jsonGet<MissingVariantRow[]>('/api/missing-variants'),
   listNameDrift: () => jsonGet<NameDriftRow[]>('/api/name-drift'),
   listSuspiciousBases: () => jsonGet<SuspiciousBaseRow[]>('/api/suspicious-bases'),
+  listArticlePrices: (itemcode: string) =>
+    jsonGet<ArticlePrice[]>(`/api/articles/${encodeURIComponent(itemcode)}/prices`),
 };
+
+export interface ArticlePrice {
+  prijslijstId: string;
+  debiteurId: string | null;
+  verkoopprijsCents: number;
+  verkoopprijsEur: string;
+  staffelAantal: number | null;
+  geldigVan: string;
+  geldigTot: string | null;
+}

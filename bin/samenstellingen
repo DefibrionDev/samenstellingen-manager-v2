@@ -28,6 +28,7 @@ use Defibrion\Samenstellingen\Domain\Afas\VariantMatcher;
 use Defibrion\Samenstellingen\Domain\Naming\VariantNamingPolicy;
 use Defibrion\Samenstellingen\Infrastructure\Afas\Http\AfasClientFactory;
 use Defibrion\Samenstellingen\Infrastructure\Afas\Http\HttpAfasArticlesFetcher;
+use Defibrion\Samenstellingen\Infrastructure\Afas\Http\HttpAfasPrijzenFetcher;
 use Defibrion\Samenstellingen\Infrastructure\Afas\Http\HttpAfasSamenstellingenFetcher;
 use Defibrion\Samenstellingen\Infrastructure\Import\FileCsvSamenstellingenReader;
 use Defibrion\Samenstellingen\Infrastructure\Import\FilePortalCsvReader;
@@ -85,6 +86,7 @@ $variantRepository = $container->variantRepository();
 $afasSamenstellingenRepository = $container->afasSamenstellingenRepository();
 $bomBlacklistRepository = $container->bomBlacklistRepository();
 $afasArticleRepository = $container->afasArticleRepository();
+$afasPrijsRepository = $container->afasPrijsRepository();
 
 $createGroupHandler = new CreateGroupHandler($groupRepository);
 $showGroupHandler = new ShowGroupHandler(
@@ -191,12 +193,15 @@ if ($hasAfasCreds) {
     $afasClient = AfasClientFactory::fromEnv();
     $fetcher = new HttpAfasSamenstellingenFetcher($afasClient);
     $articlesFetcher = new HttpAfasArticlesFetcher($afasClient);
+    $prijzenFetcher = new HttpAfasPrijzenFetcher($afasClient);
     $pullHandler = new PullAfasSamenstellingenHandler(
         $fetcher,
         $afasSamenstellingenRepository,
         $articlesFetcher,
         $afasArticleRepository,
         $syncAllGroupsHandler,
+        $prijzenFetcher,
+        $afasPrijsRepository,
     );
     $application->addCommand(new AfasPullCommand($pullHandler));
 }

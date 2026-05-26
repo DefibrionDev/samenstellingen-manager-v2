@@ -24,6 +24,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
 import { api, Accessoire, GroupBase, GroupDetail as GroupDetailType, GroupVariantRow } from '../api';
+import { ArticlePricesTable } from '../components/ArticlePricesTable';
 
 type TabKey = 'bases' | 'accessoires' | 'variants';
 const TAB_KEYS: TabKey[] = ['bases', 'accessoires', 'variants'];
@@ -119,26 +120,39 @@ function BasesTab({ bases }: { bases: GroupDetailType['bases'] }) {
             </Stack>
           </AccordionSummary>
           <AccordionDetails sx={{ p: 0 }}>
-            <TableContainer>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Itemcode</TableCell>
-                    <TableCell>Label</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {base.items.map((item) => (
-                    <TableRow key={item.itemcode}>
-                      <TableCell>
-                        <code>{item.itemcode}</code>
-                      </TableCell>
-                      <TableCell>{item.label}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+            <Stack spacing={2} sx={{ p: 2 }}>
+              <Stack>
+                <Typography variant="overline" color="text.secondary">
+                  BOM-items
+                </Typography>
+                <TableContainer>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Itemcode</TableCell>
+                        <TableCell>Label</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {base.items.map((item) => (
+                        <TableRow key={item.itemcode}>
+                          <TableCell>
+                            <code>{item.itemcode}</code>
+                          </TableCell>
+                          <TableCell>{item.label}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Stack>
+              <Stack>
+                <Typography variant="overline" color="text.secondary">
+                  Actieve prijzen ({base.afasItemcode ?? 'geen SKU'})
+                </Typography>
+                <ArticlePricesTable itemcode={base.afasItemcode} />
+              </Stack>
+            </Stack>
           </AccordionDetails>
         </Accordion>
       ))}

@@ -12,6 +12,7 @@ final readonly class PullAfasSamenstellingenResult
         public int $samenstellingen,
         public int $articles,
         public SyncAllSummary $sync,
+        public int $prijzen = 0,
     ) {
     }
 }

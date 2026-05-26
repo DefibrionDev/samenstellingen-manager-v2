@@ -801,6 +801,33 @@ Eindbeeld: elke accessoire heeft een canonieke prijs-toeslag (`delta_eur`) die d
 
 ---
 
+## Slice 26 — `afas_prijzen` snapshot + integratie in `afas:pull`
+
+Eindbeeld: bij `afas:pull` halen we ook prijs-data uit `Get_Prijzen` op en bewaren alleen de actieve rijen (`Einddatum` leeg of ≥ vandaag) in een lokale `afas_prijzen`-tabel. UI-pagina `/prices/{itemcode}` toont de huidige prijzen per prijslijst/debiteur.
+
+### Fase 1 — Schema + domain
+- [x] Migration `0015_afas_prijzen.sql` (auto-id PK + indexen op itemcode + prijslijst_id).
+- [x] `AfasPrijs` value-object met validaties.
+- [x] `AfasPrijsRepository` interface (`replaceSnapshot`, `findByItemcode`, `countSnapshot`).
+- [x] InMemory + Sqlite + contracttest (5 scenarios).
+
+### Fase 2 — Fetcher + sync
+- [x] `AfasPrijzenFetcher` + `HttpAfasPrijzenFetcher` (Get_Prijzen → cents, filter actief).
+- [x] `PullAfasSamenstellingenHandler` haalt ook prijzen op.
+- [x] `PullAfasSamenstellingenResult.prijzen`-veld.
+- [x] `AfasPullCommand` toont aantal prijzen.
+
+### Fase 3 — HTTP + UI
+- [x] `GET /api/articles/{itemcode}/prices`.
+- [x] `ArticlePricesTable` component; geïntegreerd in BasesTab van GroupDetail (BOM-items boven, actieve prijzen onder).
+- [x] Vitest mock onderscheidt detail vs prices op URL.
+
+### Fase 4 — Lint + live
+- [x] `make check` (260 tests / 577 assertions) + vitest (7) groen.
+- [x] Live: `afas:pull` levert 41.036 actieve prijzen over 17 prijslijsten en 10.886 unieke artikelen. UI toont per base z'n prijzen — voor 11161 (Lifepak CR2 NL): Basis €1.899, Dealers FR €1.819, Dealers Benelux €1.499.
+
+---
+
 ## Slice 20 — Reconciliation in portal-CSV-import (vervang wipe)
 
 Eindbeeld: portal-CSV-import is idempotent. Bestaande groepen behouden hun `model_name` en `group_accessoires` over imports heen; alleen groepen die niet meer in de CSV staan worden opgeruimd. Geen `ToolDataWiper` meer in de import-flow.

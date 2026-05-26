@@ -20,27 +20,38 @@ function renderAt(path: string) {
 beforeEach(() => {
   vi.stubGlobal(
     'fetch',
-    vi.fn(async () => ({
-      ok: true,
-      status: 200,
-      statusText: 'OK',
-      json: async () => ({
-        familyHead: '52112',
-        name: 'Reanibex 100 Semi-Auto',
-        bases: [
-          {
-            id: 1,
-            name: 'AED pakket NL',
-            languageCode: 'NL',
-            afasItemcode: '11142',
-            items: [
-              { itemcode: '50013', label: 'AED NL' },
-              { itemcode: '70112', label: 'Reanimatiekit' },
-            ],
-          },
-        ],
-      }),
-    })),
+    vi.fn(async (url: string) => {
+      // Route op URL: detail vs prijzen (ArticlePricesTable triggert eigen call).
+      if (url.includes('/prices')) {
+        return {
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          json: async () => [],
+        };
+      }
+      return {
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        json: async () => ({
+          familyHead: '52112',
+          name: 'Reanibex 100 Semi-Auto',
+          bases: [
+            {
+              id: 1,
+              name: 'AED pakket NL',
+              languageCode: 'NL',
+              afasItemcode: '11142',
+              items: [
+                { itemcode: '50013', label: 'AED NL' },
+                { itemcode: '70112', label: 'Reanimatiekit' },
+              ],
+            },
+          ],
+        }),
+      };
+    }),
   );
 });
 

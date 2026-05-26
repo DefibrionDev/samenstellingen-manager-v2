@@ -75,6 +75,9 @@ final class AppFactory
                 $container->accessoireRepository(),
             ),
         );
+        $listArticlePrices = new ListArticlePricesController(
+            $container->afasPrijsRepository(),
+        );
         $app->get('/api/groups', $listGroups);
         $app->get('/api/groups/{familyHead}', $showGroup);
         $app->get('/api/groups/{familyHead}/accessoires', $listGroupAccessoires);
@@ -84,6 +87,7 @@ final class AppFactory
         $app->get('/api/missing-variants', $listMissing);
         $app->get('/api/name-drift', $listNameDrift);
         $app->get('/api/suspicious-bases', $listSuspiciousBases);
+        $app->get('/api/articles/{itemcode}/prices', $listArticlePrices);
 
         return $app;
     }
