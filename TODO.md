@@ -995,15 +995,16 @@ Eindbeeld: `afas_prijzen.staffel_aantal` bevat echte waarden uit AFAS. Onze huid
 Eindbeeld: read-only audit-rapport van AFAS-samenstellingen met identieke BOM. Live: 1893 samenstellingen, 133 duplicaten. Hoofdpatroon: variant-rijen waar accessoire-itemcode in AFAS niet aan BOM is toegevoegd. Zie PLAN.md §17.
 
 ### Sub-slice 34.0 — Domain + handler
-- [ ] Value-object `DuplicateBomGroup(fingerprint, members)` waarin `members` een `list<array{itemcode, name}>` is.
-- [ ] `DuplicateBomAuditHandler` itereert alle samenstellingen, berekent fingerprint (gesorteerde, kommagescheiden BOM), groepeert, returnt groepen met ≥ 2 leden.
-- [ ] Unit-tests: lege snapshot → empty, twee samenstellingen met identieke BOM → 1 groep, drie identiek → 1 groep met 3 leden, twee verschillende BOMs → 0 groepen.
+- [x] Value-object `DuplicateBomGroup(fingerprint, members)`.
+- [x] `DuplicateBomAuditHandler` met `AfasSamenstelling::bomKey()` als fingerprint.
+- [x] 5 unit-tests (empty, no-dups, identiek pair, order-invariant, lege BOM skipped).
 
 ### Sub-slice 34.1 — CLI + HTTP + UI
-- [ ] CLI `audit:duplicate-boms` met tabel-output (fingerprint, aantal, itemcodes). Exit 1 bij hits.
-- [ ] HTTP `GET /api/duplicate-boms`.
-- [ ] AppBar-link "Duplicate BOM".
-- [ ] `web/src/pages/DuplicateBoms.tsx` met DataGrid + CSV-export + Vitest.
+- [x] CLI `audit:duplicate-boms` met `--limit=N`, exit 1 bij hits.
+- [x] HTTP `GET /api/duplicate-boms`.
+- [x] AppBar-link "Duplicate BOM".
+- [x] `DuplicateBoms.tsx` met uitklap + CSV-export + Vitest.
+- [x] Live: 59 groepen met 192 samenstellingen op de echte snapshot. Hoofdpatroon bevestigd: variant heeft dezelfde BOM als pure base omdat accessoire-itemcode niet in BOM is opgenomen.
 
 ---
 

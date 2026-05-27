@@ -12,6 +12,7 @@ import { GroupDetail } from './pages/GroupDetail';
 import { MissingVariants } from './pages/MissingVariants';
 import { NameDrift } from './pages/NameDrift';
 import { NotFound } from './pages/NotFound';
+import { DuplicateBoms } from './pages/DuplicateBoms';
 import { PriceDrift } from './pages/PriceDrift';
 import { PrijslijstWhitelist } from './pages/PrijslijstWhitelist';
 import { SuspiciousBases } from './pages/SuspiciousBases';
@@ -37,6 +38,7 @@ const router = createBrowserRouter([
       { path: 'suspicious-bases', element: <SuspiciousBases /> },
       { path: 'price-drift', element: <PriceDrift /> },
       { path: 'prijslijst-whitelist', element: <PrijslijstWhitelist /> },
+      { path: 'duplicate-boms', element: <DuplicateBoms /> },
       { path: '*', element: <NotFound /> },
     ],
   },

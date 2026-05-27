@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Defibrion\Samenstellingen\Interface\Http;
 
+use Defibrion\Samenstellingen\Application\Audit\DuplicateBomAuditHandler;
 use Defibrion\Samenstellingen\Application\Audit\ListMissingVariantsHandler;
 use Defibrion\Samenstellingen\Application\Audit\NameAuditHandler;
 use Defibrion\Samenstellingen\Application\Audit\PriceAuditHandler;
@@ -93,6 +94,9 @@ final class AppFactory
                 $container->prijslijstWhitelistRepository(),
             ),
         );
+        $listDuplicateBoms = new ListDuplicateBomsController(
+            new DuplicateBomAuditHandler($container->afasSamenstellingenRepository()),
+        );
         $app->get('/api/groups', $listGroups);
         $app->get('/api/groups/{familyHead}', $showGroup);
         $app->get('/api/groups/{familyHead}/accessoires', $listGroupAccessoires);
@@ -104,6 +108,7 @@ final class AppFactory
         $app->get('/api/suspicious-bases', $listSuspiciousBases);
         $app->get('/api/articles/{itemcode}/prices', $listArticlePrices);
         $app->get('/api/price-drift', $listPriceDrift);
+        $app->get('/api/duplicate-boms', $listDuplicateBoms);
         $app->get('/api/prijslijst-whitelist', $listPrijslijstWhitelist);
 
         return $app;

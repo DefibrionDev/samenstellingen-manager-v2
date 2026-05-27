@@ -101,7 +101,14 @@ export const api = {
   listPriceDrift: () => jsonGet<PriceDriftRow[]>('/api/price-drift'),
   listPrijslijstWhitelist: () =>
     jsonGet<PrijslijstWhitelistEntry[]>('/api/prijslijst-whitelist'),
+  listDuplicateBoms: () => jsonGet<DuplicateBomGroup[]>('/api/duplicate-boms'),
 };
+
+export interface DuplicateBomGroup {
+  fingerprint: string;
+  memberCount: number;
+  members: Array<{ itemcode: string; name: string }>;
+}
 
 export interface PrijslijstWhitelistEntry {
   prijslijstId: string;

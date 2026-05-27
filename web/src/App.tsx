@@ -10,6 +10,7 @@ const navLinks = [
   { to: '/suspicious-bases', label: 'Suspicious' },
   { to: '/price-drift', label: 'Price drift' },
   { to: '/prijslijst-whitelist', label: 'Prijslijst-WL' },
+  { to: '/duplicate-boms', label: 'Duplicate BOM' },
 ];
 
 export function App() {
