@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Defibrion\Samenstellingen\Interface\Cli;
 
-use Defibrion\Samenstellingen\Domain\Afas\PrijslijstAlreadyBlacklistedException;
-use Defibrion\Samenstellingen\Domain\Afas\PrijslijstBlacklistRepository;
+use Defibrion\Samenstellingen\Domain\Afas\PrijslijstAlreadyWhitelistedException;
+use Defibrion\Samenstellingen\Domain\Afas\PrijslijstWhitelistRepository;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -14,12 +14,12 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(
-    name: 'pricelist:blacklist',
-    description: 'Plaats een prijslijst-ID op de blacklist — drift-rapporten skippen die lijst dan volledig.',
+    name: 'pricelist:whitelist',
+    description: 'Plaats een prijslijst-ID op de whitelist — alleen whitelist-lijsten worden gepulld en geaudit.',
 )]
-final class BlacklistPrijslijstCommand extends Command
+final class WhitelistPrijslijstCommand extends Command
 {
-    public function __construct(private readonly PrijslijstBlacklistRepository $repository)
+    public function __construct(private readonly PrijslijstWhitelistRepository $repository)
     {
         parent::__construct();
     }
@@ -28,7 +28,7 @@ final class BlacklistPrijslijstCommand extends Command
     {
         $this
             ->addArgument('id', InputArgument::REQUIRED, 'Prijslijst-ID uit AFAS (bv. 011)')
-            ->addArgument('reden', InputArgument::REQUIRED, 'Reden voor blacklist (bv. "IOK — kleine klant-specifieke catalogus")');
+            ->addArgument('reden', InputArgument::REQUIRED, 'Reden voor whitelist (bv. "IOK — kleine klant-specifieke catalogus")');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -39,7 +39,7 @@ final class BlacklistPrijslijstCommand extends Command
 
         try {
             $this->repository->add($id, $reden);
-        } catch (PrijslijstAlreadyBlacklistedException $e) {
+        } catch (PrijslijstAlreadyWhitelistedException $e) {
             $io->error($e->getMessage());
 
             return Command::FAILURE;
@@ -49,7 +49,7 @@ final class BlacklistPrijslijstCommand extends Command
             return Command::INVALID;
         }
 
-        $io->success(sprintf("Prijslijst '%s' op de blacklist gezet — reden: %s", $id, $reden));
+        $io->success(sprintf("Prijslijst '%s' op de whitelist gezet — reden: %s", $id, $reden));
 
         return Command::SUCCESS;
     }

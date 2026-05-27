@@ -99,11 +99,11 @@ export const api = {
   listArticlePrices: (itemcode: string) =>
     jsonGet<ArticlePrice[]>(`/api/articles/${encodeURIComponent(itemcode)}/prices`),
   listPriceDrift: () => jsonGet<PriceDriftRow[]>('/api/price-drift'),
-  listPrijslijstBlacklist: () =>
-    jsonGet<PrijslijstBlacklistEntry[]>('/api/prijslijst-blacklist'),
+  listPrijslijstWhitelist: () =>
+    jsonGet<PrijslijstWhitelistEntry[]>('/api/prijslijst-whitelist'),
 };
 
-export interface PrijslijstBlacklistEntry {
+export interface PrijslijstWhitelistEntry {
   prijslijstId: string;
   omschrijving: string | null;
   reden: string;
@@ -121,13 +121,14 @@ export interface PriceDriftRow {
   expectedDeltaEur: string;
   prijslijstId: string;
   prijslijstOmschrijving: string | null;
-  basePrijsCents: number;
-  basePrijsEur: string;
+  staffelAantal: number | null;
+  basePrijsCents: number | null;
+  basePrijsEur: string | null;
   variantPrijsCents: number | null;
   variantPrijsEur: string | null;
   actualDeltaCents: number | null;
   actualDeltaEur: string | null;
-  status: 'toeslag-drift' | 'missing';
+  status: 'toeslag-drift' | 'missing' | 'inconsistent-staffel';
 }
 
 export interface ArticlePrice {

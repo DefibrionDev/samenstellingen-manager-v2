@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { Alert, Skeleton, Stack, Typography } from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
-import { api, PrijslijstBlacklistEntry } from '../api';
+import { api, PrijslijstWhitelistEntry } from '../api';
 
-const columns: GridColDef<PrijslijstBlacklistEntry>[] = [
+const columns: GridColDef<PrijslijstWhitelistEntry>[] = [
   { field: 'prijslijstId', headerName: 'ID', width: 100 },
   {
     field: 'omschrijving',
@@ -15,32 +15,33 @@ const columns: GridColDef<PrijslijstBlacklistEntry>[] = [
   { field: 'aangemaaktOp', headerName: 'Aangemaakt-op', width: 180 },
 ];
 
-export function PrijslijstBlacklist() {
+export function PrijslijstWhitelist() {
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['prijslijst-blacklist'],
-    queryFn: api.listPrijslijstBlacklist,
+    queryKey: ['prijslijst-whitelist'],
+    queryFn: api.listPrijslijstWhitelist,
   });
 
   if (isError) {
-    return <Alert severity="error">Kon prijslijst-blacklist niet laden: {(error as Error).message}</Alert>;
+    return <Alert severity="error">Kon prijslijst-whitelist niet laden: {(error as Error).message}</Alert>;
   }
 
   return (
     <Stack spacing={2}>
       <Typography variant="h5" component="h1">
-        Prijslijst-blacklist
+        Prijslijst-whitelist
       </Typography>
       <Typography variant="body2" color="text.secondary">
-        Prijslijst-IDs die volledig worden overgeslagen in <code>audit:prices</code> — zowel
-        toeslag-drift als missing-rijen verdwijnen voor deze lijsten. Bedoeld voor kleine
-        klantspecifieke catalogi die niet alle AEDs hoeven te bevatten. Beheren via{' '}
-        <code>bin/samenstellingen pricelist:blacklist &lt;id&gt; '&lt;reden&gt;'</code> /{' '}
-        <code>pricelist:unblacklist &lt;id&gt;</code>.
+        Prijslijst-IDs die actief worden meegenomen in <code>afas:pull</code> en{' '}
+        <code>audit:prices</code>. Alleen deze lijsten worden uit AFAS gehaald én gecheckt
+        op toeslag-drift/missing. Lijsten die niet op de whitelist staan worden volledig
+        overgeslagen (strict). Lege whitelist = geen prijzen-pull, geen audit-output.
+        Beheren via <code>bin/samenstellingen pricelist:whitelist &lt;id&gt; '&lt;reden&gt;'</code> /{' '}
+        <code>pricelist:unwhitelist &lt;id&gt;</code>.
       </Typography>
       {isLoading ? (
         <Skeleton variant="rectangular" height={300} />
       ) : (
-        <DataGrid<PrijslijstBlacklistEntry>
+        <DataGrid<PrijslijstWhitelistEntry>
           rows={data ?? []}
           columns={columns}
           getRowId={(row) => row.prijslijstId}

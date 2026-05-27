@@ -17,7 +17,7 @@ use Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryAfasPr
 use Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryGroupAccessoireRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryGroupBaseRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryGroupRepository;
-use Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryPrijslijstBlacklistRepository;
+use Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryPrijslijstWhitelistRepository;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -80,15 +80,26 @@ final class PriceAuditHandlerTest extends TestCase
     }
 
     #[Test]
-    public function skipsBlacklistedPrijslijstForBothStatuses(): void
+    public function onlyIncludesWhitelistedPrijslijstenForBothStatuses(): void
     {
+        // Maak een handler met lege whitelist om whitelist-gedrag te testen.
         $bag = $this->wiring();
+        $emptyWhitelist = new InMemoryPrijslijstWhitelistRepository();
+        $handler = new PriceAuditHandler(
+            $bag['groups'],
+            $bag['bases'],
+            $bag['links'],
+            $bag['prijzen'],
+            $bag['prijslijsten'],
+            $emptyWhitelist,
+        );
+
         $bag['groups']->save(new Group('Reanibex', '52112'));
         $bag['bases']->saveForGroup('52112', new GroupBase(null, 'Base NL', 'NL', '11142'));
         $bag['accessoires']->save(new Accessoire('60110', 'Rugzak', 2500));
         $bag['links']->link('52112', '60110');
 
-        // Twee prijslijsten: ***** met drift, 003 met missing. Beide moeten verdwijnen na blacklist.
+        // Twee prijslijsten: ***** met drift, 003 met missing.
         $bag['prijzen']->replaceSnapshot([
             new AfasPrijs('11142', '*****', null, 189900, null, '2025-01-01', null),
             new AfasPrijs('11142-60110', '*****', null, 193000, null, '2025-01-01', null), // drift
@@ -96,18 +107,18 @@ final class PriceAuditHandlerTest extends TestCase
             // variant ontbreekt in 003 → missing
         ]);
 
-        // Zonder blacklist: 2 rijen
-        self::assertCount(2, ($bag['handler'])(new AuditPrices()));
+        // Lege whitelist: niets in audit.
+        self::assertSame([], $handler(new AuditPrices()));
 
-        // Met ***** op blacklist: alleen 003-missing blijft
-        $bag['blacklist']->add('*****', 'test');
-        $rows = ($bag['handler'])(new AuditPrices());
-        self::assertCount(1, $rows);
-        self::assertSame('003', $rows[0]->prijslijstId);
+        // ***** op whitelist: drift-rij voor ***** komt door.
+        $emptyWhitelist->add('*****', 'test');
+        $rows = $handler(new AuditPrices());
+        $ids = array_map(static fn ($r) => $r->prijslijstId, $rows);
+        self::assertSame(['*****'], $ids);
 
-        // Beide op blacklist: leeg
-        $bag['blacklist']->add('003', 'test');
-        self::assertSame([], ($bag['handler'])(new AuditPrices()));
+        // Beide op whitelist: 2 rijen.
+        $emptyWhitelist->add('003', 'test');
+        self::assertCount(2, $handler(new AuditPrices()));
     }
 
     #[Test]
@@ -119,10 +130,11 @@ final class PriceAuditHandlerTest extends TestCase
         $bag['accessoires']->save(new Accessoire('60110', 'Rugzak', 2500));
         $bag['links']->link('52112', '60110');
 
-        // Prijslijst "999" zit niet in de prijslijsten-snapshot
+        // Prijslijst "888" zit niet in de prijslijsten-snapshot, maar wel in whitelist.
+        $bag['whitelist']->add('888', 'test');
         $bag['prijzen']->replaceSnapshot([
-            new AfasPrijs('11142', '999', null, 189900, null, '2025-01-01', null),
-            new AfasPrijs('11142-60110', '999', null, 193000, null, '2025-01-01', null),
+            new AfasPrijs('11142', '888', null, 189900, null, '2025-01-01', null),
+            new AfasPrijs('11142-60110', '888', null, 193000, null, '2025-01-01', null),
         ]);
 
         $rows = ($bag['handler'])(new AuditPrices());
@@ -156,6 +168,89 @@ final class PriceAuditHandlerTest extends TestCase
     }
 
     #[Test]
+    public function auditsHigherStaffelsSeparately(): void
+    {
+        // Plat model: zelfde delta (€25) op elke staffel. Variant op staffel=10 wijkt
+        // af van base+delta → drift voor die staffel.
+        $bag = $this->wiring();
+        $bag['groups']->save(new Group('Reanibex', '52112'));
+        $bag['bases']->saveForGroup('52112', new GroupBase(null, 'Base NL', 'NL', '11142'));
+        $bag['accessoires']->save(new Accessoire('60110', 'Rugzak', 2500));
+        $bag['links']->link('52112', '60110');
+
+        $bag['prijzen']->replaceSnapshot([
+            // Baseline: base €1899, variant €1929 → actual delta €30, expected €25 → drift
+            new AfasPrijs('11142', '*****', null, 189900, null, '2025-01-01', null),
+            new AfasPrijs('11142-60110', '*****', null, 192900, null, '2025-01-01', null),
+            // Staffel 10: base €1799, variant €1850 → actual delta €51, expected €25 → drift
+            new AfasPrijs('11142', '*****', null, 179900, 10, '2025-01-01', null),
+            new AfasPrijs('11142-60110', '*****', null, 185000, 10, '2025-01-01', null),
+        ]);
+
+        $rows = ($bag['handler'])(new AuditPrices());
+
+        self::assertCount(2, $rows);
+        $perStaffel = [];
+        foreach ($rows as $r) {
+            $perStaffel[$r->staffelAantal ?? 0] = $r;
+        }
+        self::assertSame('toeslag-drift', $perStaffel[0]->status);
+        self::assertSame(3000, $perStaffel[0]->actualDeltaCents);
+        self::assertSame('toeslag-drift', $perStaffel[10]->status);
+        self::assertSame(5100, $perStaffel[10]->actualDeltaCents);
+    }
+
+    #[Test]
+    public function reportsMissingOnHigherStaffelWhenBaseHasItButVariantDoesnt(): void
+    {
+        $bag = $this->wiring();
+        $bag['groups']->save(new Group('Reanibex', '52112'));
+        $bag['bases']->saveForGroup('52112', new GroupBase(null, 'Base NL', 'NL', '11142'));
+        $bag['accessoires']->save(new Accessoire('60110', 'Rugzak', 2500));
+        $bag['links']->link('52112', '60110');
+
+        $bag['prijzen']->replaceSnapshot([
+            // Baseline klopt voor beide
+            new AfasPrijs('11142', '*****', null, 189900, null, '2025-01-01', null),
+            new AfasPrijs('11142-60110', '*****', null, 192400, null, '2025-01-01', null),
+            // Base heeft staffel 10, variant niet
+            new AfasPrijs('11142', '*****', null, 179900, 10, '2025-01-01', null),
+        ]);
+
+        $rows = ($bag['handler'])(new AuditPrices());
+
+        self::assertCount(1, $rows);
+        self::assertSame('missing', $rows[0]->status);
+        self::assertSame(10, $rows[0]->staffelAantal);
+    }
+
+    #[Test]
+    public function reportsInconsistentStaffelWhenVariantHasItButBaseDoesnt(): void
+    {
+        $bag = $this->wiring();
+        $bag['groups']->save(new Group('Reanibex', '52112'));
+        $bag['bases']->saveForGroup('52112', new GroupBase(null, 'Base NL', 'NL', '11142'));
+        $bag['accessoires']->save(new Accessoire('60110', 'Rugzak', 2500));
+        $bag['links']->link('52112', '60110');
+
+        $bag['prijzen']->replaceSnapshot([
+            // Baseline klopt voor beide
+            new AfasPrijs('11142', '*****', null, 189900, null, '2025-01-01', null),
+            new AfasPrijs('11142-60110', '*****', null, 192400, null, '2025-01-01', null),
+            // Variant heeft staffel 10, base niet
+            new AfasPrijs('11142-60110', '*****', null, 185000, 10, '2025-01-01', null),
+        ]);
+
+        $rows = ($bag['handler'])(new AuditPrices());
+
+        self::assertCount(1, $rows);
+        self::assertSame('inconsistent-staffel', $rows[0]->status);
+        self::assertSame(10, $rows[0]->staffelAantal);
+        self::assertNull($rows[0]->basePrijsCents);
+        self::assertSame(185000, $rows[0]->variantPrijsCents);
+    }
+
+    #[Test]
     public function skipsClientSpecificPrices(): void
     {
         $bag = $this->wiring();
@@ -182,7 +277,7 @@ final class PriceAuditHandlerTest extends TestCase
      *   links: InMemoryGroupAccessoireRepository,
      *   prijzen: InMemoryAfasPrijsRepository,
      *   prijslijsten: InMemoryAfasPrijslijstRepository,
-     *   blacklist: InMemoryPrijslijstBlacklistRepository,
+     *   whitelist: InMemoryPrijslijstWhitelistRepository,
      *   handler: PriceAuditHandler
      * }
      */
@@ -198,9 +293,14 @@ final class PriceAuditHandlerTest extends TestCase
             new AfasPrijslijst('*****', 'Basisprijslijst (excl BTW)'),
             new AfasPrijslijst('003', 'Dealers FR'),
         ]);
-        $blacklist = new InMemoryPrijslijstBlacklistRepository();
-        $handler = new PriceAuditHandler($groups, $bases, $links, $prijzen, $prijslijsten, $blacklist);
+        $whitelist = new InMemoryPrijslijstWhitelistRepository();
+        // Default whitelist 2 bekende lijsten zodat bestaande tests werken.
+        // Tests die whitelist-gedrag verifiëren maken bewust een nieuwe handler.
+        foreach (['*****', '003'] as $id) {
+            $whitelist->add($id, 'test');
+        }
+        $handler = new PriceAuditHandler($groups, $bases, $links, $prijzen, $prijslijsten, $whitelist);
 
-        return compact('groups', 'bases', 'accessoires', 'links', 'prijzen', 'prijslijsten', 'blacklist', 'handler');
+        return compact('groups', 'bases', 'accessoires', 'links', 'prijzen', 'prijslijsten', 'whitelist', 'handler');
     }
 }

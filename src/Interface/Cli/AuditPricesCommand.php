@@ -43,9 +43,12 @@ final class AuditPricesCommand extends Command
 
         $drift = 0;
         $missing = 0;
+        $inconsistent = 0;
         foreach ($rows as $r) {
             if ($r->status === 'missing') {
                 ++$missing;
+            } elseif ($r->status === 'inconsistent-staffel') {
+                ++$inconsistent;
             } else {
                 ++$drift;
             }
@@ -62,16 +65,17 @@ final class AuditPricesCommand extends Command
                 $r->variantAfasItemcode,
                 $r->accessoireItemcode,
                 $lijstLabel,
+                $r->staffelAantal !== null ? (string) $r->staffelAantal : 'basis',
                 $r->status,
-                EuroParser::formatCents($r->basePrijsCents),
+                $r->basePrijsCents !== null ? EuroParser::formatCents($r->basePrijsCents) : '—',
                 $r->variantPrijsCents !== null ? EuroParser::formatCents($r->variantPrijsCents) : '—',
                 EuroParser::formatCents($r->expectedDeltaCents),
                 $r->actualDeltaCents !== null ? EuroParser::formatCents($r->actualDeltaCents) : '—',
             ];
         }
-        $io->section(sprintf('%d rij(en) — %d toeslag-drift, %d missing', count($rows), $drift, $missing));
+        $io->section(sprintf('%d rij(en) — %d toeslag-drift, %d missing, %d inconsistent-staffel', count($rows), $drift, $missing, $inconsistent));
         $io->table(
-            ['Variant', 'Acc.', 'Prijslijst', 'Status', 'Base', 'Variant', 'Verwacht', 'Werkelijk'],
+            ['Variant', 'Acc.', 'Prijslijst', 'Aantal', 'Status', 'Base', 'Variant', 'Verwacht', 'Werkelijk'],
             $table,
         );
         if ($limit > 0 && count($rows) > $limit) {

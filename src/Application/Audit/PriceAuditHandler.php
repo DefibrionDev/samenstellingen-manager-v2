@@ -7,21 +7,24 @@ namespace Defibrion\Samenstellingen\Application\Audit;
 use Defibrion\Samenstellingen\Domain\Afas\AfasPrijs;
 use Defibrion\Samenstellingen\Domain\Afas\AfasPrijslijstRepository;
 use Defibrion\Samenstellingen\Domain\Afas\AfasPrijsRepository;
-use Defibrion\Samenstellingen\Domain\Afas\PrijslijstBlacklistRepository;
+use Defibrion\Samenstellingen\Domain\Afas\PrijslijstWhitelistRepository;
 use Defibrion\Samenstellingen\Domain\Group\GroupAccessoireRepository;
 use Defibrion\Samenstellingen\Domain\Group\GroupBaseRepository;
 use Defibrion\Samenstellingen\Domain\Group\GroupRepository;
 
 /**
- * Controleert per (groep × base × gekoppelde accessoire × prijslijst) of de
- * AFAS-prijs van de variant overeenkomt met de canonieke toeslag
- * (accessoires.delta_cents). Twee soorten drift in één rapport:
+ * Controleert per (groep × base × gekoppelde accessoire × prijslijst × staffel) of
+ * de AFAS-prijs van de variant overeenkomt met `base + accessoires.delta_cents`.
+ * Drie statuscategorieën:
  *
- * - toeslag-drift: variant-prijs bestaat, maar (variant - base) != expected delta.
- * - missing: variant-prijs ontbreekt in een prijslijst waar de base wél prijs heeft.
+ * - toeslag-drift: variant-prijs bestaat in deze staffel, maar (variant - base) != expected delta.
+ * - missing: base heeft deze staffel, variant niet.
+ * - inconsistent-staffel: variant heeft een staffel die base niet heeft (auto-fix onveilig).
  *
  * Verwachte variant-SKU: `base.afas_itemcode + '-' + accessoire.itemcode`.
  * Alleen prijslijst-prijzen (debiteur_id IS NULL). Klant-prijzen later.
+ * Baseline-prijzen (Hoeveelheid=0) en hogere staffels worden afzonderlijk
+ * geaudit — toeslag is plat: zelfde delta op elke staffel.
  */
 final readonly class PriceAuditHandler
 {
@@ -31,7 +34,7 @@ final readonly class PriceAuditHandler
         private GroupAccessoireRepository $links,
         private AfasPrijsRepository $prijzen,
         private AfasPrijslijstRepository $prijslijsten,
-        private PrijslijstBlacklistRepository $blacklist,
+        private PrijslijstWhitelistRepository $whitelist,
     ) {
     }
 
@@ -44,9 +47,9 @@ final readonly class PriceAuditHandler
         foreach ($this->prijslijsten->findAll() as $p) {
             $prijslijstNamen[$p->id] = $p->omschrijving;
         }
-        $blacklist = [];
-        foreach ($this->blacklist->findAll() as $entry) {
-            $blacklist[$entry->prijslijstId] = true;
+        $whitelist = [];
+        foreach ($this->whitelist->findAll() as $entry) {
+            $whitelist[$entry->prijslijstId] = true;
         }
 
         $rows = [];
@@ -62,24 +65,25 @@ final readonly class PriceAuditHandler
                     continue;
                 }
 
-                $basePrijzenPerPrijslijst = $this->indexLatestPerPrijslijst(
+                $baseIndex = $this->indexLatestPerPrijslijstAndStaffel(
                     $this->prijzen->findByItemcode($base->afasItemcode),
                 );
-                if ($basePrijzenPerPrijslijst === []) {
+                if ($baseIndex === []) {
                     continue;
                 }
 
                 foreach ($accessoires as $accessoire) {
                     $variantSku = $base->afasItemcode . '-' . $accessoire->itemcode;
-                    $variantPrijzenPerPrijslijst = $this->indexLatestPerPrijslijst(
+                    $variantIndex = $this->indexLatestPerPrijslijstAndStaffel(
                         $this->prijzen->findByItemcode($variantSku),
                     );
 
-                    foreach ($basePrijzenPerPrijslijst as $prijslijstId => $basePrijs) {
-                        if (isset($blacklist[(string) $prijslijstId])) {
+                    // Drift + missing: per (prijslijst, staffel) waar base prijs heeft.
+                    foreach ($baseIndex as $key => $basePrijs) {
+                        if (!isset($whitelist[$basePrijs->prijslijstId])) {
                             continue;
                         }
-                        $variantPrijs = $variantPrijzenPerPrijslijst[$prijslijstId] ?? null;
+                        $variantPrijs = $variantIndex[$key] ?? null;
                         if ($variantPrijs === null) {
                             $rows[] = new PriceDriftRow(
                                 groupName: $group->name,
@@ -89,8 +93,9 @@ final readonly class PriceAuditHandler
                                 accessoireItemcode: $accessoire->itemcode,
                                 accessoireLabel: $accessoire->label,
                                 expectedDeltaCents: $accessoire->deltaCents,
-                                prijslijstId: (string) $prijslijstId,
-                                prijslijstOmschrijving: $prijslijstNamen[(string) $prijslijstId] ?? null,
+                                prijslijstId: $basePrijs->prijslijstId,
+                                prijslijstOmschrijving: $prijslijstNamen[$basePrijs->prijslijstId] ?? null,
+                                staffelAantal: $basePrijs->staffelAantal,
                                 basePrijsCents: $basePrijs->verkoopprijsCents,
                                 variantPrijsCents: null,
                                 actualDeltaCents: null,
@@ -109,14 +114,41 @@ final readonly class PriceAuditHandler
                                 accessoireItemcode: $accessoire->itemcode,
                                 accessoireLabel: $accessoire->label,
                                 expectedDeltaCents: $accessoire->deltaCents,
-                                prijslijstId: (string) $prijslijstId,
-                                prijslijstOmschrijving: $prijslijstNamen[(string) $prijslijstId] ?? null,
+                                prijslijstId: $basePrijs->prijslijstId,
+                                prijslijstOmschrijving: $prijslijstNamen[$basePrijs->prijslijstId] ?? null,
+                                staffelAantal: $basePrijs->staffelAantal,
                                 basePrijsCents: $basePrijs->verkoopprijsCents,
                                 variantPrijsCents: $variantPrijs->verkoopprijsCents,
                                 actualDeltaCents: $actualDelta,
                                 status: 'toeslag-drift',
                             );
                         }
+                    }
+
+                    // Inconsistent-staffel: variant-staffels die base niet heeft.
+                    foreach ($variantIndex as $key => $variantPrijs) {
+                        if (isset($baseIndex[$key])) {
+                            continue;
+                        }
+                        if (!isset($whitelist[$variantPrijs->prijslijstId])) {
+                            continue;
+                        }
+                        $rows[] = new PriceDriftRow(
+                            groupName: $group->name,
+                            baseAfasItemcode: $base->afasItemcode,
+                            baseName: $base->name,
+                            variantAfasItemcode: $variantSku,
+                            accessoireItemcode: $accessoire->itemcode,
+                            accessoireLabel: $accessoire->label,
+                            expectedDeltaCents: $accessoire->deltaCents,
+                            prijslijstId: $variantPrijs->prijslijstId,
+                            prijslijstOmschrijving: $prijslijstNamen[$variantPrijs->prijslijstId] ?? null,
+                            staffelAantal: $variantPrijs->staffelAantal,
+                            basePrijsCents: null,
+                            variantPrijsCents: $variantPrijs->verkoopprijsCents,
+                            actualDeltaCents: null,
+                            status: 'inconsistent-staffel',
+                        );
                     }
                 }
             }
@@ -126,27 +158,25 @@ final readonly class PriceAuditHandler
     }
 
     /**
-     * Filter op prijslijst-prijzen (debiteur_id IS NULL) en pak per prijslijst
-     * de meest recente (`geldig_van` lexicaal grootste) — Get_Prijzen kan meerdere
-     * actieve overlappende rijen leveren, maar de meest recente is de geldende.
+     * Index op `<prijslijst>|<staffel>` met staffel=0 voor baseline (null in DB).
+     * Bij meerdere actieve rijen voor dezelfde (lijst, staffel): pak de meest recente
+     * geldig_van. Klant-prijzen (debiteur_id != null) worden geskipped.
      *
      * @param list<AfasPrijs> $prijzen
      * @return array<string, AfasPrijs>
      */
-    private function indexLatestPerPrijslijst(array $prijzen): array
+    private function indexLatestPerPrijslijstAndStaffel(array $prijzen): array
     {
         $latest = [];
         foreach ($prijzen as $p) {
             if ($p->debiteurId !== null) {
                 continue;
             }
-            if ($p->staffelAantal !== null && $p->staffelAantal > 1) {
-                // Hogere staffels overslaan in audit — alleen baseline-prijs vergelijken.
-                continue;
-            }
-            $current = $latest[$p->prijslijstId] ?? null;
+            $staffelKey = $p->staffelAantal ?? 0;
+            $key = $p->prijslijstId . '|' . $staffelKey;
+            $current = $latest[$key] ?? null;
             if ($current === null || $p->geldigVan > $current->geldigVan) {
-                $latest[$p->prijslijstId] = $p;
+                $latest[$key] = $p;
             }
         }
 

@@ -6,10 +6,10 @@ namespace Defibrion\Samenstellingen\Domain\Afas;
 
 use DomainException;
 
-final class PrijslijstNotBlacklistedException extends DomainException
+final class PrijslijstAlreadyWhitelistedException extends DomainException
 {
     public static function forId(string $prijslijstId): self
     {
-        return new self(sprintf("Prijslijst '%s' staat niet op de blacklist.", $prijslijstId));
+        return new self(sprintf("Prijslijst '%s' staat al op de whitelist.", $prijslijstId));
     }
 }

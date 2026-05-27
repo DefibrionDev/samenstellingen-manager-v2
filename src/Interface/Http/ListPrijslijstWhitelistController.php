@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace Defibrion\Samenstellingen\Interface\Http;
 
 use Defibrion\Samenstellingen\Domain\Afas\AfasPrijslijstRepository;
-use Defibrion\Samenstellingen\Domain\Afas\PrijslijstBlacklistRepository;
+use Defibrion\Samenstellingen\Domain\Afas\PrijslijstWhitelistRepository;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
-final readonly class ListPrijslijstBlacklistController
+final readonly class ListPrijslijstWhitelistController
 {
     public function __construct(
-        private PrijslijstBlacklistRepository $blacklist,
+        private PrijslijstWhitelistRepository $blacklist,
         private AfasPrijslijstRepository $prijslijsten,
     ) {
     }

@@ -48,7 +48,7 @@ final class TestDatabase
         $pdo->exec('DELETE FROM afas_articles');
         $pdo->exec('DELETE FROM afas_prijzen');
         $pdo->exec('DELETE FROM afas_prijslijsten');
-        $pdo->exec('DELETE FROM prijslijst_blacklist');
+        $pdo->exec('DELETE FROM prijslijst_whitelist');
         $pdo->exec(
             "DELETE FROM sqlite_sequence
              WHERE name IN ('groups', 'accessoires', 'group_variants', 'group_bases', 'afas_samenstellingen')"

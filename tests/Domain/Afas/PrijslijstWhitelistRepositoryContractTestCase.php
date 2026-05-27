@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Defibrion\Samenstellingen\Tests\Domain\Afas;
 
-use Defibrion\Samenstellingen\Domain\Afas\PrijslijstAlreadyBlacklistedException;
-use Defibrion\Samenstellingen\Domain\Afas\PrijslijstBlacklistRepository;
-use Defibrion\Samenstellingen\Domain\Afas\PrijslijstNotBlacklistedException;
+use Defibrion\Samenstellingen\Domain\Afas\PrijslijstAlreadyWhitelistedException;
+use Defibrion\Samenstellingen\Domain\Afas\PrijslijstNotWhitelistedException;
+use Defibrion\Samenstellingen\Domain\Afas\PrijslijstWhitelistRepository;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-abstract class PrijslijstBlacklistRepositoryContractTestCase extends TestCase
+abstract class PrijslijstWhitelistRepositoryContractTestCase extends TestCase
 {
-    abstract protected function makeRepository(): PrijslijstBlacklistRepository;
+    abstract protected function makeRepository(): PrijslijstWhitelistRepository;
 
     #[Test]
     public function emptyByDefault(): void
@@ -51,7 +51,7 @@ abstract class PrijslijstBlacklistRepositoryContractTestCase extends TestCase
         $repo = $this->makeRepository();
         $repo->add('010', 'oude reden');
 
-        $this->expectException(PrijslijstAlreadyBlacklistedException::class);
+        $this->expectException(PrijslijstAlreadyWhitelistedException::class);
         $repo->add('010', 'nieuwe reden');
     }
 
@@ -69,7 +69,7 @@ abstract class PrijslijstBlacklistRepositoryContractTestCase extends TestCase
     #[Test]
     public function removingUnknownThrows(): void
     {
-        $this->expectException(PrijslijstNotBlacklistedException::class);
+        $this->expectException(PrijslijstNotWhitelistedException::class);
         $this->makeRepository()->remove('010');
     }
 }

@@ -4,22 +4,22 @@ declare(strict_types=1);
 
 namespace Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory;
 
-use Defibrion\Samenstellingen\Domain\Afas\PrijslijstAlreadyBlacklistedException;
-use Defibrion\Samenstellingen\Domain\Afas\PrijslijstBlacklistEntry;
-use Defibrion\Samenstellingen\Domain\Afas\PrijslijstBlacklistRepository;
-use Defibrion\Samenstellingen\Domain\Afas\PrijslijstNotBlacklistedException;
+use Defibrion\Samenstellingen\Domain\Afas\PrijslijstAlreadyWhitelistedException;
+use Defibrion\Samenstellingen\Domain\Afas\PrijslijstNotWhitelistedException;
+use Defibrion\Samenstellingen\Domain\Afas\PrijslijstWhitelistEntry;
+use Defibrion\Samenstellingen\Domain\Afas\PrijslijstWhitelistRepository;
 
-final class InMemoryPrijslijstBlacklistRepository implements PrijslijstBlacklistRepository
+final class InMemoryPrijslijstWhitelistRepository implements PrijslijstWhitelistRepository
 {
-    /** @var array<string, PrijslijstBlacklistEntry> */
+    /** @var array<string, PrijslijstWhitelistEntry> */
     private array $entries = [];
 
     public function add(string $prijslijstId, string $reden): void
     {
         if (isset($this->entries[$prijslijstId])) {
-            throw PrijslijstAlreadyBlacklistedException::forId($prijslijstId);
+            throw PrijslijstAlreadyWhitelistedException::forId($prijslijstId);
         }
-        $this->entries[$prijslijstId] = new PrijslijstBlacklistEntry(
+        $this->entries[$prijslijstId] = new PrijslijstWhitelistEntry(
             $prijslijstId,
             $reden,
             (new \DateTimeImmutable())->format('Y-m-d H:i:s'),
@@ -29,7 +29,7 @@ final class InMemoryPrijslijstBlacklistRepository implements PrijslijstBlacklist
     public function remove(string $prijslijstId): void
     {
         if (!isset($this->entries[$prijslijstId])) {
-            throw PrijslijstNotBlacklistedException::forId($prijslijstId);
+            throw PrijslijstNotWhitelistedException::forId($prijslijstId);
         }
         unset($this->entries[$prijslijstId]);
     }

@@ -16,7 +16,7 @@ use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteGroupBaseI
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteGroupBaseRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteGroupRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteGroupVariantRepository;
-use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqlitePrijslijstBlacklistRepository;
+use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqlitePrijslijstWhitelistRepository;
 use PDO;
 
 /**
@@ -36,7 +36,7 @@ class Container
     private ?SqliteAfasArticleRepository $afasArticleRepository = null;
     private ?SqliteAfasPrijsRepository $afasPrijsRepository = null;
     private ?SqliteAfasPrijslijstRepository $afasPrijslijstRepository = null;
-    private ?SqlitePrijslijstBlacklistRepository $prijslijstBlacklistRepository = null;
+    private ?SqlitePrijslijstWhitelistRepository $prijslijstWhitelistRepository = null;
     private ?SqliteBomBlacklistRepository $bomBlacklistRepository = null;
 
     public function __construct(
@@ -116,8 +116,8 @@ class Container
         return $this->afasPrijslijstRepository ??= new SqliteAfasPrijslijstRepository($this->pdo());
     }
 
-    public function prijslijstBlacklistRepository(): SqlitePrijslijstBlacklistRepository
+    public function prijslijstWhitelistRepository(): SqlitePrijslijstWhitelistRepository
     {
-        return $this->prijslijstBlacklistRepository ??= new SqlitePrijslijstBlacklistRepository($this->pdo());
+        return $this->prijslijstWhitelistRepository ??= new SqlitePrijslijstWhitelistRepository($this->pdo());
     }
 }

@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
-import { PrijslijstBlacklist } from './PrijslijstBlacklist';
+import { PrijslijstWhitelist } from './PrijslijstWhitelist';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 
 function renderWithProviders(ui: React.ReactElement) {
@@ -42,8 +42,8 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-test('toont prijslijst-blacklist met omschrijving + onbekend-fallback', async () => {
-  renderWithProviders(<PrijslijstBlacklist />);
+test('toont prijslijst-whitelist met omschrijving + onbekend-fallback', async () => {
+  renderWithProviders(<PrijslijstWhitelist />);
 
   await waitFor(() => expect(screen.getByText('010')).toBeInTheDocument());
   expect(screen.getByText('Farys')).toBeInTheDocument();

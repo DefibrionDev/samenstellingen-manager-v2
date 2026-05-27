@@ -475,3 +475,167 @@ Voorstel: **B**. Klein, statisch, en is sowieso nuttig voor leesbaarheid van all
 - **Slice 28.1** — `prijslijst_blacklist` tabel + CLI commando's + repository.
 - **Slice 28.2** — `PriceAuditHandler` skipt geblackliste lijsten (zowel `missing` als `toeslag-drift`). Test toevoegen.
 - **Slice 28.3** — Read-only UI-pagina + nav-link "Prijslijst-blacklist". Vitest.
+
+## 14. Prijs-drift fixen — `prices:fix-drift` (slice 30 — concept)
+
+### Probleem
+
+`audit:prices` toont 45 toeslag-drift-rijen waarvan de variant-prijs in AFAS niet `base + accessoires.delta_cents` is. Handmatig fixen in AFAS Profit is voor 45 rijen onpraktisch — maar fout-bulk-fixen risicovol omdat het klantprijzen raakt.
+
+### Aanpak
+
+CLI `prices:fix-drift [--apply] [--limit=N]`:
+- **Default = dry-run** (CLAUDE.md regel). Print per drift-rij: huidige vs gewenste prijs, en payload-preview.
+- `--apply` doet de PUT richting AFAS via `FbSalesPrice`.
+- `--limit=N` beperkt tot eerste N rijen, voor stapsgewijs uitrollen.
+- Idempotent: tweede run vindt minder drift; dezelfde rij twee keer fixen is een no-op (Pric wordt overschreven).
+
+### PoC-bevindingen (verifieerd live op 27-05-2026)
+
+- **Connector**: `FbSalesPrice` (PUT op `/connectors/FbSalesPrice`).
+- **Payload**:
+  ```
+  {"FbSalesPrice":{"Element":{"Fields":{
+    "VaIt":"7",         // 7 = Samenstelling (universeel voor onze varianten)
+    "ItCd":"<variant>",
+    "PrLi":"<prijslijst>",
+    "BiUn":"STK",       // universeel
+    "CuId":"EUR",       // universeel
+    "DaBg":"<bestaande begindatum>",
+    "Pric":<base+delta in euro>
+  }}}}
+  ```
+- **Begindatum behouden** (niet opnieuw zetten op vandaag) — voorkomt prijshistorie-corruptie.
+- Respons: HTTP 201, lege body bij succes.
+- PoC-resultaat: 10041-60212 in lijst 003 succesvol van €1520 → €1450 gezet (audit-drift opgeheven).
+
+### Architectuur
+
+1. **AfasHttpClient** krijgt `updateConnector(string $id, array $payload): void` (PUT).
+2. **Domain**:
+   - `PriceFixPlan` — value-object met `variantItemcode`, `prijslijstId`, `currentCents`, `targetCents`, `beginDate`.
+   - `PriceFixWriter`-contract — `apply(PriceFixPlan)`.
+3. **Application**:
+   - `FixPriceDriftHandler` — itereert `audit:prices` (drift only), bouwt `PriceFixPlan` per rij, schrijft via `PriceFixWriter`. Skipt blacklist-lijsten automatisch (al door audit-filter). Logt successen/fouten.
+4. **Infrastructure**:
+   - `HttpFbSalesPriceWriter implements PriceFixWriter` — bouwt FbSalesPrice-payload en doet PUT via AfasHttpClient.
+   - `InMemoryPriceFixWriter` voor tests — registreert wat geschreven zou worden, geen netwerk.
+5. **CLI** `prices:fix-drift`: dry-run-table by default, `--apply` doet de PUT, `--limit=N` beperkt.
+
+### Test-strategie
+
+- Unit-test `FixPriceDriftHandler` met `InMemoryPriceFixWriter` — assert dat de juiste plannen worden gegenereerd.
+- Geen integratietest tegen echte AFAS (CLAUDE.md regel: tests raken nooit echte AFAS).
+- Wel live verificatie na implementatie: `--limit=1` op een veilige rij en handmatig in Profit/Get_Prijzen verifiëren.
+
+### Faalmodi
+
+- **PUT faalt** (4xx/5xx): logregel in `tmp/fix-drift-{datum}.csv`, doorgaan met volgende rij. Niet abort.
+- **Pric verschilt < 1 cent**: skippen (geen meaningful fix).
+- **Variant heeft geen base-prijs in deze prijslijst**: kan niet voorkomen want audit produceert dan geen drift-rij, alleen missing.
+
+## 15. Missing-prijs aanvullen — `prices:fix-missing` (slice 31 — concept)
+
+Zelfde patroon als slice 30, maar dan voor `missing`-rijen: variant heeft geen prijs in een prijslijst waar de base wel in staat.
+
+- **Connector**: zelfde `FbSalesPrice`, maar **POST** (insert) ipv PUT (update). AFAS sluit dit doorgaans niet uit — verifiëren met PoC voor implementatie.
+- **Payload**: identiek aan drift-fix, behalve dat de rij nog niet bestaat.
+- **Begindatum**: nemen we de begindatum van de *base*-prijs in dezelfde prijslijst (consistente boekhouding).
+- **Architectuur**: hergebruik `PriceFixPlan` + `PriceFixWriter`, voeg `FixPriceMissingHandler` toe naast `FixPriceDriftHandler`. CLI `prices:fix-missing [--apply] [--limit=N]`.
+
+PoC vereist een **handmatige eerste POST** om te bevestigen dat insert via FbSalesPrice werkt zoals verwacht — net als slice 30 zijn we doen het stap-voor-stap.
+
+## 16. Staffelprijzen meenemen — switch naar easylinq (slice 32 — concept)
+
+### Probleem
+
+`Get_Prijzen` levert in onze AFAS-setup **geen staffelprijzen** — alle 41036 rijen in `afas_prijzen` hebben `staffel_aantal = NULL`, en een server-side filter op niet-lege `Staffelprijs` retourneert 0 rijen. Audit en fix-scripts werken nu alleen op de baseline-prijs en zouden hogere staffels stilletjes negeren.
+
+AFAS heeft twee `easylinq_*`-connectors die wel staffels leveren:
+
+- **`easylinq_prices_saleprice`** — basisstaffel (`Hoeveelheid` veld, hoofdletter H).
+- **`easylinq_prices_saleprice_staffel`** — hogere staffels (`quantity` veld) met `current`-flag.
+
+### Aanpak
+
+Switch `HttpAfasPrijzenFetcher` van `Get_Prijzen` naar de twee easylinq-connectors, geünificeerd in één result-list. Geen schema-wijzigingen aan `afas_prijzen` — die heeft al `staffel_aantal` als kolom (was alleen leeg).
+
+### Mapping naar `afas_prijzen`
+
+| afas_prijzen kolom | saleprice veld | saleprice_staffel veld |
+|---|---|---|
+| `itemcode` | `item_id` | `item_id` |
+| `prijslijst_id` | `pricelist_id` | `pricelist_id` |
+| `debiteur_id` | `debtor_id` (leeg → null) | `debtor_id` |
+| `verkoopprijs_cents` | `price` × 100 (string→int via EuroParser-stijl) | `price` × 100 |
+| `staffel_aantal` | `Hoeveelheid` | `quantity` |
+| `geldig_van` | `date` | `date` |
+| `geldig_tot` | — (niet aanwezig) | — (niet aanwezig) |
+
+`geldig_tot` blijft `NULL` voor easylinq-data. Filter op "actieve prijs" loopt via:
+- `saleprice`: huidige fetcher houdt alle rijen (er is geen einddatum, blijkbaar pure "actief" semantiek).
+- `saleprice_staffel`: alleen rijen met `current=1`.
+
+### Audit-impact — staffels mee-auditen
+
+Beslissing: niet alleen staffels syncen, ook auditen + fixen.
+
+**Audit-regel** (plat model): voor elke (variant, prijslijst, staffel) geldt `variantPrijs == basePrijs(zelfde-prijslijst, zelfde-staffel) + accessoires.delta_cents`. Volume-korting in base → identieke volume-korting in variant. Accessoire-toeslag is een vaste cents per staffel.
+
+**Statuscategorieën** in `PriceDriftRow`:
+- `toeslag-drift` — beide hebben deze staffel, maar variant-base ≠ delta.
+- `missing` — base heeft deze staffel, variant niet.
+- `inconsistent-staffel` (nieuw) — variant heeft staffel die base niet heeft. Auto-fix is onveilig → wel rapporteren, niet auto-corrigeren.
+
+**Indexering**: `PriceAuditHandler::indexLatestPerPrijslijst` wordt `indexLatestPerPrijslijstAndStaffel` — key wordt `<prijslijst>|<staffel>`. Drop de `staffelAantal > 1`-skip.
+
+**`PriceDriftRow`** krijgt veld `staffelAantal: ?int` (null = baseline-rij in oude data; na switch altijd ≥ 0).
+
+**CLI + UI**: extra kolom "Aantal" achter "Prijslijst". UI-grouping blijft `(variant, accessoire)`; uitklap-rijen tonen per (prijslijst, staffel).
+
+### Fix-impact
+
+`FbSalesPrice`-payload moet bij staffel > basisstaffel ook `CrPr=true` en `Am=<staffel>` meegeven. PoC nodig met één staffel-PUT en één staffel-POST voor we slice 30/31 op staffels loslaten.
+
+### PoC
+
+Vóór code:
+1. Tel rijen in beide easylinq-connectors (background-call loopt al).
+2. Vergelijk: levert `easylinq_prices_saleprice` minstens net zoveel baseline-rijen als de huidige `Get_Prijzen`-snapshot (41036) op (itemcode, prijslijst, debiteur) niveau?
+3. Sample 5 random items en vergelijk prijs (cents) tussen oud en nieuw. Verschil van 0 = clean switch; verschil > 0 = data-issue in oude of nieuwe bron, eerst onderzoeken.
+
+### Slices
+
+- **Slice 32.0** — PoC + verkenningsscript. Vergelijk row-counts en sample-prijzen tussen `Get_Prijzen` en `easylinq_prices_saleprice`. Output → `tmp/`. Geen production-code-wijziging.
+- **Slice 32.1** — `HttpAfasPrijzenFetcher` herschrijven naar twee easylinq-connectors. Filter staffel-rijen op `current=1`.
+- **Slice 32.2** — Live `afas:pull` + count-verificatie van staffel-rijen.
+- **Slice 32.3** — `PriceAuditHandler` per-staffel indexeren. Drop `staffel > 1`-skip. Voeg `staffelAantal` toe aan `PriceDriftRow`. Voeg `inconsistent-staffel` status toe voor variant-staffels zonder base-tegenhanger.
+- **Slice 32.4** — UI/CLI uitbreiden met "Aantal"-kolom. Grouping in UI blijft `(variant, accessoire)`; uitklap toont (prijslijst, staffel).
+- **Slice 32.5** — Slice 30/31 PoC voor staffel-PUT/POST (FbSalesPrice met `CrPr` + `Am`). Pas fix-handlers aan om staffels mee te nemen.
+
+## 17. Duplicate-BOM audit (slice 34 — concept)
+
+### Probleem
+
+Live SQL-check op `afas_samenstellingen` toont **133 samenstellingen met BOM identiek aan minstens één andere**. Bij inspectie:
+
+- `10042-60112` (variant Defibtech + witte binnenkast 60112) heeft BOM `[10142, 70112, 81111]`.
+- `10042` (pure base zonder accessoire) heeft *dezelfde* BOM.
+
+De variant *zou* `60112` in z'n BOM moeten hebben — dat doet hij niet. Dit zijn dus structurele AFAS-data-fouten. Patroon is consistent over alle gevonden gevallen: variant-rij neemt de base-BOM over zonder accessoire-itemcode mee te nemen.
+
+Impact: portal-CSV-import-resolutie en variant-detectie zijn fragiel als BOM-data niet betrouwbaar is.
+
+### Aanpak
+
+Read-only audit volgens hetzelfde patroon als de andere audits (`audit:names`, `audit:suspicious-bases`):
+
+- **Domain**: `DuplicateBomGroup` value-object met `fingerprint` (gesorteerde, kommagescheiden BOM-string) en `list<itemcode + name>`.
+- **Application**: `DuplicateBomAuditHandler` — itereert alle `afas_samenstellingen` (geen filter — *alle* samenstellingen, niet alleen die in onze groepen), bouwt fingerprint, groepeert. Return alleen groepen met ≥ 2 leden.
+- **CLI**: `audit:duplicate-boms` — toont per groep itemcodes + BOM-fingerprint. Exit-code 1 bij hits.
+- **HTTP + UI**: `GET /api/duplicate-boms` + `/duplicate-boms` pagina met DataGrid (group-by-fingerprint, uitklap toont itemcodes en namen). CSV-export.
+
+### Slices
+
+- **Slice 34.0** — Domain + handler + unit-tests met `InMemoryAfasSamenstellingenRepository`.
+- **Slice 34.1** — CLI + HTTP + UI + vitest.

@@ -271,9 +271,10 @@ final class ImportPortalCsvHandlerTest extends TestCase
     }
 
     #[Test]
-    public function acceptsPureEnglishBaseWithoutStickerset(): void
+    public function rejectsEnglishBaseWithoutStickerset(): void
     {
-        // AFAS heeft geen aparte EN-stickerset; pure EN-bases hebben alleen 70112 + article.
+        // EN moet sinds eind mei 2026 ook stickerset hebben (oude uitzondering vervallen).
+        // UK is in onze tool een markt, geen taal — taal-code is EN.
         $bag = $this->emptyBag();
         $bag['accessoires']->save(new Accessoire('60110', 'EHBO-Rugzak'));
         $bag['afas']->replaceSnapshot([
@@ -285,8 +286,8 @@ final class ImportPortalCsvHandlerTest extends TestCase
 
         $summary = $this->makeHandler($bag, $reader)(new ImportPortalCsv('/irrelevant.csv'));
 
-        self::assertSame([], $summary->unresolved);
-        self::assertSame(1, $summary->basesCreated);
+        self::assertCount(1, $summary->unresolved);
+        self::assertSame('11000', $summary->unresolved[0]['code']);
     }
 
     #[Test]

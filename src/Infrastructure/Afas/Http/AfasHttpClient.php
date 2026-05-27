@@ -22,25 +22,43 @@ final readonly class AfasHttpClient
      */
     public function getConnectorPage(string $connectorId, array $query = [], int $take = 1000, int $skip = 0): array
     {
-        $response = $this->http->request('GET', $this->baseUrl . '/connectors/' . $connectorId, [
-            'headers' => $this->headers(),
-            'query' => $query + ['take' => $take, 'skip' => $skip],
-        ]);
-
-        /** @var mixed $data */
-        $data = json_decode($response->getBody()->getContents(), true);
-        if (!is_array($data) || !isset($data['rows']) || !is_array($data['rows'])) {
-            return [];
-        }
-
-        $rows = [];
-        foreach ($data['rows'] as $row) {
-            if (is_array($row)) {
-                $rows[] = $row;
+        // AFAS dropt soms de connectie bij grote skips of zware connectors.
+        // Drie pogingen met exponentiële backoff (1s, 3s, 9s) overbrugt dat zonder
+        // de hele pull te laten falen.
+        $attempts = 0;
+        $lastException = null;
+        while ($attempts < 3) {
+            try {
+                $t = microtime(true);
+                $response = $this->http->request('GET', $this->baseUrl . '/connectors/' . $connectorId, [
+                    'headers' => $this->headers(),
+                    'query' => $query + ['take' => $take, 'skip' => $skip],
+                ]);
+                $dt = microtime(true) - $t;
+                if ($attempts > 0 || $dt > 5.0) {
+                    fwrite(STDERR, sprintf("[%s]   http %s skip=%d take=%d → %.1fs%s\n", date('H:i:s'), $connectorId, $skip, $take, $dt, $attempts > 0 ? ' (retry ' . $attempts . ')' : ''));
+                }
+                /** @var mixed $data */
+                $data = json_decode($response->getBody()->getContents(), true);
+                if (!is_array($data) || !isset($data['rows']) || !is_array($data['rows'])) {
+                    return [];
+                }
+                $rows = [];
+                foreach ($data['rows'] as $row) {
+                    if (is_array($row)) {
+                        $rows[] = $row;
+                    }
+                }
+                return $rows;
+            } catch (\GuzzleHttp\Exception\ConnectException | \GuzzleHttp\Exception\RequestException $e) {
+                $lastException = $e;
+                $attempts++;
+                if ($attempts < 3) {
+                    sleep(3 ** ($attempts - 1));
+                }
             }
         }
-
-        return $rows;
+        throw $lastException;
     }
 
     /**

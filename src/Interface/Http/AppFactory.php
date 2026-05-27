@@ -79,8 +79,8 @@ final class AppFactory
         $listArticlePrices = new ListArticlePricesController(
             $container->afasPrijsRepository(),
         );
-        $listPrijslijstBlacklist = new ListPrijslijstBlacklistController(
-            $container->prijslijstBlacklistRepository(),
+        $listPrijslijstWhitelist = new ListPrijslijstWhitelistController(
+            $container->prijslijstWhitelistRepository(),
             $container->afasPrijslijstRepository(),
         );
         $listPriceDrift = new ListPriceDriftController(
@@ -90,7 +90,7 @@ final class AppFactory
                 $container->linkRepository(),
                 $container->afasPrijsRepository(),
                 $container->afasPrijslijstRepository(),
-                $container->prijslijstBlacklistRepository(),
+                $container->prijslijstWhitelistRepository(),
             ),
         );
         $app->get('/api/groups', $listGroups);
@@ -104,7 +104,7 @@ final class AppFactory
         $app->get('/api/suspicious-bases', $listSuspiciousBases);
         $app->get('/api/articles/{itemcode}/prices', $listArticlePrices);
         $app->get('/api/price-drift', $listPriceDrift);
-        $app->get('/api/prijslijst-blacklist', $listPrijslijstBlacklist);
+        $app->get('/api/prijslijst-whitelist', $listPrijslijstWhitelist);
 
         return $app;
     }

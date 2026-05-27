@@ -249,17 +249,8 @@ final readonly class ImportPortalCsvHandler
 
     /**
      * "Verkoopbare" base-samenstellingen: BOM bevat article-code + reanimatiekit (70112)
-     * + stickerset (81xxx) en GEEN geregistreerde accessoire.
+     * + stickerset (81xxx) en GEEN geregistreerde accessoire. Voor alle talen.
      *
-     * Uitzondering: pure EN/UK-bases hebben in AFAS geen aparte stickerset (er bestaat
-     * geen Engelse stickerset). Voor `language === 'EN'` of `'UK'` vervalt de 81xxx-eis;
-     * 70112 blijft verplicht. Compound talen (`NL/EN`, `NL/EN/FR`, ...) behouden de
-     * sticker-eis omdat compound bases in AFAS gewoon de NL-stickerset hebben.
-     *
-     * @param list<string> $blockedBomCodes
-     * @return list<AfasSamenstelling>
-     */
-    /**
      * @param list<string> $blockedBomCodes
      * @param list<string> $pinnedAfasCodes
      * @return list<AfasSamenstelling>
@@ -267,17 +258,13 @@ final readonly class ImportPortalCsvHandler
     private function sellableCandidatesFor(string $articleCode, array $blockedBomCodes, string $language, array $pinnedAfasCodes): array
     {
         $bases = $this->lookup->findCanonicalBasesContaining($articleCode, $blockedBomCodes);
-        $stickerRequired = !$this->isEnglishOnlyLanguage($language);
 
         $candidates = array_values(array_filter(
             $bases,
-            static function (AfasSamenstelling $s) use ($stickerRequired): bool {
+            static function (AfasSamenstelling $s): bool {
                 $bom = $s->bomItemcodes;
                 if (!in_array('70112', $bom, true)) {
                     return false;
-                }
-                if (!$stickerRequired) {
-                    return true;
                 }
                 foreach ($bom as $code) {
                     if (str_starts_with($code, '81')) {
@@ -303,11 +290,6 @@ final readonly class ImportPortalCsvHandler
         }
 
         return $candidates;
-    }
-
-    private function isEnglishOnlyLanguage(string $language): bool
-    {
-        return $language === 'EN' || $language === 'UK';
     }
 
     /**

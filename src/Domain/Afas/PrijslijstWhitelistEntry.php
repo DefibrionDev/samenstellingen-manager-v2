@@ -6,7 +6,7 @@ namespace Defibrion\Samenstellingen\Domain\Afas;
 
 use InvalidArgumentException;
 
-final readonly class PrijslijstBlacklistEntry
+final readonly class PrijslijstWhitelistEntry
 {
     public string $prijslijstId;
     public string $reden;
@@ -17,10 +17,10 @@ final readonly class PrijslijstBlacklistEntry
         $prijslijstId = trim($prijslijstId);
         $reden = trim($reden);
         if ($prijslijstId === '') {
-            throw new InvalidArgumentException('Prijslijst-blacklist prijslijstId mag niet leeg zijn.');
+            throw new InvalidArgumentException('Prijslijst-whitelist prijslijstId mag niet leeg zijn.');
         }
         if ($reden === '') {
-            throw new InvalidArgumentException('Prijslijst-blacklist reden mag niet leeg zijn.');
+            throw new InvalidArgumentException('Prijslijst-whitelist reden mag niet leeg zijn.');
         }
 
         $this->prijslijstId = $prijslijstId;
