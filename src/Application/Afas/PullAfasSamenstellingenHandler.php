@@ -8,6 +8,8 @@ use Defibrion\Samenstellingen\Application\Group\SyncAllGroups;
 use Defibrion\Samenstellingen\Application\Group\SyncAllGroupsHandler;
 use Defibrion\Samenstellingen\Domain\Afas\AfasArticleRepository;
 use Defibrion\Samenstellingen\Domain\Afas\AfasArticlesFetcher;
+use Defibrion\Samenstellingen\Domain\Afas\AfasPrijslijstenFetcher;
+use Defibrion\Samenstellingen\Domain\Afas\AfasPrijslijstRepository;
 use Defibrion\Samenstellingen\Domain\Afas\AfasPrijsRepository;
 use Defibrion\Samenstellingen\Domain\Afas\AfasPrijzenFetcher;
 use Defibrion\Samenstellingen\Domain\Afas\AfasSamenstellingenFetcher;
@@ -23,6 +25,8 @@ final readonly class PullAfasSamenstellingenHandler
         private SyncAllGroupsHandler $syncAllGroups,
         private AfasPrijzenFetcher $prijzenFetcher,
         private AfasPrijsRepository $prijsRepository,
+        private AfasPrijslijstenFetcher $prijslijstenFetcher,
+        private AfasPrijslijstRepository $prijslijstRepository,
     ) {
     }
 
@@ -37,6 +41,9 @@ final readonly class PullAfasSamenstellingenHandler
         $prijzen = $this->prijzenFetcher->fetchActive();
         $this->prijsRepository->replaceSnapshot($prijzen);
 
+        $prijslijsten = $this->prijslijstenFetcher->fetchAll();
+        $this->prijslijstRepository->replaceSnapshot($prijslijsten);
+
         // Verse snapshot → variant-match-status meteen opnieuw berekenen.
         $syncSummary = ($this->syncAllGroups)(new SyncAllGroups());
 
@@ -45,6 +52,7 @@ final readonly class PullAfasSamenstellingenHandler
             count($articles),
             $syncSummary,
             count($prijzen),
+            count($prijslijsten),
         );
     }
 }

@@ -8,6 +8,8 @@ const navLinks = [
   { to: '/missing', label: 'Missing' },
   { to: '/name-drift', label: 'Name drift' },
   { to: '/suspicious-bases', label: 'Suspicious' },
+  { to: '/price-drift', label: 'Price drift' },
+  { to: '/prijslijst-blacklist', label: 'Prijslijst-BL' },
 ];
 
 export function App() {

@@ -18,7 +18,7 @@ lint: ## Draai PHP CS Fixer (check-only)
 fix: ## Pas PHP CS Fixer toe
 	vendor/bin/php-cs-fixer fix
 
-check: lint stan test ## Lint + stan + test (CI-gate)
+check: lint stan test ui-test ## Lint + stan + PHPUnit + vitest (CI-gate)
 
 clean: ## Verwijder caches en tmp-bestanden
 	rm -rf .phpunit.cache .phpunit.result.cache .php-cs-fixer.cache tmp/*.sqlite tmp/*.log
@@ -38,8 +38,8 @@ web-install: ## Installeer frontend-dependencies
 ui-build: ## Bouw de frontend (output naar public/)
 	npm --prefix web run build
 
-ui-test: ## Draai frontend-tests
-	npm --prefix web run test
+ui-test: ## Draai frontend-tests (vitest --run)
+	npm --prefix web run test -- --run
 
 ui: ## Start backend (Docker) + Vite dev-server parallel
 	docker compose up -d

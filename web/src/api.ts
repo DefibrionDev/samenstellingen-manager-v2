@@ -98,7 +98,37 @@ export const api = {
   listSuspiciousBases: () => jsonGet<SuspiciousBaseRow[]>('/api/suspicious-bases'),
   listArticlePrices: (itemcode: string) =>
     jsonGet<ArticlePrice[]>(`/api/articles/${encodeURIComponent(itemcode)}/prices`),
+  listPriceDrift: () => jsonGet<PriceDriftRow[]>('/api/price-drift'),
+  listPrijslijstBlacklist: () =>
+    jsonGet<PrijslijstBlacklistEntry[]>('/api/prijslijst-blacklist'),
 };
+
+export interface PrijslijstBlacklistEntry {
+  prijslijstId: string;
+  omschrijving: string | null;
+  reden: string;
+  aangemaaktOp: string | null;
+}
+
+export interface PriceDriftRow {
+  groupName: string;
+  baseAfasItemcode: string;
+  baseName: string;
+  variantAfasItemcode: string;
+  accessoireItemcode: string;
+  accessoireLabel: string;
+  expectedDeltaCents: number;
+  expectedDeltaEur: string;
+  prijslijstId: string;
+  prijslijstOmschrijving: string | null;
+  basePrijsCents: number;
+  basePrijsEur: string;
+  variantPrijsCents: number | null;
+  variantPrijsEur: string | null;
+  actualDeltaCents: number | null;
+  actualDeltaEur: string | null;
+  status: 'toeslag-drift' | 'missing';
+}
 
 export interface ArticlePrice {
   prijslijstId: string;

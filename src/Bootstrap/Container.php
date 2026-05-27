@@ -7,6 +7,7 @@ namespace Defibrion\Samenstellingen\Bootstrap;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\Migrator;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAccessoireRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAfasArticleRepository;
+use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAfasPrijslijstRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAfasPrijsRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAfasSamenstellingenRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteBomBlacklistRepository;
@@ -15,6 +16,7 @@ use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteGroupBaseI
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteGroupBaseRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteGroupRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteGroupVariantRepository;
+use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqlitePrijslijstBlacklistRepository;
 use PDO;
 
 /**
@@ -33,6 +35,8 @@ class Container
     private ?SqliteAfasSamenstellingenRepository $afasSamenstellingenRepository = null;
     private ?SqliteAfasArticleRepository $afasArticleRepository = null;
     private ?SqliteAfasPrijsRepository $afasPrijsRepository = null;
+    private ?SqliteAfasPrijslijstRepository $afasPrijslijstRepository = null;
+    private ?SqlitePrijslijstBlacklistRepository $prijslijstBlacklistRepository = null;
     private ?SqliteBomBlacklistRepository $bomBlacklistRepository = null;
 
     public function __construct(
@@ -105,5 +109,15 @@ class Container
     public function afasPrijsRepository(): SqliteAfasPrijsRepository
     {
         return $this->afasPrijsRepository ??= new SqliteAfasPrijsRepository($this->pdo());
+    }
+
+    public function afasPrijslijstRepository(): SqliteAfasPrijslijstRepository
+    {
+        return $this->afasPrijslijstRepository ??= new SqliteAfasPrijslijstRepository($this->pdo());
+    }
+
+    public function prijslijstBlacklistRepository(): SqlitePrijslijstBlacklistRepository
+    {
+        return $this->prijslijstBlacklistRepository ??= new SqlitePrijslijstBlacklistRepository($this->pdo());
     }
 }

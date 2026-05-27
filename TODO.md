@@ -828,6 +828,91 @@ Eindbeeld: bij `afas:pull` halen we ook prijs-data uit `Get_Prijzen` op en bewar
 
 ---
 
+## Slice 27 — `audit:prices` (toeslag-drift + missende prijslijst)
+
+Eindbeeld: één audit-rapport dat per (groep, base, accessoire, prijslijst) detecteert óf de prijs-toeslag in AFAS afwijkt van `accessoires.delta_cents`, óf de variant in die prijslijst ontbreekt. Verwachte variant-SKU = `base.afasItemcode + '-' + accessoire.itemcode`.
+
+### Fase 1 — Domain + handler
+- [x] `PriceDriftRow` value-object + `AuditPrices` DTO.
+- [x] `PriceAuditHandler` (skip klant-prijzen, skip hogere staffels, latest-per-prijslijst).
+- [x] 5 handler-tests.
+
+### Fase 2 — CLI
+- [x] `audit:prices --limit=N` met exit 1 bij hits.
+
+### Fase 3 — HTTP + UI
+- [x] `GET /api/price-drift`.
+- [x] AppBar krijgt "Price drift"-link.
+- [x] `PriceDrift.tsx` met DataGrid + CSV-export + Vitest.
+- [x] Bug-fix `EuroParser::formatCents` accepteert negatieve cents.
+- [x] Bug-fix `SqliteGroupAccessoireRepository::findAllForGroup` selecteert nu `delta_cents` mee (stille bug — alle linked-accessoires kwamen met delta 0 uit deze repo).
+
+### Fase 4 — Lint + live
+- [x] `make check` (265 / 588) + vitest (8) groen.
+- [x] Live: 980 rijen — 194 toeslag-drift + 786 missing. UI toont per rij verwachte vs werkelijke delta met status-chip.
+
+---
+
+## Slice 28 — Prijslijst-blacklist + prijslijst-naam-snapshot
+
+Eindbeeld: één globale `prijslijst_blacklist`-tabel laat ons prijslijsten markeren die geheel buiten `audit:prices` blijven (zowel `missing` als `toeslag-drift`). Vóór de blacklist zelf eerst een mini-snapshot van `Get_Prijslijsten` (id → omschrijving) zodat namen overal in output beschikbaar zijn. CLI-only mutaties, read-only UI (CLAUDE.md regel). Zie PLAN.md §13.
+
+### Sub-slice 28.0 — `afas_prijslijsten` snapshot
+
+#### Fase 1 — Domain + repo
+- [x] Migration `0016_afas_prijslijsten.sql`: `(id TEXT PRIMARY KEY, omschrijving TEXT NOT NULL, gesynchroniseerd_op TEXT)`.
+- [x] Value-object `AfasPrijslijst(id, omschrijving)`.
+- [x] `AfasPrijslijstRepository`-contract + `findAll()` + `findById(id): ?AfasPrijslijst` + `replaceSnapshot(list)` (idempotent reconciliation).
+- [x] `InMemoryAfasPrijslijstRepository` + `SqliteAfasPrijslijstRepository` + gedeeld contract-test (278/616 groen).
+
+#### Fase 2 — Fetcher + sync-handler
+- [x] `AfasPrijslijstenFetcher`-contract.
+- [x] `HttpAfasPrijslijstenFetcher`: `Get_Prijslijsten` → list<AfasPrijslijst>. Lege omschrijving → fallback naar ID.
+- [x] Geïntegreerd in `PullAfasSamenstellingenHandler` + `PullAfasSamenstellingenResult` + `afas:pull` output. Container + bin wiring.
+
+#### Fase 3 — Naam-weergave overal
+- [x] `PriceAuditHandler` returnt `prijslijstOmschrijving` mee in `PriceDriftRow` (resolved via `AfasPrijslijstRepository`, fallback `null` als onbekend).
+- [x] `audit:prices` CLI: kolom "Prijslijst" toont nu `id — omschrijving`.
+- [x] HTTP `/api/price-drift` levert `prijslijstOmschrijving` mee.
+- [x] `PriceDrift.tsx` + CSV-export tonen `id — omschrijving`; vitest aangepast (279/619 + 8 vitest groen).
+
+### Sub-slice 28.1 — Blacklist tabel + CLI
+
+#### Fase 1 — Domain + repo
+- [x] Migration `0017_prijslijst_blacklist.sql`.
+- [x] Value-object `PrijslijstBlacklistEntry(prijslijstId, reden, aangemaaktOp?)`.
+- [x] `PrijslijstBlacklistRepository`-contract + InMemory + Sqlite + gedeeld contract-test.
+- [x] Faalmodi (`PrijslijstAlreadyBlacklistedException` / `PrijslijstNotBlacklistedException`).
+
+#### Fase 2 — CLI commando's
+- [x] `pricelist:blacklist <id> "<reden>"`.
+- [x] `pricelist:unblacklist <id>`.
+- [x] `pricelist:list-blacklist` met join op `afas_prijslijsten` voor omschrijving.
+
+### Sub-slice 28.2 — Audit-filter
+
+- [x] `PriceAuditHandler` accepteert `PrijslijstBlacklistRepository`.
+- [x] Skipt alle drift-rijen (beide statussen) waarvan `prijslijstId` op de blacklist staat.
+- [x] Test `skipsBlacklistedPrijslijstForBothStatuses` dekt drift + missing.
+- [x] Container + AppFactory + bin-wiring bijgewerkt (292/643 groen).
+
+### Sub-slice 28.3 — UI
+
+- [x] HTTP `GET /api/prijslijst-blacklist` → list met `prijslijstId, omschrijving, reden, aangemaaktOp`.
+- [x] AppBar krijgt link "Prijslijst-BL".
+- [x] `web/src/pages/PrijslijstBlacklist.tsx` met DataGrid + inline-tip naar CLI.
+- [x] Vitest (9 passing).
+
+### Fase 4 — Lint + live (over alle sub-slices)
+
+- [x] `make check` (292/643 + 9 vitest) groen.
+- [x] Live `afas:pull` syncde 29 prijslijsten.
+- [x] `audit:prices` toont kolom `id — omschrijving` op de echte snapshot.
+- [x] Live IOK (011), Opdrachtencentrale (024), Coop collectief (025), Farys (010) op blacklist. Audit: **980 → 917** rijen (63 missing-rijen op die lijsten weg; drift bleef 194 — er was geen drift op die kleine lijsten). UI op `/prijslijst-blacklist` toont de 4 entries met omschrijving+reden+datum. UI op `/price-drift` toont `194 toeslag-drift, 723 missing` met namen achter de prijslijst-ID.
+- [ ] ARKY-Dealers (026, 47 bases) bewust nog niet blacklisted — bespreken met user na zien resterende drift.
+
+---
+
 ## Slice 20 — Reconciliation in portal-CSV-import (vervang wipe)
 
 Eindbeeld: portal-CSV-import is idempotent. Bestaande groepen behouden hun `model_name` en `group_accessoires` over imports heen; alleen groepen die niet meer in de CSV staan worden opgeruimd. Geen `ToolDataWiper` meer in de import-flow.

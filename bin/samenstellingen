@@ -11,6 +11,7 @@ use Defibrion\Samenstellingen\Application\Afas\ListBomBlacklistHandler;
 use Defibrion\Samenstellingen\Application\Afas\PullAfasSamenstellingenHandler;
 use Defibrion\Samenstellingen\Application\Audit\ListMissingVariantsHandler;
 use Defibrion\Samenstellingen\Application\Audit\NameAuditHandler;
+use Defibrion\Samenstellingen\Application\Audit\PriceAuditHandler;
 use Defibrion\Samenstellingen\Application\Audit\SuspiciousBaseAuditHandler;
 use Defibrion\Samenstellingen\Application\Group\AddAccessoireToGroupHandler;
 use Defibrion\Samenstellingen\Application\Group\AddBaseFromAfasHandler;
@@ -28,6 +29,7 @@ use Defibrion\Samenstellingen\Domain\Afas\VariantMatcher;
 use Defibrion\Samenstellingen\Domain\Naming\VariantNamingPolicy;
 use Defibrion\Samenstellingen\Infrastructure\Afas\Http\AfasClientFactory;
 use Defibrion\Samenstellingen\Infrastructure\Afas\Http\HttpAfasArticlesFetcher;
+use Defibrion\Samenstellingen\Infrastructure\Afas\Http\HttpAfasPrijslijstenFetcher;
 use Defibrion\Samenstellingen\Infrastructure\Afas\Http\HttpAfasPrijzenFetcher;
 use Defibrion\Samenstellingen\Infrastructure\Afas\Http\HttpAfasSamenstellingenFetcher;
 use Defibrion\Samenstellingen\Infrastructure\Import\FileCsvSamenstellingenReader;
@@ -49,7 +51,11 @@ use Defibrion\Samenstellingen\Interface\Cli\RemoveBaseCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AfasListDuplicatesCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AfasPullCommand;
 use Defibrion\Samenstellingen\Interface\Cli\BlacklistBomCommand;
+use Defibrion\Samenstellingen\Interface\Cli\BlacklistPrijslijstCommand;
+use Defibrion\Samenstellingen\Interface\Cli\ListPrijslijstBlacklistCommand;
+use Defibrion\Samenstellingen\Interface\Cli\UnblacklistPrijslijstCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AuditNamesCommand;
+use Defibrion\Samenstellingen\Interface\Cli\AuditPricesCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AuditSuspiciousBasesCommand;
 use Defibrion\Samenstellingen\Interface\Cli\CreateAccessoireCommand;
 use Defibrion\Samenstellingen\Interface\Cli\DeleteAccessoireCommand;
@@ -87,6 +93,8 @@ $afasSamenstellingenRepository = $container->afasSamenstellingenRepository();
 $bomBlacklistRepository = $container->bomBlacklistRepository();
 $afasArticleRepository = $container->afasArticleRepository();
 $afasPrijsRepository = $container->afasPrijsRepository();
+$afasPrijslijstRepository = $container->afasPrijslijstRepository();
+$prijslijstBlacklistRepository = $container->prijslijstBlacklistRepository();
 
 $createGroupHandler = new CreateGroupHandler($groupRepository);
 $showGroupHandler = new ShowGroupHandler(
@@ -164,6 +172,14 @@ $suspiciousBaseAuditHandler = new SuspiciousBaseAuditHandler(
     $afasSamenstellingenRepository,
     $accessoireRepository,
 );
+$priceAuditHandler = new PriceAuditHandler(
+    $groupRepository,
+    $baseRepository,
+    $linkRepository,
+    $afasPrijsRepository,
+    $afasPrijslijstRepository,
+    $prijslijstBlacklistRepository,
+);
 
 $application = new Application('samenstellingen-manager');
 $application->addCommand(new CreateGroupCommand($createGroupHandler));
@@ -184,6 +200,10 @@ $application->addCommand(new ListBomBlacklistCommand($listBomBlacklistHandler));
 $application->addCommand(new ExportMissingVariantsCommand($listMissingHandler));
 $application->addCommand(new AuditNamesCommand($nameAuditHandler));
 $application->addCommand(new AuditSuspiciousBasesCommand($suspiciousBaseAuditHandler));
+$application->addCommand(new AuditPricesCommand($priceAuditHandler));
+$application->addCommand(new BlacklistPrijslijstCommand($prijslijstBlacklistRepository));
+$application->addCommand(new UnblacklistPrijslijstCommand($prijslijstBlacklistRepository));
+$application->addCommand(new ListPrijslijstBlacklistCommand($prijslijstBlacklistRepository, $afasPrijslijstRepository));
 $application->addCommand(new SyncGroupAgainstAfasCommand($syncHandler));
 
 // `afas:pull` heeft credentials nodig en bouwt zelf z'n fetcher.
@@ -194,6 +214,7 @@ if ($hasAfasCreds) {
     $fetcher = new HttpAfasSamenstellingenFetcher($afasClient);
     $articlesFetcher = new HttpAfasArticlesFetcher($afasClient);
     $prijzenFetcher = new HttpAfasPrijzenFetcher($afasClient);
+    $prijslijstenFetcher = new HttpAfasPrijslijstenFetcher($afasClient);
     $pullHandler = new PullAfasSamenstellingenHandler(
         $fetcher,
         $afasSamenstellingenRepository,
@@ -202,6 +223,8 @@ if ($hasAfasCreds) {
         $syncAllGroupsHandler,
         $prijzenFetcher,
         $afasPrijsRepository,
+        $prijslijstenFetcher,
+        $afasPrijslijstRepository,
     );
     $application->addCommand(new AfasPullCommand($pullHandler));
 }

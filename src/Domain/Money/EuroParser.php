@@ -42,14 +42,12 @@ final class EuroParser
 
     public static function formatCents(int $cents): string
     {
-        if ($cents < 0) {
-            throw new InvalidArgumentException('Negatieve cents niet ondersteund in formatter.');
-        }
-
-        $euros = intdiv($cents, 100);
-        $remainder = $cents % 100;
+        $negative = $cents < 0;
+        $absCents = $negative ? -$cents : $cents;
+        $euros = intdiv($absCents, 100);
+        $remainder = $absCents % 100;
         $eurosFormatted = number_format($euros, 0, ',', '.');
 
-        return sprintf('€ %s,%02d', $eurosFormatted, $remainder);
+        return sprintf('%s€ %s,%02d', $negative ? '-' : '', $eurosFormatted, $remainder);
     }
 }

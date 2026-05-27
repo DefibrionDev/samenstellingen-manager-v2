@@ -31,10 +31,11 @@ final class AfasPullCommand extends Command
         $result = ($this->handler)(new PullAfasSamenstellingen());
 
         $io->success(sprintf(
-            '%d samenstellingen + %d artikelen + %d prijzen opgeslagen in de lokale snapshot.',
+            '%d samenstellingen + %d artikelen + %d prijzen + %d prijslijsten opgeslagen in de lokale snapshot.',
             $result->samenstellingen,
             $result->articles,
             $result->prijzen,
+            $result->prijslijsten,
         ));
 
         $sync = $result->sync;

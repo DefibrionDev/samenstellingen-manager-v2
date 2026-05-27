@@ -415,3 +415,63 @@ Output-kolommen: `groep | base | accessoire | prijslijst | verwachte_delta | wer
 2. **Verkooprelatie ↔ prijslijst**: waar staat de koppeling "klant Y zit op prijslijst Z"? Te onderzoeken in `easylinq_debtor` of `easylink_verkooprelatie`.
 3. **Historie**: alleen actieve rijen bewaren of ook oude voor latere "prijs-ontwikkeling"-views? Voorstel: alleen actief; historie pas later als business-case ontstaat.
 4. **Staffels**: lijkt `Staffelprijs=1` = vanaf 1 stuk (basisstaffel) en hogere aantallen aparte rijen. Bevestigen tijdens slice 25-implementatie.
+
+## 13. Prijslijst-blacklist (slice 28 — concept)
+
+### Probleem
+
+Na live `audit:prices` (slice 27, 980 rijen) blijkt veel "missing"-ruis te komen van prijslijsten met een kleine doelgroep:
+
+| ID | Omschrijving | # bases | Karakter |
+|---|---|--:|---|
+| 011 | IOK | 1 | Eén specifieke klant, niet elke AED hoort hierin |
+| 024 | Opdrachtencentrale | 2 | Idem |
+| 025 | Coop collectief | 3 | Idem |
+| 010 | Farys | 3 | Idem |
+| 026 | ARKY Dealers | 47 | Eigen catalogus, niet 1:1 met onze AED-lijn |
+
+"Missing" op zo'n lijst betekent vaak niet "vergeten in AFAS", maar "die AED hoort daar bewust niet in".
+
+### Oplossing — `prijslijst_blacklist`
+
+Globale blacklist van prijslijst-IDs. Geblackliste lijsten worden volledig uit `audit:prices` weggelaten (zowel `missing` als `toeslag-drift`). Beredenering voor "ook drift skippen": als een lijst niet relevant is voor onze AED-lijn, is een afwijkende toeslag daar net zo goed ruis als een ontbrekende prijs.
+
+Patroon kopieert `bom_blacklist` (slice 12.x): één tabel, CRUD via CLI, read-only UI-pagina.
+
+### Schema
+
+```sql
+CREATE TABLE prijslijst_blacklist (
+    prijslijst_id TEXT PRIMARY KEY,
+    reden TEXT NOT NULL,
+    aangemaakt_op TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+`prijslijst_id` matcht 1:1 op `afas_prijzen.prijslijst_id` (zelfde ruwe AFAS-ID, bv. `011`, `010`, `026`).
+
+### CLI
+
+- `pricelist:blacklist <id> "<reden>"` — voegt toe (faalt als al aanwezig).
+- `pricelist:unblacklist <id>` — verwijdert.
+- `pricelist:list-blacklist` — toont huidige lijst met reden + datum.
+
+### UI
+
+Read-only pagina `/prijslijst-blacklist` met tabel (ID, omschrijving uit ad-hoc lookup of leeg, reden, datum). Inline tip "Beheer via CLI: `pricelist:blacklist <id> '<reden>'`" — net als andere read-only pagina's (CLAUDE.md regel).
+
+### Vraag: prijslijst-naam erbij?
+
+In de DB hebben we alleen ID's. Voor de UI zou een naam fijn zijn. Twee opties:
+
+- **A** (lazy): UI-pagina alleen ID + reden + datum. Naam ophalen kost een AFAS-call, slaan we niet op. Minst werk, mogelijk verwarrend ("welke lijst is `010` ook al weer?").
+- **B** (snapshot): aparte snapshot-tabel `afas_prijslijsten (id, omschrijving)` synced tijdens `afas:pull` (29 rijen, statisch). Naam staat dan overal beschikbaar — ook voor `audit:prices`-output, `pricelist:list-blacklist`, UI.
+
+Voorstel: **B**. Klein, statisch, en is sowieso nuttig voor leesbaarheid van alle prijs-gerelateerde output. Wordt sub-slice 28.0 vóór de blacklist zelf.
+
+### Slices
+
+- **Slice 28.0** — snapshot `afas_prijslijsten` (id, omschrijving) + sync in `afas:pull`. Toon naam in `audit:prices` output (CLI tabelkolom + UI grid-kolom).
+- **Slice 28.1** — `prijslijst_blacklist` tabel + CLI commando's + repository.
+- **Slice 28.2** — `PriceAuditHandler` skipt geblackliste lijsten (zowel `missing` als `toeslag-drift`). Test toevoegen.
+- **Slice 28.3** — Read-only UI-pagina + nav-link "Prijslijst-blacklist". Vitest.

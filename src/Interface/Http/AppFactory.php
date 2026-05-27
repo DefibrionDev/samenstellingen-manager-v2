@@ -6,6 +6,7 @@ namespace Defibrion\Samenstellingen\Interface\Http;
 
 use Defibrion\Samenstellingen\Application\Audit\ListMissingVariantsHandler;
 use Defibrion\Samenstellingen\Application\Audit\NameAuditHandler;
+use Defibrion\Samenstellingen\Application\Audit\PriceAuditHandler;
 use Defibrion\Samenstellingen\Application\Audit\SuspiciousBaseAuditHandler;
 use Defibrion\Samenstellingen\Bootstrap\Container;
 use Defibrion\Samenstellingen\Domain\Naming\VariantNamingPolicy;
@@ -78,6 +79,20 @@ final class AppFactory
         $listArticlePrices = new ListArticlePricesController(
             $container->afasPrijsRepository(),
         );
+        $listPrijslijstBlacklist = new ListPrijslijstBlacklistController(
+            $container->prijslijstBlacklistRepository(),
+            $container->afasPrijslijstRepository(),
+        );
+        $listPriceDrift = new ListPriceDriftController(
+            new PriceAuditHandler(
+                $container->groupRepository(),
+                $container->baseRepository(),
+                $container->linkRepository(),
+                $container->afasPrijsRepository(),
+                $container->afasPrijslijstRepository(),
+                $container->prijslijstBlacklistRepository(),
+            ),
+        );
         $app->get('/api/groups', $listGroups);
         $app->get('/api/groups/{familyHead}', $showGroup);
         $app->get('/api/groups/{familyHead}/accessoires', $listGroupAccessoires);
@@ -88,6 +103,8 @@ final class AppFactory
         $app->get('/api/name-drift', $listNameDrift);
         $app->get('/api/suspicious-bases', $listSuspiciousBases);
         $app->get('/api/articles/{itemcode}/prices', $listArticlePrices);
+        $app->get('/api/price-drift', $listPriceDrift);
+        $app->get('/api/prijslijst-blacklist', $listPrijslijstBlacklist);
 
         return $app;
     }
