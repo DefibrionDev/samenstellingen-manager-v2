@@ -10,8 +10,9 @@ final readonly class AfasArticle
 {
     public string $itemcode;
     public string $name;
+    public bool $geblokkeerd;
 
-    public function __construct(string $itemcode, string $name)
+    public function __construct(string $itemcode, string $name, bool $geblokkeerd = false)
     {
         $trimmedItemcode = trim($itemcode);
         if ($trimmedItemcode === '') {
@@ -20,5 +21,6 @@ final readonly class AfasArticle
 
         $this->itemcode = $trimmedItemcode;
         $this->name = trim($name);
+        $this->geblokkeerd = $geblokkeerd;
     }
 }

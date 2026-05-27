@@ -27,7 +27,8 @@ final readonly class HttpAfasArticlesFetcher implements AfasArticlesFetcher
             if ($trimmed === '') {
                 continue;
             }
-            $articles[] = new AfasArticle($trimmed, is_string($name) ? $name : '');
+            $geblokkeerd = (string) ($row['Geblokkeerd'] ?? '') === '1';
+            $articles[] = new AfasArticle($trimmed, is_string($name) ? $name : '', $geblokkeerd);
         }
 
         return $articles;

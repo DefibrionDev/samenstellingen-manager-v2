@@ -32,11 +32,27 @@ final readonly class PullAfasSamenstellingenHandler
 
     public function __invoke(PullAfasSamenstellingen $command): PullAfasSamenstellingenResult
     {
-        $samenstellingen = $this->fetcher->fetchAll();
-        $this->repository->replaceSnapshot($samenstellingen);
+        // Articles eerst — leveren de set geblokkeerde itemcodes die we daarna
+        // uit alle andere snapshots (samenstellingen) filteren. Geblokkeerde
+        // artikelen "bestaan niet" voor onze lokale tool.
+        $allArticles = $this->articlesFetcher->fetchAll();
+        $blockedItemcodes = [];
+        $activeArticles = [];
+        foreach ($allArticles as $article) {
+            if ($article->geblokkeerd) {
+                $blockedItemcodes[$article->itemcode] = true;
+                continue;
+            }
+            $activeArticles[] = $article;
+        }
+        $this->articleRepository->replaceSnapshot($activeArticles);
 
-        $articles = $this->articlesFetcher->fetchAll();
-        $this->articleRepository->replaceSnapshot($articles);
+        $allSamenstellingen = $this->fetcher->fetchAll();
+        $samenstellingen = array_values(array_filter(
+            $allSamenstellingen,
+            static fn ($s): bool => !isset($blockedItemcodes[$s->itemcode]),
+        ));
+        $this->repository->replaceSnapshot($samenstellingen);
 
         $prijzen = $this->prijzenFetcher->fetchActive();
         $this->prijsRepository->replaceSnapshot($prijzen);
@@ -49,7 +65,7 @@ final readonly class PullAfasSamenstellingenHandler
 
         return new PullAfasSamenstellingenResult(
             count($samenstellingen),
-            count($articles),
+            count($activeArticles),
             $syncSummary,
             count($prijzen),
             count($prijslijsten),
