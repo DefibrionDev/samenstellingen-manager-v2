@@ -103,7 +103,18 @@ export const api = {
   listPrijslijstWhitelist: () =>
     jsonGet<PrijslijstWhitelistEntry[]>('/api/prijslijst-whitelist'),
   listDuplicateBoms: () => jsonGet<DuplicateBomGroup[]>('/api/duplicate-boms'),
+  listStickerDrift: () => jsonGet<StickerDriftRow[]>('/api/sticker-drift'),
 };
+
+export interface StickerDriftRow {
+  groupName: string;
+  familyHeadItemcode: string;
+  baseName: string;
+  baseAfasItemcode: string;
+  languageCode: string;
+  expectedSticker: string;
+  actualStickers: string[];
+}
 
 export interface DuplicateBomGroup {
   fingerprint: string;

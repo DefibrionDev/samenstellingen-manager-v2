@@ -15,6 +15,7 @@ import { NotFound } from './pages/NotFound';
 import { DuplicateBoms } from './pages/DuplicateBoms';
 import { PriceDrift } from './pages/PriceDrift';
 import { PrijslijstWhitelist } from './pages/PrijslijstWhitelist';
+import { StickerDrift } from './pages/StickerDrift';
 import { SuspiciousBases } from './pages/SuspiciousBases';
 
 const queryClient = new QueryClient({
@@ -39,6 +40,7 @@ const router = createBrowserRouter([
       { path: 'price-drift', element: <PriceDrift /> },
       { path: 'prijslijst-whitelist', element: <PrijslijstWhitelist /> },
       { path: 'duplicate-boms', element: <DuplicateBoms /> },
+      { path: 'sticker-drift', element: <StickerDrift /> },
       { path: '*', element: <NotFound /> },
     ],
   },

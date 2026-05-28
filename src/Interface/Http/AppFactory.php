@@ -8,6 +8,7 @@ use Defibrion\Samenstellingen\Application\Audit\DuplicateBomAuditHandler;
 use Defibrion\Samenstellingen\Application\Audit\ListMissingVariantsHandler;
 use Defibrion\Samenstellingen\Application\Audit\NameAuditHandler;
 use Defibrion\Samenstellingen\Application\Audit\PriceAuditHandler;
+use Defibrion\Samenstellingen\Application\Audit\StickerAuditHandler;
 use Defibrion\Samenstellingen\Application\Audit\SuspiciousBaseAuditHandler;
 use Defibrion\Samenstellingen\Bootstrap\Container;
 use Defibrion\Samenstellingen\Domain\Naming\VariantNamingPolicy;
@@ -97,6 +98,13 @@ final class AppFactory
         $listDuplicateBoms = new ListDuplicateBomsController(
             new DuplicateBomAuditHandler($container->afasSamenstellingenRepository()),
         );
+        $listStickerDrift = new ListStickerDriftController(
+            new StickerAuditHandler(
+                $container->groupRepository(),
+                $container->baseRepository(),
+                $container->afasSamenstellingenRepository(),
+            ),
+        );
         $app->get('/api/groups', $listGroups);
         $app->get('/api/groups/{familyHead}', $showGroup);
         $app->get('/api/groups/{familyHead}/accessoires', $listGroupAccessoires);
@@ -109,6 +117,7 @@ final class AppFactory
         $app->get('/api/articles/{itemcode}/prices', $listArticlePrices);
         $app->get('/api/price-drift', $listPriceDrift);
         $app->get('/api/duplicate-boms', $listDuplicateBoms);
+        $app->get('/api/sticker-drift', $listStickerDrift);
         $app->get('/api/prijslijst-whitelist', $listPrijslijstWhitelist);
 
         return $app;
