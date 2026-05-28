@@ -17,6 +17,8 @@ final class InMemoryPriceFixWriter implements PriceFixWriter
 {
     /** @var list<PriceFixPlan> */
     public array $applied = [];
+    /** @var list<PriceFixPlan> */
+    public array $inserted = [];
 
     public function __construct(private readonly ?string $failOnVariant = null)
     {
@@ -28,5 +30,13 @@ final class InMemoryPriceFixWriter implements PriceFixWriter
             throw PriceFixFailedException::from($plan, new RuntimeException('simulated failure'));
         }
         $this->applied[] = $plan;
+    }
+
+    public function insert(PriceFixPlan $plan): void
+    {
+        if ($this->failOnVariant !== null && $plan->variantItemcode === $this->failOnVariant) {
+            throw PriceFixFailedException::from($plan, new RuntimeException('simulated failure'));
+        }
+        $this->inserted[] = $plan;
     }
 }

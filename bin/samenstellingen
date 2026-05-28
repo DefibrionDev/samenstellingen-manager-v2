@@ -58,10 +58,12 @@ use Defibrion\Samenstellingen\Interface\Cli\UnwhitelistPrijslijstCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AuditNamesCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AuditDuplicateBomsCommand;
 use Defibrion\Samenstellingen\Application\Fix\FixPriceDriftHandler;
+use Defibrion\Samenstellingen\Application\Fix\FixPriceMissingHandler;
 use Defibrion\Samenstellingen\Infrastructure\Fix\HttpFbSalesPriceWriter;
 use Defibrion\Samenstellingen\Infrastructure\Fix\HttpGetPrijzenBeginDateLookup;
 use Defibrion\Samenstellingen\Interface\Cli\AuditPricesCommand;
 use Defibrion\Samenstellingen\Interface\Cli\FixPriceDriftCommand;
+use Defibrion\Samenstellingen\Interface\Cli\FixPriceMissingCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AuditSuspiciousBasesCommand;
 use Defibrion\Samenstellingen\Interface\Cli\CreateAccessoireCommand;
 use Defibrion\Samenstellingen\Interface\Cli\DeleteAccessoireCommand;
@@ -243,6 +245,14 @@ if ($hasAfasCreds) {
         $fbSalesPriceWriter,
     );
     $application->addCommand(new FixPriceDriftCommand($fixPriceDriftHandler));
+
+    $fixPriceMissingHandler = new FixPriceMissingHandler(
+        $priceAuditHandler,
+        $beginDateLookup,
+        $afasArticleRepository,
+        $fbSalesPriceWriter,
+    );
+    $application->addCommand(new FixPriceMissingCommand($fixPriceMissingHandler));
 }
 
 exit($application->run());

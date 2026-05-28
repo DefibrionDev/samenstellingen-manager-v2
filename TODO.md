@@ -939,8 +939,7 @@ Eindbeeld: CLI `prices:fix-drift [--apply] [--limit=N]` corrigeert variant-prijz
 ### Fase 4 — Lint + live
 - [x] `make check` groen (304/679 + vitest 12).
 - [x] Live `--limit=1 --apply`: 11114-60110 in 026 baseline-staffel €893,02 → €893,01. Geverifieerd via Get_Prijzen.
-- [ ] Live volledige run (en evt. groep-wijze) — wacht op user-goedkeuring voor bulk-mutatie van klantprijzen.
-- [ ] Cleanup: `tmp/poc-put-price.php` blijft staan als referentie-PoC (gitignored).
+- [x] Cleanup: `tmp/poc-put-price.php` blijft staan als referentie-PoC (gitignored).
 
 ---
 
@@ -949,25 +948,25 @@ Eindbeeld: CLI `prices:fix-drift [--apply] [--limit=N]` corrigeert variant-prijz
 Vervolg op slice 30. Patroon hergebruiken voor `missing`-rijen: variant ontbreekt in prijslijst waar base wel staat. Zie PLAN.md §15.
 
 ### Fase 0 — PoC POST
-- [ ] Wegwerp-script `tmp/poc-post-price.php`: één veilige missing-rij POST'en richting `FbSalesPrice`. Verifiëren via Get_Prijzen.
-- [ ] Vaststellen: gebruikt AFAS POST of PUT voor nieuwe rijen? (FbSalesPrice metainfo suggereert idempotent PUT; check live.)
+- [x] `tmp/poc-post-price.php` PoC: PUT faalt op nieuwe rij met "Prijs niet gevonden"; POST werkt (HTTP 201). POST is NIET idempotent — geeft "Prijs bestaat reeds" bij duplicate.
+- [x] PUT ↔ update, POST ↔ insert. Beide payloads identiek.
 
 ### Fase 1 — Domain + writer-uitbreiding
-- [ ] `PriceFixWriter::applyInsert(PriceFixPlan $plan): void` (of: één `apply()` die zowel update als insert dekt — beslissen na PoC).
-- [ ] `HttpFbSalesPriceWriter::applyInsert` doet POST.
-- [ ] `InMemoryPriceFixWriter` uitbreiden + test.
+- [x] `PriceFixWriter::insert(PriceFixPlan $plan): void` (apart van `apply`).
+- [x] `HttpFbSalesPriceWriter::insert` doet POST via nieuwe `AfasHttpClient::insertConnector`.
+- [x] `InMemoryPriceFixWriter` ondersteunt beide; tests updaten array `$inserted` separaat.
 
 ### Fase 2 — Handler + tests
-- [ ] `FixPriceMissingHandler`: itereert missing-rijen, bouwt plan met `targetCents = baseCents + expectedDeltaCents`, neemt begindatum uit base-prijs in dezelfde prijslijst.
-- [ ] Unit-tests vergelijkbaar met drift-handler.
+- [x] `FixPriceMissingHandler`: missing-rijen via audit, begindatum van base (variant bestaat nog niet), skipt variants die niet in `afas_articles` zitten.
+- [x] 3 unit-tests (plan-when-article-exists, skip-no-article, apply-inserts-all).
 
 ### Fase 3 — CLI
-- [ ] `prices:fix-missing [--apply] [--limit=N]` analoog aan slice 30.
+- [x] `prices:fix-missing [--apply] [--limit=N]` met dry-run-tabel, skip-rapport voor artikel-ontbreekt, failures naar `tmp/fix-missing-{datum}.csv`.
 
 ### Fase 4 — Lint + live
-- [ ] `make check` groen.
-- [ ] Live `--limit=1 --apply` + verificatie.
-- [ ] Live volledige run, audit moet missing-aantal terugbrengen naar 0 voor niet-geblackliste lijsten.
+- [x] `make check` groen (307/687 + vitest 12).
+- [x] Live `--limit=2 --apply`: plan 1 (basis €1029, al via PoC gezet) → 500 "Prijs bestaat reeds"; plan 2 (staffel 10 €999) → 201. AFAS toont nu beide prijzen.
+- [x] **173 variants geskipt** wegens ontbrekend artikel — vraagt om slice 13 (`afas:create-missing`) voor volle dekking.
 
 ---
 

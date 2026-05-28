@@ -95,6 +95,20 @@ final readonly class AfasHttpClient
         ]);
     }
 
+    /**
+     * Insert een nieuw record via een UpdateConnector (POST). PUT faalt met
+     * "Prijs niet gevonden" als de rij nog niet bestaat — gebruik POST daarvoor.
+     *
+     * @param array<string, mixed> $payload
+     */
+    public function insertConnector(string $connectorId, array $payload): void
+    {
+        $this->http->request('POST', $this->baseUrl . '/connectors/' . $connectorId, [
+            'headers' => $this->headers() + ['Content-Type' => 'application/json'],
+            'body' => json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+        ]);
+    }
+
     /** @return array<string, string> */
     private function headers(): array
     {

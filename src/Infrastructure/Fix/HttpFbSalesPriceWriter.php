@@ -38,6 +38,27 @@ final readonly class HttpFbSalesPriceWriter implements PriceFixWriter
 
     public function apply(PriceFixPlan $plan): void
     {
+        try {
+            $this->client->updateConnector('FbSalesPrice', $this->payload($plan));
+        } catch (Throwable $e) {
+            throw PriceFixFailedException::from($plan, $e);
+        }
+    }
+
+    public function insert(PriceFixPlan $plan): void
+    {
+        try {
+            $this->client->insertConnector('FbSalesPrice', $this->payload($plan));
+        } catch (Throwable $e) {
+            throw PriceFixFailedException::from($plan, $e);
+        }
+    }
+
+    /**
+     * @return array{FbSalesPrice: array{Element: array{Fields: array<string, mixed>}}}
+     */
+    private function payload(PriceFixPlan $plan): array
+    {
         $fields = [
             'VaIt' => '7',
             'ItCd' => $plan->variantItemcode,
@@ -52,12 +73,6 @@ final readonly class HttpFbSalesPriceWriter implements PriceFixWriter
             $fields['Am'] = $plan->staffelAantal;
         }
 
-        $payload = ['FbSalesPrice' => ['Element' => ['Fields' => $fields]]];
-
-        try {
-            $this->client->updateConnector('FbSalesPrice', $payload);
-        } catch (Throwable $e) {
-            throw PriceFixFailedException::from($plan, $e);
-        }
+        return ['FbSalesPrice' => ['Element' => ['Fields' => $fields]]];
     }
 }
