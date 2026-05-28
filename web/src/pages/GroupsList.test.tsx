@@ -21,8 +21,8 @@ beforeEach(() => {
       status: 200,
       statusText: 'OK',
       json: async () => [
-        { name: 'Reanibex 100 Semi-Auto', familyHead: '52112', baseCount: 3, baseItemCount: 12 },
-        { name: 'Lifepak CR2', familyHead: '11161', baseCount: 5, baseItemCount: 20 },
+        { name: 'Reanibex 100 Semi-Auto', familyHead: '52112', baseCount: 3, baseItemCount: 12, familyHeadIsBase: true },
+        { name: 'Lifepak CR2', familyHead: '11161', baseCount: 5, baseItemCount: 20, familyHeadIsBase: false },
       ],
     })),
   );

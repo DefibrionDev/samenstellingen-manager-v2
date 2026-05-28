@@ -25,7 +25,11 @@ final readonly class ListGroupsController
         foreach ($this->groups->findAll() as $group) {
             $bases = $this->bases->findAllForGroup($group->familyHeadItemcode);
             $itemCount = 0;
+            $familyHeadIsBase = false;
             foreach ($bases as $base) {
+                if ($base->afasItemcode === $group->familyHeadItemcode) {
+                    $familyHeadIsBase = true;
+                }
                 if ($base->id === null) {
                     continue;
                 }
@@ -36,6 +40,7 @@ final readonly class ListGroupsController
                 'familyHead' => $group->familyHeadItemcode,
                 'baseCount' => count($bases),
                 'baseItemCount' => $itemCount,
+                'familyHeadIsBase' => $familyHeadIsBase,
             ];
         }
 

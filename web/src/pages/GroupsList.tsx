@@ -1,12 +1,28 @@
 import { useQuery } from '@tanstack/react-query';
-import { Alert, Skeleton, Stack, Typography } from '@mui/material';
+import { Alert, Skeleton, Stack, Tooltip, Typography } from '@mui/material';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { DataGrid, GridColDef, GridRowParams } from '@mui/x-data-grid';
 import { useNavigate } from 'react-router-dom';
 import { api, GroupSummary } from '../api';
 
 const columns: GridColDef<GroupSummary>[] = [
   { field: 'name', headerName: 'Naam', flex: 2, minWidth: 240 },
-  { field: 'familyHead', headerName: 'Family-head', flex: 1, minWidth: 140 },
+  {
+    field: 'familyHead',
+    headerName: 'Family-head',
+    flex: 1,
+    minWidth: 180,
+    renderCell: (params) => (
+      <Stack direction="row" spacing={1} alignItems="center">
+        <span>{params.value}</span>
+        {!params.row.familyHeadIsBase && (
+          <Tooltip title="Family-head-itemcode matcht geen base in deze groep — voeg de bijbehorende base toe of pas de family-head aan.">
+            <WarningAmberIcon fontSize="small" color="warning" />
+          </Tooltip>
+        )}
+      </Stack>
+    ),
+  },
   { field: 'baseCount', headerName: 'Bases', type: 'number', width: 100 },
   { field: 'baseItemCount', headerName: 'BOM-items', type: 'number', width: 120 },
 ];

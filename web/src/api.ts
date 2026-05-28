@@ -3,6 +3,7 @@ export interface GroupSummary {
   familyHead: string;
   baseCount: number;
   baseItemCount: number;
+  familyHeadIsBase: boolean;
 }
 
 export interface BaseItem {
