@@ -1022,12 +1022,12 @@ Eindbeeld: read-only audit-rapport van AFAS-samenstellingen met identieke BOM. L
 - [x] `PriceDrift.tsx`: prijslijst-label met staffel-suffix, 3e tab "Inconsistent staffel", CSV-kolom.
 - [x] Vitest aangepast.
 
-### Sub-slice 32.5 — Fix-scripts staffel-aware (na slice 30/31)
-- [ ] PoC: één staffel-PUT met `CrPr=true` + `Am=10` op een veilige rij. Verifiëren.
-- [ ] PoC: één staffel-POST (nieuwe staffel-rij). Verifiëren.
-- [ ] `HttpFbSalesPriceWriter::apply` ondersteunt staffel-payload.
-- [ ] `FixPriceDriftHandler` / `FixPriceMissingHandler` itereert alle staffels.
-- [ ] CLI-output toont per-staffel diff.
+### Sub-slice 32.5 — Fix-scripts staffel-aware (klaar tijdens slice 30/31)
+- [x] Staffel-PUT live: 11114-60110 026 staffel 10 €860,41 → €860,40 via `prices:fix-drift --limit=1 --apply`. `CrPr=true` + `Am=10` onderscheidt staffel-rij van basis-rij.
+- [x] Staffel-POST live (in slice 31): 10074-60112 026 staffel 10 €999 insert via `prices:fix-missing --limit=2 --apply`.
+- [x] `HttpFbSalesPriceWriter::payload` voegt `CrPr=true` + `Am=N` toe bij `staffelAantal > 0` voor zowel PUT als POST.
+- [x] `FixPriceDriftHandler` en `FixPriceMissingHandler` itereren al alle (lijst, staffel)-combinaties via audit-output.
+- [x] CLI `prices:fix-drift` en `prices:fix-missing` tabellen hebben "Aantal"-kolom.
 
 ---
 
