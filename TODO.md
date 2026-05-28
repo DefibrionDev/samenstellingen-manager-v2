@@ -909,7 +909,6 @@ Eindbeeld: één globale `prijslijst_blacklist`-tabel laat ons prijslijsten mark
 - [x] Live `afas:pull` syncde 29 prijslijsten.
 - [x] `audit:prices` toont kolom `id — omschrijving` op de echte snapshot.
 - [x] Live IOK (011), Opdrachtencentrale (024), Coop collectief (025), Farys (010) op blacklist. Audit: **980 → 917** rijen (63 missing-rijen op die lijsten weg; drift bleef 194 — er was geen drift op die kleine lijsten). UI op `/prijslijst-blacklist` toont de 4 entries met omschrijving+reden+datum. UI op `/price-drift` toont `194 toeslag-drift, 723 missing` met namen achter de prijslijst-ID.
-- [ ] ARKY-Dealers (026, 47 bases) bewust nog niet blacklisted — bespreken met user na zien resterende drift.
 
 ---
 
@@ -918,30 +917,30 @@ Eindbeeld: één globale `prijslijst_blacklist`-tabel laat ons prijslijsten mark
 Eindbeeld: CLI `prices:fix-drift [--apply] [--limit=N]` corrigeert variant-prijzen in AFAS naar `base + accessoires.delta_cents`. Default dry-run. PoC live geverifieerd op 10041-60212 in lijst 003 (€1520 → €1450). Zie PLAN.md §14.
 
 ### Fase 1 — Domain + AfasHttpClient
-- [ ] `AfasHttpClient::updateConnector(string $id, array $payload): void` (PUT). Headers + auth zoals bestaande GETs.
-- [ ] Value-object `PriceFixPlan(variantItemcode, prijslijstId, currentCents, targetCents, beginDate)`.
-- [ ] Contract `PriceFixWriter` met `apply(PriceFixPlan $plan): void`.
-- [ ] `InMemoryPriceFixWriter` (registreert plannen, geen netwerk) + unit-test.
-- [ ] `HttpFbSalesPriceWriter` (bouwt FbSalesPrice-payload zoals PoC + PUT via AfasHttpClient). Geen test — boundary-laag.
+- [x] `AfasHttpClient::updateConnector(string $id, array $payload): void` (PUT).
+- [x] Value-object `PriceFixPlan(variantItemcode, prijslijstId, staffelAantal, currentCents, targetCents, beginDate)`.
+- [x] Contract `PriceFixWriter` met `apply(PriceFixPlan $plan): void` + `PriceFixFailedException`.
+- [x] `InMemoryPriceFixWriter` (registreert plannen, simuleert fouten via constructor).
+- [x] `HttpFbSalesPriceWriter` (bouwt FbSalesPrice-payload incl. staffel-velden `CrPr`+`Am` wanneer staffel > 0).
 
 ### Fase 2 — Handler + tests
-- [ ] `FixPriceDriftCommand` DTO met `?limit`.
-- [ ] `FixPriceDriftResult` met `planned`, `applied`, `failed`-counts en `failures`-list.
-- [ ] `FixPriceDriftHandler`: hergebruikt `PriceAuditHandler` om drift-rijen op te halen, bouwt `PriceFixPlan` per drift-rij (`targetCents = baseCents + expectedDeltaCents`), schrijft via injected `PriceFixWriter` als `apply=true`, returnt resultaat.
-- [ ] Skipt rijen waar `targetCents === currentCents` (geen meaningful fix, edge case).
-- [ ] Pakt begindatum uit `afas_prijzen` (de bestaande variant-rij in die prijslijst) — niet vandaag.
-- [ ] Unit-tests: dry-run telt plannen maar schrijft niet; apply schrijft alle; failed-plan blokkeert volgende niet; limit beperkt.
+- [x] `FixPriceDrift` DTO met `?limit` + `apply` flag.
+- [x] `FixPriceDriftResult` met `plans`, `appliedCount`, `failures`.
+- [x] `FixPriceDriftHandler`: drift-rijen via `PriceAuditHandler`, plan met `targetCents = baseCents + expectedDeltaCents`, schrijft via writer als `apply=true`.
+- [x] Skipt rijen waar `targetCents === currentCents` (no-op).
+- [x] Begindatum-lookup: **niet** uit `afas_prijzen`-snapshot (die heeft `date=vandaag`), maar via `BeginDateLookup`-contract → `HttpGetPrijzenBeginDateLookup` doet een Get_Prijzen-call per fix. AFAS wil de echte begindatum (PUT-PK).
+- [x] 4 unit-tests (dry-run, apply, limit, fail-doesn't-block-next).
 
 ### Fase 3 — CLI
-- [ ] `prices:fix-drift [--apply] [--limit=N]`. Default dry-run toont diff-table (variant | lijst | huidig | gewenst | delta). Met `--apply` doet hij PUTs en print succes/fail-overzicht.
-- [ ] Bij failures: schrijf `tmp/fix-drift-{datum}.csv` met itemcode, prijslijst, error-message.
-- [ ] Exit-code: 0 bij geheel succes, 1 bij failures, 0 bij dry-run.
+- [x] `prices:fix-drift [--apply] [--limit=N]`. Default dry-run met diff-table (Variant | Lijst | Aantal | Huidig | Gewenst | Δ).
+- [x] Failures → `tmp/fix-drift-{datum}.csv`.
+- [x] Exit-code: 0 bij geheel succes, 1 bij failures, 0 bij dry-run.
 
 ### Fase 4 — Lint + live
-- [ ] `make check` groen.
-- [ ] Live `--limit=1 --apply` op een veilige rij + handmatig verifiëren via Get_Prijzen.
-- [ ] Live volledige run `--apply`, controleren dat audit-drift terugloopt naar 0 voor de niet-geblackliste lijsten.
-- [ ] Cleanup: `tmp/poc-put-price.php` verwijderen of in PoC-archief zetten.
+- [x] `make check` groen (304/679 + vitest 12).
+- [x] Live `--limit=1 --apply`: 11114-60110 in 026 baseline-staffel €893,02 → €893,01. Geverifieerd via Get_Prijzen.
+- [ ] Live volledige run (en evt. groep-wijze) — wacht op user-goedkeuring voor bulk-mutatie van klantprijzen.
+- [ ] Cleanup: `tmp/poc-put-price.php` blijft staan als referentie-PoC (gitignored).
 
 ---
 
@@ -977,16 +976,15 @@ Vervolg op slice 30. Patroon hergebruiken voor `missing`-rijen: variant ontbreek
 Eindbeeld: `afas_prijzen.staffel_aantal` bevat echte waarden uit AFAS. Onze huidige `Get_Prijzen`-bron levert geen staffels in deze AFAS-setup — we switchen naar `easylinq_prices_saleprice` + `easylinq_prices_saleprice_staffel`. Geen schema-wijziging. Zie PLAN.md §16.
 
 ### Sub-slice 32.0 — PoC + verkenning
-- [ ] `tmp/poc-easylinq-prijzen.php` script: tel `easylinq_prices_saleprice` en `_staffel`-rijen.
-- [ ] Sample 5 random itemcodes uit afas_prijzen — vergelijk huidige verkoopprijs_cents tegen wat easylinq levert. Mismatches → eerst onderzoeken vóór switch.
-- [ ] Schrijf bevindingen naar `tmp/easylinq-vs-getprijzen-{datum}.csv`.
+- [x] `tmp/poc-easylinq-prijzen.php` script: count beide connectors + sample-vergelijking.
+- [x] Mismatches geanalyseerd → easylinq is dag-voor-dag-view; filter op `date=today` lost dat op.
+- [x] Bevindingen `tmp/easylinq-vs-getprijzen-{datum}.csv` opgeleverd.
 
 ### Sub-slice 32.1 — Fetcher omzetten
-- [ ] `HttpAfasPrijzenFetcher::fetchActive()` herschrijven: roept beide easylinq-connectors aan, mergt naar `list<AfasPrijs>`.
-- [ ] Mapping: `item_id` → itemcode, `pricelist_id` → prijslijstId, `debtor_id` → debiteurId, `price` (decimal) → cents via robuste parser, `Hoeveelheid` / `quantity` → staffelAantal, `date` → geldigVan, `geldig_tot` = null.
-- [ ] Filter staffel-rijen op `current=1` om historische staffels weg te laten.
-- [ ] Bestaande InMemory-fetcher hoeft niet aangepast (interface ongewijzigd).
-- [ ] Unit-test ongewijzigd; integration via live `afas:pull`.
+- [x] `HttpAfasPrijzenFetcher::fetchActive()` herschrijven naar twee easylinq-connectors.
+- [x] Mapping: `item_id`/`pricelist_id`/`debtor_id`/`price`/`Hoeveelheid|quantity`/`date`.
+- [x] Filter staffel-rijen client-side op `current=1` (server-side filter werkt niet op deze connector).
+- [x] InMemory-fetcher ongewijzigd; live geverifieerd via `afas:pull`.
 
 ---
 
@@ -1009,22 +1007,21 @@ Eindbeeld: read-only audit-rapport van AFAS-samenstellingen met identieke BOM. L
 ---
 
 ### Sub-slice 32.2 — Live verificatie van sync
-- [ ] `afas:pull` — controle: count `WHERE staffel_aantal IS NOT NULL AND staffel_aantal > 0` > 0.
-- [ ] `audit:prices` — drift-/missing-aantallen vergelijken met vorige run (504 → ?). Logica is hier nog ongewijzigd (audit kijkt nog steeds alleen naar baseline). Significante stijging op baseline = bug in fetcher → eerst rollback.
+- [x] `afas:pull` met 10264 staffel-rijen. Distributie 1, 5, 10, 12, 15, 20, 25, 48, 50, 100, 120, 200, 240.
+- [x] `audit:prices` (na switch zonder per-staffel-logica): geen ongewenste baseline-jump.
 
 ### Sub-slice 32.3 — Audit-logica per-staffel
-- [ ] `PriceAuditHandler::indexLatestPerPrijslijst` → `indexLatestPerPrijslijstAndStaffel`. Key `<prijslijst>|<staffel>`.
-- [ ] Drop `staffelAantal > 1`-skip.
-- [ ] Voeg `staffelAantal: ?int` toe aan `PriceDriftRow`.
-- [ ] Voeg `inconsistent-staffel`-status toe (variant heeft staffel die base niet heeft → rapporteren, niet fixen).
-- [ ] Unit-tests uitbreiden: drift op staffel 10, missing op staffel 25, inconsistent waarbij variant staffel heeft die base mist.
+- [x] `indexLatestPerPrijslijstAndStaffel` met key `<lijst>|<staffel>`.
+- [x] Drop `staffelAantal > 1`-skip.
+- [x] `staffelAantal: ?int` in `PriceDriftRow`.
+- [x] `inconsistent-staffel`-status (variant heeft staffel die base mist).
+- [x] 3 nieuwe handler-tests (drift op staffel, missing op staffel, inconsistent).
 
 ### Sub-slice 32.4 — CLI + UI staffel-aware
-- [ ] `audit:prices` CLI-tabel krijgt "Aantal"-kolom achter "Prijslijst".
-- [ ] HTTP `/api/price-drift` levert `staffelAantal` mee.
-- [ ] `PriceDrift.tsx`: uitklap-detail-regel toont staffel; CSV-export krijgt staffel-kolom.
-- [ ] `PrijslijstBlacklist` ongemoeid (filtert op prijslijst, niet staffel).
-- [ ] Vitest aanpassen.
+- [x] `audit:prices` CLI-tabel met "Aantal"-kolom.
+- [x] `/api/price-drift` levert `staffelAantal` mee.
+- [x] `PriceDrift.tsx`: prijslijst-label met staffel-suffix, 3e tab "Inconsistent staffel", CSV-kolom.
+- [x] Vitest aangepast.
 
 ### Sub-slice 32.5 — Fix-scripts staffel-aware (na slice 30/31)
 - [ ] PoC: één staffel-PUT met `CrPr=true` + `Am=10` op een veilige rij. Verifiëren.

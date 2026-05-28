@@ -81,6 +81,20 @@ final readonly class AfasHttpClient
         return $rows;
     }
 
+    /**
+     * Update een bestaand record via een UpdateConnector (PUT).
+     *
+     * @param array<string, mixed> $payload Full body, bv:
+     *   ['FbSalesPrice' => ['Element' => ['Fields' => [...]]]]
+     */
+    public function updateConnector(string $connectorId, array $payload): void
+    {
+        $this->http->request('PUT', $this->baseUrl . '/connectors/' . $connectorId, [
+            'headers' => $this->headers() + ['Content-Type' => 'application/json'],
+            'body' => json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+        ]);
+    }
+
     /** @return array<string, string> */
     private function headers(): array
     {
