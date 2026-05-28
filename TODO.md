@@ -1031,6 +1031,39 @@ Eindbeeld: read-only audit-rapport van AFAS-samenstellingen met identieke BOM. L
 
 ---
 
+## Slice 37 — VariantNamingPolicy refactor + per-taal accessoire-labels
+
+Eindbeeld: drie canonical templates (NL/FR/EN), per-accessoire en per-groep multi-taal labels, EN-bases krijgen suffix `UK`. Zie PLAN.md §18.
+
+### Sub-slice 37.0 — Schema + VO + repositories
+- [x] Migration `0019_naming_multi_taal.sql`: accessoires krijgt `naam_kort_nl/fr/en`; `groups.model_name` → `model_name_nl` + `model_name_fr/en`.
+- [x] `Accessoire` VO + `naamKort(taal)` method.
+- [x] `Group` VO + `modelNameForTaal(taal)` method.
+- [x] Sqlite + InMemory repositories aangepast.
+- [x] Bestaande `$group->modelName` refs → `$group->modelNameNl`.
+
+### Sub-slice 37.1 — VariantNamingPolicy refactor
+- [x] Drop oude 5 templates.
+- [x] 2 templates (NL voor alles + FR voor pure FR-base) met EN→UK suffix + compound `/`→`-`.
+- [x] Resolve per-taal model_name + naam_kort. Foutmelding noemt exacte CLI-suggestie.
+- [x] 12 unit-tests (alle taal-codes × base/variant + foutpaden).
+
+### Sub-slice 37.2 — CLI invoer + display
+- [x] `accessoire:set-naam-kort <itemcode> <nl|fr|en> <naam>`.
+- [x] `group:set-model-naam <family-head> <nl|fr|en> <naam>`.
+- [x] `group:show` toont model_name_{nl,fr,en} + accessoires-kolommen `Kort NL/FR/EN`.
+- [x] HTTP API geeft de nieuwe velden mee; `AccessoiresList`, `GroupDetail` UI updated.
+
+### Sub-slice 37.3 — Live data invullen
+- [x] 9 accessoires × 3 talen via `tmp/seed-naming.sh`.
+- [x] 21 groepen × 3 talen.
+- [x] `audit:names` toont 405 drift-rijen tov canonical (FR-template + per-taal-labels).
+
+### Sub-slice 37.4 — (los) Fix-names CLI
+- [ ] Apart na user-confirmation: `prices:fix-names [--apply] [--limit=N]` schrijft canonical naar AFAS via FbItemArticle PUT op `Ds_1043` (NL), `Ds_1036` (FR), `Ds_2057` (EN).
+
+---
+
 ## Slice 20 — Reconciliation in portal-CSV-import (vervang wipe)
 
 Eindbeeld: portal-CSV-import is idempotent. Bestaande groepen behouden hun `model_name` en `group_accessoires` over imports heen; alleen groepen die niet meer in de CSV staan worden opgeruimd. Geen `ToolDataWiper` meer in de import-flow.

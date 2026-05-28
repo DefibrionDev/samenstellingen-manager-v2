@@ -4,15 +4,36 @@ import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import { api, Accessoire } from '../api';
 
 const columns: GridColDef<Accessoire>[] = [
-  { field: 'itemcode', headerName: 'Itemcode', width: 140 },
-  { field: 'label', headerName: 'Label', flex: 1, minWidth: 320 },
+  { field: 'itemcode', headerName: 'Itemcode', width: 110 },
+  { field: 'label', headerName: 'Label (intern)', flex: 1.4, minWidth: 240 },
   {
     field: 'deltaEur',
     headerName: 'Toeslag',
-    width: 140,
+    width: 110,
     align: 'right',
     headerAlign: 'right',
     valueGetter: (_, row) => row.deltaEur ?? '€ 0,00',
+  },
+  {
+    field: 'naamKortNl',
+    headerName: 'Kort NL',
+    flex: 1,
+    minWidth: 160,
+    valueGetter: (_, row) => row.naamKortNl ?? '—',
+  },
+  {
+    field: 'naamKortFr',
+    headerName: 'Kort FR',
+    flex: 1,
+    minWidth: 160,
+    valueGetter: (_, row) => row.naamKortFr ?? '—',
+  },
+  {
+    field: 'naamKortEn',
+    headerName: 'Kort EN',
+    flex: 1,
+    minWidth: 160,
+    valueGetter: (_, row) => row.naamKortEn ?? '—',
   },
 ];
 
@@ -32,9 +53,10 @@ export function AccessoiresList() {
         Accessoires-catalogus
       </Typography>
       <Typography variant="body2" color="text.secondary">
-        Beheren via <code>accessoire:create &lt;itemcode&gt; '&lt;label&gt;' &lt;delta-eur&gt;</code>,
-        {' '}<code>accessoire:set-delta &lt;itemcode&gt; &lt;eur&gt;</code> of
-        {' '}<code>accessoire:delete &lt;itemcode&gt;</code>.
+        Beheren via <code>accessoire:create</code>, <code>accessoire:set-delta</code>,
+        {' '}<code>accessoire:set-naam-kort &lt;itemcode&gt; &lt;nl|fr|en&gt; '&lt;naam&gt;'</code> of
+        {' '}<code>accessoire:delete</code>. <em>Label</em> is de interne beschrijving;
+        de korte namen per taal worden in canonical variant-namen gebruikt.
       </Typography>
       {isLoading ? (
         <Skeleton variant="rectangular" height={400} />

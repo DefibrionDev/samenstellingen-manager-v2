@@ -47,6 +47,30 @@ final class InMemoryAccessoireRepository implements AccessoireRepository
         if ($existing === null) {
             throw AccessoireNotFoundException::forItemcode($itemcode);
         }
-        $this->byItemcode[$itemcode] = new Accessoire($existing->itemcode, $existing->label, $deltaCents);
+        $this->byItemcode[$itemcode] = new Accessoire(
+            $existing->itemcode,
+            $existing->label,
+            $deltaCents,
+            $existing->naamKortNl,
+            $existing->naamKortFr,
+            $existing->naamKortEn,
+        );
+    }
+
+    public function updateNaamKort(string $itemcode, string $taal, ?string $naam): void
+    {
+        $existing = $this->byItemcode[$itemcode] ?? null;
+        if ($existing === null) {
+            throw AccessoireNotFoundException::forItemcode($itemcode);
+        }
+        $clean = $naam !== null && trim($naam) !== '' ? trim($naam) : null;
+        $this->byItemcode[$itemcode] = new Accessoire(
+            $existing->itemcode,
+            $existing->label,
+            $existing->deltaCents,
+            $taal === 'nl' ? $clean : $existing->naamKortNl,
+            $taal === 'fr' ? $clean : $existing->naamKortFr,
+            $taal === 'en' ? $clean : $existing->naamKortEn,
+        );
     }
 }

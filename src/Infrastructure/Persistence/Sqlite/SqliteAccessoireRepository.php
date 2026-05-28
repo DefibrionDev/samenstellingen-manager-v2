@@ -21,12 +21,16 @@ final readonly class SqliteAccessoireRepository implements AccessoireRepository
     {
         try {
             $stmt = $this->pdo->prepare(
-                'INSERT INTO accessoires (itemcode, label, delta_cents) VALUES (:itemcode, :label, :delta)'
+                'INSERT INTO accessoires (itemcode, label, delta_cents, naam_kort_nl, naam_kort_fr, naam_kort_en)
+                 VALUES (:itemcode, :label, :delta, :nl, :fr, :en)'
             );
             $stmt->execute([
                 ':itemcode' => $accessoire->itemcode,
                 ':label' => $accessoire->label,
                 ':delta' => $accessoire->deltaCents,
+                ':nl' => $accessoire->naamKortNl,
+                ':fr' => $accessoire->naamKortFr,
+                ':en' => $accessoire->naamKortEn,
             ]);
         } catch (PDOException $e) {
             if (str_contains($e->getMessage(), 'UNIQUE constraint failed: accessoires.itemcode')) {
@@ -39,21 +43,46 @@ final readonly class SqliteAccessoireRepository implements AccessoireRepository
     public function findByItemcode(string $itemcode): ?Accessoire
     {
         $stmt = $this->pdo->prepare(
-            'SELECT itemcode, label, delta_cents FROM accessoires WHERE itemcode = :itemcode'
+            'SELECT itemcode, label, delta_cents, naam_kort_nl, naam_kort_fr, naam_kort_en
+             FROM accessoires WHERE itemcode = :itemcode'
         );
         $stmt->execute([':itemcode' => $itemcode]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!is_array($row)) {
             return null;
         }
-
         $itemcodeValue = $row['itemcode'] ?? null;
         $labelValue = $row['label'] ?? null;
         if (!is_string($itemcodeValue) || !is_string($labelValue)) {
             return null;
         }
 
-        return new Accessoire($itemcodeValue, $labelValue, $this->intFromRow($row, 'delta_cents'));
+        return $this->rowToAccessoire($row, $itemcodeValue, $labelValue);
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private function rowToAccessoire(array $row, string $itemcode, string $label): Accessoire
+    {
+        return new Accessoire(
+            $itemcode,
+            $label,
+            $this->intFromRow($row, 'delta_cents'),
+            $this->stringOrNull($row, 'naam_kort_nl'),
+            $this->stringOrNull($row, 'naam_kort_fr'),
+            $this->stringOrNull($row, 'naam_kort_en'),
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private function stringOrNull(array $row, string $key): ?string
+    {
+        $v = $row[$key] ?? null;
+
+        return is_string($v) ? $v : null;
     }
 
     public function delete(string $itemcode): void
@@ -76,6 +105,20 @@ final readonly class SqliteAccessoireRepository implements AccessoireRepository
         }
     }
 
+    public function updateNaamKort(string $itemcode, string $taal, ?string $naam): void
+    {
+        $column = match ($taal) {
+            'nl' => 'naam_kort_nl',
+            'fr' => 'naam_kort_fr',
+            'en' => 'naam_kort_en',
+        };
+        $stmt = $this->pdo->prepare("UPDATE accessoires SET $column = :naam WHERE itemcode = :itemcode");
+        $stmt->execute([':itemcode' => $itemcode, ':naam' => $naam !== null && trim($naam) !== '' ? trim($naam) : null]);
+        if ($stmt->rowCount() === 0 && $this->findByItemcode($itemcode) === null) {
+            throw AccessoireNotFoundException::forItemcode($itemcode);
+        }
+    }
+
     /**
      * @param array<string, mixed> $row
      */
@@ -88,7 +131,10 @@ final readonly class SqliteAccessoireRepository implements AccessoireRepository
 
     public function findAll(): array
     {
-        $stmt = $this->pdo->query('SELECT itemcode, label, delta_cents FROM accessoires ORDER BY itemcode');
+        $stmt = $this->pdo->query(
+            'SELECT itemcode, label, delta_cents, naam_kort_nl, naam_kort_fr, naam_kort_en
+             FROM accessoires ORDER BY itemcode'
+        );
         if ($stmt === false) {
             return [];
         }
@@ -103,7 +149,7 @@ final readonly class SqliteAccessoireRepository implements AccessoireRepository
             if (!is_string($itemcode) || !is_string($label)) {
                 continue;
             }
-            $result[] = new Accessoire($itemcode, $label, $this->intFromRow($row, 'delta_cents'));
+            $result[] = $this->rowToAccessoire($row, $itemcode, $label);
         }
 
         return $result;

@@ -11,9 +11,18 @@ final readonly class Accessoire
     public string $itemcode;
     public string $label;
     public int $deltaCents;
+    public ?string $naamKortNl;
+    public ?string $naamKortFr;
+    public ?string $naamKortEn;
 
-    public function __construct(string $itemcode, string $label, int $deltaCents = 0)
-    {
+    public function __construct(
+        string $itemcode,
+        string $label,
+        int $deltaCents = 0,
+        ?string $naamKortNl = null,
+        ?string $naamKortFr = null,
+        ?string $naamKortEn = null,
+    ) {
         $trimmedItemcode = trim($itemcode);
         if ($trimmedItemcode === '') {
             throw new InvalidArgumentException('Accessoire itemcode mag niet leeg zijn.');
@@ -34,5 +43,30 @@ final readonly class Accessoire
         $this->itemcode = $trimmedItemcode;
         $this->label = $trimmedLabel;
         $this->deltaCents = $deltaCents;
+        $this->naamKortNl = self::nullIfEmpty($naamKortNl);
+        $this->naamKortFr = self::nullIfEmpty($naamKortFr);
+        $this->naamKortEn = self::nullIfEmpty($naamKortEn);
+    }
+
+    /**
+     * @param 'nl'|'fr'|'en' $taal
+     */
+    public function naamKort(string $taal): ?string
+    {
+        return match ($taal) {
+            'nl' => $this->naamKortNl,
+            'fr' => $this->naamKortFr,
+            'en' => $this->naamKortEn,
+        };
+    }
+
+    private static function nullIfEmpty(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+        $trimmed = trim($value);
+
+        return $trimmed === '' ? null : $trimmed;
     }
 }

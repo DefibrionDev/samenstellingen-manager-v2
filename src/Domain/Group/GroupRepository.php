@@ -26,4 +26,13 @@ interface GroupRepository
      * Idempotent: onbekende family-head is no-op.
      */
     public function delete(string $familyHeadItemcode): void;
+
+    /**
+     * Wijzig één van de model-namen (nl/fr/en) — gebruikt door
+     * `group:set-model-naam`. `$naam` mag null zijn om te wissen.
+     *
+     * @param 'nl'|'fr'|'en' $taal
+     * @throws GroupNotFoundException wanneer de family-head niet bestaat.
+     */
+    public function updateModelNaam(string $familyHeadItemcode, string $taal, ?string $naam): void;
 }

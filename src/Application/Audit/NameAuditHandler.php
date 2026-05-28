@@ -43,7 +43,7 @@ final readonly class NameAuditHandler
 
         $drift = [];
         foreach ($this->groups->findAll() as $group) {
-            if ($group->modelName === null) {
+            if ($group->modelNameNl === null) {
                 continue; // Audit kan niet zonder model_name — sla over (zie /api/groups om te zien welke).
             }
             $basesById = [];

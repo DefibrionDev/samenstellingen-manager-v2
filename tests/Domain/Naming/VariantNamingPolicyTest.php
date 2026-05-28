@@ -7,162 +7,160 @@ namespace Defibrion\Samenstellingen\Tests\Domain\Naming;
 use Defibrion\Samenstellingen\Domain\Accessoire\Accessoire;
 use Defibrion\Samenstellingen\Domain\Group\Group;
 use Defibrion\Samenstellingen\Domain\Group\GroupBase;
-use Defibrion\Samenstellingen\Domain\Naming\UnknownLanguageException;
 use Defibrion\Samenstellingen\Domain\Naming\VariantNamingPolicy;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
 final class VariantNamingPolicyTest extends TestCase
 {
     private VariantNamingPolicy $policy;
-    private Group $reanibex;
 
     protected function setUp(): void
     {
         $this->policy = new VariantNamingPolicy();
-        $this->reanibex = new Group('Reanibex 100 Semi-Auto', '52112', 'Reanibex 100 semi-automaat');
     }
 
     #[Test]
     public function buildsNlBaseName(): void
     {
+        $group = $this->group(modelNl: 'Reanibex 100 semi-automaat');
         $base = new GroupBase(1, 'irrelevant', 'NL');
 
-        $name = $this->policy->expectedName(
-            $this->reanibex,
-            $base,
-            null,
-        );
-
         self::assertSame(
-            'AED pakket: Reanibex 100 semi-automaat NL incl. safeset en stickerset',
-            $name,
+            'AED Pakket: Reanibex 100 semi-automaat NL',
+            $this->policy->expectedName($group, $base, null),
         );
     }
 
     #[Test]
-    public function buildsNlVariantNameWithAccessoire(): void
+    public function buildsNlVariantWithAccessoire(): void
     {
+        $group = $this->group(modelNl: 'Heartsine Samaritan PAD 350P');
         $base = new GroupBase(1, 'irrelevant', 'NL');
-        $accessoire = new Accessoire('60112', 'ARKY metalen binnenkast wit met alarm');
-
-        $name = $this->policy->expectedName($this->reanibex, $base, $accessoire);
+        $accessoire = new Accessoire('60110', 'EHBO-Rugzak', naamKortNl: 'Rugtas');
 
         self::assertSame(
-            'AED pakket: Reanibex 100 semi-automaat NL incl. ARKY metalen binnenkast wit met alarm',
-            $name,
-        );
-    }
-
-    #[Test]
-    public function buildsFrBaseName(): void
-    {
-        $group = new Group('Reanibex 100 Semi-Auto', '52112', 'Reanibex 100 Semi-automatique');
-        $base = new GroupBase(2, 'irrelevant', 'FR');
-
-        $name = $this->policy->expectedName($group, $base, null);
-
-        self::assertSame(
-            'Pack DAE: Reanibex 100 Semi-automatique FR avec safeset et signalétique',
-            $name,
-        );
-    }
-
-    #[Test]
-    public function buildsFrVariantWithAccessoire(): void
-    {
-        $group = new Group('Reanibex 100', '52112', 'Reanibex 100 Semi-automatique');
-        $base = new GroupBase(2, 'irrelevant', 'FR');
-        $accessoire = new Accessoire('60110', 'EHBO-Rugzak YELLOW LARGE RED');
-
-        $name = $this->policy->expectedName($group, $base, $accessoire);
-
-        self::assertSame(
-            'Pack DAE: Reanibex 100 Semi-automatique FR avec EHBO-Rugzak YELLOW LARGE RED',
-            $name,
-        );
-    }
-
-    #[Test]
-    public function buildsEnBaseName(): void
-    {
-        $group = new Group('Reanibex 100', '52112', 'Reanibex 100 Semi-Automatic');
-        $base = new GroupBase(3, 'irrelevant', 'EN');
-
-        self::assertSame(
-            'AED package: Reanibex 100 Semi-Automatic EN incl. safeset and stickerset',
-            $this->policy->expectedName($group, $base, null),
-        );
-    }
-
-    #[Test]
-    public function buildsDeBaseName(): void
-    {
-        $group = new Group('Reanibex 100', '52112', 'Reanibex 100 Semi-Automatic');
-        $base = new GroupBase(4, 'irrelevant', 'DE');
-
-        self::assertSame(
-            'AED package: Reanibex 100 Semi-Automatic DE incl. safeset and stickerset',
-            $this->policy->expectedName($group, $base, null),
-        );
-    }
-
-    #[Test]
-    public function buildsDaBaseName(): void
-    {
-        $group = new Group('Reanibex 100', '52112', 'Reanibex 100 Semi-Automatic');
-        $base = new GroupBase(5, 'irrelevant', 'DA');
-
-        self::assertSame(
-            'AED package: Reanibex 100 Semi-Automatic DA incl. safeset and stickerset',
-            $this->policy->expectedName($group, $base, null),
-        );
-    }
-
-    #[Test]
-    public function buildsEnVariantWithAccessoire(): void
-    {
-        $group = new Group('Reanibex 100', '52112', 'Reanibex 100 Semi-Automatic');
-        $base = new GroupBase(3, 'irrelevant', 'EN');
-        $accessoire = new Accessoire('60223', 'ARKY Core Plus buitenkast met alarm, verwarming en pincode');
-
-        self::assertSame(
-            'AED package: Reanibex 100 Semi-Automatic EN incl. ARKY Core Plus buitenkast met alarm, verwarming en pincode',
+            'AED Pakket: Heartsine Samaritan PAD 350P NL met Rugtas',
             $this->policy->expectedName($group, $base, $accessoire),
         );
     }
 
     #[Test]
-    public function throwsForUnknownLanguageCode(): void
+    public function buildsFrBaseWithFrTemplate(): void
     {
-        $group = new Group('X', '99999', 'X model');
-        $base = new GroupBase(99, 'irrelevant', 'IT');
-
-        $this->expectException(UnknownLanguageException::class);
-        $this->policy->expectedName($group, $base, null);
-    }
-
-    #[Test]
-    public function throwsWhenGroupHasNoModelName(): void
-    {
-        $group = new Group('X', '99999'); // model_name null
-        $base = new GroupBase(99, 'irrelevant', 'NL');
-
-        $this->expectException(\RuntimeException::class);
-        $this->policy->expectedName($group, $base, null);
-    }
-
-    #[Test]
-    public function compoundLanguageCodeSplitsOnSlashAndUsesFirstSegment(): void
-    {
-        // 'NL/FR' bases (uit de portal-CSV) krijgen de NL-template — eerste segment beslist.
-        $base = new GroupBase(10, 'irrelevant', 'NL/FR');
-
-        $name = $this->policy->expectedName($this->reanibex, $base, null);
+        $group = $this->group(modelFr: 'Reanibex 100 Entièrement automatique');
+        $base = new GroupBase(2, 'irrelevant', 'FR');
 
         self::assertSame(
-            'AED pakket: Reanibex 100 semi-automaat NL incl. safeset en stickerset',
-            $name,
+            'Pack DAE: Reanibex 100 Entièrement automatique (FR)',
+            $this->policy->expectedName($group, $base, null),
         );
+    }
+
+    #[Test]
+    public function buildsFrVariantWithFrTemplateAndFrLabel(): void
+    {
+        $group = $this->group(modelFr: 'Reanibex 100 Entièrement automatique');
+        $base = new GroupBase(2, 'irrelevant', 'FR');
+        $accessoire = new Accessoire('60110', 'EHBO-Rugzak', naamKortFr: 'Sac à dos');
+
+        self::assertSame(
+            'Pack DAE: Reanibex 100 Entièrement automatique (FR) avec Sac à dos',
+            $this->policy->expectedName($group, $base, $accessoire),
+        );
+    }
+
+    #[Test]
+    public function englishBaseGetsUkSuffixWithNlTemplate(): void
+    {
+        $group = $this->group(modelNl: 'Heartsine Samaritan PAD 350P');
+        $base = new GroupBase(3, 'irrelevant', 'EN');
+
+        self::assertSame(
+            'AED Pakket: Heartsine Samaritan PAD 350P UK',
+            $this->policy->expectedName($group, $base, null),
+        );
+    }
+
+    #[Test]
+    public function deBaseGetsDeSuffixWithNlTemplate(): void
+    {
+        $group = $this->group(modelNl: 'Heartsine Samaritan PAD 350P');
+        $base = new GroupBase(4, 'irrelevant', 'DE');
+
+        self::assertSame(
+            'AED Pakket: Heartsine Samaritan PAD 350P DE',
+            $this->policy->expectedName($group, $base, null),
+        );
+    }
+
+    #[Test]
+    public function dkBaseGetsDkSuffix(): void
+    {
+        $group = $this->group(modelNl: 'Heartsine Samaritan PAD 350P');
+        $base = new GroupBase(5, 'irrelevant', 'DK');
+
+        self::assertSame(
+            'AED Pakket: Heartsine Samaritan PAD 350P DK',
+            $this->policy->expectedName($group, $base, null),
+        );
+    }
+
+    #[Test]
+    public function compoundNlFrUsesNlTemplateWithDashSuffix(): void
+    {
+        // 'NL/FR' → eerste taal-token is NL → NL-template. Suffix wordt 'NL-FR'.
+        $group = $this->group(modelNl: 'LIFEPAK CR2 AED semi-automaat 3G');
+        $base = new GroupBase(6, 'irrelevant', 'NL/FR');
+
+        self::assertSame(
+            'AED Pakket: LIFEPAK CR2 AED semi-automaat 3G NL-FR',
+            $this->policy->expectedName($group, $base, null),
+        );
+    }
+
+    #[Test]
+    public function compoundNlEnFrUsesNlTemplateAndMapsEnToUk(): void
+    {
+        $group = $this->group(modelNl: 'Mindray Beneheart C1');
+        $base = new GroupBase(7, 'irrelevant', 'NL/EN/FR');
+
+        self::assertSame(
+            'AED Pakket: Mindray Beneheart C1 NL-UK-FR',
+            $this->policy->expectedName($group, $base, null),
+        );
+    }
+
+    #[Test]
+    public function throwsWhenModelNameForBucketIsMissing(): void
+    {
+        // Group heeft alleen NL-modelnaam; base is puur FR → FR-bucket → faalt.
+        $group = $this->group(modelNl: 'Heartsine Samaritan PAD 350P');
+        $base = new GroupBase(2, 'irrelevant', 'FR');
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessageMatches('/model_name_fr/');
+        $this->policy->expectedName($group, $base, null);
+    }
+
+    #[Test]
+    public function throwsWhenAccessoireLabelForBucketIsMissing(): void
+    {
+        $group = $this->group(modelNl: 'Heartsine Samaritan PAD 350P');
+        $base = new GroupBase(1, 'irrelevant', 'NL');
+        $accessoire = new Accessoire('60110', 'EHBO-Rugzak'); // geen naam_kort_nl gezet
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessageMatches('/naam_kort_nl/');
+        $this->policy->expectedName($group, $base, $accessoire);
+    }
+
+    private function group(
+        ?string $modelNl = null,
+        ?string $modelFr = null,
+        ?string $modelEn = null,
+    ): Group {
+        return new Group('Test groep', '12345', $modelNl, $modelFr, $modelEn);
     }
 }

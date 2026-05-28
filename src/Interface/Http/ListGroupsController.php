@@ -41,6 +41,9 @@ final readonly class ListGroupsController
                 'baseCount' => count($bases),
                 'baseItemCount' => $itemCount,
                 'familyHeadIsBase' => $familyHeadIsBase,
+                'modelNameNl' => $group->modelNameNl,
+                'modelNameFr' => $group->modelNameFr,
+                'modelNameEn' => $group->modelNameEn,
             ];
         }
 

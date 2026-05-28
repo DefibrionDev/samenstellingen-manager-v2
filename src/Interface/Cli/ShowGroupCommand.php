@@ -57,8 +57,14 @@ final class ShowGroupCommand extends Command
     private function renderOverview(SymfonyStyle $io, GroupOverview $overview): void
     {
         $io->horizontalTable(
-            ['Naam', 'Family-head itemcode'],
-            [[$overview->group->name, $overview->group->familyHeadItemcode]],
+            ['Naam', 'Family-head itemcode', 'Model NL', 'Model FR', 'Model EN'],
+            [[
+                $overview->group->name,
+                $overview->group->familyHeadItemcode,
+                $overview->group->modelNameNl ?? '<comment>—</comment>',
+                $overview->group->modelNameFr ?? '<comment>—</comment>',
+                $overview->group->modelNameEn ?? '<comment>—</comment>',
+            ]],
         );
 
         $io->section('Bases');
@@ -82,9 +88,15 @@ final class ShowGroupCommand extends Command
         } else {
             $rows = [];
             foreach ($overview->accessoires as $accessoire) {
-                $rows[] = [$accessoire->itemcode, $accessoire->label];
+                $rows[] = [
+                    $accessoire->itemcode,
+                    $accessoire->label,
+                    $accessoire->naamKortNl ?? '<comment>—</comment>',
+                    $accessoire->naamKortFr ?? '<comment>—</comment>',
+                    $accessoire->naamKortEn ?? '<comment>—</comment>',
+                ];
             }
-            $io->table(['Itemcode', 'Label'], $rows);
+            $io->table(['Itemcode', 'Label (intern)', 'Kort NL', 'Kort FR', 'Kort EN'], $rows);
         }
 
         $io->section('Varianten met verwachte BOM');

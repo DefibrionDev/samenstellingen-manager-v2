@@ -4,6 +4,9 @@ export interface GroupSummary {
   baseCount: number;
   baseItemCount: number;
   familyHeadIsBase: boolean;
+  modelNameNl: string | null;
+  modelNameFr: string | null;
+  modelNameEn: string | null;
 }
 
 export interface BaseItem {
@@ -22,6 +25,9 @@ export interface GroupBase {
 export interface GroupDetail {
   familyHead: string;
   name: string;
+  modelNameNl: string | null;
+  modelNameFr: string | null;
+  modelNameEn: string | null;
   bases: GroupBase[];
 }
 
@@ -38,6 +44,9 @@ export interface Accessoire {
   label: string;
   deltaCents?: number;
   deltaEur?: string;
+  naamKortNl?: string | null;
+  naamKortFr?: string | null;
+  naamKortEn?: string | null;
 }
 
 export interface BlacklistEntry {

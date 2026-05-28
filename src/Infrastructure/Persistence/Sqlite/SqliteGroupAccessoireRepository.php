@@ -51,7 +51,7 @@ final readonly class SqliteGroupAccessoireRepository implements GroupAccessoireR
         $groupId = $this->resolveGroupId($familyHeadItemcode);
 
         $stmt = $this->pdo->prepare(
-            'SELECT a.itemcode, a.label, a.delta_cents
+            'SELECT a.itemcode, a.label, a.delta_cents, a.naam_kort_nl, a.naam_kort_fr, a.naam_kort_en
              FROM accessoires a
              INNER JOIN group_accessoires ga ON ga.accessoire_id = a.id
              WHERE ga.group_id = :group_id
@@ -72,6 +72,9 @@ final readonly class SqliteGroupAccessoireRepository implements GroupAccessoireR
                     $itemcode,
                     $label,
                     is_int($delta) ? $delta : (is_string($delta) ? (int) $delta : 0),
+                    is_string($row['naam_kort_nl'] ?? null) ? $row['naam_kort_nl'] : null,
+                    is_string($row['naam_kort_fr'] ?? null) ? $row['naam_kort_fr'] : null,
+                    is_string($row['naam_kort_en'] ?? null) ? $row['naam_kort_en'] : null,
                 );
             }
         }

@@ -10,10 +10,17 @@ final readonly class Group
 {
     public string $name;
     public string $familyHeadItemcode;
-    public ?string $modelName;
+    public ?string $modelNameNl;
+    public ?string $modelNameFr;
+    public ?string $modelNameEn;
 
-    public function __construct(string $name, string $familyHeadItemcode, ?string $modelName = null)
-    {
+    public function __construct(
+        string $name,
+        string $familyHeadItemcode,
+        ?string $modelNameNl = null,
+        ?string $modelNameFr = null,
+        ?string $modelNameEn = null,
+    ) {
         $trimmedName = trim($name);
         if ($trimmedName === '') {
             throw new InvalidArgumentException('Groepsnaam mag niet leeg zijn.');
@@ -24,10 +31,32 @@ final readonly class Group
             throw new InvalidArgumentException('Family-head itemcode mag niet leeg zijn.');
         }
 
-        $trimmedModel = $modelName !== null ? trim($modelName) : null;
-
         $this->name = $trimmedName;
         $this->familyHeadItemcode = $trimmedItemcode;
-        $this->modelName = ($trimmedModel === null || $trimmedModel === '') ? null : $trimmedModel;
+        $this->modelNameNl = self::nullIfEmpty($modelNameNl);
+        $this->modelNameFr = self::nullIfEmpty($modelNameFr);
+        $this->modelNameEn = self::nullIfEmpty($modelNameEn);
+    }
+
+    /**
+     * @param 'nl'|'fr'|'en' $taal
+     */
+    public function modelNameForTaal(string $taal): ?string
+    {
+        return match ($taal) {
+            'nl' => $this->modelNameNl,
+            'fr' => $this->modelNameFr,
+            'en' => $this->modelNameEn,
+        };
+    }
+
+    private static function nullIfEmpty(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+        $trimmed = trim($value);
+
+        return $trimmed === '' ? null : $trimmed;
     }
 }

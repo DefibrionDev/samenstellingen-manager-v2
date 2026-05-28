@@ -24,6 +24,9 @@ final readonly class ListAccessoiresController
                 'label' => $accessoire->label,
                 'deltaCents' => $accessoire->deltaCents,
                 'deltaEur' => EuroParser::formatCents($accessoire->deltaCents),
+                'naamKortNl' => $accessoire->naamKortNl,
+                'naamKortFr' => $accessoire->naamKortFr,
+                'naamKortEn' => $accessoire->naamKortEn,
             ];
         }
         usort($payload, static fn ($a, $b) => strcmp($a['itemcode'], $b['itemcode']));

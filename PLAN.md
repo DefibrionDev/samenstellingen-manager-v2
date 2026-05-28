@@ -639,3 +639,73 @@ Read-only audit volgens hetzelfde patroon als de andere audits (`audit:names`, `
 
 - **Slice 34.0** — Domain + handler + unit-tests met `InMemoryAfasSamenstellingenRepository`.
 - **Slice 34.1** — CLI + HTTP + UI + vitest.
+
+## 18. VariantNamingPolicy refactor + per-taal accessoire-labels (slice 37 — concept)
+
+### Probleem
+
+`VariantNamingPolicy` (slice 7) genereert namen als `AED pakket: ... NL incl. EHBO-Rugzak`. Bij vergelijking met de werkelijke AFAS-data klopt dit niet:
+
+- AFAS gebruikt **prefix `AED Pakket:`** (hoofdletter P), niet `AED pakket:`.
+- AFAS gebruikt **joiner ` met `** voor varianten, niet `incl.`.
+- AFAS gebruikt **`UK`** als taal-suffix voor `EN`-bases, niet `EN`.
+- AFAS heeft **echte vertalingen** van accessoire-suffixes (Reanibex-groep heeft `Sac à dos` ipv `Rugtas`); onze labels zijn lange interne beschrijvingen die niet matchen.
+- AFAS heeft compound-suffixes met `-` ipv `/` (`NL-FR`, `NL-EN-FR`).
+- AFAS-data zelf bevat **inconsistenties** (`Heartsine` vs `HeartSine`, `Buitenkast` vs `buitenkast`, typos zoals `safesett`, `aavec`).
+
+### Aanpak
+
+AFAS-patronen zijn leidend voor de structuur, maar onze tool produceert één canonical vorm per (taal, accessoire). Bestaande AFAS-inconsistenties worden door de audit gerapporteerd en bij `prices:fix-names`-equivalent (volgende slice) gecorrigeerd.
+
+#### Drie canonical templates
+
+```
+NL: AED Pakket: {ModelNL} {LangSuffix}                                ← base
+    AED Pakket: {ModelNL} {LangSuffix} met {AccessoireNL}             ← variant
+
+FR: Pack DAE: {ModelFR} ({LangSuffix})                                ← base
+    Pack DAE: {ModelFR} ({LangSuffix}) avec {AccessoireFR}            ← variant
+
+EN: AED Package: {ModelEN} ({LangSuffix})                             ← base
+    AED Package: {ModelEN} ({LangSuffix}) with {AccessoireEN}         ← variant
+```
+
+Template-keuze loopt over het **eerste taal-token** van de base (compound `NL/EN/FR` → NL-template).
+
+#### LangSuffix-mapping (AFAS-data-leidend)
+
+| `language_code` | Suffix |
+|---|---|
+| `NL` | `NL` |
+| `FR` | `FR` |
+| `DE` | `DE` |
+| `DK` | `DK` |
+| `EN` | **`UK`** |
+| `WAL` | `WAL` |
+| `NL/FR` | `NL-FR` |
+| `NL/EN/FR` | `NL-EN-FR` |
+
+EN-bases krijgen suffix `UK` op basis van bestaande AFAS-werkelijkheid (11113, 11123 hebben `... PAD 350P UK` etc.).
+
+#### Schema-uitbreiding
+
+- `accessoires` tabel: nieuwe kolommen `naam_kort_nl`, `naam_kort_fr`, `naam_kort_en` (TEXT, nullable). Bestaande `label` blijft als interne beschrijving (lange vorm).
+- `groups` tabel: nieuwe kolommen `model_name_fr`, `model_name_en` (TEXT, nullable). Bestaande `model_name` wordt `model_name_nl`. Bij compound talen wordt model-naam van de bijbehorende taal-token gebruikt.
+
+#### CLI
+
+- `accessoire:set-naam-kort <itemcode> <taal> <naam>` — vult/wijzigt `naam_kort_nl|fr|en`.
+- `group:set-model-naam <family-head> <taal> <naam>` — idem voor groep.
+- `audit:names` blijft, gebruikt nu de nieuwe per-taal-data en rapporteert drift naar canonical.
+
+#### Defibtech-groep
+
+User-beslissing: ook canonical NL/FR-template, geen Engelse uitzondering. Defibtech-bases worden dus gefilterd via name-drift en moeten omgezet worden naar `AED Pakket: Defibtech Lifeline AED semi-automaat NL met Rugtas` (Nederlands template, ook al gebruikt AFAS nu een ander format).
+
+### Slices
+
+- **Slice 37.0** — Migration: accessoires.naam_kort_nl/fr/en + groups.model_name_fr/en. Hernoem `model_name` → `model_name_nl`. VO + repository-updates + InMemory/Sqlite + tests.
+- **Slice 37.1** — Refactor `VariantNamingPolicy`: drop oude template, implementeer 3 canonical templates met `LangSuffix`-mapping (EN→UK). Resolve modelnaam + accessoire-naam-kort per taal. Unit-tests met data-provider (alle 7 taal-codes × base/variant).
+- **Slice 37.2** — CLI: `accessoire:set-naam-kort`, `group:set-model-naam`. Update bestaande CLI's die `model_name` referen.
+- **Slice 37.3** — Live data invullen via CLI voor onze 9 accessoires (3 talen elk) + 22 groepen (3 talen elk). Daarna `audit:names` om huidige drift te zien.
+- **Slice 37.4** — Eventueel `prices:fix-names`-equivalent (FbItemArticle PUT op `Ds_1043`/`Ds_1036`/`Ds_2057`) om namen in AFAS te corrigeren — apart, na confirmation.

@@ -6,6 +6,7 @@ namespace Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite;
 
 use Defibrion\Samenstellingen\Domain\Group\Group;
 use Defibrion\Samenstellingen\Domain\Group\GroupAlreadyExistsException;
+use Defibrion\Samenstellingen\Domain\Group\GroupNotFoundException;
 use Defibrion\Samenstellingen\Domain\Group\GroupRepository;
 use PDO;
 use PDOException;
@@ -20,12 +21,14 @@ final readonly class SqliteGroupRepository implements GroupRepository
     {
         try {
             $stmt = $this->pdo->prepare(
-                'INSERT INTO groups (name, family_head_itemcode, model_name) VALUES (:name, :itemcode, :model)'
+                'INSERT INTO groups (name, family_head_itemcode, model_name_nl, model_name_fr, model_name_en) VALUES (:name, :itemcode, :modelNl, :modelFr, :modelEn)'
             );
             $stmt->execute([
                 ':name' => $group->name,
                 ':itemcode' => $group->familyHeadItemcode,
-                ':model' => $group->modelName,
+                ':modelNl' => $group->modelNameNl,
+                ':modelFr' => $group->modelNameFr,
+                ':modelEn' => $group->modelNameEn,
             ]);
         } catch (PDOException $e) {
             $message = $e->getMessage();
@@ -42,7 +45,7 @@ final readonly class SqliteGroupRepository implements GroupRepository
     public function findByName(string $name): ?Group
     {
         $stmt = $this->pdo->prepare(
-            'SELECT name, family_head_itemcode, model_name FROM groups WHERE name = :name'
+            'SELECT name, family_head_itemcode, model_name_nl, model_name_fr, model_name_en FROM groups WHERE name = :name'
         );
         $stmt->execute([':name' => $name]);
 
@@ -52,7 +55,7 @@ final readonly class SqliteGroupRepository implements GroupRepository
     public function findByFamilyHeadItemcode(string $familyHeadItemcode): ?Group
     {
         $stmt = $this->pdo->prepare(
-            'SELECT name, family_head_itemcode, model_name FROM groups WHERE family_head_itemcode = :itemcode'
+            'SELECT name, family_head_itemcode, model_name_nl, model_name_fr, model_name_en FROM groups WHERE family_head_itemcode = :itemcode'
         );
         $stmt->execute([':itemcode' => $familyHeadItemcode]);
 
@@ -68,9 +71,26 @@ final readonly class SqliteGroupRepository implements GroupRepository
         // Idempotent: rowCount kan 0 zijn als de groep niet bestond.
     }
 
+    public function updateModelNaam(string $familyHeadItemcode, string $taal, ?string $naam): void
+    {
+        $column = match ($taal) {
+            'nl' => 'model_name_nl',
+            'fr' => 'model_name_fr',
+            'en' => 'model_name_en',
+        };
+        $stmt = $this->pdo->prepare("UPDATE groups SET $column = :naam WHERE family_head_itemcode = :itemcode");
+        $stmt->execute([
+            ':itemcode' => $familyHeadItemcode,
+            ':naam' => $naam !== null && trim($naam) !== '' ? trim($naam) : null,
+        ]);
+        if ($stmt->rowCount() === 0 && $this->findByFamilyHeadItemcode($familyHeadItemcode) === null) {
+            throw GroupNotFoundException::forFamilyHeadItemcode($familyHeadItemcode);
+        }
+    }
+
     public function findAll(): array
     {
-        $stmt = $this->pdo->query('SELECT name, family_head_itemcode, model_name FROM groups ORDER BY name');
+        $stmt = $this->pdo->query('SELECT name, family_head_itemcode, model_name_nl, model_name_fr, model_name_en FROM groups ORDER BY name');
         if ($stmt === false) {
             return [];
         }
@@ -99,9 +119,16 @@ final readonly class SqliteGroupRepository implements GroupRepository
         if (!is_string($name) || !is_string($itemcode)) {
             return null;
         }
-        $model = $row['model_name'] ?? null;
-        $modelStr = is_string($model) ? $model : null;
+        $modelNl = $row['model_name_nl'] ?? null;
+        $modelFr = $row['model_name_fr'] ?? null;
+        $modelEn = $row['model_name_en'] ?? null;
 
-        return new Group($name, $itemcode, $modelStr);
+        return new Group(
+            $name,
+            $itemcode,
+            is_string($modelNl) ? $modelNl : null,
+            is_string($modelFr) ? $modelFr : null,
+            is_string($modelEn) ? $modelEn : null,
+        );
     }
 }

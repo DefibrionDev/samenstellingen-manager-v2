@@ -69,6 +69,13 @@ export function GroupDetail() {
             <Typography variant="body2" color="text.secondary">
               family-head <code>{data.familyHead}</code> · {data.bases.length} bases
             </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              <strong>Model NL:</strong> {data.modelNameNl ?? '—'}
+              {' · '}
+              <strong>FR:</strong> {data.modelNameFr ?? '—'}
+              {' · '}
+              <strong>EN:</strong> {data.modelNameEn ?? '—'}
+            </Typography>
           </Paper>
 
           <Paper>

@@ -59,6 +59,9 @@ final readonly class ShowGroupController
         return Json::write($response, [
             'familyHead' => $group->familyHeadItemcode,
             'name' => $group->name,
+            'modelNameNl' => $group->modelNameNl,
+            'modelNameFr' => $group->modelNameFr,
+            'modelNameEn' => $group->modelNameEn,
             'bases' => $bases,
         ]);
     }

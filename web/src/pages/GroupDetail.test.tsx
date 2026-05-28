@@ -37,6 +37,9 @@ beforeEach(() => {
         json: async () => ({
           familyHead: '52112',
           name: 'Reanibex 100 Semi-Auto',
+          modelNameNl: null,
+          modelNameFr: null,
+          modelNameEn: null,
           bases: [
             {
               id: 1,

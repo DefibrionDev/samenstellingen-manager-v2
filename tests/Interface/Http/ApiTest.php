@@ -266,7 +266,7 @@ final class ApiTest extends TestCase
         self::assertCount(1, $response['body']);
         self::assertSame('52112', $response['body'][0]['afasItemcode']);
         self::assertSame(
-            'AED pakket: Reanibex 100 semi-automaat NL incl. safeset en stickerset',
+            'AED Pakket: Reanibex 100 semi-automaat NL',
             $response['body'][0]['expected'],
         );
     }

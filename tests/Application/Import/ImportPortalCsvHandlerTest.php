@@ -218,7 +218,7 @@ final class ImportPortalCsvHandlerTest extends TestCase
         self::assertCount(1, $bag['links']->findAllForGroup('11142'));
         $afterSeed = $bag['groups']->findByFamilyHeadItemcode('11142');
         self::assertNotNull($afterSeed);
-        self::assertSame('Reanibex 100 semi-automaat', $afterSeed->modelName);
+        self::assertSame('Reanibex 100 semi-automaat', $afterSeed->modelNameNl);
 
         // 3) Tweede import — identieke CSV — moet idempotent zijn.
         $summary = $this->makeHandler($bag, $reader)(new ImportPortalCsv('/irrelevant.csv'));
@@ -230,7 +230,7 @@ final class ImportPortalCsvHandlerTest extends TestCase
         self::assertNotNull($afterReimport);
         self::assertSame(
             'Reanibex 100 semi-automaat',
-            $afterReimport->modelName,
+            $afterReimport->modelNameNl,
             'model_name moet behouden blijven over herimport',
         );
         // accessoire-koppeling moet overleven

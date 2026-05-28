@@ -34,7 +34,7 @@ final class NameAuditHandlerTest extends TestCase
         $bag['afas']->replaceSnapshot([
             new AfasSamenstelling(
                 '52112',
-                'AED pakket: Reanibex 100 semi-automaat NL incl. safeset en stickerset',
+                'AED Pakket: Reanibex 100 semi-automaat NL',
                 null,
                 ['50013'],
             ),
@@ -81,7 +81,7 @@ final class NameAuditHandlerTest extends TestCase
 
         self::assertCount(1, $drift);
         self::assertSame('52112', $drift[0]->afasItemcode);
-        self::assertSame('AED pakket: Reanibex 100 semi-automaat NL incl. safeset en stickerset', $drift[0]->expected);
+        self::assertSame('AED Pakket: Reanibex 100 semi-automaat NL', $drift[0]->expected);
         self::assertSame('AED Pakket: Reanibex 100 semi-automaat NL incl. safeset en stickerset', $drift[0]->actual);
         self::assertNull($drift[0]->accessoireItemcode);
     }
@@ -93,7 +93,7 @@ final class NameAuditHandlerTest extends TestCase
         $bag['groups']->save(new Group('Reanibex', '52112', 'Reanibex 100 semi-automaat'));
         $base = $bag['bases']->saveForGroup('52112', new GroupBase(null, 'AED pakket NL', 'NL', '52112'));
         self::assertNotNull($base->id);
-        $bag['accessoires']->save(new Accessoire('60112', 'ARKY metalen binnenkast wit met alarm'));
+        $bag['accessoires']->save(new Accessoire('60112', 'ARKY metalen binnenkast wit met alarm', naamKortNl: 'witte binnenkast'));
         $bag['links']->link('52112', '60112');
         $bag['variants']->regenerateForGroup('52112');
 
@@ -101,7 +101,7 @@ final class NameAuditHandlerTest extends TestCase
             new AfasSamenstelling(
                 '52112-60112',
                 // Drift: oude "incl. safeset en stickerset"-staart i.p.v. accessoire-label.
-                'AED pakket: Reanibex 100 semi-automaat NL incl. safeset en stickerset',
+                'AED Pakket: Reanibex 100 semi-automaat NL',
                 '52112',
                 ['50013', '60112'],
             ),
@@ -118,7 +118,7 @@ final class NameAuditHandlerTest extends TestCase
         self::assertCount(1, $drift);
         self::assertSame('60112', $drift[0]->accessoireItemcode);
         self::assertSame(
-            'AED pakket: Reanibex 100 semi-automaat NL incl. ARKY metalen binnenkast wit met alarm',
+            'AED Pakket: Reanibex 100 semi-automaat NL met witte binnenkast',
             $drift[0]->expected,
         );
     }
