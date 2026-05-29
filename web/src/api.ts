@@ -63,6 +63,7 @@ export interface GroupVariantRow {
   accessoireLabel: string | null;
   afasSamenstellingItemcode: string | null;
   afasStatus: string | null;
+  canonicalName: string | null;
 }
 
 export interface SuspiciousBaseRow {

@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace Defibrion\Samenstellingen\Interface\Http;
 
+use Defibrion\Samenstellingen\Domain\Accessoire\AccessoireRepository;
+use Defibrion\Samenstellingen\Domain\Group\GroupBase;
 use Defibrion\Samenstellingen\Domain\Group\GroupBaseRepository;
 use Defibrion\Samenstellingen\Domain\Group\GroupRepository;
 use Defibrion\Samenstellingen\Domain\Group\GroupVariantRepository;
+use Defibrion\Samenstellingen\Domain\Naming\VariantNamingPolicy;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Throwable;
 
 final readonly class ListGroupVariantsController
 {
@@ -16,6 +20,8 @@ final readonly class ListGroupVariantsController
         private GroupRepository $groups,
         private GroupBaseRepository $bases,
         private GroupVariantRepository $variants,
+        private AccessoireRepository $accessoires,
+        private VariantNamingPolicy $namingPolicy,
     ) {
     }
 
@@ -30,24 +36,39 @@ final readonly class ListGroupVariantsController
             return Json::write($response, ['error' => "Groep '$familyHead' niet gevonden."], 404);
         }
 
-        // Cache taal-code per base-id; voorkomt N lookups per variant.
-        $languageByBaseId = [];
+        /** @var array<int, GroupBase> */
+        $baseById = [];
         foreach ($this->bases->findAllForGroup($group->familyHeadItemcode) as $base) {
             if ($base->id !== null) {
-                $languageByBaseId[$base->id] = $base->languageCode;
+                $baseById[$base->id] = $base;
             }
         }
 
         $payload = [];
         foreach ($this->variants->findAllForGroup($group->familyHeadItemcode) as $variant) {
+            $base = $baseById[$variant->baseId] ?? null;
+            $accessoire = $variant->accessoireItemcode !== null
+                ? $this->accessoires->findByItemcode($variant->accessoireItemcode)
+                : null;
+
+            $canonicalName = null;
+            if ($base !== null) {
+                try {
+                    $canonicalName = $this->namingPolicy->expectedName($group, $base, $accessoire);
+                } catch (Throwable) {
+                    // Group/accessoire mist een canonical-veld — laat null door.
+                }
+            }
+
             $payload[] = [
                 'baseId' => $variant->baseId,
                 'baseName' => $variant->baseName,
-                'languageCode' => $languageByBaseId[$variant->baseId] ?? null,
+                'languageCode' => $base?->languageCode,
                 'accessoireItemcode' => $variant->accessoireItemcode,
                 'accessoireLabel' => $variant->accessoireLabel,
                 'afasSamenstellingItemcode' => $variant->afasSamenstellingItemcode,
                 'afasStatus' => $variant->afasStatus,
+                'canonicalName' => $canonicalName,
             ];
         }
 

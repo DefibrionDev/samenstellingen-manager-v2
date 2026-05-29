@@ -54,6 +54,8 @@ final class AppFactory
             $container->groupRepository(),
             $container->baseRepository(),
             $container->variantRepository(),
+            $container->accessoireRepository(),
+            new VariantNamingPolicy(),
         );
         $listMissing = new ListMissingVariantsController(
             new ListMissingVariantsHandler(

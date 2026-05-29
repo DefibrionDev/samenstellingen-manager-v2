@@ -231,6 +231,30 @@ const variantColumns: GridColDef<GroupVariantRow & { id: string }>[] = [
   },
   { field: 'afasSamenstellingItemcode', headerName: 'AFAS-SKU', width: 130 },
   {
+    field: 'canonicalName',
+    headerName: 'Canonical naam',
+    flex: 2.4,
+    minWidth: 320,
+    renderCell: (params) =>
+      params.value ? (
+        <Typography
+          variant="body2"
+          sx={{
+            fontFamily: 'monospace',
+            fontSize: 12,
+            whiteSpace: 'normal',
+            wordBreak: 'break-word',
+            lineHeight: 1.4,
+            py: 1,
+          }}
+        >
+          {params.value}
+        </Typography>
+      ) : (
+        '—'
+      ),
+  },
+  {
     field: 'afasStatus',
     headerName: 'Status',
     width: 130,
@@ -268,6 +292,7 @@ function VariantsTab({ familyHead }: { familyHead: string }) {
       rows={rows}
       columns={variantColumns}
       autoHeight
+      getRowHeight={() => 'auto'}
       disableRowSelectionOnClick
       initialState={{ pagination: { paginationModel: { pageSize: 25 } } }}
       pageSizeOptions={[25, 50, 100]}

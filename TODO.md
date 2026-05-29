@@ -1093,6 +1093,41 @@ Eindbeeld: bases die binnen één groep een afwijkende hardware-variant zijn (4G
 
 ---
 
+## Slice 39 — Missende varianten in AFAS aanmaken (`variants:fix-missing`)
+
+Eindbeeld: CLI `variants:fix-missing [--group=<family-head>] [--apply] [--limit=N]` POST't `no_match`-varianten als nieuwe FbComposition-records met canonical naam + BOM. Default dry-run. Failures → `tmp/fix-variants-{datum}.csv`. Zie PLAN.md §20.
+
+### Sub-slice 39.0 — PoC: werkende FbComposition POST-payload
+- [ ] `tmp/poc-fb-composition-post.php`: kies één missing variant uit lage-risico groep, probeer 3-5 payload-vormen (varianten van `@VaCt`/`@ItCd`/`Fields`/BOM-lines) via `AfasHttpClient` tegen test-AFAS.
+- [ ] Identificeer minimaal vereiste velden naast `Ds` (`Itemcode_Parent`, warehouse, sync-free-fields, type_id-coupling).
+- [ ] Bevestig itemcode-strategie: accepteert AFAS onze `<baseSku>-<accessoireItemcode>`-conventie, of moet AFAS hem zelf genereren?
+- [ ] BOM-lines: in dezelfde POST (`Lines`/`Objects`) of via tweede call?
+- [ ] Resultaat: `tmp/poc-fb-composition-post-NOTES.md` met werkende JSON-snippet + bevestigingen. **Stop-gate** voor 39.1.
+
+### Sub-slice 39.1 — Domain/Application
+- [ ] `VariantFixMissingPlan` VO: `afasItemcode`, `canonicalName`, `bomItemcodes`, `familyHeadItemcode`, `baseAfasItemcode`.
+- [ ] `VariantFixMissingWriter`-contract: `apply(VariantFixMissingPlan)`.
+- [ ] `InMemoryVariantFixMissingWriter` met `failOn*`-constructor-param (mirror van `InMemoryNameFixWriter`).
+- [ ] `FixMissingVariantsHandler`: leest `ListMissingVariantsHandler`-output, filtert op optioneel `--group`, applied `VariantNamingPolicy` voor canonical naam, skipt rijen zonder canonical met duidelijke foutmelding, respecteert `--limit`.
+- [ ] TDD-tests: dry-run, apply, group-filter, limit, failure-blokkeert-andere-niet.
+
+### Sub-slice 39.2 — Infrastructure (HTTP-writer)
+- [ ] `HttpFbCompositionVariantWriter` implementeert `VariantFixMissingWriter` met de in 39.0 bevestigde payload-shape.
+- [ ] Geen live-AFAS in tests — alleen contract-check op de payload-builder met PHPUnit assertions over de uitgaande body-structuur.
+- [ ] PHPStan groen.
+
+### Sub-slice 39.3 — CLI + wiring
+- [ ] `variants:fix-missing [--group=<family-head>] [--apply] [--limit=N]`. Default dry-run met diff-tabel (Base | Accessoire | Suggested SKU | Canonical naam).
+- [ ] Failures → `tmp/fix-variants-{datum}.csv` (mirror `names:fix-drift`).
+- [ ] Wire in `bin/samenstellingen` (handler + writer + command).
+
+### Sub-slice 39.4 — Live verificatie
+- [ ] `--apply --limit=1` voor één laag-risico groep. Verifieer itemcode in AFAS (Profit + GetConnector pull).
+- [ ] `audit:export-missing` herdraait → die rij is weg.
+- [ ] Daarna grotere `--limit=N` per groep. CSV met failures bewaren in `tmp/`.
+
+---
+
 ## Slice 20 — Reconciliation in portal-CSV-import (vervang wipe)
 
 Eindbeeld: portal-CSV-import is idempotent. Bestaande groepen behouden hun `model_name` en `group_accessoires` over imports heen; alleen groepen die niet meer in de CSV staan worden opgeruimd. Geen `ToolDataWiper` meer in de import-flow.

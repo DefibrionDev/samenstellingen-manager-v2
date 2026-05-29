@@ -785,3 +785,54 @@ Conditioneel — alleen ingevoegd als `variantLabel` niet leeg is.
 - **Slice 38.1** — `VariantNamingPolicy` gebruikt het label; data-provider-test uitbreiden (NL, FR, FR + accessoire, label + suffix).
 - **Slice 38.2** — CLI `base:set-variant-label`. UI: chip op `GroupDetail`.
 - **Slice 38.3** — Live backfill: `21018-FR/UK/DE` → `4G` + lijst LIFEPAK-bases met radio-variant. Daarna `audit:names` heruitvoeren en verifiëren dat de naam-collisies weg zijn. Pas dán evt. opnieuw `names:fix-drift --apply` voor de overgebleven drift.
+
+---
+
+## 20. Missende varianten in AFAS aanmaken — `variants:fix-missing` (slice 39 — concept)
+
+### Probleem
+
+`audit:export-missing` levert een CSV-actielijst voor het AFAS-team — handmatig invoeren in Profit. Dat schaalt slecht (honderden missende varianten) en is foutgevoelig. We willen dezelfde flow als `names:fix-drift` en `prices:fix-missing`: dry-run default, `--apply` om te schrijven, `--limit=N` voor stapsgewijze rollout, `--group=<family-head>` om scope te beperken.
+
+### Aanpak — twee fasen
+
+We doen dit niet in één slice omdat we cruciale onbekenden hebben rond de **AFAS POST-payload-shape voor nieuwe samenstellingen**. De `afas-connector-tools`-codebase doet alleen `PUT`s op bestaande composities; een werkende `POST` voor een nieuw FbComposition-record met `Ds` + BOM-lines is nog niet eerder gedaan. Eerst een experiment-fase, daarna de productie-slice.
+
+#### Onbekenden die de PoC moet uitwijzen
+
+1. **Payload-shape.** Welke combinatie van `@VaCt`, `@ItCd`, `Fields`, en de BOM-lines-array wordt door FbComposition geaccepteerd voor een create? `test-composition-variants.php` in afas-connector-tools probeerde 6 vormen — geen documentatie van wat wel werkte.
+2. **Itemcode-strategie.** Accepteert AFAS onze `<baseSku>-<accessoireItemcode>`-conventie als nieuwe key, of moet AFAS hem zelf genereren (en wij hem daarna ophalen)?
+3. **Verplichte velden.** Naast `Ds` waarschijnlijk: `Itemcode_Parent` (family-head), warehouse, vrije velden `Sync_Reseller_NL`/`Tonen_Reseller_NL`, type_id-coupling. Welk minimum is vereist? Welke kan AFAS afleiden van de parent?
+4. **BOM-lines.** Wordt de BOM mee gepost in dezelfde call (`Lines`/`Objects`-array), of in een tweede call op een andere connector?
+
+### Fase A — PoC (los, in `tmp/`)
+
+Klein wegwerp-script: kies één missing variant (bv. uit een lage-risico groep zonder commerciële druk), probeer 3-5 payload-vormen via `AfasHttpClient`. Stop zodra AFAS 200 OK geeft + de itemcode in Profit terugvindbaar is.
+
+Output: `tmp/poc-fb-composition-post-NOTES.md` met:
+- werkende payload-shape (JSON-snippet)
+- bevestigde itemcode-strategie
+- minimaal vereiste velden
+- BOM-line-aanpak
+
+Geen contractuele tests, geen integratie in CLI. Puur experiment.
+
+### Fase B — Productie-slice (na PoC)
+
+Mirror van `prices:fix-missing` (slice 31):
+
+- **Domain/Application:** `VariantFixMissingPlan` (`afasItemcode`, `canonicalName`, `bomItemcodes`, `familyHeadItemcode`, etc.). `VariantFixMissingWriter`-contract met `apply(VariantFixMissingPlan)`. `FixMissingVariantsHandler` met dry-run/apply-gedrag.
+- **Infrastructure:** `HttpFbCompositionVariantWriter` implementeert de PoC-payload. `InMemoryVariantFixMissingWriter` voor tests (met `failOn*` optie).
+- **CLI:** `variants:fix-missing [--group=<family-head>] [--apply] [--limit=N]`. Default dry-run. Failures → `tmp/fix-variants-{datum}.csv`. Scope-filter `--group` zodat 1 productlijn tegelijk kan rollen.
+- **Audit-koppeling:** verbruikt `ListMissingVariantsHandler` (bestaand) + `VariantNamingPolicy` voor canonical naam. Skipt rijen zonder canonical (model_name/naam_kort ontbreekt) met duidelijke foutmelding.
+- **UI:** `GroupDetail`-varianten-tab toont al canonical naam — geen extra UI nodig. Wel `MissingVariants`-pagina checken of die nog actueel is na fix-runs (queryCache invalidate).
+- **Test-strategie:** InMemory-fake voor writer + audit-handler. Round-trip in-memory; live verificatie in laatste sub-slice op `--limit=1`.
+- **Faalmodi:** AFAS rejected POST (logged + CSV), base bestaat niet meer in AFAS (skip + warning), canonical-naam mist (skip + warning, verwijst naar `set-model-naam` / `set-naam-kort`-CLI).
+
+### Slices
+
+- **Slice 39.0 (PoC)** — `tmp/poc-fb-composition-post.php`: probeer payload-shapes tegen één geselecteerde variant. Resultaat in `tmp/poc-fb-composition-post-NOTES.md`. **Stop-gate:** geen verdere slices voordat dit werkt.
+- **Slice 39.1** — Domain/Application: `VariantFixMissingPlan`, `VariantFixMissingWriter`-contract, `InMemoryVariantFixMissingWriter`, `FixMissingVariants`-handler. TDD met dry-run/apply/limit/failure-paths.
+- **Slice 39.2** — Infrastructure: `HttpFbCompositionVariantWriter` met de PoC-payload. Geen tests die live AFAS hitten — alleen contract-check op de payload-builder.
+- **Slice 39.3** — CLI `variants:fix-missing [--group=<fh>] [--apply] [--limit=N]`. Failures → `tmp/fix-variants-{datum}.csv`. Wire in `bin/samenstellingen`.
+- **Slice 39.4** — Live verificatie op `--limit=1` voor één groep. Daarna `audit:export-missing` herdraait → rij weg. Pas dan grotere `--limit=N`.
