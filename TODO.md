@@ -1114,12 +1114,13 @@ Eindbeeld: CLI `variants:fix-missing [--group=<family-head>] [--apply] [--limit=
 - [x] `MissingVariantRow` uitgebreid met `familyHead` voor de --group-filter.
 - [x] 6 handler-tests: dry-run, apply, skip-already-in-afas, group-filter, limit, failure-non-blocking.
 
-### Sub-slice 39.2 — Infrastructure (HTTP-writer)
-- [ ] `HttpFbCompositionVariantWriter` implementeert `VariantFixMissingWriter` met de PoC-payload. Spiegelt `Grp`/`CsGc` per groep uit een referentie-variant.
-- [ ] `ReferenceVariantLookup`-service: voor een groep, vind een bestaande matched variant in afas_samenstellingen om `Grp` en `CsGc` van over te nemen.
-- [ ] Mapping `VaIt='Art'/'Sam'` via `easylinq_stock_item.type_id` (= 7 → Sam, anders Art) — cache per run.
-- [ ] Contract-test op de payload-builder met PHPUnit-asserts over de body-structuur. Geen live AFAS.
-- [ ] PHPStan groen.
+### Sub-slice 39.2 — Infrastructure (HTTP-writer) ✅
+- [x] `FbCompositionVariantPayloadBuilder` (pure functie) bouwt de PoC-payload met FF-UUIDs + hardcoded constants (VaCt=1, BiUn=STK, VaRc=1, CrId=50002, StPrice=0).
+- [x] `VariantWriteContextLookup`-interface + `InMemoryVariantWriteContextLookup` (test) + `HttpVariantWriteContextLookup` (lazy-pulls Get_Artikelen + easylinq_stock_item, cache per run).
+- [x] `HttpFbCompositionVariantWriter` — thin wrapper rond builder + AfasHttpClient::insertConnector.
+- [x] Mapping `VaIt='Art'/'Sam'` via `easylinq_stock_item.type_id` (= 7 → Sam, anders Art).
+- [x] Contract-test op de payload-builder met 18 assertions over de body-structuur. Geen live AFAS.
+- [x] PHPStan groen, `make check` 354/800.
 
 ### Sub-slice 39.3 — CLI + wiring
 - [ ] `variants:fix-missing [--group=<family-head>] [--apply] [--limit=N] [--skip-prices]`. Default dry-run met tabel (Base | Accessoire | Suggested SKU | Canonical naam | BOM-count).
