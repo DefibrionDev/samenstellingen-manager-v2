@@ -1106,12 +1106,13 @@ Eindbeeld: CLI `variants:fix-missing [--group=<family-head>] [--apply] [--limit=
 - [x] Live geverifieerd op 11111-60212 (NL) en 11114-60212 (DE) in groep 10013. Beide compleet met BOM + sync-flags + basis- + staffel-prijzen.
 - [x] `tmp/poc-fb-composition-post-NOTES.md` met werkende JSON-snippet, FF-UUIDs, veld-mapping, DELETE-syntax en sources.
 
-### Sub-slice 39.1 — Domain/Application
-- [ ] `VariantFixMissingPlan` VO: `afasItemcode`, `canonicalName`, `bomItemcodes` (geordend), `familyHeadItemcode`, `baseAfasItemcode`, `referenceVariantItemcode` (voor `Grp`/`CsGc`-spiegel).
-- [ ] `VariantFixMissingWriter`-contract: `apply(VariantFixMissingPlan)`.
-- [ ] `InMemoryVariantFixMissingWriter` met `failOn*`-constructor-param (mirror van `InMemoryNameFixWriter`).
-- [ ] `FixMissingVariantsHandler`: leest `ListMissingVariantsHandler`-output, filtert op optioneel `--group`, applied `VariantNamingPolicy` voor canonical naam, skipt rijen zonder canonical/zonder referentie-variant met duidelijke foutmelding, respecteert `--limit`. **Filter: alleen rijen waarvan suggested_sku écht niet in `afas_samenstellingen` voorkomt** (de huidige no_match-status is onbetrouwbaar — zie PoC-bevindingen).
-- [ ] TDD-tests: dry-run, apply, group-filter, limit, failure-blokkeert-andere-niet, skip-rij-zonder-canonical.
+### Sub-slice 39.1 — Domain/Application ✅
+- [x] `VariantFixMissingPlan` VO + 4 input-validatie-tests.
+- [x] `VariantFixMissingWriter`-contract + `VariantFixMissingFailedException`.
+- [x] `InMemoryVariantFixMissingWriter` met `failOnItemcode`-param.
+- [x] `FixMissingVariantsHandler`: filtert tegen `afas_samenstellingen` (echte missing, niet onbetrouwbare no_match-status), `--group`-filter, `VariantNamingPolicy` voor canonical naam, referentie-lookup, `--limit`.
+- [x] `MissingVariantRow` uitgebreid met `familyHead` voor de --group-filter.
+- [x] 6 handler-tests: dry-run, apply, skip-already-in-afas, group-filter, limit, failure-non-blocking.
 
 ### Sub-slice 39.2 — Infrastructure (HTTP-writer)
 - [ ] `HttpFbCompositionVariantWriter` implementeert `VariantFixMissingWriter` met de PoC-payload. Spiegelt `Grp`/`CsGc` per groep uit een referentie-variant.

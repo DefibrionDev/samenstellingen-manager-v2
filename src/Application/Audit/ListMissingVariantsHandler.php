@@ -42,7 +42,7 @@ final readonly class ListMissingVariantsHandler
                 if ($variant->afasStatus !== 'no_match') {
                     continue;
                 }
-                $rows[] = $this->buildRow($group->name, $variant, $baseAfasSkuByBaseId);
+                $rows[] = $this->buildRow($group->name, $group->familyHeadItemcode, $variant, $baseAfasSkuByBaseId);
             }
         }
 
@@ -52,7 +52,7 @@ final readonly class ListMissingVariantsHandler
     /**
      * @param array<int, string> $baseAfasSkuByBaseId
      */
-    private function buildRow(string $groupName, GroupVariant $variant, array $baseAfasSkuByBaseId): MissingVariantRow
+    private function buildRow(string $groupName, string $familyHead, GroupVariant $variant, array $baseAfasSkuByBaseId): MissingVariantRow
     {
         $baseAfasSku = $baseAfasSkuByBaseId[$variant->baseId] ?? '';
 
@@ -75,6 +75,7 @@ final readonly class ListMissingVariantsHandler
 
         return new MissingVariantRow(
             $groupName,
+            $familyHead,
             $variant->baseName,
             $baseAfasSku,
             $accessoireItemcode,

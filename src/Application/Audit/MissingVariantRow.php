@@ -11,6 +11,7 @@ final readonly class MissingVariantRow
      */
     public function __construct(
         public string $groep,
+        public string $familyHead,
         public string $baseNaam,
         public string $baseAfasSku,
         public string $accessoireItemcode,
