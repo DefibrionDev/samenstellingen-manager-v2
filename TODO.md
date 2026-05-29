@@ -1097,32 +1097,43 @@ Eindbeeld: bases die binnen één groep een afwijkende hardware-variant zijn (4G
 
 Eindbeeld: CLI `variants:fix-missing [--group=<family-head>] [--apply] [--limit=N]` POST't `no_match`-varianten als nieuwe FbComposition-records met canonical naam + BOM. Default dry-run. Failures → `tmp/fix-variants-{datum}.csv`. Zie PLAN.md §20.
 
-### Sub-slice 39.0 — PoC: werkende FbComposition POST-payload
-- [ ] `tmp/poc-fb-composition-post.php`: kies één missing variant uit lage-risico groep, probeer 3-5 payload-vormen (varianten van `@VaCt`/`@ItCd`/`Fields`/BOM-lines) via `AfasHttpClient` tegen test-AFAS.
-- [ ] Identificeer minimaal vereiste velden naast `Ds` (`Itemcode_Parent`, warehouse, sync-free-fields, type_id-coupling).
-- [ ] Bevestig itemcode-strategie: accepteert AFAS onze `<baseSku>-<accessoireItemcode>`-conventie, of moet AFAS hem zelf genereren?
-- [ ] BOM-lines: in dezelfde POST (`Lines`/`Objects`) of via tweede call?
-- [ ] Resultaat: `tmp/poc-fb-composition-post-NOTES.md` met werkende JSON-snippet + bevestigingen. **Stop-gate** voor 39.1.
+### Sub-slice 39.0 — PoC: werkende FbComposition POST-payload (✅ voltooid)
+- [x] `tmp/poc-fb-composition-post.php`: 9 payload-shapes (A-I) iteratief getest tegen live AFAS.
+- [x] Minimaal vereiste velden bevestigd: `ItCd`, `Ds`, `VaCt='1'` (Explosie), `Grp`, `BiUn='STK'`, `BiSaItCd`, `VaRc='1'`, `CrId='50002'`, `CsGc`, `StPrice=0`, FF_PARENT/FF_SYNC/FF_TONEN (UUIDs).
+- [x] Itemcode-strategie bevestigd: `<baseSku>-<accessoireItemcode>` werkt als explicit `@ItCd`.
+- [x] BOM-lines: in dezelfde POST via `Objects.FbCompositionPart.Element[]` (niet `FbCompositionLine`!). Required regelvelden: `VaIt` (`"Art"`/`"Sam"` o.b.v. type_id≠7/=7), `ItCd`, `QuUn`, `Qu`, `PrSe` (positie × 10).
+- [x] DELETE-syntax bevestigd: `/connectors/FbComposition/FbComposition/ItCd/<code>` (zonder `@`).
+- [x] Live geverifieerd op 11111-60212 (NL) en 11114-60212 (DE) in groep 10013. Beide compleet met BOM + sync-flags + basis- + staffel-prijzen.
+- [x] `tmp/poc-fb-composition-post-NOTES.md` met werkende JSON-snippet, FF-UUIDs, veld-mapping, DELETE-syntax en sources.
 
 ### Sub-slice 39.1 — Domain/Application
-- [ ] `VariantFixMissingPlan` VO: `afasItemcode`, `canonicalName`, `bomItemcodes`, `familyHeadItemcode`, `baseAfasItemcode`.
+- [ ] `VariantFixMissingPlan` VO: `afasItemcode`, `canonicalName`, `bomItemcodes` (geordend), `familyHeadItemcode`, `baseAfasItemcode`, `referenceVariantItemcode` (voor `Grp`/`CsGc`-spiegel).
 - [ ] `VariantFixMissingWriter`-contract: `apply(VariantFixMissingPlan)`.
 - [ ] `InMemoryVariantFixMissingWriter` met `failOn*`-constructor-param (mirror van `InMemoryNameFixWriter`).
-- [ ] `FixMissingVariantsHandler`: leest `ListMissingVariantsHandler`-output, filtert op optioneel `--group`, applied `VariantNamingPolicy` voor canonical naam, skipt rijen zonder canonical met duidelijke foutmelding, respecteert `--limit`.
-- [ ] TDD-tests: dry-run, apply, group-filter, limit, failure-blokkeert-andere-niet.
+- [ ] `FixMissingVariantsHandler`: leest `ListMissingVariantsHandler`-output, filtert op optioneel `--group`, applied `VariantNamingPolicy` voor canonical naam, skipt rijen zonder canonical/zonder referentie-variant met duidelijke foutmelding, respecteert `--limit`. **Filter: alleen rijen waarvan suggested_sku écht niet in `afas_samenstellingen` voorkomt** (de huidige no_match-status is onbetrouwbaar — zie PoC-bevindingen).
+- [ ] TDD-tests: dry-run, apply, group-filter, limit, failure-blokkeert-andere-niet, skip-rij-zonder-canonical.
 
 ### Sub-slice 39.2 — Infrastructure (HTTP-writer)
-- [ ] `HttpFbCompositionVariantWriter` implementeert `VariantFixMissingWriter` met de in 39.0 bevestigde payload-shape.
-- [ ] Geen live-AFAS in tests — alleen contract-check op de payload-builder met PHPUnit assertions over de uitgaande body-structuur.
+- [ ] `HttpFbCompositionVariantWriter` implementeert `VariantFixMissingWriter` met de PoC-payload. Spiegelt `Grp`/`CsGc` per groep uit een referentie-variant.
+- [ ] `ReferenceVariantLookup`-service: voor een groep, vind een bestaande matched variant in afas_samenstellingen om `Grp` en `CsGc` van over te nemen.
+- [ ] Mapping `VaIt='Art'/'Sam'` via `easylinq_stock_item.type_id` (= 7 → Sam, anders Art) — cache per run.
+- [ ] Contract-test op de payload-builder met PHPUnit-asserts over de body-structuur. Geen live AFAS.
 - [ ] PHPStan groen.
 
 ### Sub-slice 39.3 — CLI + wiring
-- [ ] `variants:fix-missing [--group=<family-head>] [--apply] [--limit=N]`. Default dry-run met diff-tabel (Base | Accessoire | Suggested SKU | Canonical naam).
+- [ ] `variants:fix-missing [--group=<family-head>] [--apply] [--limit=N] [--skip-prices]`. Default dry-run met tabel (Base | Accessoire | Suggested SKU | Canonical naam | BOM-count).
 - [ ] Failures → `tmp/fix-variants-{datum}.csv` (mirror `names:fix-drift`).
+- [ ] Output toont expliciete instructie "Draai nu `afas:pull && prices:fix-missing --apply`" als `--skip-prices` aanstaat of als de chained-prijs-flow nog niet in 39.4 zit.
 - [ ] Wire in `bin/samenstellingen` (handler + writer + command).
 
-### Sub-slice 39.4 — Live verificatie
-- [ ] `--apply --limit=1` voor één laag-risico groep. Verifieer itemcode in AFAS (Profit + GetConnector pull).
+### Sub-slice 39.4 — Chained prijs-integratie
+- [ ] Na succesvolle variant-POST: targeted-refresh van `afas_articles` + `afas_samenstellingen` voor net-ingevoegde itemcodes (geen volle pull).
+- [ ] Invoke bestaande `FixPriceMissingHandler` gefilterd op diezelfde itemcodes.
+- [ ] CLI-output toont per variant: "✓ variant + N prijzen (incl. M staffels)".
+- [ ] TDD: handler-test dat variants en prijzen samen geapplied worden, en dat `--skip-prices` de tweede stap netjes overslaat.
+
+### Sub-slice 39.5 — Live verificatie
+- [ ] `--apply --limit=1` voor één laag-risico groep. Verifieer itemcode + BOM + prijzen in AFAS (Profit + lokale snapshot na pull).
 - [ ] `audit:export-missing` herdraait → die rij is weg.
 - [ ] Daarna grotere `--limit=N` per groep. CSV met failures bewaren in `tmp/`.
 

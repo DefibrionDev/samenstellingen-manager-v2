@@ -829,10 +829,61 @@ Mirror van `prices:fix-missing` (slice 31):
 - **Test-strategie:** InMemory-fake voor writer + audit-handler. Round-trip in-memory; live verificatie in laatste sub-slice op `--limit=1`.
 - **Faalmodi:** AFAS rejected POST (logged + CSV), base bestaat niet meer in AFAS (skip + warning), canonical-naam mist (skip + warning, verwijst naar `set-model-naam` / `set-naam-kort`-CLI).
 
-### Slices
+### PoC-resultaten (39.0 — voltooid 2026-05-29)
 
-- **Slice 39.0 (PoC)** — `tmp/poc-fb-composition-post.php`: probeer payload-shapes tegen één geselecteerde variant. Resultaat in `tmp/poc-fb-composition-post-NOTES.md`. **Stop-gate:** geen verdere slices voordat dit werkt.
-- **Slice 39.1** — Domain/Application: `VariantFixMissingPlan`, `VariantFixMissingWriter`-contract, `InMemoryVariantFixMissingWriter`, `FixMissingVariants`-handler. TDD met dry-run/apply/limit/failure-paths.
-- **Slice 39.2** — Infrastructure: `HttpFbCompositionVariantWriter` met de PoC-payload. Geen tests die live AFAS hitten — alleen contract-check op de payload-builder.
-- **Slice 39.3** — CLI `variants:fix-missing [--group=<fh>] [--apply] [--limit=N]`. Failures → `tmp/fix-variants-{datum}.csv`. Wire in `bin/samenstellingen`.
-- **Slice 39.4** — Live verificatie op `--limit=1` voor één groep. Daarna `audit:export-missing` herdraait → rij weg. Pas dan grotere `--limit=N`.
+Live geverifieerd op twee echte missing varianten in groep 10013 (AED Samaritan PAD 350P):
+- `11111-60212` (NL) — naam + 5/5 BOM-regels + 2 basis-prijzen
+- `11114-60212` (DE) — naam + 5/5 BOM-regels + 3 basis-prijzen + **2 staffel-prijzen** (lijst 026 @10 en @25 stuks)
+
+**Werkende POST-payload** (zie `tmp/poc-fb-composition-post-NOTES.md` voor de volledige JSON):
+
+Required velden:
+- `ItCd` + `@ItCd` (composite key)
+- `Ds` (canonical naam uit `VariantNamingPolicy`)
+- FF_PARENT (UUID `U298663…` = `Itemcode_Parent`), met family-head als value
+- FF_SYNC + FF_TONEN (UUID's) op `true` zodat de variant in de webshop verschijnt
+- `VaCt = "1"` (Type samenstelling = Explosie — onze AED-pakketten zijn altijd Explosie)
+- `Grp` (Artikelgroep — uit referentie-variant in dezelfde groep)
+- `BiUn = "STK"` (Basiseenheid — constant voor onze pakketten)
+- `BiSaItCd` = ItCd (Itemcode verkoop = de variant zelf)
+- `VaRc = "1"` (Tariefgroep BTW 21% NL)
+- `CrId = "50002"` (Inkooprelatie Defibrion)
+- `CsGc` (CBS-goederencode — uit referentie-AED-artikel zoals 10111/10114)
+- `StPrice = 0` (Verrekenprijs — virtuele samenstelling)
+- `Objects.FbCompositionPart.Element[]` — BOM-regels met `VaIt` (`"Art"` voor type_id≠7, `"Sam"` voor type_id=7), `ItCd`, `QuUn`, `Qu`, `PrSe` (= positie × 10)
+
+**DELETE-syntax** (voor cleanup of revert):
+```
+DELETE /connectors/FbComposition/FbComposition/ItCd/<code>
+```
+
+**Prijzen + staffels worden NIET door deze POST gedekt.** Bestaande `prices:fix-missing` (slice 31, staffel-aware sinds 32.5) doet dat via FbSalesPrice — chained na de variant-POST. PoC bewees dat dit end-to-end klopt.
+
+### Scope-update: chained variants + prices
+
+Op verzoek van user: `variants:fix-missing` moet **gelijk ook de prijzen goed zetten**. Twee stappen in één CLI:
+
+1. POST FbComposition (deze slice) — variant + naam + BOM + sync-flags.
+2. Direct erna: gebruik de bestaande `FixPriceMissingHandler` om basis + staffels in alle relevante prijslijsten te insertten.
+
+Dit voorkomt dat de gebruiker twee commando's moet draaien en een tussen-`afas:pull` (de prijs-handler werkt op snapshot-data — moet refresh tussendoor of in-memory door-handlen wat we net gepost hebben).
+
+**Optie A — Echt chained, twee fasen in handler:**
+- Stap 1: POST varianten + verzamel succesvol ingevoegde itemcodes.
+- Stap 2: refresh `afas_articles` + `afas_samenstellingen` voor die itemcodes (bij voorkeur targeted, niet volle pull) zodat `FixPriceMissingHandler` ze ziet.
+- Stap 3: invoke `FixPriceMissingHandler` voor diezelfde itemcodes.
+
+**Optie B — Simpeler, gedocumenteerd 2-staps gebruik:**
+- `variants:fix-missing --apply` doet alleen POST.
+- CLI-output zegt expliciet: "Run nu `afas:pull && prices:fix-missing --apply` voor prijzen".
+
+Voorkeur: **optie A** (chained), maar met `--skip-prices`-flag als ontsnapping voor edge cases. Optie B wordt opgenomen voor de eerste sub-slice (39.3) als veiligheidsventiel, optie A als 39.4-uitbreiding.
+
+### Slices (geüpdatet)
+
+- **Slice 39.0 (PoC)** — ✅ Voltooid 2026-05-29. Werkende payload + chained-prijs-flow bewezen op 11111-60212 en 11114-60212. `tmp/poc-fb-composition-post.php` + `tmp/poc-fb-composition-post-NOTES.md`.
+- **Slice 39.1** — Domain/Application: `VariantFixMissingPlan`, `VariantFixMissingWriter`-contract, `InMemoryVariantFixMissingWriter`, `FixMissingVariants`-handler met `--group`-filter en `--limit`. TDD met dry-run/apply/limit/failure-paths.
+- **Slice 39.2** — Infrastructure: `HttpFbCompositionVariantWriter` met de PoC-payload. Spiegelt `Grp`/`CsGc` per groep uit een referentie-variant (bestaande matched in dezelfde groep). Contract-test op de payload-builder, geen live AFAS in tests.
+- **Slice 39.3** — CLI `variants:fix-missing [--group=<fh>] [--apply] [--limit=N] [--skip-prices]`. Default dry-run met tabel (Base | Accessoire | Suggested SKU | Canonical naam | BOM-count). Failures → `tmp/fix-variants-{datum}.csv`. Output toont "draai nu prices:fix-missing" als `--skip-prices` aanstaat.
+- **Slice 39.4** — Chained-prijs-integratie: na succesvolle variant-POST, refresh targeted snapshot voor die itemcodes, invoke `FixPriceMissingHandler` voor diezelfde codes. Tests verifiëren dat staffels meekomen.
+- **Slice 39.5** — Live verificatie op `--limit=1` voor één groep. Daarna `audit:export-missing` herdraait → rij weg + prijzen erin. Pas dan grotere `--limit=N`.
