@@ -66,6 +66,27 @@ final class FixPriceMissingHandlerTest extends TestCase
         self::assertSame([], $bag['writer']->applied); // geen updates
     }
 
+    #[Test]
+    public function filtersToOnlyGivenItemcodes(): void
+    {
+        $bag = $this->wiringWithTwoMissingVariants();
+
+        $result = ($bag['handler'])(new FixPriceMissing(apply: false, onlyForVariantItemcodes: ['11142-60110']));
+
+        self::assertCount(1, $result->plans);
+        self::assertSame('11142-60110', $result->plans[0]->variantItemcode);
+    }
+
+    #[Test]
+    public function emptyFilterListSelectsNoVariants(): void
+    {
+        $bag = $this->wiringWithTwoMissingVariants();
+
+        $result = ($bag['handler'])(new FixPriceMissing(apply: false, onlyForVariantItemcodes: []));
+
+        self::assertSame([], $result->plans);
+    }
+
     /**
      * @return array{
      *   handler: FixPriceMissingHandler,
@@ -73,7 +94,26 @@ final class FixPriceMissingHandlerTest extends TestCase
      *   articles: InMemoryAfasArticleRepository
      * }
      */
-    private function wiring(): array
+    private function wiringWithTwoMissingVariants(): array
+    {
+        $bag = $this->wiring(extraAccessoireItemcodes: ['60112']);
+        $bag['articles']->replaceSnapshot([
+            new AfasArticle('11142-60110', 'Variant 1'),
+            new AfasArticle('11142-60112', 'Variant 2'),
+        ]);
+
+        return $bag;
+    }
+
+    /**
+     * @param list<string> $extraAccessoireItemcodes
+     * @return array{
+     *   handler: FixPriceMissingHandler,
+     *   writer: InMemoryPriceFixWriter,
+     *   articles: InMemoryAfasArticleRepository
+     * }
+     */
+    private function wiring(array $extraAccessoireItemcodes = []): array
     {
         $groups = new InMemoryGroupRepository();
         $bases = new InMemoryGroupBaseRepository($groups);
@@ -90,6 +130,10 @@ final class FixPriceMissingHandlerTest extends TestCase
         $bases->saveForGroup('52112', new GroupBase(null, 'Base NL', 'NL', '11142'));
         $accessoires->save(new Accessoire('60110', 'Rugzak', 2500));
         $links->link('52112', '60110');
+        foreach ($extraAccessoireItemcodes as $extra) {
+            $accessoires->save(new Accessoire($extra, 'Extra ' . $extra, 2500));
+            $links->link('52112', $extra);
+        }
 
         // Base heeft prijs in *****, variant NIET → missing
         $prijzen->replaceSnapshot([

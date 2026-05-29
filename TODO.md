@@ -1129,11 +1129,12 @@ Eindbeeld: CLI `variants:fix-missing [--group=<family-head>] [--apply] [--limit=
 - [x] Wire in `bin/samenstellingen` (handler + HTTP-writer + payload-builder + lookup + command).
 - [x] Smoke: dry-run op groep 10013 toont 2 echte missing (11112-60212 FR + 11113-60212 UK).
 
-### Sub-slice 39.4 — Chained prijs-integratie
-- [ ] Na succesvolle variant-POST: targeted-refresh van `afas_articles` + `afas_samenstellingen` voor net-ingevoegde itemcodes (geen volle pull).
-- [ ] Invoke bestaande `FixPriceMissingHandler` gefilterd op diezelfde itemcodes.
-- [ ] CLI-output toont per variant: "✓ variant + N prijzen (incl. M staffels)".
-- [ ] TDD: handler-test dat variants en prijzen samen geapplied worden, en dat `--skip-prices` de tweede stap netjes overslaat.
+### Sub-slice 39.4 — Chained prijs-integratie ✅
+- [x] `VariantSnapshotRefresher`-interface + HTTP-impl (`PullAfasVariantSnapshotRefresher` roept de bestaande `afas:pull` aan — niet targeted, ~30s per run; acceptabel voor typische `--limit=N`-rollouts).
+- [x] `FixPriceMissing` + handler krijgen `?onlyForVariantItemcodes`-filter (null = alle, lege array = geen).
+- [x] `FixMissingVariantsWithPricesHandler` orchestreert POST → refresh → scoped prices-fix. Slaat refresh + prices over bij dry-run, `--skip-prices` of geen-applied.
+- [x] CLI `--skip-prices`-flag + nieuwe sectie "Chained prijzen" met basis/staffel-tabel na variants.
+- [x] 4 nieuwe handler-tests (dry-run skip, chained apply, skip-prices, geen-applied).
 
 ### Sub-slice 39.5 — Live verificatie
 - [ ] `--apply --limit=1` voor één laag-risico groep. Verifieer itemcode + BOM + prijzen in AFAS (Profit + lokale snapshot na pull).

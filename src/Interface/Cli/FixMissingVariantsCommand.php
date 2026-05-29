@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Defibrion\Samenstellingen\Interface\Cli;
 
 use Defibrion\Samenstellingen\Application\Fix\FixMissingVariants;
-use Defibrion\Samenstellingen\Application\Fix\FixMissingVariantsHandler;
+use Defibrion\Samenstellingen\Application\Fix\FixMissingVariantsWithPricesHandler;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -19,7 +19,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 )]
 final class FixMissingVariantsCommand extends Command
 {
-    public function __construct(private readonly FixMissingVariantsHandler $handler)
+    public function __construct(private readonly FixMissingVariantsWithPricesHandler $handler)
     {
         parent::__construct();
     }
@@ -29,7 +29,8 @@ final class FixMissingVariantsCommand extends Command
         $this
             ->addOption('apply', null, InputOption::VALUE_NONE, 'Echt POST naar AFAS. Default = dry-run.')
             ->addOption('group', null, InputOption::VALUE_REQUIRED, 'Beperk tot één groep (family-head itemcode).')
-            ->addOption('limit', null, InputOption::VALUE_REQUIRED, 'Beperk tot N missende variants.', '0');
+            ->addOption('limit', null, InputOption::VALUE_REQUIRED, 'Beperk tot N missende variants.', '0')
+            ->addOption('skip-prices', null, InputOption::VALUE_NONE, 'Sla automatische prijs-insert over na variant-POST.');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -37,14 +38,17 @@ final class FixMissingVariantsCommand extends Command
         $io = new SymfonyStyle($input, $output);
         $apply = (bool) $input->getOption('apply');
         $limit = (int) $input->getOption('limit');
+        $skipPrices = (bool) $input->getOption('skip-prices');
         $groupOption = $input->getOption('group');
         $group = is_string($groupOption) && $groupOption !== '' ? $groupOption : null;
 
-        $result = ($this->handler)(new FixMissingVariants(
+        $chained = ($this->handler)(new FixMissingVariants(
             apply: $apply,
             familyHeadItemcode: $group,
             limit: $limit > 0 ? $limit : null,
+            skipPrices: $skipPrices,
         ));
+        $result = $chained->variants;
 
         if ($result->skipped !== []) {
             $io->section(sprintf('%d overgeslagen', count($result->skipped)));
@@ -74,8 +78,7 @@ final class FixMissingVariantsCommand extends Command
         $io->table(['Itemcode', 'Canonical naam', 'BOM-items', 'Family-head'], $rows);
 
         if (!$apply) {
-            $io->writeln('<comment>Dry-run — geen AFAS-mutaties. Run met --apply om echt te POSTen.</comment>');
-            $io->writeln('<comment>Tip: draai daarna `afas:pull && prices:fix-missing --apply` voor prijzen + staffels.</comment>');
+            $io->writeln('<comment>Dry-run — geen AFAS-mutaties. Run met --apply om varianten + prijzen chained te POSTen.</comment>');
 
             return Command::SUCCESS;
         }
@@ -105,9 +108,30 @@ final class FixMissingVariantsCommand extends Command
             }
         }
 
-        if ($result->appliedCount > 0) {
+        if ($chained->prices !== null) {
             $io->writeln('');
-            $io->writeln('<comment>Volgende stap: `bin/samenstellingen afas:pull && bin/samenstellingen prices:fix-missing --apply` voor prijzen + staffels.</comment>');
+            $io->section(sprintf('Chained prijzen (na refresh) — %d basis/staffel-prijzen', count($chained->prices->plans)));
+            if ($chained->prices->plans !== []) {
+                $priceRows = [];
+                foreach ($chained->prices->plans as $p) {
+                    $priceRows[] = [
+                        $p->variantItemcode,
+                        $p->prijslijstId,
+                        $p->staffelAantal === null ? 'basis' : (string) $p->staffelAantal,
+                        sprintf('€ %.2f', $p->targetCents / 100),
+                        $p->beginDate,
+                    ];
+                }
+                $io->table(['Variant', 'Lijst', 'Aantal', 'Prijs', 'Begindatum'], $priceRows);
+                $io->writeln(sprintf(
+                    '<info>%d prijzen ingevoegd</info>, <comment>%d gefaald</comment>.',
+                    $chained->prices->appliedCount,
+                    count($chained->prices->failures),
+                ));
+            }
+        } elseif ($result->appliedCount > 0 && $skipPrices) {
+            $io->writeln('');
+            $io->writeln('<comment>--skip-prices actief — draai handmatig `afas:pull && prices:fix-missing --apply` voor prijzen.</comment>');
         }
 
         return $result->failures === [] ? Command::SUCCESS : Command::FAILURE;

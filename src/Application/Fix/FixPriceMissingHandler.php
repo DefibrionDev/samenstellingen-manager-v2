@@ -38,6 +38,14 @@ final readonly class FixPriceMissingHandler
             static fn ($row): bool => $row->status === 'missing',
         ));
 
+        if ($command->onlyForVariantItemcodes !== null) {
+            $allowed = array_flip($command->onlyForVariantItemcodes);
+            $missingRows = array_values(array_filter(
+                $missingRows,
+                static fn ($row): bool => isset($allowed[$row->variantAfasItemcode]),
+            ));
+        }
+
         $plans = [];
         $skippedNoArticle = [];
         foreach ($missingRows as $row) {

@@ -10,6 +10,7 @@ final readonly class FixMissingVariants
         public bool $apply = false,
         public ?string $familyHeadItemcode = null,
         public ?int $limit = null,
+        public bool $skipPrices = false,
     ) {
     }
 }

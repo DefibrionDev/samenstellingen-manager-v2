@@ -59,6 +59,7 @@ use Defibrion\Samenstellingen\Interface\Cli\UnwhitelistPrijslijstCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AuditNamesCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AuditDuplicateBomsCommand;
 use Defibrion\Samenstellingen\Application\Fix\FixMissingVariantsHandler;
+use Defibrion\Samenstellingen\Application\Fix\FixMissingVariantsWithPricesHandler;
 use Defibrion\Samenstellingen\Application\Fix\FixNamesHandler;
 use Defibrion\Samenstellingen\Application\Fix\FixPriceDriftHandler;
 use Defibrion\Samenstellingen\Application\Fix\FixPriceMissingHandler;
@@ -66,6 +67,7 @@ use Defibrion\Samenstellingen\Infrastructure\Fix\FbCompositionVariantPayloadBuil
 use Defibrion\Samenstellingen\Infrastructure\Fix\HttpFbCompositionNameWriter;
 use Defibrion\Samenstellingen\Infrastructure\Fix\HttpFbCompositionVariantWriter;
 use Defibrion\Samenstellingen\Infrastructure\Fix\HttpVariantWriteContextLookup;
+use Defibrion\Samenstellingen\Infrastructure\Fix\PullAfasVariantSnapshotRefresher;
 use Defibrion\Samenstellingen\Infrastructure\Fix\HttpFbSalesPriceWriter;
 use Defibrion\Samenstellingen\Infrastructure\Fix\HttpGetPrijzenBeginDateLookup;
 use Defibrion\Samenstellingen\Interface\Cli\AuditPricesCommand;
@@ -291,7 +293,13 @@ if ($hasAfasCreds) {
         new VariantNamingPolicy(),
         $variantWriter,
     );
-    $application->addCommand(new FixMissingVariantsCommand($fixMissingVariantsHandler));
+    $variantSnapshotRefresher = new PullAfasVariantSnapshotRefresher($pullHandler);
+    $fixMissingVariantsWithPricesHandler = new FixMissingVariantsWithPricesHandler(
+        $fixMissingVariantsHandler,
+        $variantSnapshotRefresher,
+        $fixPriceMissingHandler,
+    );
+    $application->addCommand(new FixMissingVariantsCommand($fixMissingVariantsWithPricesHandler));
 }
 
 exit($application->run());
