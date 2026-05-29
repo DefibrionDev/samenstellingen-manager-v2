@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Alert, Skeleton, Stack, Tooltip, Typography } from '@mui/material';
+import { Alert, Chip, Skeleton, Stack, Tooltip, Typography } from '@mui/material';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { DataGrid, GridColDef, GridRowParams } from '@mui/x-data-grid';
 import { useNavigate } from 'react-router-dom';
@@ -25,6 +25,23 @@ const columns: GridColDef<GroupSummary>[] = [
   },
   { field: 'baseCount', headerName: 'Bases', type: 'number', width: 100 },
   { field: 'baseItemCount', headerName: 'BOM-items', type: 'number', width: 120 },
+  {
+    field: 'missingVariantCount',
+    headerName: 'Missend',
+    type: 'number',
+    width: 110,
+    renderCell: (params) => {
+      const count = (params.value as number) ?? 0;
+      if (count === 0) {
+        return <span style={{ color: 'rgba(0,0,0,0.4)' }}>0</span>;
+      }
+      return (
+        <Tooltip title={`${count} variant(en) ontbreken nog in AFAS — fix via \`variants:fix-missing --group=${params.row.familyHead} --apply\``}>
+          <Chip label={count} size="small" color="warning" />
+        </Tooltip>
+      );
+    },
+  },
 ];
 
 export function GroupsList() {

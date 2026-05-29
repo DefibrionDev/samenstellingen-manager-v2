@@ -21,8 +21,8 @@ beforeEach(() => {
       status: 200,
       statusText: 'OK',
       json: async () => [
-        { name: 'Reanibex 100 Semi-Auto', familyHead: '52112', baseCount: 3, baseItemCount: 12, familyHeadIsBase: true, modelNameNl: 'Reanibex 100', modelNameFr: null, modelNameEn: null },
-        { name: 'Lifepak CR2', familyHead: '11161', baseCount: 5, baseItemCount: 20, familyHeadIsBase: false, modelNameNl: null, modelNameFr: null, modelNameEn: null },
+        { name: 'Reanibex 100 Semi-Auto', familyHead: '52112', baseCount: 3, baseItemCount: 12, familyHeadIsBase: true, missingVariantCount: 0, modelNameNl: 'Reanibex 100', modelNameFr: null, modelNameEn: null },
+        { name: 'Lifepak CR2', familyHead: '11161', baseCount: 5, baseItemCount: 20, familyHeadIsBase: false, missingVariantCount: 42, modelNameNl: null, modelNameFr: null, modelNameEn: null },
       ],
     })),
   );
@@ -40,4 +40,13 @@ test('toont de geladen groepen in een tabel', async () => {
   });
   expect(screen.getByText('Lifepak CR2')).toBeInTheDocument();
   expect(screen.getByText('52112')).toBeInTheDocument();
+});
+
+test('toont missend-variant count als chip wanneer > 0', async () => {
+  renderWithProviders(<GroupsList />);
+
+  await waitFor(() => expect(screen.getByText('Lifepak CR2')).toBeInTheDocument());
+  // 42 is missing-count voor Lifepak CR2; 0 voor Reanibex
+  expect(screen.getByText('42')).toBeInTheDocument();
+  expect(screen.getByText('0')).toBeInTheDocument();
 });

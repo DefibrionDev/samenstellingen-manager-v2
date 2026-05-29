@@ -4,6 +4,7 @@ export interface GroupSummary {
   baseCount: number;
   baseItemCount: number;
   familyHeadIsBase: boolean;
+  missingVariantCount: number;
   modelNameNl: string | null;
   modelNameFr: string | null;
   modelNameEn: string | null;

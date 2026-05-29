@@ -32,6 +32,12 @@ final class AppFactory
             $container->groupRepository(),
             $container->baseRepository(),
             $container->baseItemRepository(),
+            new ListMissingVariantsHandler(
+                $container->groupRepository(),
+                $container->variantRepository(),
+                $container->baseItemRepository(),
+            ),
+            $container->afasSamenstellingenRepository(),
         );
         $showGroup = new ShowGroupController(
             $container->groupRepository(),
