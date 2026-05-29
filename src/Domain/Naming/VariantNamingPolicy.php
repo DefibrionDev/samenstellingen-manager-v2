@@ -50,10 +50,14 @@ final readonly class VariantNamingPolicy
             ));
         }
 
+        $modelWithLabel = $base->variantLabel !== null
+            ? sprintf('%s %s', $modelName, $base->variantLabel)
+            : $modelName;
+
         if ($accessoire === null) {
             return $taalBucket === 'fr'
-                ? sprintf('Pack DAE: %s %s', $modelName, $langSuffix)
-                : sprintf('AED Pakket: %s %s', $modelName, $langSuffix);
+                ? sprintf('Pack DAE: %s %s', $modelWithLabel, $langSuffix)
+                : sprintf('AED Pakket: %s %s', $modelWithLabel, $langSuffix);
         }
 
         $accessoireNaam = $accessoire->naamKort($taalBucket);
@@ -68,8 +72,8 @@ final readonly class VariantNamingPolicy
         }
 
         return $taalBucket === 'fr'
-            ? sprintf('Pack DAE: %s %s avec %s', $modelName, $langSuffix, $accessoireNaam)
-            : sprintf('AED Pakket: %s %s met %s', $modelName, $langSuffix, $accessoireNaam);
+            ? sprintf('Pack DAE: %s %s avec %s', $modelWithLabel, $langSuffix, $accessoireNaam)
+            : sprintf('AED Pakket: %s %s met %s', $modelWithLabel, $langSuffix, $accessoireNaam);
     }
 
     private function firstLanguageToken(string $languageCode): string

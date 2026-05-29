@@ -23,14 +23,15 @@ final readonly class SqliteGroupBaseRepository implements GroupBaseRepository
 
         try {
             $stmt = $this->pdo->prepare(
-                'INSERT INTO group_bases (group_id, name, language_code, afas_itemcode)
-                 VALUES (:group_id, :name, :language_code, :afas_itemcode)'
+                'INSERT INTO group_bases (group_id, name, language_code, afas_itemcode, variant_label)
+                 VALUES (:group_id, :name, :language_code, :afas_itemcode, :variant_label)'
             );
             $stmt->execute([
                 ':group_id' => $groupId,
                 ':name' => $base->name,
                 ':language_code' => $base->languageCode,
                 ':afas_itemcode' => $base->afasItemcode,
+                ':variant_label' => $base->variantLabel,
             ]);
         } catch (PDOException $e) {
             if (
@@ -48,7 +49,7 @@ final readonly class SqliteGroupBaseRepository implements GroupBaseRepository
     public function findById(int $baseId): ?GroupBase
     {
         $stmt = $this->pdo->prepare(
-            'SELECT id, name, language_code, afas_itemcode FROM group_bases WHERE id = :id'
+            'SELECT id, name, language_code, afas_itemcode, variant_label FROM group_bases WHERE id = :id'
         );
         $stmt->execute([':id' => $baseId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -61,7 +62,7 @@ final readonly class SqliteGroupBaseRepository implements GroupBaseRepository
         $groupId = $this->resolveGroupId($familyHeadItemcode);
 
         $stmt = $this->pdo->prepare(
-            'SELECT id, name, language_code, afas_itemcode FROM group_bases WHERE group_id = :group_id ORDER BY id'
+            'SELECT id, name, language_code, afas_itemcode, variant_label FROM group_bases WHERE group_id = :group_id ORDER BY id'
         );
         $stmt->execute([':group_id' => $groupId]);
 
@@ -83,6 +84,21 @@ final readonly class SqliteGroupBaseRepository implements GroupBaseRepository
     {
         $stmt = $this->pdo->prepare('DELETE FROM group_bases WHERE id = :id');
         $stmt->execute([':id' => $baseId]);
+    }
+
+    public function setVariantLabelByAfasItemcode(string $afasItemcode, ?string $variantLabel): int
+    {
+        $normalized = $variantLabel !== null ? trim($variantLabel) : null;
+        if ($normalized === '') {
+            $normalized = null;
+        }
+
+        $stmt = $this->pdo->prepare(
+            'UPDATE group_bases SET variant_label = :label WHERE afas_itemcode = :code'
+        );
+        $stmt->execute([':label' => $normalized, ':code' => $afasItemcode]);
+
+        return $stmt->rowCount();
     }
 
     public function findFamilyHeadForBase(int $baseId): ?string
@@ -134,7 +150,10 @@ final readonly class SqliteGroupBaseRepository implements GroupBaseRepository
         $afasRaw = $row['afas_itemcode'] ?? null;
         $afas = is_string($afasRaw) ? $afasRaw : null;
 
-        return new GroupBase($id, $name, $language, $afas);
+        $labelRaw = $row['variant_label'] ?? null;
+        $label = is_string($labelRaw) ? $labelRaw : null;
+
+        return new GroupBase($id, $name, $language, $afas, $label);
     }
 
     private function resolveGroupId(string $familyHeadItemcode): int

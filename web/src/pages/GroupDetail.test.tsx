@@ -46,10 +46,19 @@ beforeEach(() => {
               name: 'AED pakket NL',
               languageCode: 'NL',
               afasItemcode: '11142',
+              variantLabel: null,
               items: [
                 { itemcode: '50013', label: 'AED NL' },
                 { itemcode: '70112', label: 'Reanimatiekit' },
               ],
+            },
+            {
+              id: 2,
+              name: 'AED pakket DE 4G',
+              languageCode: 'DE',
+              afasItemcode: '21018-DE',
+              variantLabel: '4G',
+              items: [{ itemcode: '50014', label: 'AED DE' }],
             },
           ],
         }),
@@ -75,4 +84,12 @@ test('toont base als accordion met afas-itemcode en klapt items uit', async () =
   await waitFor(() => expect(screen.getByText('50013')).toBeInTheDocument());
   expect(screen.getByText('AED NL')).toBeInTheDocument();
   expect(screen.getByText('70112')).toBeInTheDocument();
+});
+
+test('toont variantLabel als outlined chip naast de base met label', async () => {
+  renderAt('/groups/52112');
+
+  await waitFor(() => expect(screen.getByText('AED pakket DE 4G')).toBeInTheDocument());
+  // Label-chip "4G" hoort alleen bij de DE-base te staan, niet bij de NL-base.
+  expect(screen.getByText('4G')).toBeInTheDocument();
 });

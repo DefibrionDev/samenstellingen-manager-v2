@@ -1065,6 +1065,34 @@ Eindbeeld: drie canonical templates (NL/FR/EN), per-accessoire en per-groep mult
 
 ---
 
+## Slice 38 — Variant-label per base (4G / USB / WiFi / 3G in canonical)
+
+Eindbeeld: bases die binnen één groep een afwijkende hardware-variant zijn (4G-radio bij Mindray, WiFi/USB/3G bij LIFEPAK) krijgen een `variant_label` dat tussen `<model>` en `<taal-suffix>` in de canonical-naam komt. Zonder label blijft de naam-generatie 1-op-1 als nu. Zie PLAN.md §19.
+
+### Sub-slice 38.0 — Schema + repository
+- [x] Migratie `0020_group_base_variant_label.sql`: `ALTER TABLE group_bases ADD COLUMN variant_label TEXT NULL`.
+- [x] `GroupBase` VO: optionele `?string $variantLabel`-parameter (default `null`).
+- [x] `SqliteGroupBaseRepository`: SELECT/INSERT leest + schrijft `variant_label`.
+- [x] `InMemoryGroupBaseRepository`: zelfde gedrag via `withId()`.
+- [x] Contract-tests: round-trip null/value + 0-rijen-pad.
+
+### Sub-slice 38.1 — Policy gebruikt label
+- [x] `VariantNamingPolicy`: leest `$base->variantLabel`. Niet-leeg → `<label>` tussen `<model>` en `<suffix>`.
+- [x] Data-provider-tests: NL/FR base met label, label + accessoire, label + compound taal, lege string == null.
+- [x] Bestaande policy-tests blijven groen.
+
+### Sub-slice 38.2 — CLI invoer + UI-chip
+- [x] CLI `base:set-variant-label <afas_itemcode> <label>` — lege string clear. Repo-methode `setVariantLabelByAfasItemcode` updatet alle matchende bases.
+- [x] HTTP-API: `ShowGroupController` exposeert `variantLabel` per base.
+- [x] UI: outlined MUI-chip op `GroupDetail` naast taal-chip wanneer label gezet is. Vitest-regressie-test.
+
+### Sub-slice 38.3 — Live backfill + verificatie
+- [x] `tmp/seed-variant-labels.sh`: Mindray 21018-FR/UK/DE → `4G`; LIFEPAK 11141/42/44/56/64/66 → `WiFi`; 11153/54 → `3G`; 11161/62 → `USB`.
+- [x] `audit:names` herdraait — canonical-namen tonen nu het label (4G/WiFi/3G/USB) tussen model en suffix.
+- [x] Sanity-check Mindray-groep 21011: 4G-bases (DE/FR/UK) en niet-4G-bases (21011/21019/21021) produceren geen identieke namen meer.
+
+---
+
 ## Slice 20 — Reconciliation in portal-CSV-import (vervang wipe)
 
 Eindbeeld: portal-CSV-import is idempotent. Bestaande groepen behouden hun `model_name` en `group_accessoires` over imports heen; alleen groepen die niet meer in de CSV staan worden opgeruimd. Geen `ToolDataWiper` meer in de import-flow.

@@ -110,6 +110,74 @@ abstract class GroupBaseRepositoryContractTestCase extends TestCase
     }
 
     #[Test]
+    public function roundTripsVariantLabel(): void
+    {
+        $persisted = $this->bases->saveForGroup(
+            '52112',
+            new GroupBase(null, 'AED pakket 4G NL', 'NL', '21018-DE', '4G'),
+        );
+
+        self::assertSame('4G', $persisted->variantLabel);
+        self::assertNotNull($persisted->id);
+
+        $found = $this->bases->findById($persisted->id);
+        self::assertNotNull($found);
+        self::assertSame('4G', $found->variantLabel);
+    }
+
+    #[Test]
+    public function variantLabelDefaultsToNull(): void
+    {
+        $persisted = $this->bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL', 'NL'));
+
+        self::assertNull($persisted->variantLabel);
+        self::assertNotNull($persisted->id);
+
+        $found = $this->bases->findById($persisted->id);
+        self::assertNotNull($found);
+        self::assertNull($found->variantLabel);
+    }
+
+    #[Test]
+    public function setVariantLabelByAfasItemcodeUpdatesAndReturnsCount(): void
+    {
+        $persisted = $this->bases->saveForGroup(
+            '52112',
+            new GroupBase(null, 'AED pakket NL', 'NL', '21018-DE'),
+        );
+        self::assertNotNull($persisted->id);
+
+        $updated = $this->bases->setVariantLabelByAfasItemcode('21018-DE', '4G');
+        self::assertSame(1, $updated);
+
+        $found = $this->bases->findById($persisted->id);
+        self::assertNotNull($found);
+        self::assertSame('4G', $found->variantLabel);
+    }
+
+    #[Test]
+    public function setVariantLabelByAfasItemcodeClearsWithNull(): void
+    {
+        $persisted = $this->bases->saveForGroup(
+            '52112',
+            new GroupBase(null, 'AED pakket NL', 'NL', '21018-DE', '4G'),
+        );
+        self::assertNotNull($persisted->id);
+
+        $this->bases->setVariantLabelByAfasItemcode('21018-DE', null);
+
+        $found = $this->bases->findById($persisted->id);
+        self::assertNotNull($found);
+        self::assertNull($found->variantLabel);
+    }
+
+    #[Test]
+    public function setVariantLabelByAfasItemcodeReturnsZeroForUnknownCode(): void
+    {
+        self::assertSame(0, $this->bases->setVariantLabelByAfasItemcode('99999', '4G'));
+    }
+
+    #[Test]
     public function findAllAfasItemcodesReturnsOnlyNonNullValues(): void
     {
         $this->bases->saveForGroup('52112', new GroupBase(null, 'AED NL', 'NL', '52112'));

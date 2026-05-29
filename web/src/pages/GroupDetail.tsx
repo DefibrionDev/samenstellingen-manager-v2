@@ -120,6 +120,9 @@ function BasesTab({ bases }: { bases: GroupDetailType['bases'] }) {
                 </Typography>
               )}
               <Typography sx={{ flexGrow: 1 }}>{base.name}</Typography>
+              {base.variantLabel && (
+                <Chip label={base.variantLabel} size="small" variant="outlined" />
+              )}
               <Chip label={base.languageCode} size="small" />
               <Typography variant="caption" color="text.secondary">
                 {base.items.length} items

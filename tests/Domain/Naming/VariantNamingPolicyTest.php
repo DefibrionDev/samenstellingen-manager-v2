@@ -133,6 +133,67 @@ final class VariantNamingPolicyTest extends TestCase
     }
 
     #[Test]
+    public function nlBaseWithVariantLabelInsertsLabelBeforeSuffix(): void
+    {
+        $group = $this->group(modelNl: 'Mindray Beneheart C1 semi-automaat');
+        $base = new GroupBase(8, 'irrelevant', 'DE', '21018-DE', '4G');
+
+        self::assertSame(
+            'AED Pakket: Mindray Beneheart C1 semi-automaat 4G DE',
+            $this->policy->expectedName($group, $base, null),
+        );
+    }
+
+    #[Test]
+    public function frBaseWithVariantLabelInsertsLabelBeforeSuffix(): void
+    {
+        $group = $this->group(modelFr: 'Mindray Beneheart C1 semi-automatique');
+        $base = new GroupBase(9, 'irrelevant', 'FR', '21018-FR', '4G');
+
+        self::assertSame(
+            'Pack DAE: Mindray Beneheart C1 semi-automatique 4G FR',
+            $this->policy->expectedName($group, $base, null),
+        );
+    }
+
+    #[Test]
+    public function variantLabelWithAccessoireKeepsLabelAndAddsAccessoireSuffix(): void
+    {
+        $group = $this->group(modelNl: 'Mindray Beneheart C1 semi-automaat');
+        $base = new GroupBase(10, 'irrelevant', 'DE', '21018-DE', '4G');
+        $accessoire = new Accessoire('60110', 'EHBO-Rugzak', naamKortNl: 'Rugtas');
+
+        self::assertSame(
+            'AED Pakket: Mindray Beneheart C1 semi-automaat 4G DE met Rugtas',
+            $this->policy->expectedName($group, $base, $accessoire),
+        );
+    }
+
+    #[Test]
+    public function variantLabelWithCompoundLanguageStaysBeforeCompoundSuffix(): void
+    {
+        $group = $this->group(modelNl: 'LIFEPAK CR2 AED volautomaat');
+        $base = new GroupBase(11, 'irrelevant', 'NL/EN', '11144', 'WiFi');
+
+        self::assertSame(
+            'AED Pakket: LIFEPAK CR2 AED volautomaat WiFi NL-UK',
+            $this->policy->expectedName($group, $base, null),
+        );
+    }
+
+    #[Test]
+    public function emptyVariantLabelBehavesLikeNullLabel(): void
+    {
+        $group = $this->group(modelNl: 'Heartsine Samaritan PAD 350P');
+        $base = new GroupBase(12, 'irrelevant', 'NL', '11111', '');
+
+        self::assertSame(
+            'AED Pakket: Heartsine Samaritan PAD 350P NL',
+            $this->policy->expectedName($group, $base, null),
+        );
+    }
+
+    #[Test]
     public function throwsWhenModelNameForBucketIsMissing(): void
     {
         // Group heeft alleen NL-modelnaam; base is puur FR → FR-bucket → faalt.

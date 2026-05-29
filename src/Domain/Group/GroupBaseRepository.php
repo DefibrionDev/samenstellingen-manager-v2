@@ -42,4 +42,11 @@ interface GroupBaseRepository
      * voor die groep moeten regenereren.
      */
     public function findFamilyHeadForBase(int $baseId): ?string;
+
+    /**
+     * Zet (of wis met `null`) het variant_label op alle bases met dit
+     * afas_itemcode. Retourneert het aantal aangepaste rijen — 0 betekent dat
+     * de itemcode niet voorkomt en de caller een fout kan rapporteren.
+     */
+    public function setVariantLabelByAfasItemcode(string $afasItemcode, ?string $variantLabel): int;
 }

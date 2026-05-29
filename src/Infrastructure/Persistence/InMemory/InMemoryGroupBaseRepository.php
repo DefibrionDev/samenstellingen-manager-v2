@@ -88,6 +88,31 @@ final class InMemoryGroupBaseRepository implements GroupBaseRepository
         return null;
     }
 
+    public function setVariantLabelByAfasItemcode(string $afasItemcode, ?string $variantLabel): int
+    {
+        $normalized = $variantLabel !== null ? trim($variantLabel) : null;
+        if ($normalized === '') {
+            $normalized = null;
+        }
+
+        $count = 0;
+        foreach ($this->byId as $id => $base) {
+            if ($base->afasItemcode !== $afasItemcode) {
+                continue;
+            }
+            $this->byId[$id] = new GroupBase(
+                $base->id,
+                $base->name,
+                $base->languageCode,
+                $base->afasItemcode,
+                $normalized,
+            );
+            ++$count;
+        }
+
+        return $count;
+    }
+
     public function findAllAfasItemcodes(): array
     {
         $codes = [];

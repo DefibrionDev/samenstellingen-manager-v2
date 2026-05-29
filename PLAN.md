@@ -709,3 +709,79 @@ User-beslissing: ook canonical NL/FR-template, geen Engelse uitzondering. Defibt
 - **Slice 37.2** — CLI: `accessoire:set-naam-kort`, `group:set-model-naam`. Update bestaande CLI's die `model_name` referen.
 - **Slice 37.3** — Live data invullen via CLI voor onze 9 accessoires (3 talen elk) + 22 groepen (3 talen elk). Daarna `audit:names` om huidige drift te zien.
 - **Slice 37.4** — Eventueel `prices:fix-names`-equivalent (FbItemArticle PUT op `Ds_1043`/`Ds_1036`/`Ds_2057`) om namen in AFAS te corrigeren — apart, na confirmation.
+
+---
+
+## 19. Variant-label per base — 4G / USB / WiFi / 3G in canonical (slice 38 — concept)
+
+### Probleem
+
+Onze canonical-naam bestaat uit `<template> <model_name uit group> <taal-suffix>`. `model_name` zit op groep-niveau, niet op base-niveau. Maar binnen één groep kunnen bases voorkomen die fysiek anders zijn dan de rest van de groep — die verschillen zijn vandaag onzichtbaar:
+
+- **Mindray Beneheart C1, groep `21011`:** `21018-DE/FR/UK` zijn de 4G-uitvoering, `21019` en `21021` zijn niet-4G. Allemaal dezelfde accessoire-matrix → terecht in dezelfde groep, maar canonical levert nu identieke namen op (`AED Pakket: Mindray Beneheart C1 semi-automaat DE`) voor de 4G- en de niet-4G-base.
+- **LIFEPAK CR2:** USB / WiFi / 3G zitten ook in dezelfde groep. Zelfde mechanisme.
+
+Effect bij `names:fix-drift --apply`: AFAS krijgt twee artikelen met identieke `Ds`. Naam-collisie + verlies van zinvolle hardware-aanduiding.
+
+### Aanpak — optie 2 uit het overleg
+
+Nieuwe optionele kolom `variant_label` op `group_bases`. Het template wordt:
+
+```
+<template> <model_name> <variant_label?> <taal-suffix>
+```
+
+`variant_label` is taal-neutraal (`4G`, `WiFi`, `USB`, `3G`) — bewust niet vertaald, want het zijn product-namen / radio-specs, niet copy.
+
+Voorbeelden:
+- `21018-DE` met `variant_label='4G'` → `AED Pakket: Mindray Beneheart C1 semi-automaat 4G DE`
+- `21019` met `variant_label=NULL` (niet-4G) → `AED Pakket: Mindray Beneheart C1 semi-automaat FR` (huidig gedrag)
+- LIFEPAK `11144` met `variant_label='WiFi'` → `AED Pakket: LIFEPAK CR2 AED volautomaat WiFi NL-UK`
+
+### Schema
+
+```sql
+ALTER TABLE group_bases ADD COLUMN variant_label TEXT NULL;
+```
+
+`NULL` of `''` → no-op (huidig gedrag blijft 1-op-1 hetzelfde). Geen migratie-data nodig — backfill gebeurt later via CLI.
+
+### Policy-aanpassing
+
+`VariantNamingPolicy::expectedName(Group $group, GroupBase $base, ?Accessoire $accessoire)` — base krijgt nu een `?string $variantLabel`. Template:
+
+```
+NL-bucket:   AED Pakket: <model> [<label> ]<suffix>[ met <acc>]
+FR-bucket:   Pack DAE: <model> [<label> ]<suffix>[ avec <acc>]
+```
+
+Conditioneel — alleen ingevoegd als `variantLabel` niet leeg is.
+
+### CLI
+
+- `base:set-variant-label <afas_itemcode> <label>` — set/clear (lege string = clear).
+- Backfill via shell-script in `tmp/seed-variant-labels.sh`:
+  - `21018-FR`, `21018-UK`, `21018-DE` → `4G`
+  - LIFEPAK 4G/WiFi/USB-codes (lijstje afstemmen vóór backfill)
+
+### UI
+
+`GroupDetail` toont `variant_label` als chip naast de base-itemcode. Read-only zoals de rest van de UI.
+
+### Audit-impact
+
+`audit:names` houdt nu rekening met het label — voor `21018-DE` is het expected nu `AED Pakket: Mindray Beneheart C1 semi-automaat 4G DE`, drift verdwijnt voor de 4G-bases zodra het label gezet is.
+
+### Test-strategie
+
+- VariantNamingPolicy data-provider uitbreiden: base met label, base zonder label, label + accessoire.
+- Repository: round-trip van `variant_label` (NULL + value) op SQLite en InMemory.
+- Migratie wordt impliciet getest via repository-tests (zie CLAUDE.md).
+- E2E: na `base:set-variant-label 21018-DE 4G`, `audit:names` rapporteert geen drift meer voor die rij.
+
+### Slices
+
+- **Slice 38.0** — Schema + repository: kolom toevoegen, `GroupBase`-VO uitbreiden met `?string $variantLabel`, InMemory + Sqlite + round-trip-test.
+- **Slice 38.1** — `VariantNamingPolicy` gebruikt het label; data-provider-test uitbreiden (NL, FR, FR + accessoire, label + suffix).
+- **Slice 38.2** — CLI `base:set-variant-label`. UI: chip op `GroupDetail`.
+- **Slice 38.3** — Live backfill: `21018-FR/UK/DE` → `4G` + lijst LIFEPAK-bases met radio-variant. Daarna `audit:names` heruitvoeren en verifiëren dat de naam-collisies weg zijn. Pas dán evt. opnieuw `names:fix-drift --apply` voor de overgebleven drift.
