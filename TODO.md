@@ -1122,11 +1122,12 @@ Eindbeeld: CLI `variants:fix-missing [--group=<family-head>] [--apply] [--limit=
 - [x] Contract-test op de payload-builder met 18 assertions over de body-structuur. Geen live AFAS.
 - [x] PHPStan groen, `make check` 354/800.
 
-### Sub-slice 39.3 — CLI + wiring
-- [ ] `variants:fix-missing [--group=<family-head>] [--apply] [--limit=N] [--skip-prices]`. Default dry-run met tabel (Base | Accessoire | Suggested SKU | Canonical naam | BOM-count).
-- [ ] Failures → `tmp/fix-variants-{datum}.csv` (mirror `names:fix-drift`).
-- [ ] Output toont expliciete instructie "Draai nu `afas:pull && prices:fix-missing --apply`" als `--skip-prices` aanstaat of als de chained-prijs-flow nog niet in 39.4 zit.
-- [ ] Wire in `bin/samenstellingen` (handler + writer + command).
+### Sub-slice 39.3 — CLI + wiring ✅
+- [x] `variants:fix-missing [--group=<family-head>] [--apply] [--limit=N]`. Default dry-run met tabel (Itemcode | Canonical naam | BOM-items | Family-head) en sectie "overgeslagen" met reden per gefilterde rij.
+- [x] Failures → `tmp/fix-variants-{datum}.csv` (mirror `names:fix-drift`).
+- [x] Output toont expliciete instructie "Draai nu `afas:pull && prices:fix-missing --apply`" voor de prijs-stap (vooruitlopend op 39.4's chained-flow).
+- [x] Wire in `bin/samenstellingen` (handler + HTTP-writer + payload-builder + lookup + command).
+- [x] Smoke: dry-run op groep 10013 toont 2 echte missing (11112-60212 FR + 11113-60212 UK).
 
 ### Sub-slice 39.4 — Chained prijs-integratie
 - [ ] Na succesvolle variant-POST: targeted-refresh van `afas_articles` + `afas_samenstellingen` voor net-ingevoegde itemcodes (geen volle pull).

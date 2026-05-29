@@ -58,14 +58,19 @@ use Defibrion\Samenstellingen\Interface\Cli\ListPrijslijstWhitelistCommand;
 use Defibrion\Samenstellingen\Interface\Cli\UnwhitelistPrijslijstCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AuditNamesCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AuditDuplicateBomsCommand;
+use Defibrion\Samenstellingen\Application\Fix\FixMissingVariantsHandler;
 use Defibrion\Samenstellingen\Application\Fix\FixNamesHandler;
 use Defibrion\Samenstellingen\Application\Fix\FixPriceDriftHandler;
 use Defibrion\Samenstellingen\Application\Fix\FixPriceMissingHandler;
+use Defibrion\Samenstellingen\Infrastructure\Fix\FbCompositionVariantPayloadBuilder;
 use Defibrion\Samenstellingen\Infrastructure\Fix\HttpFbCompositionNameWriter;
+use Defibrion\Samenstellingen\Infrastructure\Fix\HttpFbCompositionVariantWriter;
+use Defibrion\Samenstellingen\Infrastructure\Fix\HttpVariantWriteContextLookup;
 use Defibrion\Samenstellingen\Infrastructure\Fix\HttpFbSalesPriceWriter;
 use Defibrion\Samenstellingen\Infrastructure\Fix\HttpGetPrijzenBeginDateLookup;
 use Defibrion\Samenstellingen\Interface\Cli\AuditPricesCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AuditStickersCommand;
+use Defibrion\Samenstellingen\Interface\Cli\FixMissingVariantsCommand;
 use Defibrion\Samenstellingen\Interface\Cli\FixNamesCommand;
 use Defibrion\Samenstellingen\Interface\Cli\FixPriceDriftCommand;
 use Defibrion\Samenstellingen\Interface\Cli\FixPriceMissingCommand;
@@ -269,6 +274,24 @@ if ($hasAfasCreds) {
     $nameWriter = new HttpFbCompositionNameWriter($afasClient);
     $fixNamesHandler = new FixNamesHandler($nameAuditHandler, $nameWriter);
     $application->addCommand(new FixNamesCommand($fixNamesHandler));
+
+    $variantWriteContextLookup = new HttpVariantWriteContextLookup($afasClient);
+    $variantWriter = new HttpFbCompositionVariantWriter(
+        $afasClient,
+        $variantWriteContextLookup,
+        new FbCompositionVariantPayloadBuilder(),
+    );
+    $fixMissingVariantsHandler = new FixMissingVariantsHandler(
+        $listMissingHandler,
+        $groupRepository,
+        $baseRepository,
+        $variantRepository,
+        $accessoireRepository,
+        $afasSamenstellingenRepository,
+        new VariantNamingPolicy(),
+        $variantWriter,
+    );
+    $application->addCommand(new FixMissingVariantsCommand($fixMissingVariantsHandler));
 }
 
 exit($application->run());
