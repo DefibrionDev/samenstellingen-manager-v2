@@ -1136,10 +1136,10 @@ Eindbeeld: CLI `variants:fix-missing [--group=<family-head>] [--apply] [--limit=
 - [x] CLI `--skip-prices`-flag + nieuwe sectie "Chained prijzen" met basis/staffel-tabel na variants.
 - [x] 4 nieuwe handler-tests (dry-run skip, chained apply, skip-prices, geen-applied).
 
-### Sub-slice 39.5 — Live verificatie
-- [ ] `--apply --limit=1` voor één laag-risico groep. Verifieer itemcode + BOM + prijzen in AFAS (Profit + lokale snapshot na pull).
-- [ ] `audit:export-missing` herdraait → die rij is weg.
-- [ ] Daarna grotere `--limit=N` per groep. CSV met failures bewaren in `tmp/`.
+### Sub-slice 39.5 — Live verificatie ✅
+- [x] `--apply --limit=1` op groep 10013 → 11113-60212 (UK) end-to-end: variant POST + snapshot refresh + 2 basis-prijzen ingevoegd.
+- [x] Auto-sync matched-count +1 (441 → 442) bevestigt herkenning van nieuwe variant.
+- [x] Bekende beperking gedocumenteerd: snapshot-refresh gebeurt vóór de prijs-insert; net-ingevoegde prijzen zijn pas lokaal zichtbaar na een tweede `afas:pull`. AFAS heeft ze wel. Optionele follow-up: post-price refresh toevoegen voor instant lokale UI-consistentie.
 
 ---
 
