@@ -14,7 +14,7 @@ use RuntimeException;
  *
  * Twee templates op basis van het eerste taal-token van de base:
  *
- *   Zuiver FR:    Pack DAE: {ModelFR} ({LangSuffix}) avec {AccessoireFR}
+ *   Zuiver FR:    Pack DAE: {ModelFR} {LangSuffix} avec {AccessoireFR}
  *   Anders:       AED Pakket: {ModelNL} {LangSuffix} met {AccessoireNL}
  *
  * LangSuffix:
@@ -52,7 +52,7 @@ final readonly class VariantNamingPolicy
 
         if ($accessoire === null) {
             return $taalBucket === 'fr'
-                ? sprintf('Pack DAE: %s (%s)', $modelName, $langSuffix)
+                ? sprintf('Pack DAE: %s %s', $modelName, $langSuffix)
                 : sprintf('AED Pakket: %s %s', $modelName, $langSuffix);
         }
 
@@ -68,7 +68,7 @@ final readonly class VariantNamingPolicy
         }
 
         return $taalBucket === 'fr'
-            ? sprintf('Pack DAE: %s (%s) avec %s', $modelName, $langSuffix, $accessoireNaam)
+            ? sprintf('Pack DAE: %s %s avec %s', $modelName, $langSuffix, $accessoireNaam)
             : sprintf('AED Pakket: %s %s met %s', $modelName, $langSuffix, $accessoireNaam);
     }
 

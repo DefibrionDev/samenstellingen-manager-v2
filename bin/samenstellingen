@@ -58,12 +58,15 @@ use Defibrion\Samenstellingen\Interface\Cli\ListPrijslijstWhitelistCommand;
 use Defibrion\Samenstellingen\Interface\Cli\UnwhitelistPrijslijstCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AuditNamesCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AuditDuplicateBomsCommand;
+use Defibrion\Samenstellingen\Application\Fix\FixNamesHandler;
 use Defibrion\Samenstellingen\Application\Fix\FixPriceDriftHandler;
 use Defibrion\Samenstellingen\Application\Fix\FixPriceMissingHandler;
+use Defibrion\Samenstellingen\Infrastructure\Fix\HttpFbCompositionNameWriter;
 use Defibrion\Samenstellingen\Infrastructure\Fix\HttpFbSalesPriceWriter;
 use Defibrion\Samenstellingen\Infrastructure\Fix\HttpGetPrijzenBeginDateLookup;
 use Defibrion\Samenstellingen\Interface\Cli\AuditPricesCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AuditStickersCommand;
+use Defibrion\Samenstellingen\Interface\Cli\FixNamesCommand;
 use Defibrion\Samenstellingen\Interface\Cli\FixPriceDriftCommand;
 use Defibrion\Samenstellingen\Interface\Cli\FixPriceMissingCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AuditSuspiciousBasesCommand;
@@ -260,6 +263,10 @@ if ($hasAfasCreds) {
         $fbSalesPriceWriter,
     );
     $application->addCommand(new FixPriceMissingCommand($fixPriceMissingHandler));
+
+    $nameWriter = new HttpFbCompositionNameWriter($afasClient);
+    $fixNamesHandler = new FixNamesHandler($nameAuditHandler, $nameWriter);
+    $application->addCommand(new FixNamesCommand($fixNamesHandler));
 }
 
 exit($application->run());

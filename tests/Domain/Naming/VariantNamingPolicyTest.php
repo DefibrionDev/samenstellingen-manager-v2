@@ -53,7 +53,7 @@ final class VariantNamingPolicyTest extends TestCase
         $base = new GroupBase(2, 'irrelevant', 'FR');
 
         self::assertSame(
-            'Pack DAE: Reanibex 100 Entièrement automatique (FR)',
+            'Pack DAE: Reanibex 100 Entièrement automatique FR',
             $this->policy->expectedName($group, $base, null),
         );
     }
@@ -66,7 +66,7 @@ final class VariantNamingPolicyTest extends TestCase
         $accessoire = new Accessoire('60110', 'EHBO-Rugzak', naamKortFr: 'Sac à dos');
 
         self::assertSame(
-            'Pack DAE: Reanibex 100 Entièrement automatique (FR) avec Sac à dos',
+            'Pack DAE: Reanibex 100 Entièrement automatique FR avec Sac à dos',
             $this->policy->expectedName($group, $base, $accessoire),
         );
     }

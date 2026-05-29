@@ -1060,7 +1060,8 @@ Eindbeeld: drie canonical templates (NL/FR/EN), per-accessoire en per-groep mult
 - [x] `audit:names` toont 405 drift-rijen tov canonical (FR-template + per-taal-labels).
 
 ### Sub-slice 37.4 — (los) Fix-names CLI
-- [ ] Apart na user-confirmation: `prices:fix-names [--apply] [--limit=N]` schrijft canonical naar AFAS via FbItemArticle PUT op `Ds_1043` (NL), `Ds_1036` (FR), `Ds_2057` (EN).
+- [x] `names:fix-drift [--apply] [--limit=N]` schrijft canonical naar AFAS via `FbComposition` PUT (`Ds`). Type_id=7 routing — `FbItemArticle` faalt met "Artikel niet gevonden". Live geverifieerd op 11112 → `Pack DAE: Heartsine Samaritan PAD 350P FR`.
+- [x] FR-template haakjes verwijderd voor symmetrie met NL: `Pack DAE: <model> FR` (geen `(FR)`).
 
 ---
 
