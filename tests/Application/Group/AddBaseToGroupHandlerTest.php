@@ -6,7 +6,6 @@ namespace Defibrion\Samenstellingen\Tests\Application\Group;
 
 use Defibrion\Samenstellingen\Application\Group\AddBaseToGroup;
 use Defibrion\Samenstellingen\Application\Group\AddBaseToGroupHandler;
-use Defibrion\Samenstellingen\Domain\Group\BaseAlreadyExistsException;
 use Defibrion\Samenstellingen\Domain\Group\Group;
 use Defibrion\Samenstellingen\Domain\Group\GroupNotFoundException;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryAccessoireRepository;
@@ -45,16 +44,18 @@ final class AddBaseToGroupHandlerTest extends TestCase
     }
 
     #[Test]
-    public function passesThroughDuplicateBase(): void
+    public function allowsTwoBasesWithSameNameWhenNeitherHasAfasItemcode(): void
     {
+        // Slice 41: naam-UNIQUE op group_bases is verwijderd; itemcode is leidend.
+        // Twee identieke namen zonder SKU mogen co-existeren.
         [$groups, $bases, , , $variants] = $this->repos();
         $groups->save(new Group('Reanibex 100 Semi-Auto', '52112'));
         $handler = new AddBaseToGroupHandler($bases, $variants);
-        $handler(new AddBaseToGroup('52112', 'AED pakket NL', 'NL'));
-
-        $this->expectException(BaseAlreadyExistsException::class);
 
         $handler(new AddBaseToGroup('52112', 'AED pakket NL', 'NL'));
+        $handler(new AddBaseToGroup('52112', 'AED pakket NL', 'NL'));
+
+        self::assertCount(2, $bases->findAllForGroup('52112'));
     }
 
     /**

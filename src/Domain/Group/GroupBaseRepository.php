@@ -15,6 +15,14 @@ interface GroupBaseRepository
     public function findById(int $baseId): ?GroupBase;
 
     /**
+     * Lookup op `(group, afas_itemcode)` — leidend pad voor idempotente imports.
+     * `null` wanneer er geen base met deze SKU in de groep zit.
+     *
+     * @throws GroupNotFoundException wanneer de groep niet bestaat.
+     */
+    public function findByAfasItemcodeInGroup(string $familyHeadItemcode, string $afasItemcode): ?GroupBase;
+
+    /**
      * @throws GroupNotFoundException wanneer de groep niet bestaat.
      *
      * @return list<GroupBase>

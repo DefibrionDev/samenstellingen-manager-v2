@@ -310,15 +310,28 @@ final readonly class ImportPortalCsvHandler
         }
 
         foreach ($candidates as $samenstelling) {
-            $persisted = null;
-            try {
-                $persisted = $this->baseRepository->saveForGroup(
-                    $familyHead,
-                    new GroupBase(null, $samenstelling->name, $row['language'], $samenstelling->itemcode),
-                );
-                ++$summary->basesCreated;
-            } catch (BaseAlreadyExistsException) {
-                $persisted = $this->findExistingBase($familyHead, $samenstelling->name);
+            // Slice 41: itemcode is leidend. Eerst checken of de SKU al een
+            // base heeft in de groep — zo behouden we de bestaande naam,
+            // die kan zijn bijgewerkt door eerdere `names:fix-drift`-runs.
+            $persisted = $samenstelling->itemcode !== ''
+                ? $this->baseRepository->findByAfasItemcodeInGroup($familyHead, $samenstelling->itemcode)
+                : null;
+
+            if ($persisted === null) {
+                // Fallback voor SKU-loze rijen of nieuwe SKU: probeer save,
+                // val terug op naam-lookup wanneer een race-condition (SKU-conflict)
+                // of legacy name-UNIQUE optreedt.
+                try {
+                    $persisted = $this->baseRepository->saveForGroup(
+                        $familyHead,
+                        new GroupBase(null, $samenstelling->name, $row['language'], $samenstelling->itemcode),
+                    );
+                    ++$summary->basesCreated;
+                } catch (BaseAlreadyExistsException) {
+                    $persisted = $samenstelling->itemcode !== ''
+                        ? $this->baseRepository->findByAfasItemcodeInGroup($familyHead, $samenstelling->itemcode)
+                        : $this->findExistingBase($familyHead, $samenstelling->name);
+                }
             }
 
             if ($persisted?->id === null) {

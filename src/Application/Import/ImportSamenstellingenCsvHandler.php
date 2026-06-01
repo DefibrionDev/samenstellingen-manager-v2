@@ -34,13 +34,26 @@ final readonly class ImportSamenstellingenCsvHandler
         $baseNamesByAedArticle = $this->collectBaseNamesByAedArticle($command->csvPath, $summary);
         $accessoireLabelsByItemcode = $this->collectAccessoireLabels($command->csvPath);
 
+        // Slice 41: naam-UNIQUE op group_bases is verwijderd. Idempotentie
+        // voor deze legacy importer (geen SKU's in de CSV) doen we hier
+        // app-level via een naam-set; SKU-flow loopt via de portal-import.
+        $existingNames = [];
+        foreach ($this->baseRepository->findAllForGroup($command->familyHeadItemcode) as $existing) {
+            $existingNames[$existing->name] = true;
+        }
+
         foreach ($baseNamesByAedArticle as $name) {
+            if (isset($existingNames[$name])) {
+                ++$summary->basesSkipped;
+                continue;
+            }
             try {
                 $this->baseRepository->saveForGroup(
                     $command->familyHeadItemcode,
                     new GroupBase(null, $name, $this->detectLanguage($name)),
                 );
                 ++$summary->basesCreated;
+                $existingNames[$name] = true;
             } catch (BaseAlreadyExistsException) {
                 ++$summary->basesSkipped;
             }

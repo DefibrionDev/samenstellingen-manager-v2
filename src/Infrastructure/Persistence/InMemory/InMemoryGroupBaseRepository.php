@@ -29,9 +29,14 @@ final class InMemoryGroupBaseRepository implements GroupBaseRepository
     {
         $this->assertGroupExists($familyHeadItemcode);
 
-        foreach ($this->byFamilyHead[$familyHeadItemcode] ?? [] as $existingId) {
-            if (($this->byId[$existingId] ?? null)?->name === $base->name) {
-                throw BaseAlreadyExistsException::forNameInGroup($base->name, $familyHeadItemcode);
+        // Itemcode is leidend wanneer aanwezig. Bases zonder SKU mogen
+        // dezelfde naam delen — naam-UNIQUE is per slice 41 verwijderd.
+        if ($base->afasItemcode !== null) {
+            foreach ($this->byFamilyHead[$familyHeadItemcode] ?? [] as $existingId) {
+                $existing = $this->byId[$existingId] ?? null;
+                if ($existing !== null && $existing->afasItemcode === $base->afasItemcode) {
+                    throw BaseAlreadyExistsException::forItemcodeInGroup($base->afasItemcode, $familyHeadItemcode);
+                }
             }
         }
 
@@ -46,6 +51,20 @@ final class InMemoryGroupBaseRepository implements GroupBaseRepository
     public function findById(int $baseId): ?GroupBase
     {
         return $this->byId[$baseId] ?? null;
+    }
+
+    public function findByAfasItemcodeInGroup(string $familyHeadItemcode, string $afasItemcode): ?GroupBase
+    {
+        $this->assertGroupExists($familyHeadItemcode);
+
+        foreach ($this->byFamilyHead[$familyHeadItemcode] ?? [] as $baseId) {
+            $base = $this->byId[$baseId] ?? null;
+            if ($base !== null && $base->afasItemcode === $afasItemcode) {
+                return $base;
+            }
+        }
+
+        return null;
     }
 
     public function findAllForGroup(string $familyHeadItemcode): array

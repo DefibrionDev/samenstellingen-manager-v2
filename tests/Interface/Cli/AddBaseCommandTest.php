@@ -54,8 +54,11 @@ final class AddBaseCommandTest extends TestCase
     }
 
     #[Test]
-    public function failsForDuplicateBaseName(): void
+    public function allowsTwoBasesWithSameNameWhenNoSku(): void
     {
+        // Slice 41: naam-UNIQUE is verwijderd; itemcode is leidend. Twee bases
+        // zonder SKU mogen dezelfde naam delen — een eventuele SKU-conflict
+        // wordt later opgevangen door SKU-UNIQUE op (groep, afas_itemcode).
         [$groups, $bases, , , $variants] = $this->repos();
         $groups->save(new Group('Reanibex 100 Semi-Auto', '52112'));
         $tester = new CommandTester(new AddBaseCommand(new AddBaseToGroupHandler($bases, $variants)));
@@ -63,8 +66,8 @@ final class AddBaseCommandTest extends TestCase
         $tester->execute(['family-head-itemcode' => '52112', 'name' => 'AED pakket NL', 'language-code' => 'NL']);
         $exitCode = $tester->execute(['family-head-itemcode' => '52112', 'name' => 'AED pakket NL', 'language-code' => 'NL']);
 
-        self::assertSame(Command::FAILURE, $exitCode);
-        self::assertStringContainsString('bestaat al', $tester->getDisplay());
+        self::assertSame(Command::SUCCESS, $exitCode);
+        self::assertCount(2, $bases->findAllForGroup('52112'));
     }
 
     /**

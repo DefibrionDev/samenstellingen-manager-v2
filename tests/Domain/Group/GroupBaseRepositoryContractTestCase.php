@@ -58,14 +58,45 @@ abstract class GroupBaseRepositoryContractTestCase extends TestCase
     }
 
     #[Test]
-    public function rejectsDuplicateNameInSameGroup(): void
+    public function rejectsDuplicateAfasItemcodeInSameGroup(): void
     {
-        $this->bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL', 'NL'));
+        $this->bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL', 'NL', '52112'));
 
         $this->expectException(BaseAlreadyExistsException::class);
-        $this->expectExceptionMessage("Base met naam 'AED pakket NL' bestaat al in groep 52112");
+        $this->expectExceptionMessage("Base met afas_itemcode '52112' bestaat al in groep 52112");
 
-        $this->bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL', 'NL'));
+        $this->bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL — alternatieve naam', 'NL', '52112'));
+    }
+
+    #[Test]
+    public function allowsDuplicateNameWhenNoAfasItemcode(): void
+    {
+        // Bases zonder SKU mogen dezelfde naam delen — naam-UNIQUE is gedropt per slice 41.
+        $first = $this->bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL', 'NL'));
+        $second = $this->bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL', 'NL'));
+
+        self::assertNotNull($first->id);
+        self::assertNotNull($second->id);
+        self::assertNotSame($first->id, $second->id);
+    }
+
+    #[Test]
+    public function findByAfasItemcodeInGroupReturnsBase(): void
+    {
+        $persisted = $this->bases->saveForGroup('52112', new GroupBase(null, 'AED NL', 'NL', '52199'));
+
+        $found = $this->bases->findByAfasItemcodeInGroup('52112', '52199');
+
+        self::assertNotNull($found);
+        self::assertSame($persisted->id, $found->id);
+    }
+
+    #[Test]
+    public function findByAfasItemcodeInGroupReturnsNullForUnknownCode(): void
+    {
+        $this->bases->saveForGroup('52112', new GroupBase(null, 'AED NL', 'NL', '52199'));
+
+        self::assertNull($this->bases->findByAfasItemcodeInGroup('52112', '99999'));
     }
 
     #[Test]

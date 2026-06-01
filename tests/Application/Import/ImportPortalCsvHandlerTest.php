@@ -242,6 +242,41 @@ final class ImportPortalCsvHandlerTest extends TestCase
     }
 
     #[Test]
+    public function secondImportRemainsIdempotentAfterAfasNameChange(): void
+    {
+        // Slice 41: simuleert dat een eerdere `names:fix-drift` de AFAS-naam
+        // van een base wijzigt. De tweede import met identieke CSV moet de
+        // bestaande SKU-rij hergebruiken zonder de naam te overschrijven.
+        $bag = $this->emptyBag();
+        $bag['accessoires']->save(new Accessoire('60110', 'EHBO-Rugzak'));
+        $bag['afas']->replaceSnapshot([
+            new AfasSamenstelling('11142', 'AED pakket NL', null, ['50013', '70112', '81111']),
+        ]);
+        $reader = $this->reader([
+            new PortalCsvRow('50013', 'Reanibex 100 Semi-Auto', 'AED NL', '', 'NL'),
+        ]);
+
+        $this->makeHandler($bag, $reader)(new ImportPortalCsv('/irrelevant.csv'));
+
+        // Naam-mutatie buiten de tool om (= wat names:fix-drift in AFAS doet,
+        // en wat een volgende pull binnenhaalt).
+        $bases = $bag['bases']->findAllForGroup('11142');
+        self::assertCount(1, $bases);
+        $originalId = $bases[0]->id;
+        self::assertNotNull($originalId);
+        $bag['afas']->replaceSnapshot([
+            new AfasSamenstelling('11142', 'AED Pakket: Reanibex 100 NL — canonical', null, ['50013', '70112', '81111']),
+        ]);
+
+        $summary = $this->makeHandler($bag, $reader)(new ImportPortalCsv('/irrelevant.csv'));
+
+        self::assertSame(0, $summary->basesCreated, 'Geen nieuwe base — bestaande SKU-rij wordt herkend');
+        $basesAfter = $bag['bases']->findAllForGroup('11142');
+        self::assertCount(1, $basesAfter, 'Nul duplicates ondanks naam-verandering in AFAS');
+        self::assertSame($originalId, $basesAfter[0]->id);
+    }
+
+    #[Test]
     public function removesGroupsThatNoLongerAppearInCsv(): void
     {
         // Eerste import zet twee groepen op.

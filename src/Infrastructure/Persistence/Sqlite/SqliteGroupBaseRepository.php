@@ -34,10 +34,12 @@ final readonly class SqliteGroupBaseRepository implements GroupBaseRepository
                 ':variant_label' => $base->variantLabel,
             ]);
         } catch (PDOException $e) {
-            if (
-                str_contains($e->getMessage(), 'UNIQUE constraint failed')
-                && str_contains($e->getMessage(), 'group_bases')
-            ) {
+            $msg = $e->getMessage();
+            if (str_contains($msg, 'UNIQUE constraint failed') && str_contains($msg, 'afas_itemcode')) {
+                throw BaseAlreadyExistsException::forItemcodeInGroup($base->afasItemcode ?? '', $familyHeadItemcode);
+            }
+            if (str_contains($msg, 'UNIQUE constraint failed') && str_contains($msg, 'group_bases')) {
+                // Legacy naam-constraint — pre-migratie 0021 DB's.
                 throw BaseAlreadyExistsException::forNameInGroup($base->name, $familyHeadItemcode);
             }
             throw $e;
@@ -52,6 +54,22 @@ final readonly class SqliteGroupBaseRepository implements GroupBaseRepository
             'SELECT id, name, language_code, afas_itemcode, variant_label FROM group_bases WHERE id = :id'
         );
         $stmt->execute([':id' => $baseId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $this->rowToBase($row) : null;
+    }
+
+    public function findByAfasItemcodeInGroup(string $familyHeadItemcode, string $afasItemcode): ?GroupBase
+    {
+        $groupId = $this->resolveGroupId($familyHeadItemcode);
+
+        $stmt = $this->pdo->prepare(
+            'SELECT id, name, language_code, afas_itemcode, variant_label
+               FROM group_bases
+              WHERE group_id = :group_id AND afas_itemcode = :code
+              LIMIT 1'
+        );
+        $stmt->execute([':group_id' => $groupId, ':code' => $afasItemcode]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return is_array($row) ? $this->rowToBase($row) : null;

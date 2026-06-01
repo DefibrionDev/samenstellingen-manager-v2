@@ -16,4 +16,13 @@ final class BaseAlreadyExistsException extends DomainException
             $familyHeadItemcode,
         ));
     }
+
+    public static function forItemcodeInGroup(string $afasItemcode, string $familyHeadItemcode): self
+    {
+        return new self(sprintf(
+            "Base met afas_itemcode '%s' bestaat al in groep %s.",
+            $afasItemcode,
+            $familyHeadItemcode,
+        ));
+    }
 }
