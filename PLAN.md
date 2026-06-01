@@ -934,3 +934,35 @@ Bestaande tests blijven groen: bases zonder SKU vallen op het naam-pad terug.
 - **Slice 41.1** — Schema-migratie + repository-update: drop naam-UNIQUE, voeg partial-UNIQUE op itemcode. Nieuwe methode `GroupBaseRepository::findByAfasItemcodeInGroup()`. Nieuwe exception-variant `BaseAlreadyExistsException::forItemcodeInGroup()`. Bestaande naam-pad blijft voor SKU-loze bases.
 - **Slice 41.2** — Import-handler refactor: `findExistingBase()` matcht eerst op (groep, itemcode), valt terug op naam. Skipt zonder de naam te overschrijven. Nieuwe TDD-test voor naam-change-idempotentie.
 - **Slice 41.3** — Live verificatie: portal-CSV opnieuw importeren tegen huidige `samenstellingen.sqlite`. Verwachting: nul nieuwe duplicates, ook na de eerder gerunde `names:fix-drift --apply`.
+
+---
+
+## 22. Producttype + Subcategorie + Merknaam op nieuwe varianten (slice 42 — concept)
+
+### Probleem
+
+`variants:fix-missing` zet de webshop-relevante free-fields **Producttype** (`U5C3C0BC348244F0F97425794CE3FB4A8`), **Subcategorie** (`U79C8521E4FDA2AC22FF895BD89B6D273`) en **Merknaam** (`UE10D6C68486BDE5DE3CCC19EBE1E787B`) niet op nieuwe FbComposition-records. Frontend-labels in de Reseller-CSV zijn respectievelijk "Product type (#01)", "Product type (#02)" en "Merknaam"; de UpdateConnector-labels heten "Producttype", "Subcategorie", "Merknaam".
+
+Resultaat: nieuwe varianten worden niet correct gecategoriseerd in de webshop-stromen totdat ze handmatig nageregeld worden. Doel: bij de POST direct correct.
+
+### Bron-data
+
+`Get_Artikelen` (de basis-GetConnector die we al gebruiken) exposed deze velden NIET. `PowerBI_Item` doet dat wel:
+
+| Itemcode | Type_item | PT#01 | PT#02 | Merknaam |
+|---|---|---|---|---|
+| 10111 (los AED-artikel) | 2 (Artikel) | `AED's` | `350P` | `Heartsine` |
+| 11111 (samenstelling) | 7 (Samenstelling) | `AED pakket` | `350P` | `Heartsine` |
+| 11111-60112 (matched variant) | 7 | `AED pakket` | `350P` | `Heartsine` |
+
+PT#01 verschilt per Type_item — voor onze nieuwe samenstellingen moet het `AED pakket` zijn. PT#02 en Merknaam zijn identiek aan zowel het base-AED-artikel als de matched-variant.
+
+### Aanpak — spiegelen vanuit `referenceVariantItemcode`
+
+We hebben al een referentie-variant per nieuw plan (`VariantFixMissingPlan::referenceVariantItemcode`, gebruikt voor `Grp`/`CsGc`-spiegel via `lookupReferenceFields`). Diezelfde lookup uitbreiden met `productType` / `subcategorie` / `merknaam` levert automatisch `AED pakket` voor PT#01 (want de referentie is óók een matched samenstelling) en de juiste PT#02 + Merknaam per groep. Geen hardcoding, geen extra CLI, geen schema.
+
+### Slices
+
+- **Slice 42.0** — Lookup uitbreiden: `VariantWriteContextLookup::lookupReferenceFields()` returnt nu `{grp, cbsCode, productType, subcategorie, merknaam}`. `HttpVariantWriteContextLookup` pullt `PowerBI_Item` lazy (zelfde patroon als de Get_Artikelen-pull) en bouwt een cache. `InMemoryVariantWriteContextLookup` neemt de drie nieuwe velden in zijn fixture. Contract-update op tests.
+- **Slice 42.1** — `FbCompositionVariantPayloadBuilder` voegt de drie UUIDs toe wanneer de lookup-data de velden bevat. Unit-test uitbreiden met de drie assertions.
+- **Slice 42.2** — Live verificatie: POST een nieuwe variant via `variants:fix-missing --apply --limit=1`, pull `PowerBI_Item` voor de nieuwe SKU, verifieer dat de drie velden 1-op-1 matchen met de referentie. Vink slice 42 af.

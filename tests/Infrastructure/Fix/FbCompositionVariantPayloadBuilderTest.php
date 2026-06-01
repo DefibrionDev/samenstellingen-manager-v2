@@ -24,7 +24,15 @@ final class FbCompositionVariantPayloadBuilderTest extends TestCase
             referenceVariantItemcode: '11111-60112',
         );
         $lookup = new InMemoryVariantWriteContextLookup(
-            referenceFields: ['11111-60112' => ['grp' => '8010', 'cbsCode' => '90189084']],
+            referenceFields: [
+                '11111-60112' => [
+                    'grp' => '8010',
+                    'cbsCode' => '90189084',
+                    'productType' => 'AED pakket',
+                    'subcategorie' => '350P',
+                    'merknaam' => 'Heartsine',
+                ],
+            ],
             typeIdByItemcode: ['10111' => '2', '81111' => '7', '60212' => '7'],
         );
 
@@ -50,6 +58,11 @@ final class FbCompositionVariantPayloadBuilderTest extends TestCase
         self::assertSame('10013', $fields['U298663A9447D4B4D8A0BB3FBC14A2C0B']);
         self::assertTrue($fields['U4E3E32DEFB374A1BA9F8680B8C405907']);
         self::assertTrue($fields['UD77EC755E2F1404EB184A956685A7C0C']);
+
+        // Webshop-categorisatie (slice 42) — gespiegeld uit PowerBI_Item van de referentie.
+        self::assertSame('AED pakket', $fields['U5C3C0BC348244F0F97425794CE3FB4A8']); // Producttype (#01)
+        self::assertSame('350P', $fields['U79C8521E4FDA2AC22FF895BD89B6D273']);        // Subcategorie (#02)
+        self::assertSame('Heartsine', $fields['UE10D6C68486BDE5DE3CCC19EBE1E787B']);   // Merknaam
 
         // BOM-regels
         $lines = $payload['FbComposition']['Element']['Objects']['FbCompositionPart']['Element'];

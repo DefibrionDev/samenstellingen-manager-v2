@@ -1174,6 +1174,30 @@ Eindbeeld: `groups:import-portal-csv` is idempotent **ook na naam-mutaties in AF
 
 ---
 
+## Slice 42 — Producttype + Subcategorie + Merknaam op nieuwe varianten
+
+Eindbeeld: `variants:fix-missing` zet de webshop-relevante free-fields **Producttype** (`U5C3C…`), **Subcategorie** (`U79C8…`), **Merknaam** (`UE10D…`) direct goed op nieuwe FbComposition-records. Bron: de bestaande matched referentie-variant in dezelfde groep, via `PowerBI_Item`-GetConnector (die deze velden wel exposeert). Zie PLAN.md §22.
+
+### Sub-slice 42.0 — Lookup uitbreiden ✅
+- [x] `VariantWriteContextLookup::lookupReferenceFields()` retourneert `{grp, cbsCode, productType, subcategorie, merknaam}`.
+- [x] `HttpVariantWriteContextLookup`: lazy-pull `PowerBI_Item` (eerste keer) + cache per CLI-run.
+- [x] `InMemoryVariantWriteContextLookup`: fixture-shape uitgebreid; bestaande payload-builder-test up-to-date.
+
+### Sub-slice 42.1 — Payload-builder uitbreiden ✅
+- [x] `FbCompositionVariantPayloadBuilder` voegt 3 UUIDs toe (`U5C3C…`, `U79C8…`, `UE10D…`) wanneer lookup-data ze heeft. Lege string → veld weggelaten.
+- [x] Unit-test uitgebreid met 3 nieuwe assertions (15 → 18). `make check` groen.
+
+### Sub-slice 42.1bis — Enum-resolver ✅
+- [x] Live-test toonde dat PowerBI_Item descriptions geeft (`"AED pakket"`, `"350P"`, `"Heartsine"`) maar UpdateConnector IDs eist (`"08"`, `"17"`, `"01"`).
+- [x] `AfasHttpClient::getMetainfoUpdate()` toegevoegd.
+- [x] `HttpVariantWriteContextLookup` pullt metainfo, bouwt description→id mapping per UUID, en resolved tijdens cache-build. Geen hardcoding.
+
+### Sub-slice 42.2 — Live verificatie ✅
+- [x] `variants:fix-missing --group=10142 --apply --limit=1` op Defibtech: `11142-FR-91116` aangemaakt + 3 prijzen, 0 gefaald.
+- [x] PowerBI_Item-pull bevestigt: PT#01 = `AED pakket`, PT#02 = `AED pakket overig`, Merknaam = `Defibtech` — identiek aan referentie `11142-FR`.
+
+---
+
 ## Slice 20 — Reconciliation in portal-CSV-import (vervang wipe)
 
 Eindbeeld: portal-CSV-import is idempotent. Bestaande groepen behouden hun `model_name` en `group_accessoires` over imports heen; alleen groepen die niet meer in de CSV staan worden opgeruimd. Geen `ToolDataWiper` meer in de import-flow.

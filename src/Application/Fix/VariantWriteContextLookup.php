@@ -14,11 +14,19 @@ namespace Defibrion\Samenstellingen\Application\Fix;
 interface VariantWriteContextLookup
 {
     /**
-     * Vraag artikelgroep + CBS-goederencode van de referentie-variant op.
+     * Vraag de van-referentie-te-spiegelen velden van de referentie-variant op:
+     * - `grp` = Artikelgroep
+     * - `cbsCode` = CBS-goederencode
+     * - `productType` = "Product type (#01)" / Producttype (`U5C3C…`)
+     * - `subcategorie` = "Product type (#02)" / Subcategorie (`U79C8…`)
+     * - `merknaam` = Merknaam (`UE10D…`)
      *
-     * @return array{grp: string, cbsCode: string}
+     * Lege strings voor velden die de referentie zelf leeg heeft — de payload-
+     * builder slaat die dan over zodat AFAS niet onnodig wordt overschreven.
      *
-     * @throws VariantWriteContextNotFoundException als het referentie-itemcode niet bestaat of niet alle velden heeft.
+     * @return array{grp: string, cbsCode: string, productType: string, subcategorie: string, merknaam: string}
+     *
+     * @throws VariantWriteContextNotFoundException als het referentie-itemcode niet bestaat.
      */
     public function lookupReferenceFields(string $referenceItemcode): array;
 

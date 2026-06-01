@@ -13,7 +13,7 @@ use Defibrion\Samenstellingen\Application\Fix\VariantWriteContextNotFoundExcepti
 final class InMemoryVariantWriteContextLookup implements VariantWriteContextLookup
 {
     /**
-     * @param array<string, array{grp: string, cbsCode: string}> $referenceFields
+     * @param array<string, array{grp: string, cbsCode: string, productType: string, subcategorie: string, merknaam: string}> $referenceFields
      * @param array<int|string, string>                          $typeIdByItemcode AFAS-itemcodes
      *        zijn alfanumeriek; PHP cast pure-numerieke string-keys naar int — daarom int|string.
      */

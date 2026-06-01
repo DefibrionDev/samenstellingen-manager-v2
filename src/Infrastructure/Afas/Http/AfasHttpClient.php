@@ -82,6 +82,25 @@ final readonly class AfasHttpClient
     }
 
     /**
+     * Haal metainfo van een UpdateConnector (lijst velden + toegestane enum-
+     * waarden per veld). Gebruikt door de variant-write-flow om descriptions
+     * uit PowerBI_Item (`"AED pakket"`) te vertalen naar de id's die de
+     * UpdateConnector verwacht (`"08"`).
+     *
+     * @return array<string, mixed>
+     */
+    public function getMetainfoUpdate(string $connectorId): array
+    {
+        $response = $this->http->request('GET', $this->baseUrl . '/metainfo/update/' . $connectorId, [
+            'headers' => $this->headers(),
+        ]);
+        /** @var mixed $data */
+        $data = json_decode($response->getBody()->getContents(), true);
+
+        return is_array($data) ? $data : [];
+    }
+
+    /**
      * Update een bestaand record via een UpdateConnector (PUT).
      *
      * @param array<string, mixed> $payload Full body, bv:

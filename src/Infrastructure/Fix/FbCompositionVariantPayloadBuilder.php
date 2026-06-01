@@ -19,6 +19,11 @@ final readonly class FbCompositionVariantPayloadBuilder
     private const FF_SYNC = 'U4E3E32DEFB374A1BA9F8680B8C405907';
     private const FF_TONEN = 'UD77EC755E2F1404EB184A956685A7C0C';
 
+    // Webshop-categorisatie (slice 42) — UUIDs uit metainfo/update/FbComposition.
+    private const FF_PRODUCT_TYPE = 'U5C3C0BC348244F0F97425794CE3FB4A8';
+    private const FF_SUBCATEGORIE = 'U79C8521E4FDA2AC22FF895BD89B6D273';
+    private const FF_MERKNAAM = 'UE10D6C68486BDE5DE3CCC19EBE1E787B';
+
     // Constanten voor onze AED-pakketten — bewust hardcoded:
     // alle AED-samenstellingen zijn Explosie, BTW 21% NL, Defibrion is
     // de eigen inkooprelatie en pakketten zijn virtueel (Verrekenprijs 0).
@@ -48,25 +53,40 @@ final readonly class FbCompositionVariantPayloadBuilder
             ];
         }
 
+        $fields = [
+            'ItCd' => $plan->afasItemcode,
+            'Ds' => $plan->canonicalName,
+            self::FF_PARENT => $plan->familyHeadItemcode,
+            self::FF_SYNC => true,
+            self::FF_TONEN => true,
+            'VaCt' => self::VA_CT_EXPLOSIE,
+            'Grp' => $reference['grp'],
+            'BiUn' => self::BI_UN_STUK,
+            'BiSaItCd' => $plan->afasItemcode,
+            'VaRc' => self::VA_RC_BTW_21,
+            'CrId' => self::CR_ID_DEFIBRION,
+            'CsGc' => $reference['cbsCode'],
+            'StPrice' => self::ST_PRICE_VIRTUEEL,
+        ];
+
+        // Webshop-categorisatie alleen meesturen als de referentie waardes had —
+        // anders zou AFAS de bestaande waarden op een hypothetische update kunnen
+        // legen. Voor POST is dit grotendeels academisch maar consistent.
+        if ($reference['productType'] !== '') {
+            $fields[self::FF_PRODUCT_TYPE] = $reference['productType'];
+        }
+        if ($reference['subcategorie'] !== '') {
+            $fields[self::FF_SUBCATEGORIE] = $reference['subcategorie'];
+        }
+        if ($reference['merknaam'] !== '') {
+            $fields[self::FF_MERKNAAM] = $reference['merknaam'];
+        }
+
         return [
             'FbComposition' => [
                 'Element' => [
                     '@ItCd' => $plan->afasItemcode,
-                    'Fields' => [
-                        'ItCd' => $plan->afasItemcode,
-                        'Ds' => $plan->canonicalName,
-                        self::FF_PARENT => $plan->familyHeadItemcode,
-                        self::FF_SYNC => true,
-                        self::FF_TONEN => true,
-                        'VaCt' => self::VA_CT_EXPLOSIE,
-                        'Grp' => $reference['grp'],
-                        'BiUn' => self::BI_UN_STUK,
-                        'BiSaItCd' => $plan->afasItemcode,
-                        'VaRc' => self::VA_RC_BTW_21,
-                        'CrId' => self::CR_ID_DEFIBRION,
-                        'CsGc' => $reference['cbsCode'],
-                        'StPrice' => self::ST_PRICE_VIRTUEEL,
-                    ],
+                    'Fields' => $fields,
                     'Objects' => [
                         'FbCompositionPart' => [
                             'Element' => $lines,
