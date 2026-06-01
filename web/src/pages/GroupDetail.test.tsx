@@ -47,6 +47,7 @@ beforeEach(() => {
               languageCode: 'NL',
               afasItemcode: '11142',
               variantLabel: null,
+              publishedOn: ['Reseller NL'],
               items: [
                 { itemcode: '50013', label: 'AED NL' },
                 { itemcode: '70112', label: 'Reanimatiekit' },
@@ -58,6 +59,7 @@ beforeEach(() => {
               languageCode: 'DE',
               afasItemcode: '21018-DE',
               variantLabel: '4G',
+              publishedOn: [],
               items: [{ itemcode: '50014', label: 'AED DE' }],
             },
           ],

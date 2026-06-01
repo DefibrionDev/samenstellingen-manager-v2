@@ -16,8 +16,6 @@ final readonly class FbCompositionVariantPayloadBuilder
 {
     // Free-field UUID's uit AFAS (zelfde als afas-connector-tools).
     private const FF_PARENT = 'U298663A9447D4B4D8A0BB3FBC14A2C0B';
-    private const FF_SYNC = 'U4E3E32DEFB374A1BA9F8680B8C405907';
-    private const FF_TONEN = 'UD77EC755E2F1404EB184A956685A7C0C';
 
     // Webshop-categorisatie (slice 42) — UUIDs uit metainfo/update/FbComposition.
     private const FF_PRODUCT_TYPE = 'U5C3C0BC348244F0F97425794CE3FB4A8';
@@ -34,9 +32,13 @@ final readonly class FbCompositionVariantPayloadBuilder
     private const ST_PRICE_VIRTUEEL = 0;
 
     /**
+     * @param array<string, bool> $freeFieldFlags Map van free-field UUID → bool.
+     *        Per gepubliceerde website een sync- en tonen-paar; niet-gepubliceerd
+     *        krijgt `false`. Leeg = geen sync/tonen free-fields in payload.
+     *
      * @return array<string, mixed>
      */
-    public function build(VariantFixMissingPlan $plan, VariantWriteContextLookup $lookup): array
+    public function build(VariantFixMissingPlan $plan, VariantWriteContextLookup $lookup, array $freeFieldFlags = []): array
     {
         $reference = $lookup->lookupReferenceFields($plan->referenceVariantItemcode);
 
@@ -57,8 +59,6 @@ final readonly class FbCompositionVariantPayloadBuilder
             'ItCd' => $plan->afasItemcode,
             'Ds' => $plan->canonicalName,
             self::FF_PARENT => $plan->familyHeadItemcode,
-            self::FF_SYNC => true,
-            self::FF_TONEN => true,
             'VaCt' => self::VA_CT_EXPLOSIE,
             'Grp' => $reference['grp'],
             'BiUn' => self::BI_UN_STUK,
@@ -68,6 +68,12 @@ final readonly class FbCompositionVariantPayloadBuilder
             'CsGc' => $reference['cbsCode'],
             'StPrice' => self::ST_PRICE_VIRTUEEL,
         ];
+
+        // Publicatie-gestuurde sync/tonen vlaggen (slice 45). Voor elke
+        // website-publicatie: paar UUIDs op true; niet-gepubliceerd op false.
+        foreach ($freeFieldFlags as $uuid => $flag) {
+            $fields[$uuid] = $flag;
+        }
 
         // Webshop-categorisatie alleen meesturen als de referentie waardes had —
         // anders zou AFAS de bestaande waarden op een hypothetische update kunnen

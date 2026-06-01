@@ -22,9 +22,12 @@ final readonly class VariantFixMissingPlan
     public string $familyHeadItemcode;
     public string $baseAfasItemcode;
     public string $referenceVariantItemcode;
+    /** @var array<string, bool> Publicatie-gestuurde sync/tonen-flags per website. */
+    public array $freeFieldFlags;
 
     /**
-     * @param list<string> $bomItemcodes Geordende lijst BOM-itemcodes — eerste item kop, daarna toevoegingen.
+     * @param list<string>        $bomItemcodes   Geordende lijst BOM-itemcodes — eerste item kop, daarna toevoegingen.
+     * @param array<string, bool> $freeFieldFlags Map free-field UUID → bool. Bv. Reseller NL Sync = true, Reseller FR Sync = false.
      */
     public function __construct(
         string $afasItemcode,
@@ -33,6 +36,7 @@ final readonly class VariantFixMissingPlan
         string $familyHeadItemcode,
         string $baseAfasItemcode,
         string $referenceVariantItemcode,
+        array $freeFieldFlags = [],
     ) {
         $afasItemcode = trim($afasItemcode);
         if ($afasItemcode === '') {
@@ -64,5 +68,6 @@ final readonly class VariantFixMissingPlan
         $this->familyHeadItemcode = $familyHeadItemcode;
         $this->baseAfasItemcode = $baseAfasItemcode;
         $this->referenceVariantItemcode = $referenceVariantItemcode;
+        $this->freeFieldFlags = $freeFieldFlags;
     }
 }

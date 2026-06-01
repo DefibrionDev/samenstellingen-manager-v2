@@ -36,7 +36,11 @@ final class FbCompositionVariantPayloadBuilderTest extends TestCase
             typeIdByItemcode: ['10111' => '2', '81111' => '7', '60212' => '7'],
         );
 
-        $payload = (new FbCompositionVariantPayloadBuilder())->build($plan, $lookup);
+        $flags = [
+            'U4E3E32DEFB374A1BA9F8680B8C405907' => true, // Reseller NL Sync
+            'UD77EC755E2F1404EB184A956685A7C0C' => true, // Reseller NL Tonen
+        ];
+        $payload = (new FbCompositionVariantPayloadBuilder())->build($plan, $lookup, $flags);
 
         // Composite key
         self::assertSame('11111-60212', $payload['FbComposition']['Element']['@ItCd']);
@@ -56,6 +60,7 @@ final class FbCompositionVariantPayloadBuilderTest extends TestCase
 
         // FF UUIDs
         self::assertSame('10013', $fields['U298663A9447D4B4D8A0BB3FBC14A2C0B']);
+        // Publicatie-gestuurde flags (slice 45):
         self::assertTrue($fields['U4E3E32DEFB374A1BA9F8680B8C405907']);
         self::assertTrue($fields['UD77EC755E2F1404EB184A956685A7C0C']);
 
@@ -70,5 +75,57 @@ final class FbCompositionVariantPayloadBuilderTest extends TestCase
         self::assertSame(['VaIt' => 'Art', 'ItCd' => '10111', 'QuUn' => 1, 'Qu' => 1, 'PrSe' => 10], $lines[0]['Fields']);
         self::assertSame(['VaIt' => 'Sam', 'ItCd' => '81111', 'QuUn' => 1, 'Qu' => 1, 'PrSe' => 20], $lines[1]['Fields']);
         self::assertSame(['VaIt' => 'Sam', 'ItCd' => '60212', 'QuUn' => 1, 'Qu' => 1, 'PrSe' => 30], $lines[2]['Fields']);
+    }
+
+    #[Test]
+    public function omitsSyncTonenWhenNoPublicationFlags(): void
+    {
+        $plan = new VariantFixMissingPlan(
+            afasItemcode: '11111-60212',
+            canonicalName: 'AED Pakket NL',
+            bomItemcodes: ['10111'],
+            familyHeadItemcode: '10013',
+            baseAfasItemcode: '11111',
+            referenceVariantItemcode: '11111-60112',
+        );
+        $lookup = new InMemoryVariantWriteContextLookup(
+            referenceFields: ['11111-60112' => ['grp' => '8010', 'cbsCode' => '90189084', 'productType' => '', 'subcategorie' => '', 'merknaam' => '']],
+            typeIdByItemcode: ['10111' => '2'],
+        );
+
+        $payload = (new FbCompositionVariantPayloadBuilder())->build($plan, $lookup, []);
+
+        $fields = $payload['FbComposition']['Element']['Fields'];
+        self::assertArrayNotHasKey('U4E3E32DEFB374A1BA9F8680B8C405907', $fields);
+        self::assertArrayNotHasKey('UD77EC755E2F1404EB184A956685A7C0C', $fields);
+    }
+
+    #[Test]
+    public function unpublishedFlagsAreWrittenAsFalse(): void
+    {
+        $plan = new VariantFixMissingPlan(
+            afasItemcode: '11111-60212',
+            canonicalName: 'AED Pakket NL',
+            bomItemcodes: ['10111'],
+            familyHeadItemcode: '10013',
+            baseAfasItemcode: '11111',
+            referenceVariantItemcode: '11111-60112',
+        );
+        $lookup = new InMemoryVariantWriteContextLookup(
+            referenceFields: ['11111-60112' => ['grp' => '8010', 'cbsCode' => '90189084', 'productType' => '', 'subcategorie' => '', 'merknaam' => '']],
+            typeIdByItemcode: ['10111' => '2'],
+        );
+
+        $payload = (new FbCompositionVariantPayloadBuilder())->build($plan, $lookup, [
+            'U4E3E32DEFB374A1BA9F8680B8C405907' => true,
+            'UD77EC755E2F1404EB184A956685A7C0C' => true,
+            'UFR_SYNC' => false, // gefingeerde Reseller FR uuids — niet gepubliceerd
+            'UFR_TONEN' => false,
+        ]);
+
+        $fields = $payload['FbComposition']['Element']['Fields'];
+        self::assertTrue($fields['U4E3E32DEFB374A1BA9F8680B8C405907']);
+        self::assertFalse($fields['UFR_SYNC']);
+        self::assertFalse($fields['UFR_TONEN']);
     }
 }

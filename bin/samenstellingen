@@ -96,6 +96,9 @@ use Defibrion\Samenstellingen\Interface\Cli\ListGroupsCommand;
 use Defibrion\Samenstellingen\Interface\Cli\ListWebsitesCommand;
 use Defibrion\Samenstellingen\Interface\Cli\PublishBaseCommand;
 use Defibrion\Samenstellingen\Interface\Cli\RemoveWebsiteCommand;
+use Defibrion\Samenstellingen\Application\Publications\SyncPublicationsHandler;
+use Defibrion\Samenstellingen\Infrastructure\Publications\HttpPublicationSyncWriter;
+use Defibrion\Samenstellingen\Interface\Cli\SyncPublicationsCommand;
 use Defibrion\Samenstellingen\Interface\Cli\UnpublishBaseCommand;
 use Defibrion\Samenstellingen\Interface\Cli\ShowGroupCommand;
 use Defibrion\Samenstellingen\Interface\Cli\SyncGroupAgainstAfasCommand;
@@ -315,6 +318,8 @@ if ($hasAfasCreds) {
         $afasSamenstellingenRepository,
         new VariantNamingPolicy(),
         $variantWriter,
+        $websiteRepository,
+        $basePublicationRepository,
     );
     $variantSnapshotRefresher = new PullAfasVariantSnapshotRefresher($pullHandler);
     $fixMissingVariantsWithPricesHandler = new FixMissingVariantsWithPricesHandler(
@@ -323,6 +328,17 @@ if ($hasAfasCreds) {
         $fixPriceMissingHandler,
     );
     $application->addCommand(new FixMissingVariantsCommand($fixMissingVariantsWithPricesHandler));
+
+    $publicationSyncWriter = new HttpPublicationSyncWriter($afasClient);
+    $syncPublicationsHandler = new SyncPublicationsHandler(
+        $groupRepository,
+        $baseRepository,
+        $afasSamenstellingenRepository,
+        $websiteRepository,
+        $basePublicationRepository,
+        $publicationSyncWriter,
+    );
+    $application->addCommand(new SyncPublicationsCommand($syncPublicationsHandler));
 }
 
 exit($application->run());

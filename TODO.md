@@ -1272,26 +1272,32 @@ Eindbeeld: per variant kunnen we kiezen op welke website(s) hij gepubliceerd is.
 - [x] 4 TDD-tests + live smoke (11111 published op Reseller NL).
 - [x] Nieuwe repo-methode `GroupBaseRepository::findAllByAfasItemcode` + 2 contract-tests.
 
-### Sub-slice 45.3 — Payload-builder refactor
-- [ ] `FbCompositionVariantPayloadBuilder` accepteert nieuwe `array<string, bool>` parameter `freeFieldFlags` (uuid → true/false).
-- [ ] `FixMissingVariantsHandler` verzamelt per base de publicaties en bouwt die map; alle bases én accessoire-varianten van die base erven dezelfde flags.
-- [ ] Hardcoded `FF_SYNC` / `FF_TONEN` constanten verwijderd uit builder.
-- [ ] Unit-tests: builder met 1 website published (= true voor dat paar), 2 websites mixed (1 true, 1 false), 0 publicaties (alle flags false).
+### Sub-slice 45.3 — Payload-builder refactor ✅
+- [x] `FbCompositionVariantPayloadBuilder` accepteert nieuwe `array<string, bool>` parameter `freeFieldFlags`.
+- [x] `FixMissingVariantsHandler` verzamelt per base de publicaties (via `BasePublicationRepository::findAllForBase`) en bouwt de flag-map.
+- [x] Hardcoded `FF_SYNC` / `FF_TONEN` constanten verwijderd; alleen gestuurd via publicaties.
+- [x] `VariantFixMissingPlan` heeft optioneel `freeFieldFlags` veld; writer geeft door aan builder.
+- [x] 3 unit-tests: 1 website published, 0 publicaties (geen flags), unpublished = false.
 
-### Sub-slice 45.4 — UI
-- [ ] `/settings/websites`-pagina (nieuwe route) toont websites read-only (naam + UUID's gemaskeerd voor de eerste 8 chars).
-- [ ] `GroupDetail` toont per base een chip-rij met gepubliceerde websites; varianten erven impliciet via hun base.
-- [ ] Vitest-tests voor beide.
+### Sub-slice 45.4 — UI ✅
+- [x] `/settings/websites`-pagina met read-only tabel (naam + gemaskeerde UUID's).
+- [x] `GroupDetail` toont per base een `success`-chip per gepubliceerde website naast taal-/variantlabel-chips.
+- [x] `ShowGroupController` levert `publishedOn: string[]` per base.
+- [x] Nieuwe `/api/websites` GET endpoint.
+- [x] Vitest-test voor WebsiteSettings.
 
-### Sub-slice 45.5 — Sync naar AFAS
-- [ ] Nieuwe CLI `publications:sync [--apply] [--limit=N]`.
-- [ ] Dry-run toont per base + accessoire-variant welk vrij-veld op `true`/`false` moet, vergeleken met huidige AFAS-state (via PowerBI_Item lookup).
-- [ ] `--apply` PUT FbComposition met de juiste flags (= base zelf + alle accessoire-varianten van die base). Failures → `tmp/fix-publications-{datum}.csv`.
+### Sub-slice 45.5 — Sync naar AFAS ✅
+- [x] CLI `publications:sync [--apply] [--limit=N]`.
+- [x] `SyncPublicationsHandler` verzamelt per base + accessoire-varianten een PUT-plan met flags. Iteratie: groep → base → varianten via prefix-match in afas_samenstellingen.
+- [x] `HttpPublicationSyncWriter` PUT FbComposition met `@ItCd` + flag-Fields.
+- [x] `InMemoryPublicationSyncWriter` voor tests met optionele `failOn` parameter.
+- [x] 4 TDD-tests: dry-run, apply, limit, plan-shape.
+- [x] Failures → `tmp/fix-publications-{datum}.csv`.
 
-### Sub-slice 45.6 — Seed + live
-- [ ] Seed "Reseller NL" met `U4E3E32DEFB374A1BA9F8680B8C405907` + `UD77EC755E2F1404EB184A956685A7C0C`.
-- [ ] Bulk-script `tmp/seed-publications-reseller-nl.sh`: markeer **alle bestaande bases** als gepubliceerd op Reseller NL.
-- [ ] Live verifieer: `variants:fix-missing` blijft werken voor toekomstige varianten (FF_SYNC/FF_TONEN komt nu uit Reseller-NL-publicatie i.p.v. hardcoded).
+### Sub-slice 45.6 — Seed + live ✅
+- [x] Reseller NL al aangemaakt via `website:add` (slice 45.1 smoke).
+- [x] `tmp/seed-publications-reseller-nl.sh`: 92 unieke SKUs gepubliceerd, 94 base-rijen in `base_publications` (sommige SKUs voorkomen in meerdere groepen).
+- [x] Live verifieer: `variants:fix-missing` blijft werken (FF_SYNC/FF_TONEN komen nu uit publicaties).
 
 ---
 

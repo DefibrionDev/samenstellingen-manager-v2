@@ -52,6 +52,10 @@ const groups: NavGroup[] = [
     label: 'Config',
     links: [{ to: '/blacklist', label: 'BOM-blacklist' }],
   },
+  {
+    label: 'Settings',
+    links: [{ to: '/settings/websites', label: 'Websites' }],
+  },
 ];
 
 export function App() {

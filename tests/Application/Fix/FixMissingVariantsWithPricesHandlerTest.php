@@ -158,6 +158,8 @@ final class FixMissingVariantsWithPricesHandlerTest extends TestCase
             $afasSamenstellingen,
             new VariantNamingPolicy(),
             new InMemoryVariantFixMissingWriter(),
+            new \Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryWebsiteRepository(),
+            new \Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryBasePublicationRepository(),
         );
 
         $beginDate = new InMemoryBeginDateLookup();

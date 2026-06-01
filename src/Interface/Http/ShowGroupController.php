@@ -8,6 +8,8 @@ use Defibrion\Samenstellingen\Domain\Afas\AfasArticleRepository;
 use Defibrion\Samenstellingen\Domain\Group\GroupBaseItemRepository;
 use Defibrion\Samenstellingen\Domain\Group\GroupBaseRepository;
 use Defibrion\Samenstellingen\Domain\Group\GroupRepository;
+use Defibrion\Samenstellingen\Domain\Website\BasePublicationRepository;
+use Defibrion\Samenstellingen\Domain\Website\WebsiteRepository;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -18,6 +20,8 @@ final readonly class ShowGroupController
         private GroupBaseRepository $bases,
         private GroupBaseItemRepository $items,
         private AfasArticleRepository $articles,
+        private WebsiteRepository $websites,
+        private BasePublicationRepository $publications,
     ) {
     }
 
@@ -32,9 +36,17 @@ final readonly class ShowGroupController
             return Json::write($response, ['error' => "Groep '$familyHead' niet gevonden."], 404);
         }
 
+        $websitesById = [];
+        foreach ($this->websites->findAll() as $website) {
+            if ($website->id !== null) {
+                $websitesById[$website->id] = $website->name;
+            }
+        }
+
         $bases = [];
         foreach ($this->bases->findAllForGroup($group->familyHeadItemcode) as $base) {
             $items = [];
+            $publishedOn = [];
             if ($base->id !== null) {
                 foreach ($this->items->findAllForBase($base->id) as $item) {
                     $afasArticle = $this->articles->findByItemcode($item->itemcode);
@@ -46,6 +58,11 @@ final readonly class ShowGroupController
                         'label' => $label,
                     ];
                 }
+                foreach ($this->publications->findAllForBase($base->id) as $pub) {
+                    if ($pub->published && isset($websitesById[$pub->websiteId])) {
+                        $publishedOn[] = $websitesById[$pub->websiteId];
+                    }
+                }
             }
             $bases[] = [
                 'id' => $base->id,
@@ -53,6 +70,7 @@ final readonly class ShowGroupController
                 'languageCode' => $base->languageCode,
                 'afasItemcode' => $base->afasItemcode,
                 'variantLabel' => $base->variantLabel,
+                'publishedOn' => $publishedOn,
                 'items' => $items,
             ];
         }

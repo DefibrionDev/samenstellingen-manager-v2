@@ -26,7 +26,7 @@ final readonly class HttpFbCompositionVariantWriter implements VariantFixMissing
 
     public function apply(VariantFixMissingPlan $plan): void
     {
-        $payload = $this->payloadBuilder->build($plan, $this->lookup);
+        $payload = $this->payloadBuilder->build($plan, $this->lookup, $plan->freeFieldFlags);
 
         try {
             $this->client->insertConnector('FbComposition', $payload);

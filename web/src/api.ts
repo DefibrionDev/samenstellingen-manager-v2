@@ -21,7 +21,15 @@ export interface GroupBase {
   languageCode: string;
   afasItemcode: string | null;
   variantLabel: string | null;
+  publishedOn: string[];
   items: BaseItem[];
+}
+
+export interface Website {
+  id: number;
+  name: string;
+  ffSyncUuid: string;
+  ffTonenUuid: string;
 }
 
 export interface GroupDetail {
@@ -116,6 +124,7 @@ export const api = {
     jsonGet<PrijslijstWhitelistEntry[]>('/api/prijslijst-whitelist'),
   listDuplicateBoms: () => jsonGet<DuplicateBomGroup[]>('/api/duplicate-boms'),
   listStickerDrift: () => jsonGet<StickerDriftRow[]>('/api/sticker-drift'),
+  listWebsites: () => jsonGet<Website[]>('/api/websites'),
 };
 
 export interface StickerDriftRow {

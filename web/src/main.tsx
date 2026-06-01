@@ -17,6 +17,7 @@ import { PriceDrift } from './pages/PriceDrift';
 import { PrijslijstWhitelist } from './pages/PrijslijstWhitelist';
 import { StickerDrift } from './pages/StickerDrift';
 import { SuspiciousBases } from './pages/SuspiciousBases';
+import { WebsiteSettings } from './pages/WebsiteSettings';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, refetchOnWindowFocus: false } },
@@ -41,6 +42,7 @@ const router = createBrowserRouter([
       { path: 'prijslijst-whitelist', element: <PrijslijstWhitelist /> },
       { path: 'duplicate-boms', element: <DuplicateBoms /> },
       { path: 'sticker-drift', element: <StickerDrift /> },
+      { path: 'settings/websites', element: <WebsiteSettings /> },
       { path: '*', element: <NotFound /> },
     ],
   },

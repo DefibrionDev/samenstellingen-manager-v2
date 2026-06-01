@@ -13,6 +13,8 @@ use Defibrion\Samenstellingen\Domain\Group\GroupBaseRepository;
 use Defibrion\Samenstellingen\Domain\Group\GroupRepository;
 use Defibrion\Samenstellingen\Domain\Group\GroupVariantRepository;
 use Defibrion\Samenstellingen\Domain\Naming\VariantNamingPolicy;
+use Defibrion\Samenstellingen\Domain\Website\BasePublicationRepository;
+use Defibrion\Samenstellingen\Domain\Website\WebsiteRepository;
 use Throwable;
 
 /**
@@ -34,6 +36,8 @@ final readonly class FixMissingVariantsHandler
         private AfasSamenstellingenRepository $afasSamenstellingen,
         private VariantNamingPolicy $namingPolicy,
         private VariantFixMissingWriter $writer,
+        private WebsiteRepository $websites,
+        private BasePublicationRepository $publications,
     ) {
     }
 
@@ -103,6 +107,7 @@ final readonly class FixMissingVariantsHandler
                 familyHeadItemcode: $row->familyHead,
                 baseAfasItemcode: $row->baseAfasSku,
                 referenceVariantItemcode: $referenceCode,
+                freeFieldFlags: $this->collectPublicationFlags($base->id),
             );
 
             if ($command->limit !== null && count($plans) >= $command->limit) {
@@ -135,6 +140,34 @@ final readonly class FixMissingVariantsHandler
         }
 
         return null;
+    }
+
+    /**
+     * Verzamel per website van de base 2 free-field flags (sync + tonen):
+     * `true` als gepubliceerd, `false` anders. Wordt door
+     * `FbCompositionVariantPayloadBuilder` in de POST-payload gestopt.
+     *
+     * @return array<string, bool>
+     */
+    private function collectPublicationFlags(?int $baseId): array
+    {
+        if ($baseId === null) {
+            return [];
+        }
+        $publishedWebsiteIds = [];
+        foreach ($this->publications->findAllForBase($baseId) as $pub) {
+            if ($pub->published) {
+                $publishedWebsiteIds[$pub->websiteId] = true;
+            }
+        }
+        $flags = [];
+        foreach ($this->websites->findAll() as $website) {
+            $isPublished = $website->id !== null && isset($publishedWebsiteIds[$website->id]);
+            $flags[$website->ffSyncUuid] = $isPublished;
+            $flags[$website->ffTonenUuid] = $isPublished;
+        }
+
+        return $flags;
     }
 
     /**

@@ -124,6 +124,9 @@ function BasesTab({ bases }: { bases: GroupDetailType['bases'] }) {
                 <Chip label={base.variantLabel} size="small" variant="outlined" />
               )}
               <Chip label={base.languageCode} size="small" />
+              {(base.publishedOn ?? []).map((site) => (
+                <Chip key={site} label={site} size="small" color="success" variant="outlined" />
+              ))}
               <Typography variant="caption" color="text.secondary">
                 {base.items.length} items
               </Typography>

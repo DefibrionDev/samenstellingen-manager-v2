@@ -44,7 +44,10 @@ final class AppFactory
             $container->baseRepository(),
             $container->baseItemRepository(),
             $container->afasArticleRepository(),
+            $container->websiteRepository(),
+            $container->basePublicationRepository(),
         );
+        $listWebsites = new ListWebsitesController($container->websiteRepository());
         $listAccessoires = new ListAccessoiresController(
             $container->accessoireRepository(),
         );
@@ -127,6 +130,7 @@ final class AppFactory
         $app->get('/api/duplicate-boms', $listDuplicateBoms);
         $app->get('/api/sticker-drift', $listStickerDrift);
         $app->get('/api/prijslijst-whitelist', $listPrijslijstWhitelist);
+        $app->get('/api/websites', $listWebsites);
 
         return $app;
     }
