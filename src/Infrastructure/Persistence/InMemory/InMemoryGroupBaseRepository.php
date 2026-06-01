@@ -113,6 +113,31 @@ final class InMemoryGroupBaseRepository implements GroupBaseRepository
         return $count;
     }
 
+    public function setLanguageCodeByAfasItemcode(string $afasItemcode, string $languageCode): int
+    {
+        $normalized = trim($languageCode);
+        if ($normalized === '') {
+            throw new \InvalidArgumentException('Taal-code mag niet leeg zijn.');
+        }
+
+        $count = 0;
+        foreach ($this->byId as $id => $base) {
+            if ($base->afasItemcode !== $afasItemcode) {
+                continue;
+            }
+            $this->byId[$id] = new GroupBase(
+                $base->id,
+                $base->name,
+                $normalized,
+                $base->afasItemcode,
+                $base->variantLabel,
+            );
+            ++$count;
+        }
+
+        return $count;
+    }
+
     public function findAllAfasItemcodes(): array
     {
         $codes = [];

@@ -49,4 +49,13 @@ interface GroupBaseRepository
      * de itemcode niet voorkomt en de caller een fout kan rapporteren.
      */
     public function setVariantLabelByAfasItemcode(string $afasItemcode, ?string $variantLabel): int;
+
+    /**
+     * Wijzig de language_code van alle bases met dit afas_itemcode. Lege
+     * string is niet toegestaan (taal is verplicht — gebruik delete + re-add
+     * als je 'm echt leeg wilt).
+     *
+     * @throws \InvalidArgumentException als de taal-code leeg is.
+     */
+    public function setLanguageCodeByAfasItemcode(string $afasItemcode, string $languageCode): int;
 }

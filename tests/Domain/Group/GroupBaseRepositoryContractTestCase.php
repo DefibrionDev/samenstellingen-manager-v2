@@ -178,6 +178,36 @@ abstract class GroupBaseRepositoryContractTestCase extends TestCase
     }
 
     #[Test]
+    public function setLanguageCodeByAfasItemcodeUpdatesAndReturnsCount(): void
+    {
+        $persisted = $this->bases->saveForGroup(
+            '52112',
+            new GroupBase(null, 'AED pakket NL', 'NL', '11111'),
+        );
+        self::assertNotNull($persisted->id);
+
+        $updated = $this->bases->setLanguageCodeByAfasItemcode('11111', 'NL/FR');
+        self::assertSame(1, $updated);
+
+        $found = $this->bases->findById($persisted->id);
+        self::assertNotNull($found);
+        self::assertSame('NL/FR', $found->languageCode);
+    }
+
+    #[Test]
+    public function setLanguageCodeByAfasItemcodeReturnsZeroForUnknownCode(): void
+    {
+        self::assertSame(0, $this->bases->setLanguageCodeByAfasItemcode('99999', 'NL'));
+    }
+
+    #[Test]
+    public function setLanguageCodeByAfasItemcodeRejectsEmpty(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->bases->setLanguageCodeByAfasItemcode('11111', '   ');
+    }
+
+    #[Test]
     public function findAllAfasItemcodesReturnsOnlyNonNullValues(): void
     {
         $this->bases->saveForGroup('52112', new GroupBase(null, 'AED NL', 'NL', '52112'));

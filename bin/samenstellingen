@@ -81,6 +81,7 @@ use Defibrion\Samenstellingen\Interface\Cli\CreateAccessoireCommand;
 use Defibrion\Samenstellingen\Interface\Cli\DeleteAccessoireCommand;
 use Defibrion\Samenstellingen\Interface\Cli\SetAccessoireDeltaCommand;
 use Defibrion\Samenstellingen\Interface\Cli\SetAccessoireNaamKortCommand;
+use Defibrion\Samenstellingen\Interface\Cli\SetBaseLanguageCommand;
 use Defibrion\Samenstellingen\Interface\Cli\SetBaseVariantLabelCommand;
 use Defibrion\Samenstellingen\Interface\Cli\SetGroupModelNaamCommand;
 use Defibrion\Samenstellingen\Interface\Cli\CreateGroupCommand;
@@ -217,6 +218,7 @@ $application->addCommand(new SetAccessoireDeltaCommand($setAccessoireDeltaHandle
 $application->addCommand(new SetAccessoireNaamKortCommand($accessoireRepository));
 $application->addCommand(new SetGroupModelNaamCommand($groupRepository));
 $application->addCommand(new SetBaseVariantLabelCommand($baseRepository));
+$application->addCommand(new SetBaseLanguageCommand($baseRepository));
 $application->addCommand(new AddAccessoireCommand($addAccessoireHandler));
 $application->addCommand(new ImportSamenstellingenCsvCommand($importCsvHandler));
 $application->addCommand(new ImportPortalCsvCommand($importPortalCsvHandler));

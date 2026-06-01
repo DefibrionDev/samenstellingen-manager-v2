@@ -101,6 +101,21 @@ final readonly class SqliteGroupBaseRepository implements GroupBaseRepository
         return $stmt->rowCount();
     }
 
+    public function setLanguageCodeByAfasItemcode(string $afasItemcode, string $languageCode): int
+    {
+        $normalized = trim($languageCode);
+        if ($normalized === '') {
+            throw new \InvalidArgumentException('Taal-code mag niet leeg zijn.');
+        }
+
+        $stmt = $this->pdo->prepare(
+            'UPDATE group_bases SET language_code = :lang WHERE afas_itemcode = :code'
+        );
+        $stmt->execute([':lang' => $normalized, ':code' => $afasItemcode]);
+
+        return $stmt->rowCount();
+    }
+
     public function findFamilyHeadForBase(int $baseId): ?string
     {
         $stmt = $this->pdo->prepare(
