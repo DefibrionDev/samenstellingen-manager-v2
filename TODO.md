@@ -1224,6 +1224,30 @@ Eindbeeld: `afas:pull` detecteert wanneer Itemcode_Parent in AFAS verschoven is 
 
 ---
 
+## Slice 44 — Audit: samenstellingen zonder CBS-goederencode
+
+Eindbeeld: `audit:missing-cbs` toont alle AFAS-samenstellingen waar CBS-goederencode leeg is. Voorkomt `variants:fix-missing --apply`-failures door een lege referentie-CBS. Zie PLAN.md §24.
+
+### Sub-slice 44.0 — Schema + VO + fetcher ✅
+- [x] Migratie `0022_afas_samenstellingen_cbs_code.sql` toegevoegd.
+- [x] `AfasSamenstelling` VO uitgebreid met `?string $cbsCode` (default `null`), trim-naar-null logica.
+- [x] `HttpAfasSamenstellingenFetcher` leest `CBS-goederencode` uit `Get_Artikelen` per row.
+- [x] `SqliteAfasSamenstellingenRepository` schrijft + leest de kolom (INSERT, findAll-variants, findByItemcode).
+- [x] Bestaande tests blijven groen — 388 → 390.
+
+### Sub-slice 44.1 — Audit-handler + CLI ✅
+- [x] `MissingCbsAuditHandler` filtert `findAllCanonical()` op leeg/null `cbsCode`.
+- [x] `audit:missing-cbs` CLI met tabel-output (Itemcode | Naam | Itemcode_Parent) + `--csv=<pad>`.
+- [x] 2 TDD-tests handler.
+
+### Sub-slice 44.2 — Live verificatie ⏸️
+- [ ] Wacht op AFAS-API (401 Unauthorized op `afas:pull` — token-issue, niet code).
+- [ ] Daarna: `afas:pull` om snapshot CBS-veld te vullen.
+- [ ] `audit:missing-cbs` om totaal + concrete itemcodes te zien.
+- [ ] Documenteer top-getroffen groepen (verwacht: Cardiac Science 11148/11149 + andere).
+
+---
+
 ## Slice 20 — Reconciliation in portal-CSV-import (vervang wipe)
 
 Eindbeeld: portal-CSV-import is idempotent. Bestaande groepen behouden hun `model_name` en `group_accessoires` over imports heen; alleen groepen die niet meer in de CSV staan worden opgeruimd. Geen `ToolDataWiper` meer in de import-flow.

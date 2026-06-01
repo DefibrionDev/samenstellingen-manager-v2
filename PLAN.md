@@ -998,3 +998,23 @@ Bij `afas:pull`, na de snapshot-replace en vóór de variant-sync, voor elke gro
 - **Slice 43.1** — Repository-uitbreiding: `GroupRepository::updateFamilyHeadItemcode(string $old, string $new)` met transactie (groups + cascading group_bases via FK). InMemory + Sqlite + contract-test.
 - **Slice 43.2** — Integratie in `PullAfasSamenstellingenHandler`: na snapshot-replace, vóór `syncAllGroups`, detect + apply shifts; log naar stderr; tellen in result-VO.
 - **Slice 43.3** — Live: handmatig de Itemcode_Parent van een testsamenstelling in AFAS wijzigen, `afas:pull` draaien, verifieer dat de juiste groep mee-verhuisd is en de log de shift toont. Documenteer welke groepen geen impact hadden.
+
+---
+
+## 24. Audit: samenstellingen zonder CBS-goederencode (slice 44 — concept)
+
+### Probleem
+
+`variants:fix-missing --apply` op groep 11149 (Cardiac Science) faalt met `VariantWriteContextNotFoundException` omdat de referentie-samenstelling `11149` in AFAS Grp=`8012` heeft maar **CBS-goederencode leeg** is. Onze HTTP-lookup eist beide niet-leeg om de variant goed te kunnen aanmaken — terecht, want bij de POST eist AFAS een geldige CBS-code.
+
+Alle bestaande samenstellingen die nu een lege CBS hebben in AFAS blokkeren toekomstige variant-creatie voor hun groep. We willen een lijst om die in Profit (handmatig of via script) te vullen, voordat we verder uitrollen.
+
+### Aanpak
+
+Snapshot het CBS-veld bij elke `afas:pull` zodat de audit goedkoop is. Eén nieuwe migratie + lichte fetcher-update + audit-handler + CLI.
+
+### Slices
+
+- **Slice 44.0** — Schema + VO + repo + fetcher: migratie `0022_afas_samenstellingen_cbs_code.sql` voegt `cbs_code TEXT NULL` toe. `AfasSamenstelling`-VO uitgebreid met `?string $cbsCode`. `HttpAfasSamenstellingenFetcher` leest `CBS-goederencode` uit `Get_Artikelen`. Round-trip tests op InMemory + Sqlite.
+- **Slice 44.1** — Audit-handler + CLI: `MissingCbsAuditHandler` returnt `list<MissingCbsRow>` waar `cbs_code IS NULL OR ''`. CLI `audit:missing-cbs` toont tabel (Itemcode | Naam | Itemcode_Parent) + `--csv=<pad>` voor export.
+- **Slice 44.2** — Live: `afas:pull` om snapshot te vullen, dan `audit:missing-cbs` om totaal aantal + concrete itemcodes te zien.

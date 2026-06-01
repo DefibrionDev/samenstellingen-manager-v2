@@ -29,8 +29,8 @@ final readonly class SqliteAfasSamenstellingenRepository implements AfasSamenste
             $this->pdo->exec("DELETE FROM sqlite_sequence WHERE name = 'afas_samenstellingen'");
 
             $insertSamenstelling = $this->pdo->prepare(
-                'INSERT INTO afas_samenstellingen (itemcode, name, itemcode_parent, duplicate_of_itemcode)
-                 VALUES (:itemcode, :name, :itemcode_parent, :duplicate_of)'
+                'INSERT INTO afas_samenstellingen (itemcode, name, itemcode_parent, duplicate_of_itemcode, cbs_code)
+                 VALUES (:itemcode, :name, :itemcode_parent, :duplicate_of, :cbs_code)'
             );
             $insertBomRow = $this->pdo->prepare(
                 'INSERT INTO afas_samenstelling_bom (afas_samenstelling_id, component_itemcode)
@@ -43,6 +43,7 @@ final readonly class SqliteAfasSamenstellingenRepository implements AfasSamenste
                     ':name' => $samenstelling->name,
                     ':itemcode_parent' => $samenstelling->itemcodeParent,
                     ':duplicate_of' => $samenstelling->duplicateOfItemcode,
+                    ':cbs_code' => $samenstelling->cbsCode,
                 ]);
                 $id = (int) $this->pdo->lastInsertId();
                 foreach ($samenstelling->bomItemcodes as $component) {
@@ -80,7 +81,7 @@ final readonly class SqliteAfasSamenstellingenRepository implements AfasSamenste
     private function loadWhere(string $whereClause): array
     {
         $stmt = $this->pdo->query(
-            "SELECT id, itemcode, name, itemcode_parent, duplicate_of_itemcode
+            "SELECT id, itemcode, name, itemcode_parent, duplicate_of_itemcode, cbs_code
              FROM afas_samenstellingen
              {$whereClause}
              ORDER BY itemcode"
@@ -89,7 +90,7 @@ final readonly class SqliteAfasSamenstellingenRepository implements AfasSamenste
             return [];
         }
 
-        /** @var array<int, array{itemcode: string, name: string, itemcode_parent: ?string, duplicate_of: ?string, bom: list<string>}> $byId */
+        /** @var array<int, array{itemcode: string, name: string, itemcode_parent: ?string, duplicate_of: ?string, cbs_code: ?string, bom: list<string>}> $byId */
         $byId = [];
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
             if (!is_array($row)) {
@@ -100,6 +101,7 @@ final readonly class SqliteAfasSamenstellingenRepository implements AfasSamenste
             $name = $row['name'] ?? null;
             $parent = $row['itemcode_parent'] ?? null;
             $duplicateOf = $row['duplicate_of_itemcode'] ?? null;
+            $cbs = $row['cbs_code'] ?? null;
             if (!is_int($id) || !is_string($itemcode) || !is_string($name)) {
                 continue;
             }
@@ -108,6 +110,7 @@ final readonly class SqliteAfasSamenstellingenRepository implements AfasSamenste
                 'name' => $name,
                 'itemcode_parent' => is_string($parent) ? $parent : null,
                 'duplicate_of' => is_string($duplicateOf) ? $duplicateOf : null,
+                'cbs_code' => is_string($cbs) ? $cbs : null,
                 'bom' => [],
             ];
         }
@@ -142,6 +145,7 @@ final readonly class SqliteAfasSamenstellingenRepository implements AfasSamenste
                 $entry['itemcode_parent'],
                 $entry['bom'],
                 $entry['duplicate_of'],
+                $entry['cbs_code'],
             );
         }
 
@@ -151,7 +155,7 @@ final readonly class SqliteAfasSamenstellingenRepository implements AfasSamenste
     public function findByItemcode(string $itemcode): ?AfasSamenstelling
     {
         $stmt = $this->pdo->prepare(
-            'SELECT id, itemcode, name, itemcode_parent, duplicate_of_itemcode
+            'SELECT id, itemcode, name, itemcode_parent, duplicate_of_itemcode, cbs_code
              FROM afas_samenstellingen
              WHERE itemcode = :itemcode'
         );
@@ -165,6 +169,7 @@ final readonly class SqliteAfasSamenstellingenRepository implements AfasSamenste
         $name = $row['name'] ?? null;
         $parent = $row['itemcode_parent'] ?? null;
         $duplicateOf = $row['duplicate_of_itemcode'] ?? null;
+        $cbs = $row['cbs_code'] ?? null;
         if (!is_int($id) || !is_string($code) || !is_string($name)) {
             return null;
         }
@@ -186,6 +191,7 @@ final readonly class SqliteAfasSamenstellingenRepository implements AfasSamenste
             is_string($parent) ? $parent : null,
             $bom,
             is_string($duplicateOf) ? $duplicateOf : null,
+            is_string($cbs) ? $cbs : null,
         );
     }
 

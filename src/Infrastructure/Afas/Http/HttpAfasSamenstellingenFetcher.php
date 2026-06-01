@@ -37,6 +37,8 @@ final readonly class HttpAfasSamenstellingenFetcher implements AfasSamenstelling
                 $article['name'] ?? '',
                 $article['parent'] ?? null,
                 $bomByItemcode[$itemcode] ?? [],
+                null,
+                $article['cbs'] ?? null,
             );
         }
 
@@ -68,7 +70,7 @@ final readonly class HttpAfasSamenstellingenFetcher implements AfasSamenstelling
     /**
      * @param list<array<string, mixed>> $articles
      *
-     * @return array<string, array{name: string, parent: ?string}>
+     * @return array<string, array{name: string, parent: ?string, cbs: ?string}>
      */
     private function indexArticles(array $articles): array
     {
@@ -84,9 +86,11 @@ final readonly class HttpAfasSamenstellingenFetcher implements AfasSamenstelling
             }
             $name = $row['Naam'] ?? '';
             $parent = $row['Itemcode_Parent'] ?? null;
+            $cbs = $row['CBS-goederencode'] ?? null;
             $index[$trimmed] = [
                 'name' => is_string($name) ? $name : '',
                 'parent' => is_string($parent) && trim($parent) !== '' ? trim($parent) : null,
+                'cbs' => is_string($cbs) && trim($cbs) !== '' ? trim($cbs) : null,
             ];
         }
 
