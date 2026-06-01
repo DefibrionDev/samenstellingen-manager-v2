@@ -1328,50 +1328,23 @@ Reden: de huidige wipe is overcompensatie uit slice 8 — toen was er nog geen h
 
 ---
 
-## Slice 13 — `afas:create-missing` met per-taal naam-templating + dry-run default
+## Slice 13 — `afas:create-missing` (~~obsolete~~ vervangen door slice 39) ✅
 
-Eindbeeld: `afas:create-missing [--apply] [--limit=N]` itereert over alle variant-rijen met `afas_status='no_match'` en construeert per rij een `FbComposition`-payload. Gebruikt `base.language_code` (uit slice 11) om de variant-naam te bouwen volgens AFAS-conventie per taal.
+Oorspronkelijk plan voor een `afas:create-missing`-CLI met per-taal naam-
+templating. **Volledig vervangen** door slice 39 (`variants:fix-missing`) en
+de uitbreidingen daarna:
+- Slice 37 — canonical `VariantNamingPolicy` met per-taal modelnamen +
+  accessoire-naam-kort (vervangt de heuristieken in dit oude plan).
+- Slice 38 — `variant_label` per base voor radio-/connectiviteit-aanduidingen
+  (4G, WiFi, 3G, USB).
+- Slice 39 — PoC + `variants:fix-missing` met chained `prices:fix-missing`,
+  `FbCompositionPart`-BOM-payload, sanity-rails en CSV-failures.
+- Slice 42 — Producttype + Subcategorie + Merknaam gespiegeld uit referentie-
+  variant via `PowerBI_Item`.
+- Slice 45 — Vrije velden `Sync_*`/`Tonen_*` per website via publicatie-state
+  (vervangt de hardcoded NL-only paar uit dit plan).
 
-**Default = dry-run** (CLAUDE.md regel). `--apply` schrijft écht naar AFAS.
-
-Per-taal naam-templates (heuristiek op base.name):
-- NL: vervang ` incl.safeset en stickerset` door ` met {accessoire.label}` (of ` met  …` als de bron al een dubbele spatie heeft).
-- FR: vervang ` avec safesett et signalétique` (of ` avec safeset et signalétique`) door `  avec {accessoire.label}` (dubbele spatie, conform AFAS).
-- DE/EN/UK: append `+ {accessoire.label}` (uit AFAS-conventie van Philips/Cardiac-bases).
-- Onbekend / NULL: fallback `"{base.name} + {accessoire.label}"`.
-
-Bekende onzekerheden:
-- Exacte FbComposition INSERT-payload-shape (BOM-lines onder `Objects`/`FbCompositionLines`?).
-- Free field UUIDs voor `Itemcode_Parent`, `Sync_Reseller_NL`, `Tonen_Reseller_NL` hergebruiken uit afas-connector-tools.
-
-### Fase 1 — Domein + writer-abstractie
-- [ ] `NewAfasSamenstelling` value object: `itemcode`, `name`, `itemcodeParent`, `syncResellerNl`, `tonenResellerNl`, `bomItemcodes`.
-- [ ] `AfasSamenstellingenWriter` interface met `create(NewAfasSamenstelling): void`.
-- [ ] `AfasWriteFailedException`.
-
-### Fase 2 — Naam-templating
-- [ ] `VariantNamingPolicy` domain service: `name(GroupBase $base, Accessoire $accessoire): string`. Past per-taal regels toe op basis van `$base->languageCode`.
-
-### Fase 3 — Writer-implementaties
-- [ ] `LoggingDryRunWriter` (print payload).
-- [ ] `HttpAfasSamenstellingenWriter` (echte call). Hergebruikt UUIDs uit afas-connector-tools (`U298663…` voor Itemcode_Parent etc.).
-- [ ] `InMemoryAfasSamenstellingenWriter` (tests).
-
-### Fase 4 — Application
-- [ ] `CreateMissingSamenstellingen` + handler. Itereert missing variants, gebruikt `VariantNamingPolicy`, roept writer aan.
-- [ ] `CreateMissingSummary` met counts en errors.
-
-### Fase 5 — CLI
-- [ ] `CreateMissingAfasCommand` — `afas:create-missing [--apply] [--limit=N]`.
-- [ ] Default dry-run; `--apply` switcht naar HttpWriter + vraagt confirmation.
-
-### Fase 6 — Handmatige verificatie + commit
-- [ ] Dry-run check: payloads ogen goed (NL/FR namen kloppen met AFAS-conventie).
-- [ ] `--apply --limit=1` op één veilige rij, controle in AFAS.
-- [ ] Stapsgewijs opschalen.
-- [ ] Na succesvolle apply: `afas:pull` + `group:sync-afas`; missing-count daalt.
-- [ ] `make check` is groen.
-- [ ] **Commit + push** "slice 12: afas:create-missing met per-taal naam-templating".
+Geen openstaande todos meer in dit blok.
 
 ---
 
