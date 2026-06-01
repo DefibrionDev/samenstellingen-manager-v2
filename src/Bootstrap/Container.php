@@ -10,6 +10,7 @@ use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAfasArticl
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAfasPrijslijstRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAfasPrijsRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAfasSamenstellingenRepository;
+use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteBasePublicationRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteBomBlacklistRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteGroupAccessoireRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteGroupBaseItemRepository;
@@ -17,6 +18,7 @@ use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteGroupBaseR
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteGroupRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteGroupVariantRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqlitePrijslijstWhitelistRepository;
+use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteWebsiteRepository;
 use PDO;
 
 /**
@@ -38,6 +40,8 @@ class Container
     private ?SqliteAfasPrijslijstRepository $afasPrijslijstRepository = null;
     private ?SqlitePrijslijstWhitelistRepository $prijslijstWhitelistRepository = null;
     private ?SqliteBomBlacklistRepository $bomBlacklistRepository = null;
+    private ?SqliteWebsiteRepository $websiteRepository = null;
+    private ?SqliteBasePublicationRepository $basePublicationRepository = null;
 
     public function __construct(
         private readonly string $dbPath,
@@ -119,5 +123,15 @@ class Container
     public function prijslijstWhitelistRepository(): SqlitePrijslijstWhitelistRepository
     {
         return $this->prijslijstWhitelistRepository ??= new SqlitePrijslijstWhitelistRepository($this->pdo());
+    }
+
+    public function websiteRepository(): SqliteWebsiteRepository
+    {
+        return $this->websiteRepository ??= new SqliteWebsiteRepository($this->pdo());
+    }
+
+    public function basePublicationRepository(): SqliteBasePublicationRepository
+    {
+        return $this->basePublicationRepository ??= new SqliteBasePublicationRepository($this->pdo());
     }
 }

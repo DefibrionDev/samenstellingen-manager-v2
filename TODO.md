@@ -1247,6 +1247,53 @@ Eindbeeld: `audit:missing-cbs` toont alle AFAS-samenstellingen waar CBS-goederen
 
 ---
 
+## Slice 45 — Website-publicatie per variant
+
+Eindbeeld: per variant kunnen we kiezen op welke website(s) hij gepubliceerd is. Bij `publications:sync --apply` zet AFAS de bijbehorende `Sync_*`/`Tonen_*`-vrije velden op `true`/`false` per website. Bestaande hardcoded `Sync_Reseller_NL`/`Tonen_Reseller_NL` in `FbCompositionVariantPayloadBuilder` wordt vervangen door publicatie-gestuurde flow. Zie PLAN.md §25.
+
+### Sub-slice 45.0 — Schema + domain ✅
+- [x] Migratie `0023_websites_and_publications.sql` met `websites` + `base_publications` (UNIQUE + FK-cascade).
+- [x] VO's `Website` + `BasePublication` met validatie (niet-leeg).
+- [x] Interfaces `WebsiteRepository` + `BasePublicationRepository`.
+- [x] InMemory + Sqlite implementaties.
+- [x] 8 contract-tests voor websites + 4 voor base-publications (round-trip, UNIQUE, upsert, find-paths).
+
+### Sub-slice 45.1 — CLI website-management ✅
+- [x] `website:add <naam> <sync-uuid> <tonen-uuid>` met validatie alleen op niet-leeg.
+- [x] `website:list` met tabel + `--csv=<pad>`-optie.
+- [x] `website:remove <naam>` — idempotent, cascade via FK.
+- [x] 6 TDD-tests per command. Container + bin/samenstellingen gewired.
+- [x] Smoke: Reseller NL toegevoegd met de bestaande free-field UUIDs.
+
+### Sub-slice 45.2 — CLI publicatie-management
+- [ ] `base:publish <afas-itemcode> <website-naam>` (lookup via afas_itemcode net als `base:set-language`).
+- [ ] `base:unpublish <afas-itemcode> <website-naam>` — idempotent.
+- [ ] Foutpaden: onbekende afas_itemcode, onbekende website-naam.
+- [ ] TDD-tests + smoke.
+
+### Sub-slice 45.3 — Payload-builder refactor
+- [ ] `FbCompositionVariantPayloadBuilder` accepteert nieuwe `array<string, bool>` parameter `freeFieldFlags` (uuid → true/false).
+- [ ] `FixMissingVariantsHandler` verzamelt per base de publicaties en bouwt die map; alle bases én accessoire-varianten van die base erven dezelfde flags.
+- [ ] Hardcoded `FF_SYNC` / `FF_TONEN` constanten verwijderd uit builder.
+- [ ] Unit-tests: builder met 1 website published (= true voor dat paar), 2 websites mixed (1 true, 1 false), 0 publicaties (alle flags false).
+
+### Sub-slice 45.4 — UI
+- [ ] `/settings/websites`-pagina (nieuwe route) toont websites read-only (naam + UUID's gemaskeerd voor de eerste 8 chars).
+- [ ] `GroupDetail` toont per base een chip-rij met gepubliceerde websites; varianten erven impliciet via hun base.
+- [ ] Vitest-tests voor beide.
+
+### Sub-slice 45.5 — Sync naar AFAS
+- [ ] Nieuwe CLI `publications:sync [--apply] [--limit=N]`.
+- [ ] Dry-run toont per base + accessoire-variant welk vrij-veld op `true`/`false` moet, vergeleken met huidige AFAS-state (via PowerBI_Item lookup).
+- [ ] `--apply` PUT FbComposition met de juiste flags (= base zelf + alle accessoire-varianten van die base). Failures → `tmp/fix-publications-{datum}.csv`.
+
+### Sub-slice 45.6 — Seed + live
+- [ ] Seed "Reseller NL" met `U4E3E32DEFB374A1BA9F8680B8C405907` + `UD77EC755E2F1404EB184A956685A7C0C`.
+- [ ] Bulk-script `tmp/seed-publications-reseller-nl.sh`: markeer **alle bestaande bases** als gepubliceerd op Reseller NL.
+- [ ] Live verifieer: `variants:fix-missing` blijft werken voor toekomstige varianten (FF_SYNC/FF_TONEN komt nu uit Reseller-NL-publicatie i.p.v. hardcoded).
+
+---
+
 ## Slice 20 — Reconciliation in portal-CSV-import (vervang wipe)
 
 Eindbeeld: portal-CSV-import is idempotent. Bestaande groepen behouden hun `model_name` en `group_accessoires` over imports heen; alleen groepen die niet meer in de CSV staan worden opgeruimd. Geen `ToolDataWiper` meer in de import-flow.

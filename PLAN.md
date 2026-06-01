@@ -1018,3 +1018,52 @@ Snapshot het CBS-veld bij elke `afas:pull` zodat de audit goedkoop is. Eén nieu
 - **Slice 44.0** — Schema + VO + repo + fetcher: migratie `0022_afas_samenstellingen_cbs_code.sql` voegt `cbs_code TEXT NULL` toe. `AfasSamenstelling`-VO uitgebreid met `?string $cbsCode`. `HttpAfasSamenstellingenFetcher` leest `CBS-goederencode` uit `Get_Artikelen`. Round-trip tests op InMemory + Sqlite.
 - **Slice 44.1** — Audit-handler + CLI: `MissingCbsAuditHandler` returnt `list<MissingCbsRow>` waar `cbs_code IS NULL OR ''`. CLI `audit:missing-cbs` toont tabel (Itemcode | Naam | Itemcode_Parent) + `--csv=<pad>` voor export.
 - **Slice 44.2** — Live: `afas:pull` om snapshot te vullen, dan `audit:missing-cbs` om totaal aantal + concrete itemcodes te zien.
+
+---
+
+## 25. Website-publicatie per variant (slice 45 — concept)
+
+### Probleem
+
+Onze tool zet bij elke `variants:fix-missing --apply` hardcoded de free-fields `Sync_Reseller_NL` (`U4E3…`) + `Tonen_Reseller_NL` (`UD77…`) op `true`. Dat impliceert dat alle nieuwe varianten direct op de NL-reseller-shop verschijnen. Maar Defibrion heeft meer shops (FR, DE, …) elk met eigen vrije-veld-paren. We willen per `(variant, website)` kunnen kiezen of een variant gepubliceerd is, en die keuze synchroniseren naar AFAS via dezelfde vrije velden.
+
+### Conceptueel model
+
+- **Website**: aparte AFAS-bestemming. Heeft naam (`"Reseller NL"`, `"Reseller FR"`, …) + free-field UUID's voor `Sync_*` en `Tonen_*`. De bestaande Reseller NL-vrije-velden worden de eerste website-entry, daarna kan de gebruiker er meer toevoegen via CLI.
+- **Publication**: per `(base, website)` een vink. Granulariteit = base-niveau; alle accessoire-varianten van die base erven automatisch de publicatie-staat. Bv.: publiceer base `11111` op website X → variants `11111`, `11111-60110`, `11111-60112` etc. krijgen allemaal FF_SYNC/FF_TONEN=true voor website X.
+- **AFAS-sync**: voor elke `published`-base PUT'en we FbComposition op de base zelf + op elke afgeleide variant in AFAS met `FF_SYNC` + `FF_TONEN`=true voor die website; not-published bases krijgen `false`.
+
+### Schema-aanpak
+
+```sql
+CREATE TABLE websites (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    ff_sync_uuid TEXT NOT NULL,
+    ff_tonen_uuid TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE base_publications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    base_id INTEGER NOT NULL,
+    website_id INTEGER NOT NULL,
+    published INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (base_id, website_id),
+    FOREIGN KEY (base_id) REFERENCES group_bases(id) ON DELETE CASCADE,
+    FOREIGN KEY (website_id) REFERENCES websites(id) ON DELETE CASCADE
+);
+```
+
+Bestaande hardcoded UUID-constanten in `FbCompositionVariantPayloadBuilder` worden vervangen: payload-builder krijgt een mapping `website-publicaties → array{ff_uuid → bool}` mee, geen hardcoded `FF_SYNC`/`FF_TONEN` meer.
+
+### Slices
+
+- **Slice 45.0** — Schema + domain: migratie `0023_websites_and_publications.sql`, `Website` + `BasePublication` VO's, `WebsiteRepository` + `BasePublicationRepository` (InMemory + Sqlite), contract-tests.
+- **Slice 45.1** — CLI website-management: `website:add <naam> <sync-uuid> <tonen-uuid>`, `website:list`, `website:remove <naam>`. UUID's worden alleen op niet-leeg gevalideerd.
+- **Slice 45.2** — CLI publicatie-management: `base:publish <afas-itemcode> <website-naam>` en `base:unpublish <afas-itemcode> <website-naam>` — lookup via afas_itemcode net als `base:set-language`. Idempotent.
+- **Slice 45.3** — Refactor `FbCompositionVariantPayloadBuilder`: leest publicaties van de base (variant's base via plan), voegt per-website FF_SYNC + FF_TONEN toe (`true` als published, `false` anders). Hardcoded `Sync_Reseller_NL`/`Tonen_Reseller_NL`-constanten verwijderd.
+- **Slice 45.4** — UI: `/settings/websites` read-only lijst (naam + gemaskeerd uuid). `GroupDetail` toont per base een chip-rij met gepubliceerde websites; de varianten-tab erft die.
+- **Slice 45.5** — Sync naar AFAS: nieuwe CLI `publications:sync [--apply] [--limit=N]` — voor elke base + al z'n accessoire-varianten PUT FbComposition met de juiste FF_SYNC/FF_TONEN per website. Dry-run default, failures naar `tmp/fix-publications-{datum}.csv`.
+- **Slice 45.6** — Seed + live: voeg "Reseller NL" toe met bestaande UUIDs, markeer **alle bases** als published op Reseller NL (handmatig bulk via script). Verifieer dat een `variants:fix-missing --apply` daarna nog identiek werkt (FF_SYNC/FF_TONEN komt nu uit publicatie i.p.v. hardcoded).
