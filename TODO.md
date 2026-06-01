@@ -1198,6 +1198,32 @@ Eindbeeld: `variants:fix-missing` zet de webshop-relevante free-fields **Product
 
 ---
 
+## Slice 43 — Auto-sync family-head bij `afas:pull`
+
+Eindbeeld: `afas:pull` detecteert wanneer Itemcode_Parent in AFAS verschoven is voor een groep en updatet `groups.family_head_itemcode` automatisch. Sanity rails: ≥3 bases nodig, nieuwe parent moet bestaan in AFAS, geen dubbel-claim. Log per shift. Zie PLAN.md §23.
+
+### Sub-slice 43.0 — Detector (pure functie) ✅
+- [x] `FamilyHeadShiftDetector::detect(list<Group>, array<int|string, iterable<GroupBase>>, list<AfasSamenstelling>): list<FamilyHeadShift>`.
+- [x] 6 TDD-tests: stable, shift bij 3+ bases, geen shift bij <3, geen shift bij niet-bestaande parent, geen shift bij dubbel-claim, SKU-loze bases tellen niet.
+
+### Sub-slice 43.1 — Repository ✅
+- [x] `GroupRepository::updateFamilyHeadItemcode()` op interface + InMemory + Sqlite.
+- [x] Contract-tests: shift werkt, GroupNotFoundException bij onbekende oude head, GroupAlreadyExistsException bij conflict.
+
+### Sub-slice 43.2 — Integratie in pull ✅
+- [x] `PullAfasSamenstellingenHandler` neemt `GroupRepository` + `GroupBaseRepository` + `FamilyHeadShiftDetector` op.
+- [x] Na snapshot-replace, vóór `syncAllGroups`: detect + apply per shift; log naar stderr.
+- [x] `PullAfasSamenstellingenResult` krijgt `int $familyHeadShiftsApplied`.
+- [x] Wiring in `bin/samenstellingen` bijgewerkt.
+
+### Sub-slice 43.3 — Live verificatie ✅
+- [x] Geen handmatige AFAS-wijziging nodig: live pull detecteerde direct twee bestaande shifts: Mindray C2 semi `21013 → 21013-UK` (3 bases) en C2 vol `21014 → 21014-UK` (3 bases).
+- [x] Heartsine-groepen (10013/10023/11131) en alle andere stable → 0 false positives.
+- [x] DB verifieerde: `groups.family_head_itemcode` bijgewerkt; bases blijven gekoppeld via group_id (FK).
+- [x] Note: de allereerste pull-run liet de update pas op tweede run committen (PDO connection state na meerdere replaceSnapshot-transacties). Idempotent — geen data-verlies. Mogelijke follow-up: shifts in eigen expliciete TX wrappen.
+
+---
+
 ## Slice 20 — Reconciliation in portal-CSV-import (vervang wipe)
 
 Eindbeeld: portal-CSV-import is idempotent. Bestaande groepen behouden hun `model_name` en `group_accessoires` over imports heen; alleen groepen die niet meer in de CSV staan worden opgeruimd. Geen `ToolDataWiper` meer in de import-flow.

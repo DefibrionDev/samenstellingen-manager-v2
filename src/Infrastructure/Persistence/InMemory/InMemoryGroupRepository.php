@@ -73,4 +73,28 @@ final class InMemoryGroupRepository implements GroupRepository
         $this->byFamilyHead[$familyHeadItemcode] = $updated;
         $this->byName[$existing->name] = $updated;
     }
+
+    public function updateFamilyHeadItemcode(string $oldFamilyHead, string $newFamilyHead): void
+    {
+        $existing = $this->byFamilyHead[$oldFamilyHead] ?? null;
+        if ($existing === null) {
+            throw GroupNotFoundException::forFamilyHeadItemcode($oldFamilyHead);
+        }
+        if ($oldFamilyHead === $newFamilyHead) {
+            return;
+        }
+        if (isset($this->byFamilyHead[$newFamilyHead])) {
+            throw GroupAlreadyExistsException::forFamilyHeadItemcode($newFamilyHead);
+        }
+        $updated = new Group(
+            $existing->name,
+            $newFamilyHead,
+            $existing->modelNameNl,
+            $existing->modelNameFr,
+            $existing->modelNameEn,
+        );
+        unset($this->byFamilyHead[$oldFamilyHead]);
+        $this->byFamilyHead[$newFamilyHead] = $updated;
+        $this->byName[$existing->name] = $updated;
+    }
 }

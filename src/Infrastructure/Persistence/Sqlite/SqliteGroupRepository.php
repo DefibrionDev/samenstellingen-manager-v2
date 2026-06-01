@@ -88,6 +88,25 @@ final readonly class SqliteGroupRepository implements GroupRepository
         }
     }
 
+    public function updateFamilyHeadItemcode(string $oldFamilyHead, string $newFamilyHead): void
+    {
+        if ($this->findByFamilyHeadItemcode($oldFamilyHead) === null) {
+            throw GroupNotFoundException::forFamilyHeadItemcode($oldFamilyHead);
+        }
+        if ($oldFamilyHead === $newFamilyHead) {
+            return;
+        }
+        try {
+            $stmt = $this->pdo->prepare('UPDATE groups SET family_head_itemcode = :new WHERE family_head_itemcode = :old');
+            $stmt->execute([':new' => $newFamilyHead, ':old' => $oldFamilyHead]);
+        } catch (\PDOException $e) {
+            if (str_contains($e->getMessage(), 'UNIQUE constraint failed')) {
+                throw GroupAlreadyExistsException::forFamilyHeadItemcode($newFamilyHead);
+            }
+            throw $e;
+        }
+    }
+
     public function findAll(): array
     {
         $stmt = $this->pdo->query('SELECT name, family_head_itemcode, model_name_nl, model_name_fr, model_name_en FROM groups ORDER BY name');

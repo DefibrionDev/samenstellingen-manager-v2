@@ -966,3 +966,35 @@ We hebben al een referentie-variant per nieuw plan (`VariantFixMissingPlan::refe
 - **Slice 42.0** — Lookup uitbreiden: `VariantWriteContextLookup::lookupReferenceFields()` returnt nu `{grp, cbsCode, productType, subcategorie, merknaam}`. `HttpVariantWriteContextLookup` pullt `PowerBI_Item` lazy (zelfde patroon als de Get_Artikelen-pull) en bouwt een cache. `InMemoryVariantWriteContextLookup` neemt de drie nieuwe velden in zijn fixture. Contract-update op tests.
 - **Slice 42.1** — `FbCompositionVariantPayloadBuilder` voegt de drie UUIDs toe wanneer de lookup-data de velden bevat. Unit-test uitbreiden met de drie assertions.
 - **Slice 42.2** — Live verificatie: POST een nieuwe variant via `variants:fix-missing --apply --limit=1`, pull `PowerBI_Item` voor de nieuwe SKU, verifieer dat de drie velden 1-op-1 matchen met de referentie. Vink slice 42 af.
+
+---
+
+## 23. Auto-sync van family-head bij `afas:pull` (slice 43 — concept)
+
+### Probleem
+
+Onze tool bewaart `groups.family_head_itemcode` als handmatige grouping-key. AFAS bewaart `Itemcode_Parent` per samenstelling. Wanneer een gebruiker in AFAS de Itemcode_Parent wijzigt (bv. samenstellingen verhuist naar een nieuwe parent), worden onze `groups`-rijen niet automatisch meeverhuisd — opvolgende `variants:fix-missing`-runs sturen dan de **oude** family-head als `FF_PARENT` in de POST, wat een mismatch met AFAS oplevert.
+
+`variants:fix-missing` gebruikt `groups.family_head_itemcode` direct voor de FF_PARENT-payload-veld; mismatches zijn niet zichtbaar tot na een rollout.
+
+### Aanpak — detect + apply tijdens pull, met sanity rails
+
+Bij `afas:pull`, na de snapshot-replace en vóór de variant-sync, voor elke groep:
+
+1. Verzamel alle `bases` van die groep met een `afas_itemcode` (niet de SKU-loze).
+2. Voor elke base: kijk in de verse `afas_samenstellingen`-snapshot wat de current `itemcode_parent` van die SKU is.
+3. Skip bases waar parent gelijk is aan de huidige family-head (= geen verschuiving).
+4. Als minstens **3 distincte bases** een **gemeenschappelijke nieuwe parent X** hebben, EN X zelf bestaat als samenstelling in de snapshot, EN X is niet al een andere group's family-head → markeer als verschuiving.
+5. Bij verschuiving: update `groups.family_head_itemcode` in een transactie + log één regel per shift naar stderr (`[groups] family-head 10013 → 10099 (N bases verschoven)`).
+
+**Sanity rails** (om ongewenste auto-merges te voorkomen):
+- Drempel van 3 bases zorgt dat een enkele AFAS-typo niet de groep verhuist.
+- Check dat de nieuwe parent niet al een andere group claimt → voorkomt accidentele merge.
+- Bij <3 bases of dubbel-claim: geen update, alleen een waarschuwing zonder verandering.
+
+### Slices
+
+- **Slice 43.0** — Domain-logica: `FamilyHeadShiftDetector` als pure functie (input: groups + bases + afas-samenstellingen → output: list shifts). Tests voor: geen shift wanneer alles stabiel; shift wanneer ≥3 bases naar één nieuwe parent; geen shift bij <3 bases; geen shift wanneer nieuwe parent niet bestaat; geen shift bij dubbel-claim.
+- **Slice 43.1** — Repository-uitbreiding: `GroupRepository::updateFamilyHeadItemcode(string $old, string $new)` met transactie (groups + cascading group_bases via FK). InMemory + Sqlite + contract-test.
+- **Slice 43.2** — Integratie in `PullAfasSamenstellingenHandler`: na snapshot-replace, vóór `syncAllGroups`, detect + apply shifts; log naar stderr; tellen in result-VO.
+- **Slice 43.3** — Live: handmatig de Itemcode_Parent van een testsamenstelling in AFAS wijzigen, `afas:pull` draaien, verifieer dat de juiste groep mee-verhuisd is en de log de shift toont. Documenteer welke groepen geen impact hadden.

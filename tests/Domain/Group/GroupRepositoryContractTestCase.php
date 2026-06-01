@@ -94,4 +94,41 @@ abstract class GroupRepositoryContractTestCase extends TestCase
 
         self::assertSame([], $repo->findAll());
     }
+
+    #[Test]
+    public function updateFamilyHeadItemcodeShiftsTheKey(): void
+    {
+        $repo = $this->repository();
+        $repo->save(new \Defibrion\Samenstellingen\Domain\Group\Group('Reanibex', '52112', 'Reanibex 100'));
+
+        $repo->updateFamilyHeadItemcode('52112', '52199');
+
+        self::assertNull($repo->findByFamilyHeadItemcode('52112'));
+        $shifted = $repo->findByFamilyHeadItemcode('52199');
+        self::assertNotNull($shifted);
+        self::assertSame('Reanibex', $shifted->name);
+        self::assertSame('Reanibex 100', $shifted->modelNameNl);
+    }
+
+    #[Test]
+    public function updateFamilyHeadItemcodeRejectsUnknownOldHead(): void
+    {
+        $repo = $this->repository();
+
+        $this->expectException(\Defibrion\Samenstellingen\Domain\Group\GroupNotFoundException::class);
+
+        $repo->updateFamilyHeadItemcode('99999', '88888');
+    }
+
+    #[Test]
+    public function updateFamilyHeadItemcodeRejectsConflictingNewHead(): void
+    {
+        $repo = $this->repository();
+        $repo->save(new \Defibrion\Samenstellingen\Domain\Group\Group('Eerste', '52112'));
+        $repo->save(new \Defibrion\Samenstellingen\Domain\Group\Group('Tweede', '52199'));
+
+        $this->expectException(\Defibrion\Samenstellingen\Domain\Group\GroupAlreadyExistsException::class);
+
+        $repo->updateFamilyHeadItemcode('52112', '52199');
+    }
 }

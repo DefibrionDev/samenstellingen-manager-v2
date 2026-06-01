@@ -35,4 +35,14 @@ interface GroupRepository
      * @throws GroupNotFoundException wanneer de family-head niet bestaat.
      */
     public function updateModelNaam(string $familyHeadItemcode, string $taal, ?string $naam): void;
+
+    /**
+     * Verschuif de `family_head_itemcode` van een bestaande groep. Bases blijven
+     * gekoppeld via group_id (FK), dus die migreren automatisch mee. Gebruikt
+     * door de auto-shift-detectie tijdens `afas:pull` (zie PLAN.md §23).
+     *
+     * @throws GroupNotFoundException wanneer `$oldFamilyHead` niet bestaat.
+     * @throws GroupAlreadyExistsException wanneer `$newFamilyHead` al claimt.
+     */
+    public function updateFamilyHeadItemcode(string $oldFamilyHead, string $newFamilyHead): void;
 }

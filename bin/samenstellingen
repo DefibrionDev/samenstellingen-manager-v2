@@ -255,6 +255,9 @@ if ($hasAfasCreds) {
         $afasPrijsRepository,
         $prijslijstenFetcher,
         $afasPrijslijstRepository,
+        $groupRepository,
+        $baseRepository,
+        new \Defibrion\Samenstellingen\Domain\Group\FamilyHeadShiftDetector(),
     );
     $application->addCommand(new AfasPullCommand($pullHandler));
 

@@ -14,6 +14,7 @@ final readonly class PullAfasSamenstellingenResult
         public SyncAllSummary $sync,
         public int $prijzen = 0,
         public int $prijslijsten = 0,
+        public int $familyHeadShiftsApplied = 0,
     ) {
     }
 }
