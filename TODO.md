@@ -1143,6 +1143,36 @@ Eindbeeld: CLI `variants:fix-missing [--group=<family-head>] [--apply] [--limit=
 
 ---
 
+## Slice 41 — Base-deduplicatie op afas_itemcode i.p.v. naam
+
+Eindbeeld: `groups:import-portal-csv` is idempotent **ook na naam-mutaties in AFAS** (door bv. `names:fix-drift`). Bases worden gededupliceerd op `(group_id, afas_itemcode)` wanneer SKU aanwezig is, met fallback naar `(group_id, name)` voor legacy bases zonder SKU. Zie PLAN.md §21.
+
+### Sub-slice 41.0 — Diagnose + cleanup historische duplicates ✅
+- [x] Backup gemaakt vóór alles: `tmp/samenstellingen.sqlite.backup-20260601-090027`.
+- [x] Diagnose: 3 duplicates in herstelde DB-state — 11144 (id 7+76), 21019 (id 29+77), 21020 (id 34+82). Eerder bevonden duplicate 11112 was alleen aanwezig na de bug-import en is door restore verdwenen.
+- [x] Per duplicate: behouden = rij waarvan naam matcht met huidige AFAS-naam (76 / 77 / 82).
+- [x] `tmp/dedupe-bases-20260601.sql` transactioneel uitgevoerd, 3 rijen verwijderd.
+- [x] Verifieer: 0 `(group_id, afas_itemcode)`-duplicates over. `group_bases` 78 → 75. BOM + varianten cascade-deleted; symmetrisch met behouden rijen dus geen data-verlies.
+
+### Sub-slice 41.1 — Schema + repository
+- [ ] Migratie `0021_group_bases_unique_on_itemcode.sql`: drop UNIQUE op `(group_id, name)`, voeg partial-UNIQUE toe op `(group_id, afas_itemcode) WHERE afas_itemcode IS NOT NULL`. Naam-UNIQUE wordt non-unique index.
+- [ ] `GroupBaseRepository::findByAfasItemcodeInGroup(string $familyHead, string $sku): ?GroupBase` op interface + InMemory + Sqlite + contract-test.
+- [ ] Nieuwe `BaseAlreadyExistsException::forItemcodeInGroup()` + Sqlite-handler vangt UNIQUE-violation op de nieuwe constraint.
+- [ ] Bestaande tests blijven groen (bases zonder SKU op naam-pad).
+
+### Sub-slice 41.2 — Import-handler refactor
+- [ ] `ImportPortalCsvHandler::findExistingBase()`: eerst proberen via `findByAfasItemcodeInGroup` als CSV-rij een SKU heeft; fallback naar bestaande naam-match alleen wanneer beide kanten geen SKU hebben.
+- [ ] Bij match: skip insert, behoud bestaande `name` zodat eerdere `names:fix-drift`-canonical niet wordt overschreven door een herimport.
+- [ ] Nieuwe TDD-test `secondImportRemainsIdempotentAfterAfasNameChange`: import → naam-update → herimport → 0 nieuwe bases, naam blijft.
+- [ ] Bestaande `secondImportIsIdempotentAndPreservesUserDefinedConfig` blijft groen.
+
+### Sub-slice 41.3 — Live verificatie
+- [ ] Backup huidige `samenstellingen.sqlite`.
+- [ ] `bin/samenstellingen group:import-portal-csv "AEDs op Reseller - Blad2.csv"` opnieuw draaien.
+- [ ] Verifieer: nul nieuwe duplicates, 11112 blijft op de canonical-naam-rij, geen regressie op andere groepen.
+
+---
+
 ## Slice 20 — Reconciliation in portal-CSV-import (vervang wipe)
 
 Eindbeeld: portal-CSV-import is idempotent. Bestaande groepen behouden hun `model_name` en `group_accessoires` over imports heen; alleen groepen die niet meer in de CSV staan worden opgeruimd. Geen `ToolDataWiper` meer in de import-flow.

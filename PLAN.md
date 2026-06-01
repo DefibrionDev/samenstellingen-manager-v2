@@ -887,3 +887,50 @@ Voorkeur: **optie A** (chained), maar met `--skip-prices`-flag als ontsnapping v
 - **Slice 39.3** — CLI `variants:fix-missing [--group=<fh>] [--apply] [--limit=N] [--skip-prices]`. Default dry-run met tabel (Base | Accessoire | Suggested SKU | Canonical naam | BOM-count). Failures → `tmp/fix-variants-{datum}.csv`. Output toont "draai nu prices:fix-missing" als `--skip-prices` aanstaat.
 - **Slice 39.4** — Chained-prijs-integratie: na succesvolle variant-POST, refresh targeted snapshot voor die itemcodes, invoke `FixPriceMissingHandler` voor diezelfde codes. Tests verifiëren dat staffels meekomen.
 - **Slice 39.5** — Live verificatie op `--limit=1` voor één groep. Daarna `audit:export-missing` herdraait → rij weg + prijzen erin. Pas dan grotere `--limit=N`.
+
+---
+
+## 21. Base-deduplicatie op afas_itemcode i.p.v. naam (slice 41 — concept)
+
+### Probleem
+
+`groups:import-portal-csv` heeft op 2026-06-01 een duplicate-base aangemaakt voor `11112` in groep `10013`: oude DB-rij `id=11` heet `"AED Pakket: …"`, nieuwe rij `id=103` heet `"Pack DAE: …"` — dezelfde AFAS-SKU, verschillende namen.
+
+Oorzaak: bases worden gededupliceerd op `(group_id, name)`:
+- Schema: `migrations/0006_refactor_schema.sql:29` — `UNIQUE (group_id, name)`.
+- `InMemoryGroupBaseRepository.php:33` — duplicate-check via `->name === $base->name`.
+- `SqliteGroupBaseRepository.php:38-41` — UNIQUE-violation → `BaseAlreadyExistsException::forNameInGroup()`.
+- `ImportPortalCsvHandler.php:342-351` (`findExistingBase`) — match op `$base->name === $name`.
+
+Toen `slice 37.4 names:fix-drift` de canonical naam in AFAS naar `"Pack DAE: …"` schreef, kreeg het portal-CSV-extract daarna ook die nieuwe naam. De import zag dat als een onbekende base (naam matched niet) → insert. De `afas_itemcode`-kolom uit `migrations/0011_base_afas_itemcode.sql` heeft géén UNIQUE — dus de duplicate ging onopgemerkt door.
+
+De bestaande test `secondImportIsIdempotentAndPreservesUserDefinedConfig` (slice 20) controleert idempotentie alleen bij identieke namen — naam-mutatie tussen runs is niet gedekt.
+
+### Aanpak
+
+**Itemcode is leidend wanneer aanwezig**, naam blijft fallback voor legacy bases zonder SKU.
+
+- Match-volgorde: `(group_id, afas_itemcode)` met beide niet-null → fallback `(group_id, name)`.
+- Schema: drop UNIQUE op naam, voeg partial-UNIQUE toe op `(group_id, afas_itemcode) WHERE afas_itemcode IS NOT NULL` — SQLite ondersteunt dat. Naam-UNIQUE vervangen door non-unique index voor performance.
+- Bij match: skip insert (idempotent), behoud bestaande naam zodat een eerdere `names:fix-drift` niet door een herimport wordt overschreven.
+
+### Migratie-strategie
+
+Bestaande duplicates moeten vóór de UNIQUE-constraint worden opgeruimd, anders faalt de migratie. We hebben er nu drie: `11112` (door deze bug aangemaakt), `11144` en `21020` (historisch, namen wijken af op taal-suffix). Beslissing per duplicate is user-input: welke rij behouden, welke verwijderen?
+
+### Test-strategie
+
+Nieuwe test `secondImportRemainsIdempotentAfterAfasNameChange()`:
+1. Eerste import: variant met SKU X en naam A landt in DB.
+2. Handmatige update: zet de naam van die base op naam B (simuleert wat `names:fix-drift --apply` extern doet).
+3. Tweede import met dezelfde CSV (naam-veld = B).
+4. Verwachting: nul nieuwe bases, naam B is bewaard.
+
+Bestaande tests blijven groen: bases zonder SKU vallen op het naam-pad terug.
+
+### Slices
+
+- **Slice 41.0** — Diagnose + cleanup van bestaande duplicates: lijst 3 huidige duplicates (11112 / 11144 / 21020), wachten op user-keuze per rij, daarna verwijderen. Bewaart de canonical-naam-variant waar van toepassing. Backup-script in `tmp/`.
+- **Slice 41.1** — Schema-migratie + repository-update: drop naam-UNIQUE, voeg partial-UNIQUE op itemcode. Nieuwe methode `GroupBaseRepository::findByAfasItemcodeInGroup()`. Nieuwe exception-variant `BaseAlreadyExistsException::forItemcodeInGroup()`. Bestaande naam-pad blijft voor SKU-loze bases.
+- **Slice 41.2** — Import-handler refactor: `findExistingBase()` matcht eerst op (groep, itemcode), valt terug op naam. Skipt zonder de naam te overschrijven. Nieuwe TDD-test voor naam-change-idempotentie.
+- **Slice 41.3** — Live verificatie: portal-CSV opnieuw importeren tegen huidige `samenstellingen.sqlite`. Verwachting: nul nieuwe duplicates, ook na de eerder gerunde `names:fix-drift --apply`.
