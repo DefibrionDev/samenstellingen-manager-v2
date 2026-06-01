@@ -15,6 +15,7 @@ final readonly class PullAfasSamenstellingenResult
         public int $prijzen = 0,
         public int $prijslijsten = 0,
         public int $familyHeadShiftsApplied = 0,
+        public int $basesRenamed = 0,
     ) {
     }
 }

@@ -1301,6 +1301,18 @@ Eindbeeld: per variant kunnen we kiezen op welke website(s) hij gepubliceerd is.
 
 ---
 
+## Slice 46 — Basis-naam syncen vanuit AFAS bij `afas:pull`
+
+Eindbeeld: na een rename in AFAS (bv. `11148` → `… semi-automaat NL-EN`) brengt één `afas:pull` zowel `afas_samenstellingen.name` als `group_bases.name` in lijn. AFAS is leidend; bases zonder `afas_itemcode` blijven ongemoeid. Zie PLAN.md §26.
+
+### Sub-slice 46.0 — Sync-stap in `PullAfasSamenstellingenHandler`
+- [x] Repo-methode `GroupBaseRepository::renameFromAfas(array<string,string> $afasNameByItemcode): int` (InMemory + Sqlite + contract-tests): voor elke base waar `afas_itemcode` matcht en `name` verschilt → UPDATE. Telt rijen. Bases zonder `afas_itemcode` ongemoeid.
+- [x] `PullAfasSamenstellingenHandler` roept `renameFromAfas` aan ná `repository->replaceSnapshot($samenstellingen)` en vóór `detectAndApplyShifts`. Handler-test verifieert dat een rename in de snapshot doortelt naar `group_bases.name`.
+- [x] `PullAfasSamenstellingenResult` krijgt `int $basesRenamed`; `AfasPullCommand` toont `… N base(s) hernoemd uit AFAS` wanneer >0.
+- [x] Live: `bin/samenstellingen afas:pull` draaien; verifieer dat `group_bases.name` voor `11148` nu de nieuwe AFAS-naam toont in de UI. → 7 bases hernoemd; 11148 → "AED pakket: Cardiac Science Powerheart G5 semi-automaat NL-EN".
+
+---
+
 ## Slice 20 — Reconciliation in portal-CSV-import (vervang wipe)
 
 Eindbeeld: portal-CSV-import is idempotent. Bestaande groepen behouden hun `model_name` en `group_accessoires` over imports heen; alleen groepen die niet meer in de CSV staan worden opgeruimd. Geen `ToolDataWiper` meer in de import-flow.

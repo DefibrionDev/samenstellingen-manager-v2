@@ -169,6 +169,36 @@ final class InMemoryGroupBaseRepository implements GroupBaseRepository
         return $count;
     }
 
+    public function renameFromAfas(array $afasNameByItemcode): int
+    {
+        // PHP cast numerieke string-keys naar int — normaliseer terug naar string-lookup.
+        $byString = [];
+        foreach ($afasNameByItemcode as $code => $name) {
+            $byString[(string) $code] = $name;
+        }
+
+        $count = 0;
+        foreach ($this->byId as $id => $base) {
+            if ($base->afasItemcode === null) {
+                continue;
+            }
+            $newName = $byString[$base->afasItemcode] ?? null;
+            if ($newName === null || $newName === $base->name) {
+                continue;
+            }
+            $this->byId[$id] = new GroupBase(
+                $base->id,
+                $newName,
+                $base->languageCode,
+                $base->afasItemcode,
+                $base->variantLabel,
+            );
+            ++$count;
+        }
+
+        return $count;
+    }
+
     public function findAllAfasItemcodes(): array
     {
         $codes = [];

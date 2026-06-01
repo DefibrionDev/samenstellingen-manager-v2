@@ -1067,3 +1067,19 @@ Bestaande hardcoded UUID-constanten in `FbCompositionVariantPayloadBuilder` word
 - **Slice 45.4** — UI: `/settings/websites` read-only lijst (naam + gemaskeerd uuid). `GroupDetail` toont per base een chip-rij met gepubliceerde websites; de varianten-tab erft die.
 - **Slice 45.5** — Sync naar AFAS: nieuwe CLI `publications:sync [--apply] [--limit=N]` — voor elke base + al z'n accessoire-varianten PUT FbComposition met de juiste FF_SYNC/FF_TONEN per website. Dry-run default, failures naar `tmp/fix-publications-{datum}.csv`.
 - **Slice 45.6** — Seed + live: voeg "Reseller NL" toe met bestaande UUIDs, markeer **alle bases** als published op Reseller NL (handmatig bulk via script). Verifieer dat een `variants:fix-missing --apply` daarna nog identiek werkt (FF_SYNC/FF_TONEN komt nu uit publicatie i.p.v. hardcoded).
+
+---
+
+## 26. Basis-naam syncen vanuit AFAS bij `afas:pull` (slice 46 — concept)
+
+### Probleem
+
+`afas:pull` ververst correct `afas_samenstellingen.name` met de nieuwe naam uit AFAS, maar `group_bases.name` blijft staan zoals bij `base:add` (of `base:add-from-afas`) ingevuld. Effect: hernoem je `11148` in AFAS van `… semi-automaat NL` naar `… semi-automaat NL-EN`, dan blijft de UI de oude naam tonen. Voor de gebruiker is "basis-variant-naam" en "AFAS-naam" hetzelfde concept — de splitsing is een implementatie-artefact, niet een ontwerp-keuze.
+
+### Aanpak
+
+AFAS is leidend. Tijdens `afas:pull` na het binnenhalen van de samenstellingen-snapshot, overschrijven we `group_bases.name` met `afas_samenstellingen.name` voor elke base waar `afas_itemcode` matcht. Bases zonder `afas_itemcode` (handmatig toegevoegd, nog niet gekoppeld) blijven ongemoeid. Eén regel SQL — geen aparte CLI nodig, geen "expliciete refresh"-knop. Drift kan niet meer ontstaan want er is geen overschrijfbaar lokaal veld meer in de praktijk: de eerstvolgende pull trekt het terug.
+
+### Slices
+
+- **Slice 46.0** — Sync-stap in `PullAfasSamenstellingenHandler`: na `replaceSnapshot($samenstellingen)` en vóór auto-shift-detection, één UPDATE die `group_bases.name` zet op `afas_samenstellingen.name` waar `group_bases.afas_itemcode = afas_samenstellingen.itemcode` en de namen verschillen. Tellertje terug in de `PullAfasSamenstellingenResult` (`basesRenamed`). Test: InMemory + Sqlite integratie — pull met een gewijzigde naam → `group_bases.name` matcht na de pull; bases zonder `afas_itemcode` ongemoeid.

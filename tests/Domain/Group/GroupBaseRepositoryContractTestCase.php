@@ -267,4 +267,45 @@ abstract class GroupBaseRepositoryContractTestCase extends TestCase
 
         self::assertSame(['52112', '52124'], $codes);
     }
+
+    #[Test]
+    public function renameFromAfasUpdatesMatchingBaseAndReportsCount(): void
+    {
+        $persisted = $this->bases->saveForGroup(
+            '52112',
+            new GroupBase(null, 'AED pakket: oude naam', 'NL', '11148'),
+        );
+        self::assertNotNull($persisted->id);
+
+        $renamed = $this->bases->renameFromAfas(['11148' => 'AED pakket: nieuwe naam']);
+        self::assertSame(1, $renamed);
+
+        $found = $this->bases->findById($persisted->id);
+        self::assertNotNull($found);
+        self::assertSame('AED pakket: nieuwe naam', $found->name);
+    }
+
+    #[Test]
+    public function renameFromAfasSkipsBasesWhereNameAlreadyMatches(): void
+    {
+        $this->bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL', 'NL', '11148'));
+
+        $renamed = $this->bases->renameFromAfas(['11148' => 'AED pakket NL']);
+
+        self::assertSame(0, $renamed);
+    }
+
+    #[Test]
+    public function renameFromAfasLeavesBasesWithoutAfasItemcodeUntouched(): void
+    {
+        $persisted = $this->bases->saveForGroup('52112', new GroupBase(null, 'Handmatige base', 'NL'));
+        self::assertNotNull($persisted->id);
+
+        $renamed = $this->bases->renameFromAfas(['11148' => 'iets anders']);
+
+        self::assertSame(0, $renamed);
+        $found = $this->bases->findById($persisted->id);
+        self::assertNotNull($found);
+        self::assertSame('Handmatige base', $found->name);
+    }
 }

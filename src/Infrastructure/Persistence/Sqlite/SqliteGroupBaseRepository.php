@@ -172,6 +172,26 @@ final readonly class SqliteGroupBaseRepository implements GroupBaseRepository
         return is_string($value) ? $value : null;
     }
 
+    public function renameFromAfas(array $afasNameByItemcode): int
+    {
+        if ($afasNameByItemcode === []) {
+            return 0;
+        }
+
+        $stmt = $this->pdo->prepare(
+            'UPDATE group_bases SET name = :name WHERE afas_itemcode = :code AND name <> :name'
+        );
+
+        $count = 0;
+        foreach ($afasNameByItemcode as $itemcode => $name) {
+            $code = (string) $itemcode;
+            $stmt->execute([':code' => $code, ':name' => $name]);
+            $count += $stmt->rowCount();
+        }
+
+        return $count;
+    }
+
     public function findAllAfasItemcodes(): array
     {
         $stmt = $this->pdo->query(

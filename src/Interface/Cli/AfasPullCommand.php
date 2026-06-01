@@ -38,6 +38,13 @@ final class AfasPullCommand extends Command
             $result->prijslijsten,
         ));
 
+        if ($result->basesRenamed > 0) {
+            $io->writeln(sprintf(
+                '<info>%d base(s) hernoemd uit AFAS</info>.',
+                $result->basesRenamed,
+            ));
+        }
+
         $sync = $result->sync;
         if ($sync->groupsProcessed > 0) {
             $io->writeln(sprintf(

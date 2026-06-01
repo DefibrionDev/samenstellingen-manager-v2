@@ -60,6 +60,14 @@ final readonly class PullAfasSamenstellingenHandler
         ));
         $this->repository->replaceSnapshot($samenstellingen);
 
+        // AFAS is leidend voor de naam. Trek elke rename door naar group_bases
+        // zodat de UI niet bij oude namen blijft hangen. Zie PLAN.md §26.
+        $nameByItemcode = [];
+        foreach ($samenstellingen as $s) {
+            $nameByItemcode[$s->itemcode] = $s->name;
+        }
+        $basesRenamed = $this->groupBaseRepository->renameFromAfas($nameByItemcode);
+
         $prijzen = $this->prijzenFetcher->fetchActive();
         $this->prijsRepository->replaceSnapshot($prijzen);
 
@@ -81,6 +89,7 @@ final readonly class PullAfasSamenstellingenHandler
             count($prijzen),
             count($prijslijsten),
             $shifts,
+            $basesRenamed,
         );
     }
 

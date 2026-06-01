@@ -76,4 +76,13 @@ interface GroupBaseRepository
      * @throws \InvalidArgumentException als de taal-code leeg is.
      */
     public function setLanguageCodeByAfasItemcode(string $afasItemcode, string $languageCode): int;
+
+    /**
+     * Synchroniseer `name` met AFAS voor bases waar `afas_itemcode` matcht en
+     * de huidige naam afwijkt. Bases zonder `afas_itemcode` blijven ongemoeid.
+     * Retourneert het aantal daadwerkelijk gewijzigde rijen.
+     *
+     * @param array<int|string, string> $afasNameByItemcode itemcode → AFAS-naam (PHP cast numerieke string-keys naar int)
+     */
+    public function renameFromAfas(array $afasNameByItemcode): int;
 }
