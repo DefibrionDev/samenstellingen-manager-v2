@@ -43,9 +43,23 @@ final class SyncPublicationsCommand extends Command
         ));
 
         if ($result->plans === []) {
-            $io->success('Geen plans — geen websites of geen bases met SKU.');
+            if ($result->totalCandidates === 0) {
+                $io->success('Geen plans — geen websites of geen bases met SKU.');
+            } else {
+                $io->success(sprintf(
+                    'Niets te doen — alle %d itemcode(s) staan al goed in AFAS.',
+                    $result->noopSkipped,
+                ));
+            }
 
             return Command::SUCCESS;
+        }
+
+        if ($result->noopSkipped > 0) {
+            $io->writeln(sprintf(
+                '<comment>%d itemcode(s) overgeslagen — AFAS-state matcht al.</comment>',
+                $result->noopSkipped,
+            ));
         }
 
         $rows = [];

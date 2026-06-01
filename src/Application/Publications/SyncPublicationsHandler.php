@@ -43,6 +43,8 @@ final readonly class SyncPublicationsHandler
         $afasFlagState = $this->afasState->readAll();
 
         $plans = [];
+        $noopSkipped = 0;
+        $totalCandidates = 0;
         foreach ($this->groups->findAll() as $group) {
             foreach ($this->bases->findAllForGroup($group->familyHeadItemcode) as $base) {
                 if ($base->id === null || $base->afasItemcode === null) {
@@ -64,10 +66,12 @@ final readonly class SyncPublicationsHandler
                 // Verzamel base + accessoire-varianten (itemcode `<baseSku>` of `<baseSku>-…`).
                 $targetItemcodes = $this->collectVariantItemcodes($base->afasItemcode, $afasItemcodes);
                 foreach ($targetItemcodes as $itemcode) {
+                    ++$totalCandidates;
                     // No-op skip: als AFAS al ALLE bekende flags op de gewenste waarde
                     // heeft staan, slaan we over (geen PUT). Onbekende flags →
                     // veiligheid voorrang → wel PUT'en.
                     if ($this->matchesCurrentState($itemcode, $flags, $afasFlagState)) {
+                        ++$noopSkipped;
                         continue;
                     }
                     $plans[] = new PublicationSyncPlan($itemcode, $base->afasItemcode, $flags);
@@ -91,7 +95,7 @@ final readonly class SyncPublicationsHandler
             }
         }
 
-        return new SyncPublicationsResult($plans, $applied, $failures);
+        return new SyncPublicationsResult($plans, $applied, $failures, $noopSkipped, $totalCandidates);
     }
 
     /**
