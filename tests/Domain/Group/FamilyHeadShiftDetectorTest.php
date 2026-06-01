@@ -58,9 +58,9 @@ final class FamilyHeadShiftDetectorTest extends TestCase
     }
 
     #[Test]
-    public function noShiftWhenFewerThanThreeBasesAgree(): void
+    public function noShiftWhenAnyBaseStaysOnOldParent(): void
     {
-        // Slechts 2 bases zijn verschoven — niet boven de drempel.
+        // Niet unanimous: 1 base wijst nog naar oude parent → block.
         $groups = [new Group('Heartsine 350P', '10013')];
         $bases = [
             new GroupBase(1, 'NL', 'NL', '11111'),
@@ -72,6 +72,51 @@ final class FamilyHeadShiftDetectorTest extends TestCase
             new AfasSamenstelling('11112', 'FR', '10099', []),
             new AfasSamenstelling('11113', 'UK', '10013', []), // nog op oude head
             new AfasSamenstelling('10099', 'Niet relevant', null, []),
+        ];
+
+        $shifts = (new FamilyHeadShiftDetector())->detect($groups, ['10013' => $bases], $afas);
+
+        self::assertSame([], $shifts);
+    }
+
+    #[Test]
+    public function shiftWithJustTwoBasesUnanimous(): void
+    {
+        // Geen drempel meer: 2 bases die allebei naar nieuwe parent wijzen volstaan.
+        $groups = [new Group('CU Medical', '064.1308-SAM-UK')];
+        $bases = [
+            new GroupBase(1, 'DE', 'DE', '064.1308-SAM-DE'),
+            new GroupBase(2, 'UK', 'EN', '064.1309-SAM-UK'),
+        ];
+        $afas = [
+            new AfasSamenstelling('064.1308-SAM-DE', 'DE', '064.1309-SAM-UK', []),
+            new AfasSamenstelling('064.1309-SAM-UK', 'UK', '064.1309-SAM-UK', []), // self-ref
+        ];
+
+        $shifts = (new FamilyHeadShiftDetector())->detect($groups, ['064.1308-SAM-UK' => $bases], $afas);
+
+        self::assertCount(1, $shifts);
+        self::assertSame('064.1308-SAM-UK', $shifts[0]->oldHead);
+        self::assertSame('064.1309-SAM-UK', $shifts[0]->newHead);
+        self::assertSame(2, $shifts[0]->baseCount);
+    }
+
+    #[Test]
+    public function noShiftWhenBasesDisagreeOnNewParent(): void
+    {
+        // Verschillende bases wijzen naar verschillende nieuwe parents → block.
+        $groups = [new Group('Heartsine 350P', '10013')];
+        $bases = [
+            new GroupBase(1, 'NL', 'NL', '11111'),
+            new GroupBase(2, 'FR', 'FR', '11112'),
+            new GroupBase(3, 'UK', 'EN', '11113'),
+        ];
+        $afas = [
+            new AfasSamenstelling('11111', 'NL', '10099', []),
+            new AfasSamenstelling('11112', 'FR', '10099', []),
+            new AfasSamenstelling('11113', 'UK', '10088', []), // andere nieuwe parent
+            new AfasSamenstelling('10099', 'A', null, []),
+            new AfasSamenstelling('10088', 'B', null, []),
         ];
 
         $shifts = (new FamilyHeadShiftDetector())->detect($groups, ['10013' => $bases], $afas);
@@ -127,7 +172,8 @@ final class FamilyHeadShiftDetectorTest extends TestCase
     #[Test]
     public function ignoresBasesWithoutAfasItemcode(): void
     {
-        // Bases zonder SKU tellen niet mee in de shift-detectie.
+        // Bases zonder SKU tellen niet mee — wel een shift omdat de SKU-bases
+        // unanimous zijn (de SKU-loze base is "geen vote", niet "tegenstem").
         $groups = [new Group('Heartsine 350P', '10013')];
         $bases = [
             new GroupBase(1, 'NL', 'NL', '11111'),
@@ -142,7 +188,9 @@ final class FamilyHeadShiftDetectorTest extends TestCase
 
         $shifts = (new FamilyHeadShiftDetector())->detect($groups, ['10013' => $bases], $afas);
 
-        // 2 bases verschoven (de SKU-loze telt niet) — onder de drempel.
-        self::assertSame([], $shifts);
+        self::assertCount(1, $shifts);
+        self::assertSame('10013', $shifts[0]->oldHead);
+        self::assertSame('10099', $shifts[0]->newHead);
+        self::assertSame(2, $shifts[0]->baseCount);
     }
 }
