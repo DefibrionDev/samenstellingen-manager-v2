@@ -97,6 +97,7 @@ use Defibrion\Samenstellingen\Interface\Cli\ListWebsitesCommand;
 use Defibrion\Samenstellingen\Interface\Cli\PublishBaseCommand;
 use Defibrion\Samenstellingen\Interface\Cli\RemoveWebsiteCommand;
 use Defibrion\Samenstellingen\Application\Publications\SyncPublicationsHandler;
+use Defibrion\Samenstellingen\Infrastructure\Publications\HttpAfasFreeFieldStateReader;
 use Defibrion\Samenstellingen\Infrastructure\Publications\HttpPublicationSyncWriter;
 use Defibrion\Samenstellingen\Interface\Cli\SyncPublicationsCommand;
 use Defibrion\Samenstellingen\Interface\Cli\UnpublishBaseCommand;
@@ -330,6 +331,7 @@ if ($hasAfasCreds) {
     $application->addCommand(new FixMissingVariantsCommand($fixMissingVariantsWithPricesHandler));
 
     $publicationSyncWriter = new HttpPublicationSyncWriter($afasClient);
+    $afasFreeFieldStateReader = new HttpAfasFreeFieldStateReader($afasClient);
     $syncPublicationsHandler = new SyncPublicationsHandler(
         $groupRepository,
         $baseRepository,
@@ -337,6 +339,7 @@ if ($hasAfasCreds) {
         $websiteRepository,
         $basePublicationRepository,
         $publicationSyncWriter,
+        $afasFreeFieldStateReader,
     );
     $application->addCommand(new SyncPublicationsCommand($syncPublicationsHandler));
 }

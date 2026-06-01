@@ -25,6 +25,7 @@ final readonly class SyncPublicationsHandler
         private WebsiteRepository $websites,
         private BasePublicationRepository $publications,
         private PublicationSyncWriter $writer,
+        private AfasFreeFieldStateReader $afasState,
     ) {
     }
 
@@ -39,6 +40,7 @@ final readonly class SyncPublicationsHandler
         foreach ($this->afasSamenstellingen->findAll() as $samenstelling) {
             $afasItemcodes[$samenstelling->itemcode] = true;
         }
+        $afasFlagState = $this->afasState->readAll();
 
         $plans = [];
         foreach ($this->groups->findAll() as $group) {
@@ -62,6 +64,12 @@ final readonly class SyncPublicationsHandler
                 // Verzamel base + accessoire-varianten (itemcode `<baseSku>` of `<baseSku>-…`).
                 $targetItemcodes = $this->collectVariantItemcodes($base->afasItemcode, $afasItemcodes);
                 foreach ($targetItemcodes as $itemcode) {
+                    // No-op skip: als AFAS al ALLE bekende flags op de gewenste waarde
+                    // heeft staan, slaan we over (geen PUT). Onbekende flags →
+                    // veiligheid voorrang → wel PUT'en.
+                    if ($this->matchesCurrentState($itemcode, $flags, $afasFlagState)) {
+                        continue;
+                    }
                     $plans[] = new PublicationSyncPlan($itemcode, $base->afasItemcode, $flags);
                     if ($command->limit !== null && count($plans) >= $command->limit) {
                         break 3;
@@ -84,6 +92,29 @@ final readonly class SyncPublicationsHandler
         }
 
         return new SyncPublicationsResult($plans, $applied, $failures);
+    }
+
+    /**
+     * Returnt true wanneer ALLE gewenste flags al de juiste waarde hebben in
+     * AFAS. Een onbekende flag (niet in de reader-output) betekent "we weten
+     * het niet" → return false (= wel PUT'en, veilig).
+     *
+     * @param array<string, bool>                  $desired
+     * @param array<string, array<string, bool>>   $currentState  per itemcode → uuid → bool
+     */
+    private function matchesCurrentState(string $itemcode, array $desired, array $currentState): bool
+    {
+        $current = $currentState[$itemcode] ?? null;
+        if ($current === null) {
+            return false;
+        }
+        foreach ($desired as $uuid => $expected) {
+            if (!array_key_exists($uuid, $current) || $current[$uuid] !== $expected) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

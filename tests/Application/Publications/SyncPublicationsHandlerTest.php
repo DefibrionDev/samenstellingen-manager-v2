@@ -15,6 +15,7 @@ use Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryBasePu
 use Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryGroupBaseRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryGroupRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryWebsiteRepository;
+use Defibrion\Samenstellingen\Infrastructure\Publications\InMemoryAfasFreeFieldStateReader;
 use Defibrion\Samenstellingen\Infrastructure\Publications\InMemoryPublicationSyncWriter;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -104,8 +105,47 @@ final class SyncPublicationsHandlerTest extends TestCase
             new AfasSamenstelling('99999', 'Andere groep', null, []),
         ]);
 
-        $handler = new SyncPublicationsHandler($groups, $bases, $afas, $websites, $publications, $writer);
+        $afasState = new InMemoryAfasFreeFieldStateReader([]);
+        $handler = new SyncPublicationsHandler($groups, $bases, $afas, $websites, $publications, $writer, $afasState);
 
         return ['handler' => $handler, 'writer' => $writer];
+    }
+
+    #[Test]
+    public function skipsItemcodesWhereAfasAlreadyMatchesDesiredState(): void
+    {
+        $groups = new InMemoryGroupRepository();
+        $bases = new InMemoryGroupBaseRepository($groups);
+        $afas = new InMemoryAfasSamenstellingenRepository();
+        $websites = new InMemoryWebsiteRepository();
+        $publications = new InMemoryBasePublicationRepository();
+        $writer = new InMemoryPublicationSyncWriter();
+
+        $groups->save(new Group('Heartsine 350P', '10013'));
+        $base = $bases->saveForGroup('10013', new GroupBase(null, 'NL', 'NL', '11111'));
+        $wNl = $websites->save(new Website(null, 'Reseller NL', 'U_NL_SYNC', 'U_NL_TONEN'));
+        self::assertNotNull($base->id);
+        self::assertNotNull($wNl->id);
+        $publications->setPublished($base->id, $wNl->id, true);
+
+        $afas->replaceSnapshot([
+            new AfasSamenstelling('11111', 'Base', '10013', []),
+            new AfasSamenstelling('11111-60110', 'Variant 1', '11111', []),
+        ]);
+
+        // AFAS heeft beide al op true voor 11111 (matched) maar niet voor 11111-60110 (mismatch).
+        $afasState = new InMemoryAfasFreeFieldStateReader([
+            '11111' => ['U_NL_SYNC' => true, 'U_NL_TONEN' => true],
+            '11111-60110' => ['U_NL_SYNC' => false, 'U_NL_TONEN' => true],
+        ]);
+
+        $handler = new SyncPublicationsHandler($groups, $bases, $afas, $websites, $publications, $writer, $afasState);
+
+        $result = $handler(new SyncPublications(apply: true));
+
+        // Alleen 11111-60110 mismatched → 1 plan, 1 applied.
+        self::assertCount(1, $result->plans);
+        self::assertSame('11111-60110', $result->plans[0]->afasItemcode);
+        self::assertSame(1, $result->appliedCount);
     }
 }
