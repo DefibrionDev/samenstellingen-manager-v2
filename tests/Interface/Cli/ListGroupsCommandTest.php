@@ -50,4 +50,31 @@ final class ListGroupsCommandTest extends TestCase
 
         self::assertStringContainsString('Geen groepen geregistreerd', $tester->getDisplay());
     }
+
+    #[Test]
+    public function writesCsvToGivenPathWhenOptionProvided(): void
+    {
+        $groups = new InMemoryGroupRepository();
+        $bases = new InMemoryGroupBaseRepository($groups);
+        $groups->save(new Group('Heartsine 350P', '10013', 'Heartsine Samaritan PAD 350P'));
+        $groups->save(new Group('Reanibex 100', '52112'));
+        $bases->saveForGroup('10013', new GroupBase(null, 'AED NL', 'NL', '11111'));
+
+        $path = tempnam(sys_get_temp_dir(), 'group-list-csv-');
+        self::assertNotFalse($path);
+
+        try {
+            $tester = new CommandTester(new ListGroupsCommand($groups, $bases));
+            $tester->execute(['--csv' => $path]);
+
+            $content = file_get_contents($path);
+            self::assertIsString($content);
+            self::assertStringContainsString('family_head,name,model_name_nl,bases_count', $content);
+            self::assertStringContainsString('10013,"Heartsine 350P","Heartsine Samaritan PAD 350P",1', $content);
+            self::assertStringContainsString('52112,"Reanibex 100",,0', $content);
+            self::assertStringContainsString('geëxporteerd naar', $tester->getDisplay());
+        } finally {
+            @unlink($path);
+        }
+    }
 }
