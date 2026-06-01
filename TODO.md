@@ -1240,11 +1240,10 @@ Eindbeeld: `audit:missing-cbs` toont alle AFAS-samenstellingen waar CBS-goederen
 - [x] `audit:missing-cbs` CLI met tabel-output (Itemcode | Naam | Itemcode_Parent) + `--csv=<pad>`.
 - [x] 2 TDD-tests handler.
 
-### Sub-slice 44.2 — Live verificatie ⏸️
-- [ ] Wacht op AFAS-API (401 Unauthorized op `afas:pull` — token-issue, niet code).
-- [ ] Daarna: `afas:pull` om snapshot CBS-veld te vullen.
-- [ ] `audit:missing-cbs` om totaal + concrete itemcodes te zien.
-- [ ] Documenteer top-getroffen groepen (verwacht: Cardiac Science 11148/11149 + andere).
+### Sub-slice 44.2 — Live verificatie ✅
+- [x] `afas:pull` snapshot bijgewerkt incl. CBS-veld (na auto-shift-detectie op Mindray C2 was de detector stabiel).
+- [x] `audit:missing-cbs`: **1215 samenstellingen** zonder CBS-goederencode geëxporteerd naar `tmp/missing-cbs-20260601.csv`.
+- [x] Top-getroffen: Reanibex 100 GPS+WIFI+SIGFOX-familie (52199/52200 + varianten), Cardiac Science 11148/11149 incl. accessoire-varianten, diverse losse oude artikelen.
 
 ---
 
