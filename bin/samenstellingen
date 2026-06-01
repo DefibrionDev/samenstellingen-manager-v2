@@ -89,6 +89,7 @@ use Defibrion\Samenstellingen\Interface\Cli\ExportMissingVariantsCommand;
 use Defibrion\Samenstellingen\Interface\Cli\ImportPortalCsvCommand;
 use Defibrion\Samenstellingen\Interface\Cli\ImportSamenstellingenCsvCommand;
 use Defibrion\Samenstellingen\Interface\Cli\ListBomBlacklistCommand;
+use Defibrion\Samenstellingen\Interface\Cli\ListGroupsCommand;
 use Defibrion\Samenstellingen\Interface\Cli\ShowGroupCommand;
 use Defibrion\Samenstellingen\Interface\Cli\SyncGroupAgainstAfasCommand;
 use Symfony\Component\Console\Application;
@@ -208,6 +209,7 @@ $priceAuditHandler = new PriceAuditHandler(
 $application = new Application('samenstellingen-manager');
 $application->addCommand(new CreateGroupCommand($createGroupHandler));
 $application->addCommand(new ShowGroupCommand($showGroupHandler));
+$application->addCommand(new ListGroupsCommand($groupRepository, $baseRepository));
 $application->addCommand(new AddBaseCommand($addBaseHandler));
 $application->addCommand(new AddBaseFromAfasCommand($addBaseFromAfasHandler));
 $application->addCommand(new RemoveBaseCommand($removeBaseHandler));
