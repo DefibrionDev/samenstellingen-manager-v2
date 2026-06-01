@@ -53,6 +53,18 @@ final class InMemoryGroupBaseRepository implements GroupBaseRepository
         return $this->byId[$baseId] ?? null;
     }
 
+    public function findAllByAfasItemcode(string $afasItemcode): array
+    {
+        $result = [];
+        foreach ($this->byId as $base) {
+            if ($base->afasItemcode === $afasItemcode) {
+                $result[] = $base;
+            }
+        }
+
+        return $result;
+    }
+
     public function findByAfasItemcodeInGroup(string $familyHeadItemcode, string $afasItemcode): ?GroupBase
     {
         $this->assertGroupExists($familyHeadItemcode);

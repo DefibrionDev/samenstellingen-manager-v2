@@ -100,6 +100,23 @@ abstract class GroupBaseRepositoryContractTestCase extends TestCase
     }
 
     #[Test]
+    public function findAllByAfasItemcodeReturnsMatchingBases(): void
+    {
+        $persisted = $this->bases->saveForGroup('52112', new GroupBase(null, 'AED NL', 'NL', '52199'));
+
+        $found = $this->bases->findAllByAfasItemcode('52199');
+
+        self::assertCount(1, $found);
+        self::assertSame($persisted->id, $found[0]->id);
+    }
+
+    #[Test]
+    public function findAllByAfasItemcodeReturnsEmptyForUnknown(): void
+    {
+        self::assertSame([], $this->bases->findAllByAfasItemcode('99999'));
+    }
+
+    #[Test]
     public function rejectsSaveForUnknownGroup(): void
     {
         $this->expectException(GroupNotFoundException::class);

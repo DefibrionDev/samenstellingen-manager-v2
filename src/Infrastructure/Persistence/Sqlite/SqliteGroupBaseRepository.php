@@ -59,6 +59,30 @@ final readonly class SqliteGroupBaseRepository implements GroupBaseRepository
         return is_array($row) ? $this->rowToBase($row) : null;
     }
 
+    public function findAllByAfasItemcode(string $afasItemcode): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT id, name, language_code, afas_itemcode, variant_label
+               FROM group_bases
+              WHERE afas_itemcode = :code
+              ORDER BY id'
+        );
+        $stmt->execute([':code' => $afasItemcode]);
+
+        $bases = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $base = $this->rowToBase($row);
+            if ($base !== null) {
+                $bases[] = $base;
+            }
+        }
+
+        return $bases;
+    }
+
     public function findByAfasItemcodeInGroup(string $familyHeadItemcode, string $afasItemcode): ?GroupBase
     {
         $groupId = $this->resolveGroupId($familyHeadItemcode);

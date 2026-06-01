@@ -23,6 +23,16 @@ interface GroupBaseRepository
     public function findByAfasItemcodeInGroup(string $familyHeadItemcode, string $afasItemcode): ?GroupBase;
 
     /**
+     * Alle bases met dit AFAS-itemcode (over groepen heen — normaal 1, maar
+     * niet altijd uniek omdat enkele oude SKUs in meerdere groepen kunnen
+     * voorkomen). Wordt gebruikt door publication-CLI's die het base-id niet
+     * kennen maar wel de SKU.
+     *
+     * @return list<GroupBase>
+     */
+    public function findAllByAfasItemcode(string $afasItemcode): array;
+
+    /**
      * @throws GroupNotFoundException wanneer de groep niet bestaat.
      *
      * @return list<GroupBase>

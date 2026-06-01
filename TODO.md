@@ -1265,11 +1265,12 @@ Eindbeeld: per variant kunnen we kiezen op welke website(s) hij gepubliceerd is.
 - [x] 6 TDD-tests per command. Container + bin/samenstellingen gewired.
 - [x] Smoke: Reseller NL toegevoegd met de bestaande free-field UUIDs.
 
-### Sub-slice 45.2 — CLI publicatie-management
-- [ ] `base:publish <afas-itemcode> <website-naam>` (lookup via afas_itemcode net als `base:set-language`).
-- [ ] `base:unpublish <afas-itemcode> <website-naam>` — idempotent.
-- [ ] Foutpaden: onbekende afas_itemcode, onbekende website-naam.
-- [ ] TDD-tests + smoke.
+### Sub-slice 45.2 — CLI publicatie-management ✅
+- [x] `base:publish <afas-itemcode> <website-naam>` lookup via `findAllByAfasItemcode`.
+- [x] `base:unpublish <afas-itemcode> <website-naam>` — idempotent via upsert.
+- [x] Foutpaden: onbekende afas_itemcode, onbekende website-naam.
+- [x] 4 TDD-tests + live smoke (11111 published op Reseller NL).
+- [x] Nieuwe repo-methode `GroupBaseRepository::findAllByAfasItemcode` + 2 contract-tests.
 
 ### Sub-slice 45.3 — Payload-builder refactor
 - [ ] `FbCompositionVariantPayloadBuilder` accepteert nieuwe `array<string, bool>` parameter `freeFieldFlags` (uuid → true/false).
