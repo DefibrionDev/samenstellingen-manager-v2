@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Defibrion\Samenstellingen\Interface\Http;
 
 use Defibrion\Samenstellingen\Domain\Afas\AfasArticleRepository;
+use Defibrion\Samenstellingen\Domain\Afas\AfasSamenstellingenRepository;
 use Defibrion\Samenstellingen\Domain\Group\GroupBaseItemRepository;
 use Defibrion\Samenstellingen\Domain\Group\GroupBaseRepository;
 use Defibrion\Samenstellingen\Domain\Group\GroupRepository;
@@ -22,6 +23,7 @@ final readonly class ShowGroupController
         private AfasArticleRepository $articles,
         private WebsiteRepository $websites,
         private BasePublicationRepository $publications,
+        private AfasSamenstellingenRepository $samenstellingen,
     ) {
     }
 
@@ -64,11 +66,18 @@ final readonly class ShowGroupController
                     }
                 }
             }
+            $afasParent = null;
+            if ($base->afasItemcode !== null) {
+                $samenstelling = $this->samenstellingen->findByItemcode($base->afasItemcode);
+                $afasParent = $samenstelling?->itemcodeParent;
+            }
+
             $bases[] = [
                 'id' => $base->id,
                 'name' => $base->name,
                 'languageCode' => $base->languageCode,
                 'afasItemcode' => $base->afasItemcode,
+                'afasItemcodeParent' => $afasParent,
                 'variantLabel' => $base->variantLabel,
                 'publishedOn' => $publishedOn,
                 'items' => $items,

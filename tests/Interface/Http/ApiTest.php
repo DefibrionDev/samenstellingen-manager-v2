@@ -91,9 +91,76 @@ final class ApiTest extends TestCase
         ))[0];
         self::assertSame('AED pakket NL', $nl['name']);
         self::assertSame('52112', $nl['afasItemcode']);
+        self::assertArrayHasKey('afasItemcodeParent', $nl);
+        self::assertNull($nl['afasItemcodeParent']);
         self::assertCount(1, $nl['items']);
         self::assertSame('50013', $nl['items'][0]['itemcode']);
         self::assertSame('AED Nederlands', $nl['items'][0]['label']);
+    }
+
+    #[Test]
+    public function listGroupsExposesParentMismatchCount(): void
+    {
+        $pdo = TestDatabase::pdo();
+        $groups = new SqliteGroupRepository($pdo);
+        $bases = new SqliteGroupBaseRepository($pdo);
+
+        $groups->save(new Group('Mindray C1 semi', '21018'));
+        $groups->save(new Group('Cardiac G5 semi', '11148'));
+        $bases->saveForGroup('21018', new GroupBase(null, 'NL', 'NL', '21018'));
+        $bases->saveForGroup('21018', new GroupBase(null, 'tri', 'NL/EN/FR', '21011'));
+        $bases->saveForGroup('11148', new GroupBase(null, 'NL/EN', 'NL/EN', '11148'));
+
+        $samenstellingen = new \Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAfasSamenstellingenRepository($pdo);
+        $samenstellingen->replaceSnapshot([
+            new \Defibrion\Samenstellingen\Domain\Afas\AfasSamenstelling('21018', 'Mindray semi NL', '21018', []),
+            new \Defibrion\Samenstellingen\Domain\Afas\AfasSamenstelling('21011', 'Mindray 3-talig', '21017', []),
+            new \Defibrion\Samenstellingen\Domain\Afas\AfasSamenstelling('11148', 'Cardiac G5 NL-EN', '11148', []),
+        ]);
+
+        $response = $this->call('GET', '/api/groups');
+
+        self::assertSame(200, $response['status']);
+        $byFh = [];
+        foreach ($response['body'] as $g) {
+            $byFh[$g['familyHead']] = $g;
+        }
+        self::assertSame(1, $byFh['21018']['parentMismatchCount']);
+        self::assertSame(0, $byFh['11148']['parentMismatchCount']);
+    }
+
+    #[Test]
+    public function showsAfasItemcodeParentOnBasesWhenSnapshotHasIt(): void
+    {
+        $pdo = TestDatabase::pdo();
+        $groups = new SqliteGroupRepository($pdo);
+        $bases = new SqliteGroupBaseRepository($pdo);
+
+        $groups->save(new Group('Mindray C1 semi', '21018'));
+        $baseInGroup = $bases->saveForGroup('21018', new GroupBase(null, 'NL base', 'NL', '21018'));
+        $baseFromOtherFamily = $bases->saveForGroup('21018', new GroupBase(null, 'NL/EN/FR', 'NL/EN/FR', '21011'));
+        $baseNoAfas = $bases->saveForGroup('21018', new GroupBase(null, 'Handmatig', 'NL'));
+        self::assertNotNull($baseInGroup->id);
+        self::assertNotNull($baseFromOtherFamily->id);
+        self::assertNotNull($baseNoAfas->id);
+
+        $samenstellingen = new \Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAfasSamenstellingenRepository($pdo);
+        $samenstellingen->replaceSnapshot([
+            new \Defibrion\Samenstellingen\Domain\Afas\AfasSamenstelling('21018', 'Mindray C1 semi NL', '21018', []),
+            new \Defibrion\Samenstellingen\Domain\Afas\AfasSamenstelling('21011', 'Mindray C1A 3-talig', '21017', []),
+        ]);
+
+        $response = $this->call('GET', '/api/groups/21018');
+
+        self::assertSame(200, $response['status']);
+        $byCode = [];
+        foreach ($response['body']['bases'] as $b) {
+            $byCode[$b['afasItemcode'] ?? '__none'] = $b;
+        }
+
+        self::assertSame('21018', $byCode['21018']['afasItemcodeParent']);
+        self::assertSame('21017', $byCode['21011']['afasItemcodeParent']);
+        self::assertNull($byCode['__none']['afasItemcodeParent']);
     }
 
     #[Test]

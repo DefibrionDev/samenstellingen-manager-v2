@@ -95,7 +95,7 @@ export function GroupDetail() {
             </Tabs>
           </Paper>
 
-          {activeTab === 'bases' && <BasesTab bases={data.bases} />}
+          {activeTab === 'bases' && <BasesTab bases={data.bases} familyHead={data.familyHead} />}
           {activeTab === 'accessoires' && <AccessoiresTab familyHead={data.familyHead} />}
           {activeTab === 'variants' && <VariantsTab familyHead={data.familyHead} />}
         </>
@@ -104,9 +104,44 @@ export function GroupDetail() {
   );
 }
 
-function BasesTab({ bases }: { bases: GroupDetailType['bases'] }) {
+function BasesTab({ bases, familyHead }: { bases: GroupDetailType['bases']; familyHead: string }) {
+  const parentMismatches = bases.filter(
+    (b) => b.afasItemcodeParent && b.afasItemcodeParent !== familyHead,
+  );
+
   return (
     <Stack spacing={1}>
+      {parentMismatches.length > 0 && (
+        <Alert severity="info">
+          <Typography variant="body2" sx={{ mb: 1 }}>
+            {parentMismatches.length} base(s) hebben een AFAS-parent die afwijkt van de family-head{' '}
+            <code>{familyHead}</code>. Variant-matching werkt, maar auto-shift kan deze groep niet
+            unanimous verschuiven.
+          </Typography>
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>AFAS itemcode</TableCell>
+                  <TableCell>Parent in AFAS</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {parentMismatches.map((b) => (
+                  <TableRow key={b.id}>
+                    <TableCell>
+                      <code>{b.afasItemcode}</code>
+                    </TableCell>
+                    <TableCell>
+                      <code>{b.afasItemcodeParent}</code>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Alert>
+      )}
       {bases.map((base: GroupBase) => (
         <Accordion key={base.id} disableGutters>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>

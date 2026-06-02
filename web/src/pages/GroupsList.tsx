@@ -42,6 +42,23 @@ const columns: GridColDef<GroupSummary>[] = [
       );
     },
   },
+  {
+    field: 'parentMismatchCount',
+    headerName: 'Parent-drift',
+    type: 'number',
+    width: 130,
+    renderCell: (params) => {
+      const count = (params.value as number) ?? 0;
+      if (count === 0) {
+        return <span style={{ color: 'rgba(0,0,0,0.4)' }}>0</span>;
+      }
+      return (
+        <Tooltip title={`${count} base(s) met afwijkende parent in AFAS`}>
+          <Chip label={count} size="small" color="warning" variant="outlined" />
+        </Tooltip>
+      );
+    },
+  },
 ];
 
 export function GroupsList() {

@@ -1143,3 +1143,25 @@ Voor beide writers: bouw vooraf een snapshot-refresh van de geraakte samenstelli
 - **Slice 47.1** — Live strip uitvoeren: `bom:strip-component 81611 --apply`. Verifieer dat een volgende `afas:pull` 0 BOM-hits voor 81611 toont en dat de 17 EN-bases als matched blijven (tool BOM = AFAS BOM, beide zonder 81611).
 - **Slice 47.2** — `StickersRestoreHandler` + CLI `stickers:restore [--language=EN]`. Per base de policy-verwachting bepalen, ontbrekende sticker toevoegen aan `group_base_items` (en aan AFAS-samenstelling-BOM via dezelfde writer-flow). Dry-run default. Tests op InMemory: EN-base zonder sticker → restore voegt `81611` toe; NL-base met sticker → no-op.
 - **Slice 47.3** — Audit-bonus: `StickerAuditHandler` blijft drift rapporteren tijdens de "stripped"-periode. Voeg een korte CLI-banner toe ("X bases missen hun verwachte stickerset — gebruik `stickers:restore --apply` wanneer de voorraad terug is") wanneer de drift uitsluitend door één weggehaalde sticker komt. Optioneel; primair signaal is genoeg.
+
+---
+
+## 28. Frontend-waarschuwing voor base-parent ≠ groep-family-head (slice 48 — concept)
+
+### Probleem
+
+Sommige tool-groepen bevatten bases waarvan AFAS' `Itemcode_Parent` afwijkt van de groep z'n `family_head_itemcode`. Bv. Mindray C1 semi (groep 21018) bevat de `21011-*` subfamilie waar AFAS naar parent `21017` wijst, terwijl de groep family-head `21018` heeft. Variant-matching werkt wel (gaat op BOM-equality), maar:
+
+- Auto-shift (slice 43) firet niet, want unanimous-rule wordt niet gehaald — er ontstaat een blijvend stille split-brain.
+- Visueel: een gebruiker die de Mindray C1-groep bekijkt heeft geen idee dat er twee AFAS-families samenleven, totdat 'ie diep in `audit:` of SQL gaat graven.
+
+### Aanpak
+
+Read-only signalering in de UI op de `GroupDetail`-pagina. Eén MUI `<Alert severity="info">` boven de bases-lijst wanneer ≥1 base een `afasItemcodeParent` heeft dat (a) niet leeg is, en (b) ongelijk is aan `familyHead`. Banner-tekst noemt het aantal afwijkende bases, hun afas-itemcodes, en wat de parent-waarde is.
+
+Geen audit-handler, geen CLI — de UI is de signaal-laag. Audit-CLI's bestaan al voor andere drift-soorten; deze klasse drift is wel goedkoop visueel te tonen en duur om CLI-only te maken.
+
+### Slices
+
+- **Slice 48.0** — API + render. `ShowGroupController` haalt voor elke base met `afasItemcode` de bijbehorende `AfasSamenstelling` op uit de snapshot-repository en voegt `afasItemcodeParent: string|null` toe aan elke base in de JSON-respons. `GroupDetail.tsx` berekent een lijst van bases waar de parent gevuld is en niet matcht met `data.familyHead`, en rendert een MUI Alert info met de tabel-rijen `(afas itemcode | parent in AFAS)`. Geen waarschuwing als de lijst leeg is. Vitest: één test "toont parent-mismatch banner" + één "geen banner zonder mismatches".
+- **Slice 48.1** — Signaal op overzichtspagina. `ListGroupsController` telt per groep het aantal bases waar `afasItemcodeParent ≠ familyHeadItemcode`, en voegt `parentMismatchCount: int` toe aan de JSON-respons. `GroupsList.tsx` toont in de bestaande tabel een waarschuwings-Chip/icon (warning-severity) op rijen met `parentMismatchCount > 0` met tooltip "N base(s) met afwijkende parent in AFAS". PHP-test verifieert de nieuwe count. Vitest verifieert de chip op rijen met `parentMismatchCount > 0`.

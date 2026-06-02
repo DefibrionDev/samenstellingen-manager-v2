@@ -5,6 +5,7 @@ export interface GroupSummary {
   baseItemCount: number;
   familyHeadIsBase: boolean;
   missingVariantCount: number;
+  parentMismatchCount?: number;
   modelNameNl: string | null;
   modelNameFr: string | null;
   modelNameEn: string | null;
@@ -20,6 +21,7 @@ export interface GroupBase {
   name: string;
   languageCode: string;
   afasItemcode: string | null;
+  afasItemcodeParent?: string | null;
   variantLabel: string | null;
   publishedOn: string[];
   items: BaseItem[];

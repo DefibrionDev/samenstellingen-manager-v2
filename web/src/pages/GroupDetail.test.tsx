@@ -95,3 +95,63 @@ test('toont variantLabel als outlined chip naast de base met label', async () =>
   // Label-chip "4G" hoort alleen bij de DE-base te staan, niet bij de NL-base.
   expect(screen.getByText('4G')).toBeInTheDocument();
 });
+
+test('toont parent-mismatch banner als een base een afwijkende afasItemcodeParent heeft', async () => {
+  vi.unstubAllGlobals();
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url.includes('/prices')) {
+        return { ok: true, status: 200, statusText: 'OK', json: async () => [] };
+      }
+      return {
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        json: async () => ({
+          familyHead: '21018',
+          name: 'Mindray C1 semi',
+          modelNameNl: null,
+          modelNameFr: null,
+          modelNameEn: null,
+          bases: [
+            {
+              id: 1,
+              name: 'NL base',
+              languageCode: 'NL',
+              afasItemcode: '21018',
+              afasItemcodeParent: '21018',
+              variantLabel: null,
+              publishedOn: [],
+              items: [],
+            },
+            {
+              id: 2,
+              name: '3-talig',
+              languageCode: 'NL/EN/FR',
+              afasItemcode: '21011',
+              afasItemcodeParent: '21017',
+              variantLabel: null,
+              publishedOn: [],
+              items: [],
+            },
+          ],
+        }),
+      };
+    }),
+  );
+
+  renderAt('/groups/21018');
+
+  await waitFor(() => expect(screen.getByText(/1 base\(s\) hebben een AFAS-parent/i)).toBeInTheDocument());
+  // De afwijkende base toont z'n itemcode + parent in de banner-tabel.
+  // 21017 staat alleen in de banner, dus uniek vindbaar.
+  expect(screen.getByText('21017')).toBeInTheDocument();
+});
+
+test('geen parent-mismatch banner als alle bases dezelfde parent hebben als familyHead', async () => {
+  // Standaard fixture: NL+DE bases zonder afasItemcodeParent — banner moet weg blijven.
+  renderAt('/groups/52112');
+  await waitFor(() => expect(screen.getByText('AED pakket NL')).toBeInTheDocument());
+  expect(screen.queryByText(/afwijkt van de family-head/i)).not.toBeInTheDocument();
+});

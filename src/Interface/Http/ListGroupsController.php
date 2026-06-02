@@ -46,9 +46,20 @@ final readonly class ListGroupsController
             $bases = $this->bases->findAllForGroup($group->familyHeadItemcode);
             $itemCount = 0;
             $familyHeadIsBase = false;
+            $parentMismatchCount = 0;
             foreach ($bases as $base) {
                 if ($base->afasItemcode === $group->familyHeadItemcode) {
                     $familyHeadIsBase = true;
+                }
+                if ($base->afasItemcode !== null) {
+                    $samenstelling = $this->afasSamenstellingen->findByItemcode($base->afasItemcode);
+                    if (
+                        $samenstelling !== null
+                        && $samenstelling->itemcodeParent !== null
+                        && $samenstelling->itemcodeParent !== $group->familyHeadItemcode
+                    ) {
+                        ++$parentMismatchCount;
+                    }
                 }
                 if ($base->id === null) {
                     continue;
@@ -62,6 +73,7 @@ final readonly class ListGroupsController
                 'baseItemCount' => $itemCount,
                 'familyHeadIsBase' => $familyHeadIsBase,
                 'missingVariantCount' => $missingByFamilyHead[$group->familyHeadItemcode] ?? 0,
+                'parentMismatchCount' => $parentMismatchCount,
                 'modelNameNl' => $group->modelNameNl,
                 'modelNameFr' => $group->modelNameFr,
                 'modelNameEn' => $group->modelNameEn,

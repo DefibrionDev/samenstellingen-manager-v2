@@ -46,6 +46,7 @@ final class AppFactory
             $container->afasArticleRepository(),
             $container->websiteRepository(),
             $container->basePublicationRepository(),
+            $container->afasSamenstellingenRepository(),
         );
         $listWebsites = new ListWebsitesController($container->websiteRepository());
         $listAccessoires = new ListAccessoiresController(

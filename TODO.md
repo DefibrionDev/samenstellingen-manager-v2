@@ -1345,6 +1345,26 @@ Eindbeeld: één commando om een out-of-stock BOM-component (bv. stickerset `816
 
 ---
 
+## Slice 48 — Frontend-waarschuwing voor base-parent ≠ groep-family-head
+
+Eindbeeld: op `/groups/<familyHead>` toont een MUI Alert ("X base(s) hebben een afwijkende parent in AFAS") zodra ≥1 base een `afasItemcodeParent` heeft dat ongelijk is aan de groep's `familyHead`. Read-only signalering — geen audit-CLI, geen migratie. Zie PLAN.md §28.
+
+### Sub-slice 48.0 — API-veld + UI-banner
+- [x] `ShowGroupController` injecteert `afasItemcodeParent: string | null` op elke base in de JSON-respons door per base `afasSamenstellingenRepository->findByItemcode($base->afasItemcode)?->itemcodeParent` te lezen. PHP unit/integration-test in `tests/Interface/Http/ApiTest.php` (of waar de ShowGroup-test al staat) verifieert dat het veld in de response zit en `null` is voor bases zonder `afas_itemcode` of voor itemcodes waar de snapshot geen entry heeft.
+- [x] `web/src/pages/GroupDetail.tsx` rendert boven de bases-lijst een `<Alert severity="info">` zodra `bases.filter(b => b.afasItemcodeParent && b.afasItemcodeParent !== familyHead).length > 0`. De Alert bevat een korte introtekst + een tabel `(afas itemcode | parent in AFAS)`. TypeScript-type voor `Base` uitgebreid met optioneel `afasItemcodeParent?: string | null`.
+- [x] Vitest in `web/src/pages/GroupDetail.test.tsx`: 1 test "toont parent-mismatch banner" (met `afasItemcodeParent` afwijkend van `familyHead` → banner zichtbaar + de juiste afas itemcode is in de tabel), 1 test "geen banner zonder mismatches" (alle bases hebben parent = familyHead of `null` → geen banner).
+- [x] `make check` + `npm --prefix web run test` groen. → 460 PHP-tests / 1111 assertions + 17 vitest-tests.
+- [x] Live: open `/groups/21018` in de UI en verifieer dat de banner verschijnt met de 5 bases van de 21011-familie (parent=21017). Open `/groups/11148` (Cardiac Science) en verifieer dat er geen banner is. → Banner toont op 21018 met 5 bases (21018-FR/UK/DE + 21011-FR/UK → 21017); afwezig op 11148.
+
+### Sub-slice 48.1 — Signaal op overzichtspagina
+- [x] `ListGroupsController` telt per groep `parentMismatchCount = bases.filter(b => b.afasItemcode && samenstelling.itemcodeParent && samenstelling.itemcodeParent !== familyHead).count`. JSON-respons krijgt `parentMismatchCount: int` per group. PHP-test in `ApiTest.php` verifieert het nieuwe veld voor minimaal 1 groep mét en 1 groep zonder mismatches.
+- [x] `web/src/pages/GroupsList.tsx` toont in de bestaande DataGrid op rijen met `parentMismatchCount > 0` een MUI `<Chip>` (warning, klein, met tooltip "N base(s) met afwijkende parent in AFAS"). TypeScript-type `GroupSummary` uitgebreid met `parentMismatchCount?: number`.
+- [x] Vitest in `web/src/pages/GroupsList.test.tsx`: verifieer dat de waarschuwings-chip verschijnt op een groep met `parentMismatchCount: 5` en niet verschijnt op een groep met `parentMismatchCount: 0`.
+- [x] `make check` + `npm --prefix web run test` groen. → 461 PHP-tests / 1114 assertions + 18 vitest-tests.
+- [x] Live: open `/` (overzichtspagina) en verifieer dat groep "Mindray Beneheart C1 AED semi-automaat" een waarschuwingschip toont met "5". → Bevestigd: Mindray C1 semi (21018)=5, Mindray C1 vol (21019)=6, anderen 0.
+
+---
+
 ## Slice 20 — Reconciliation in portal-CSV-import (vervang wipe)
 
 Eindbeeld: portal-CSV-import is idempotent. Bestaande groepen behouden hun `model_name` en `group_accessoires` over imports heen; alleen groepen die niet meer in de CSV staan worden opgeruimd. Geen `ToolDataWiper` meer in de import-flow.
