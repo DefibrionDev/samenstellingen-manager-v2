@@ -85,4 +85,34 @@ abstract class GroupBaseItemRepositoryContractTestCase extends TestCase
 
         $this->items->findAllForBase(9999);
     }
+
+    #[Test]
+    public function deleteByItemcodeRemovesAcrossAllBasesAndReportsCount(): void
+    {
+        // Tweede base in andere taal, beide krijgen dezelfde sticker-code.
+        $second = $this->bases->saveForGroup('52112', new GroupBase(null, 'AED pakket EN', 'EN'));
+        self::assertNotNull($second->id);
+
+        $this->items->saveForBase($this->baseId, new GroupBaseItem('81611', 'AED stickerset internationaal'));
+        $this->items->saveForBase($this->baseId, new GroupBaseItem('70112', 'Reanimatiekit'));
+        $this->items->saveForBase($second->id, new GroupBaseItem('81611', 'AED stickerset internationaal'));
+
+        $deleted = $this->items->deleteByItemcode('81611');
+
+        self::assertSame(2, $deleted);
+
+        $firstAfter = array_map(static fn (GroupBaseItem $i) => $i->itemcode, $this->items->findAllForBase($this->baseId));
+        $secondAfter = array_map(static fn (GroupBaseItem $i) => $i->itemcode, $this->items->findAllForBase($second->id));
+        self::assertSame(['70112'], $firstAfter);
+        self::assertSame([], $secondAfter);
+    }
+
+    #[Test]
+    public function deleteByItemcodeReturnsZeroWhenAbsent(): void
+    {
+        $this->items->saveForBase($this->baseId, new GroupBaseItem('70112', 'Reanimatiekit'));
+
+        self::assertSame(0, $this->items->deleteByItemcode('81611'));
+        self::assertCount(1, $this->items->findAllForBase($this->baseId));
+    }
 }

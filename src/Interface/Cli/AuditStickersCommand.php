@@ -35,6 +35,7 @@ final class AuditStickersCommand extends Command
         }
 
         $table = [];
+        $expectedSet = [];
         foreach ($rows as $r) {
             $table[] = [
                 $r->baseAfasItemcode,
@@ -43,9 +44,22 @@ final class AuditStickersCommand extends Command
                 $r->expectedSticker,
                 $r->actualStickers === [] ? '(geen)' : implode(', ', $r->actualStickers),
             ];
+            $expectedSet[$r->expectedSticker] = true;
         }
         $io->section(sprintf('%d base(s) met sticker-taal-mismatch', count($rows)));
         $io->table(['Itemcode', 'Groep', 'Taal', 'Verwacht', 'Werkelijk'], $table);
+
+        // Als ALLE drift exact één gemeenschappelijke verwachte sticker mist,
+        // is de oorzaak vermoedelijk een `bom:strip-component` (bv. tijdelijk
+        // uit voorraad). Wijs de gebruiker naar het tegen-commando.
+        if (count($expectedSet) === 1) {
+            $sticker = array_key_first($expectedSet);
+            $io->writeln(sprintf(
+                '<comment>Alle %d drift-rijen missen alleen stickerset %s — gebruik `bin/samenstellingen stickers:restore` wanneer de voorraad terug is.</comment>',
+                count($rows),
+                (string) $sticker,
+            ));
+        }
 
         return Command::FAILURE;
     }

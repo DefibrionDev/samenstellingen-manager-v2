@@ -1313,6 +1313,38 @@ Eindbeeld: na een rename in AFAS (bv. `11148` → `… semi-automaat NL-EN`) bre
 
 ---
 
+## Slice 47 — BOM-component tijdelijk uit voorraad halen + stickers later terugzetten
+
+Eindbeeld: één commando om een out-of-stock BOM-component (bv. stickerset `81611` "internationaal") uit alle tool-bases én AFAS-samenstellingen te halen, en een tegen-commando dat de stickerset later weer terugplaatst aan de hand van `StickerPolicy` + base-taal. Zie PLAN.md §27.
+
+### Sub-slice 47.0 — `bom:strip-component` PoC + writer + CLI
+- [x] PoC live: handmatig één PUT FbComposition met `FbCompositionPart` DELETE-syntax tegen één wegwerp-samenstelling in AFAS (kies een EN-samenstelling die we toch gaan strippen, bv. `11142-EN`). Doel: bevestigen welke attribuut/methode AFAS verwacht voor "regel verwijderen" — `@Method="delete"` op het Element, of een aparte payload-vorm. Log de werkende request-shape in een commentaar in de writer. → **Bevestigd**: `Fields.@Action="delete"` + `Fields.PrSe` + `Fields.VaIt` + `Fields.ItCd` (composite key). PrSe is per samenstelling niet uniek (1140 paren in AFAS), maar door `VaIt+ItCd` mee te sturen blijft de delete onambiguous. PrSe-veld toegevoegd aan `easylinq_stock_item_parts` GetConnector (heet `Presentatievolgorde` in output).
+- [x] `BomComponentStripPlan` VO + `StripBomComponent` command + `StripBomComponentResult` (lijst van geraakte samenstellingen + tool-rij-count + failures). → Domain: `BomLine` VO + `BomLineReader` interface; Application: `StripBomComponent`, `StripBomComponentResult`, `BomComponentStripWriter`, `BomComponentStripFailedException`.
+- [x] Repo-methode `GroupBaseItemRepository::deleteByItemcode(string $itemcode): int` (InMemory + Sqlite + contract-tests): verwijdert alle rijen met deze itemcode en retourneert het aantal verwijderde rijen.
+- [x] `BomComponentStripper` interface + `HttpBomComponentStripper` (PUT FbComposition met DELETE-payload uit PoC) + `InMemoryBomComponentStripper` voor tests. → `BomComponentStripWriter` + Http + InMemory; werkende request-shape ge-inline-comment in writer.
+- [x] `StripBomComponentHandler`: dry-run berekent plan (welke `group_base_items`-rijen + welke `afas_samenstellingen` geraakt worden); apply doet beide stappen (tool DELETE eerst, dan AFAS-writes). Tests: dry-run telt correct, apply roept writer aan, failures verzameld.
+- [x] CLI `bom:strip-component <itemcode> [--apply] [--limit=N]`. Default dry-run met tabel (samenstelling | tool-rijen | …). Failures naar `tmp/strip-component-{datum}.csv`. Test: dry-run output bevat verwachte rijen; apply path roept writer aan.
+- [x] `make check` groen.
+
+### Sub-slice 47.1 — Live strip `81611`
+- [x] `bin/samenstellingen bom:strip-component 81611` (dry-run): bevestig 17 tool-rijen + ~186 AFAS-samenstellingen geraakt. → 17 tool / 184 AFAS-regels (1 was al gestript tijdens PoC).
+- [x] `bin/samenstellingen bom:strip-component 81611 --apply`: live uitvoeren. Failures (indien) in `tmp/strip-component-*.csv` napluizen. → 0 failures.
+- [x] `bin/samenstellingen afas:pull` daarna: verifieer dat `afas_samenstelling_bom` 0 hits heeft voor `81611` en dat de 17 EN-bases als matched blijven (geen no_match-drift). → 0 AFAS-hits + 0 tool-hits. Auto-sync: 564 matched / 193 no_match (was 550 / 207 voor strip — netto +14 matched).
+
+### Sub-slice 47.2 — `stickers:restore` CLI
+- [x] `StickersRestorePlan` VO + `RestoreStickers` command + `StickersRestoreResult` (per base: verwachte sticker + welke samenstellingen restored worden). → `BomComponentRestorePlan`, `RestoreStickers`, `RestoreStickersResult`, `BomComponentRestoreWriter`, `BomComponentRestoreFailedException`.
+- [x] ~~Repo-methode `GroupBaseItemRepository::saveForBaseIfMissing(...)` (idempotent insert).~~ Niet nodig: handler vangt `BaseItemAlreadyExistsException` op + gebruikt bestaande `saveForBase`.
+- [x] `BomComponentAdder` interface + `HttpBomComponentAdder` + `InMemoryBomComponentAdder`. → `BomComponentRestoreWriter` + Http + InMemory, werkende request-shape ge-inline-comment (PoC-repair confirmde `@Action=insert`).
+- [x] `RestoreStickersHandler`: itereer over bases → per base `StickerPolicy::expectedSticker($base->languageCode)`. Filter optioneel op `--language=<code>`. Voor elke base: als tool de sticker mist → plan tool-insert; voor elke AFAS-samenstelling die bij die base hoort (`<baseSku>` of `<baseSku>-…`) waarin de sticker ontbreekt in `afas_samenstelling_bom` → plan AFAS-add. Apply doet beide. Tests: EN-base zonder sticker → restore voegt `81611` toe in tool + plant AFAS-writes; NL-base met sticker = no-op. → 4 handler-tests groen.
+- [x] CLI `stickers:restore [--language=<code>] [--apply] [--limit=N]`. Default dry-run. Failures naar `tmp/restore-stickers-{datum}.csv`. → Dry-run: 19 tool / 124 AFAS-regels voor `--language=EN`.
+- [x] PrSe-allocatie: nieuwe methode `BomLineReader::findMaxPrSePerSamenstelling()` voor bulk-pull; restore gebruikt `max + 10` per samenstelling zodat PrSe niet conflicteert.
+- [x] `make check` groen.
+
+### Sub-slice 47.3 — `audit:stickers` banner (optioneel)
+- [x] `StickerAuditHandler` / `AuditStickersCommand`: wanneer **alle** drift-rijen exact één gemeenschappelijke ontbrekende sticker hebben, banner: `<comment>X bases missen alleen stickerset Y — gebruik `stickers:restore` wanneer de voorraad terug is.</comment>`. Test: drift-set met 1 gemeenschappelijke sticker → banner getoond; drift-set met meerdere → geen banner. → 2 CommandTester-tests groen.
+
+---
+
 ## Slice 20 — Reconciliation in portal-CSV-import (vervang wipe)
 
 Eindbeeld: portal-CSV-import is idempotent. Bestaande groepen behouden hun `model_name` en `group_accessoires` over imports heen; alleen groepen die niet meer in de CSV staan worden opgeruimd. Geen `ToolDataWiper` meer in de import-flow.

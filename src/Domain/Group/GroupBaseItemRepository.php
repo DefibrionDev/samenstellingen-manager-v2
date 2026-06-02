@@ -18,4 +18,11 @@ interface GroupBaseItemRepository
      * @return list<GroupBaseItem>
      */
     public function findAllForBase(int $baseId): array;
+
+    /**
+     * Verwijder alle base-items met deze itemcode, ongeacht base. Retourneert
+     * het aantal verwijderde rijen. Idempotent: 0 als de itemcode nergens
+     * voorkomt.
+     */
+    public function deleteByItemcode(string $itemcode): int;
 }

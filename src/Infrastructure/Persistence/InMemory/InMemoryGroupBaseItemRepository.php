@@ -41,6 +41,19 @@ final class InMemoryGroupBaseItemRepository implements GroupBaseItemRepository
         return $items;
     }
 
+    public function deleteByItemcode(string $itemcode): int
+    {
+        $count = 0;
+        foreach ($this->byBaseAndItemcode as $baseId => $items) {
+            if (isset($items[$itemcode])) {
+                unset($this->byBaseAndItemcode[$baseId][$itemcode]);
+                ++$count;
+            }
+        }
+
+        return $count;
+    }
+
     private function assertBaseExists(int $baseId): void
     {
         if (!$this->baseRepository->findById($baseId) instanceof GroupBase) {

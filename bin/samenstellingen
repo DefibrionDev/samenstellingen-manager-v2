@@ -96,9 +96,16 @@ use Defibrion\Samenstellingen\Interface\Cli\ListGroupsCommand;
 use Defibrion\Samenstellingen\Interface\Cli\ListWebsitesCommand;
 use Defibrion\Samenstellingen\Interface\Cli\PublishBaseCommand;
 use Defibrion\Samenstellingen\Interface\Cli\RemoveWebsiteCommand;
+use Defibrion\Samenstellingen\Application\Bom\RestoreStickersHandler;
+use Defibrion\Samenstellingen\Application\Bom\StripBomComponentHandler;
 use Defibrion\Samenstellingen\Application\Publications\SyncPublicationsHandler;
+use Defibrion\Samenstellingen\Infrastructure\Bom\Http\HttpBomComponentRestoreWriter;
+use Defibrion\Samenstellingen\Infrastructure\Bom\Http\HttpBomComponentStripWriter;
+use Defibrion\Samenstellingen\Infrastructure\Bom\Http\HttpBomLineReader;
 use Defibrion\Samenstellingen\Infrastructure\Publications\HttpAfasFreeFieldStateReader;
 use Defibrion\Samenstellingen\Infrastructure\Publications\HttpPublicationSyncWriter;
+use Defibrion\Samenstellingen\Interface\Cli\RestoreStickersCommand;
+use Defibrion\Samenstellingen\Interface\Cli\StripBomComponentCommand;
 use Defibrion\Samenstellingen\Interface\Cli\SyncPublicationsCommand;
 use Defibrion\Samenstellingen\Interface\Cli\UnpublishBaseCommand;
 use Defibrion\Samenstellingen\Interface\Cli\ShowGroupCommand;
@@ -342,6 +349,26 @@ if ($hasAfasCreds) {
         $afasFreeFieldStateReader,
     );
     $application->addCommand(new SyncPublicationsCommand($syncPublicationsHandler));
+
+    $bomLineReader = new HttpBomLineReader($afasClient);
+    $bomStripWriter = new HttpBomComponentStripWriter($afasClient);
+    $stripBomComponentHandler = new StripBomComponentHandler(
+        $bomLineReader,
+        $bomStripWriter,
+        $baseItemRepository,
+    );
+    $application->addCommand(new StripBomComponentCommand($stripBomComponentHandler));
+
+    $bomRestoreWriter = new HttpBomComponentRestoreWriter($afasClient);
+    $restoreStickersHandler = new RestoreStickersHandler(
+        $groupRepository,
+        $baseRepository,
+        $baseItemRepository,
+        $afasSamenstellingenRepository,
+        $bomLineReader,
+        $bomRestoreWriter,
+    );
+    $application->addCommand(new RestoreStickersCommand($restoreStickersHandler));
 }
 
 exit($application->run());

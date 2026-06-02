@@ -1083,3 +1083,63 @@ AFAS is leidend. Tijdens `afas:pull` na het binnenhalen van de samenstellingen-s
 ### Slices
 
 - **Slice 46.0** — Sync-stap in `PullAfasSamenstellingenHandler`: na `replaceSnapshot($samenstellingen)` en vóór auto-shift-detection, één UPDATE die `group_bases.name` zet op `afas_samenstellingen.name` waar `group_bases.afas_itemcode = afas_samenstellingen.itemcode` en de namen verschillen. Tellertje terug in de `PullAfasSamenstellingenResult` (`basesRenamed`). Test: InMemory + Sqlite integratie — pull met een gewijzigde naam → `group_bases.name` matcht na de pull; bases zonder `afas_itemcode` ongemoeid.
+
+---
+
+## 27. BOM-component tijdelijk uit voorraad halen + stickers later terugzetten (slice 47 — concept)
+
+### Probleem
+
+Een AFAS-component die we normaal in samenstellingen verwerken (bv. stickerset `81611` "internationaal") raakt tijdelijk out-of-stock. We willen:
+1. De component uit alle huidige samenstellingen in AFAS halen zodat orders niet meer op die SKU wachten.
+2. De tool z'n `group_base_items` mee aanpassen, anders breekt BOM-equality bij `sync` en worden alle 17 EN-bases als `no_match` gemarkeerd.
+3. Wanneer de voorraad terug is: één commando om de component weer aan de juiste bases + AFAS-samenstellingen toe te voegen, zonder elke base handmatig na te lopen.
+
+Bestaande mechanismen lossen dit niet op:
+- `bom_blacklist` filtert alleen in de portal-CSV-import, niet in `VariantMatcher` of in `variants:fix-missing`.
+- `variants:fix-missing` POSTed alleen nieuwe samenstellingen — het update bestaande BOMs niet.
+- Geen AFAS-writer voor FbCompositionPart DELETE/POST losse regels.
+
+### Aanpak
+
+Twee symmetrische CLI's, beide met `--apply`-flag (default dry-run, failures naar `tmp/`-CSV):
+
+**`bom:strip-component <itemcode>`** — generiek "uit voorraad". Twee stappen, één commando:
+1. Tool: `DELETE FROM group_base_items WHERE itemcode = <itemcode>`. Telt verwijderde rijen.
+2. AFAS: voor elke `afas_samenstellingen` met deze code in `afas_samenstelling_bom` → DELETE de losse regel via UpdateConnector (zie onderaan). Failures per samenstelling loggen, niet aborten.
+
+**`stickers:restore [--language=<code>]`** — sticker-specifiek, leunt op `StickerPolicy`. Voor elke base:
+- Bepaal de verwachte stickerset (`StickerPolicy::expectedSticker($languageCode)`).
+- Als die stickerset ontbreekt in `group_base_items`: voeg toe.
+- Voor elke AFAS-samenstelling die hoort bij die base (`<baseSku>` of `<baseSku>-…`): als de stickerset ontbreekt in de BOM, POST de regel.
+- `--language=<code>` filtert op base-taal voor de zekerheid (één-set tegelijk terugzetten).
+
+### AFAS-write
+
+FbCompositionPart wordt als nested element binnen FbComposition gestuurd:
+
+```json
+{
+  "FbComposition": {
+    "Element": {
+      "@ItCd": "<samenstelling>",
+      "Objects": {
+        "FbCompositionPart": {
+          "Element": [ {"@ItCd": "<bom-itemcode>", "@VaIt": "Sam", ...} ]
+        }
+      }
+    }
+  }
+}
+```
+
+Strip-pad: PUT FbComposition met `@VaIt`-vrije payload + alleen de te-verwijderen regel met methode-attribuut voor delete (concrete syntax verifiëren tegen AFAS-doc voor we de writer schrijven; vergelijkbaar met `afas-connector-tools`-patroon). Restore-pad: PUT FbComposition met alleen de toe-te-voegen regel onder `FbCompositionPart.Element`.
+
+Voor beide writers: bouw vooraf een snapshot-refresh van de geraakte samenstellingen om zeker te weten of de regel echt weg/aanwezig is en idempotent te kunnen falen.
+
+### Slices
+
+- **Slice 47.0** — `BomComponentRemover` writer + tool-side strip: `StripBomComponentHandler` met dry-run-result (rijen die uit `group_base_items` zouden gaan + AFAS-samenstellingen die geraakt worden). CLI `bom:strip-component`. InMemory + Http writer; failures naar CSV. Tool-side DELETE via nieuwe repo-methode `GroupBaseItemRepository::deleteByItemcode(string)`. Live verifieer: dry-run toont 17 tool-rijen + 186 AFAS-samenstellingen voor `81611`.
+- **Slice 47.1** — Live strip uitvoeren: `bom:strip-component 81611 --apply`. Verifieer dat een volgende `afas:pull` 0 BOM-hits voor 81611 toont en dat de 17 EN-bases als matched blijven (tool BOM = AFAS BOM, beide zonder 81611).
+- **Slice 47.2** — `StickersRestoreHandler` + CLI `stickers:restore [--language=EN]`. Per base de policy-verwachting bepalen, ontbrekende sticker toevoegen aan `group_base_items` (en aan AFAS-samenstelling-BOM via dezelfde writer-flow). Dry-run default. Tests op InMemory: EN-base zonder sticker → restore voegt `81611` toe; NL-base met sticker → no-op.
+- **Slice 47.3** — Audit-bonus: `StickerAuditHandler` blijft drift rapporteren tijdens de "stripped"-periode. Voeg een korte CLI-banner toe ("X bases missen hun verwachte stickerset — gebruik `stickers:restore --apply` wanneer de voorraad terug is") wanneer de drift uitsluitend door één weggehaalde sticker komt. Optioneel; primair signaal is genoeg.
