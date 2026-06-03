@@ -21,4 +21,12 @@ interface GroupVariantRepository
     public function markMatched(int $variantId, string $afasItemcode): void;
 
     public function markNoMatch(int $variantId): void;
+
+    /**
+     * Geef de distinct gesorteerde AFAS-itemcodes terug van varianten die aan deze base
+     * gekoppeld zijn (afas_samenstelling_itemcode IS NOT NULL). Onbekende base → [].
+     *
+     * @return list<string>
+     */
+    public function findMatchedAfasItemcodesForBase(int $baseId): array;
 }

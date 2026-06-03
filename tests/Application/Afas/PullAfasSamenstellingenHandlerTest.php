@@ -106,6 +106,11 @@ final class PullAfasSamenstellingenHandlerTest extends TestCase
             public function markNoMatch(int $variantId): void
             {
             }
+            /** @return list<string> */
+            public function findMatchedAfasItemcodesForBase(int $baseId): array
+            {
+                return [];
+            }
         };
         $baseItems = new class () implements GroupBaseItemRepository {
             public function saveForBase(int $baseId, GroupBaseItem $item): void

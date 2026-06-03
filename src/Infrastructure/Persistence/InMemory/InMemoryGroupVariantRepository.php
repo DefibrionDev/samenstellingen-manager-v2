@@ -138,6 +138,22 @@ final class InMemoryGroupVariantRepository implements GroupVariantRepository
         );
     }
 
+    public function findMatchedAfasItemcodesForBase(int $baseId): array
+    {
+        $codes = [];
+        foreach ($this->variantsByGroup as $variants) {
+            foreach ($variants as $variant) {
+                if ($variant->baseId === $baseId && $variant->afasSamenstellingItemcode !== null) {
+                    $codes[$variant->afasSamenstellingItemcode] = true;
+                }
+            }
+        }
+        $result = array_keys($codes);
+        sort($result);
+
+        return $result;
+    }
+
     /**
      * @param callable(GroupVariant): GroupVariant $mutator
      */

@@ -128,6 +128,27 @@ final readonly class SqliteGroupVariantRepository implements GroupVariantReposit
         $stmt->execute([':id' => $variantId]);
     }
 
+    public function findMatchedAfasItemcodesForBase(int $baseId): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT DISTINCT afas_samenstelling_itemcode
+             FROM group_variants
+             WHERE base_id = :base_id
+               AND afas_samenstelling_itemcode IS NOT NULL
+             ORDER BY afas_samenstelling_itemcode'
+        );
+        $stmt->execute([':base_id' => $baseId]);
+
+        $codes = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $value) {
+            if (is_string($value)) {
+                $codes[] = $value;
+            }
+        }
+
+        return $codes;
+    }
+
     /**
      * @return list<int>
      */

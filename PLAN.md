@@ -1031,7 +1031,7 @@ Onze tool zet bij elke `variants:fix-missing --apply` hardcoded de free-fields `
 
 - **Website**: aparte AFAS-bestemming. Heeft naam (`"Reseller NL"`, `"Reseller FR"`, …) + free-field UUID's voor `Sync_*` en `Tonen_*`. De bestaande Reseller NL-vrije-velden worden de eerste website-entry, daarna kan de gebruiker er meer toevoegen via CLI.
 - **Publication**: per `(base, website)` een vink. Granulariteit = base-niveau; alle accessoire-varianten van die base erven automatisch de publicatie-staat. Bv.: publiceer base `11111` op website X → variants `11111`, `11111-60110`, `11111-60112` etc. krijgen allemaal FF_SYNC/FF_TONEN=true voor website X.
-- **AFAS-sync**: voor elke `published`-base PUT'en we FbComposition op de base zelf + op elke afgeleide variant in AFAS met `FF_SYNC` + `FF_TONEN`=true voor die website; not-published bases krijgen `false`.
+- **AFAS-sync**: voor elke `published`-base PUT'en we FbComposition op de base zelf én op elke variant in AFAS waarvoor `group_variants.afas_samenstelling_itemcode` gevuld is via de BOM-equality-matcher van `group:sync-afas` (zie §29 voor de refactor weg van itemcode-prefix-matching). De flag-map wordt per website opgebouwd: `FF_SYNC`/`FF_TONEN`=true wanneer de base voor die website published is, anders `false`.
 
 ### Schema-aanpak
 
@@ -1165,3 +1165,54 @@ Geen audit-handler, geen CLI — de UI is de signaal-laag. Audit-CLI's bestaan a
 
 - **Slice 48.0** — API + render. `ShowGroupController` haalt voor elke base met `afasItemcode` de bijbehorende `AfasSamenstelling` op uit de snapshot-repository en voegt `afasItemcodeParent: string|null` toe aan elke base in de JSON-respons. `GroupDetail.tsx` berekent een lijst van bases waar de parent gevuld is en niet matcht met `data.familyHead`, en rendert een MUI Alert info met de tabel-rijen `(afas itemcode | parent in AFAS)`. Geen waarschuwing als de lijst leeg is. Vitest: één test "toont parent-mismatch banner" + één "geen banner zonder mismatches".
 - **Slice 48.1** — Signaal op overzichtspagina. `ListGroupsController` telt per groep het aantal bases waar `afasItemcodeParent ≠ familyHeadItemcode`, en voegt `parentMismatchCount: int` toe aan de JSON-respons. `GroupsList.tsx` toont in de bestaande tabel een waarschuwings-Chip/icon (warning-severity) op rijen met `parentMismatchCount > 0` met tooltip "N base(s) met afwijkende parent in AFAS". PHP-test verifieert de nieuwe count. Vitest verifieert de chip op rijen met `parentMismatchCount > 0`.
+
+---
+
+## 29. Plan-engine: BOM-based target-matching i.p.v. itemcode-prefix (slice 49 — concept)
+
+### Probleem
+
+`SyncPublicationsHandler::collectVariantItemcodes` (`src/Application/Publications/SyncPublicationsHandler.php:128`) verzamelt voor elke base in de DB alle AFAS-itemcodes die qua tekenstring matchen op `<base_sku>` of `<base_sku>-…` (zie `str_starts_with($code, $prefix)`). Het algoritme onderscheidt niet tussen accessoire-suffixen (`-60110`, `-60112`) en taal-suffixen (`-DE`, `-UK`, `-CZ`, `-ES`, `-FIN`, `-FR`).
+
+Effect: een `base:publish 10144 "Reseller NL"` veroorzaakt een dry-run-plan van 200+ items dat ook taal-siblings sleept die wij niet beheren — Tsjechische, Spaanse, Finse, Duitse, Franse, Engelse Philips HeartStart FRx-varianten en hun 7 accessoire-varianten elk. Wanneer `publications:sync --apply` draait worden die ook op `Sync_Reseller_NL=true` + `Tonen_Reseller_NL=true` gezet, terwijl dat geen expliciete keuze van de gebruiker is en (qua reseller-distributie) onjuist kan zijn.
+
+De fundamentele kwetsbaarheid: PLAN.md §25 gaat ervan uit dat AFAS-itemcode-suffixen altijd accessoires zijn. In de praktijk gebruikt Defibrion `-DE`/`-UK`/`-CZ`/`-ES`/`-FIN`/`-FR` óók als taal-suffixen op hetzelfde syntactische niveau. Tekenstring-matching kan die twee niet uit elkaar houden.
+
+### Inzicht: BOM zegt het wél eenduidig
+
+Een variant die hoort bij onze `base 10144` (Nederlandse Philips HeartStart FRx) heeft in z'n BOM dezelfde AED-itemcode (`12144`) als de base. De Tsjechische variant `10144-CZ-60110` heeft `12144-CZ` in z'n BOM (een andere AED-SKU) en mist de sticker `81111` — dus z'n BOM matcht niet met `(base_bom \ swap_out) ∪ {accessoire_itemcode}`.
+
+Voorbeeld:
+
+| Itemcode | AFAS-BOM | Onze interpretatie |
+|---|---|---|
+| `10144` | `{10591, 12144, 70112, 81111}` | base (NL) — exact gelijk aan onze interne `group_base_items` |
+| `10144-60110` | `{12144, 60110, 70112, 81111}` | NL + Backpack — match (AED `12144` + sticker `81111` blijven) |
+| `10144-CZ-60110` | `{12144-CZ, 60110, 70112}` | CZ + Backpack — geen match (andere AED, geen sticker) |
+
+De bestaande `VariantMatcher::findMatch` + `AfasSamenstelling::bomMatches` doet exact-equality-vergelijking op gesorteerde itemcode-set. Dat is dezelfde semantiek die `SyncGroupAgainstAfasHandler` (`group:sync-afas`, auto-sync bij `afas:pull`) gebruikt om `group_variants.afas_samenstelling_itemcode` te vullen.
+
+### Aanpak
+
+`SyncPublicationsHandler::collectVariantItemcodes` (de prefix-fallback) verwijderen en vervangen door een lookup op reeds-gematchte data:
+
+1. De **base** is altijd `base.afasItemcode` (de matched-or-self itemcode in onze DB).
+2. De **accessoire-varianten** worden gelezen uit `group_variants.afas_samenstelling_itemcode WHERE base_id = base.id AND afas_samenstelling_itemcode IS NOT NULL`. Dat zijn de items die de auto-sync via BOM-equality al heeft gekoppeld.
+
+Geen prefix-iteratie meer over `afas_samenstellingen.itemcode`. De plan-engine consumeert wat de auto-sync produceert; semantische verantwoordelijkheid van "wat is een variant van mijn base" blijft op één plek (`VariantMatcher`).
+
+**Consequentie A** — bucket B (162 taal-siblings) verdwijnt uit het plan. Hun BOM matcht ons base-BOM niet, dus auto-sync heeft ze nooit aan een `group_variants.afas_samenstelling_itemcode` gekoppeld, dus de plan-engine ziet ze niet meer.
+
+**Consequentie B** — bucket A (38 echte NL-varianten die in `no_match`-status staan) blijft mee-vallen onder de plan-engine, want hun `group_variants.afas_samenstelling_itemcode` is `NULL`. De plan-engine zal die niet meer flippen. Dat lijkt regressie, maar legt feitelijk een bestaande bug bloot: de auto-sync linkt deze variants niet aan AFAS terwijl de matching wel mogelijk zou moeten zijn. Voor Philips FRx is de discrepantie waarschijnlijk een sticker-of swap-out-mismatch (`10591` in onze base, niet in AFAS-variant). Die bug zit niet in deze slice — die hoort in een aparte audit (bv. "report bases met variants in `no_match` ondanks AFAS-snapshot-match"). Voor dit moment: de plan-engine wordt strikter, en zichtbare "no_match"-counts in de UI (slice 48-stijl signaal of bestaande missend-chip) moeten als afdwingbaar signaal volstaan totdat de root-cause is opgelost.
+
+**Consequentie C** — sibling-base scenario blijft correct werken: als `10144-DE` en `10144-UK` als aparte base in onze DB staan (al het geval), worden hun matched variants apart in het plan opgenomen via hun eigen `group_variants`-rows. Geen prefix-vangst van de NL-base nodig.
+
+### Slices
+
+- **Slice 49.0** — `SyncPublicationsHandler` refactor. Vervang `collectVariantItemcodes(string)` door een lookup-call die per base z'n eigen `afasItemcode` + alle `group_variants.afas_samenstelling_itemcode` (non-null) retourneert. Voeg een `GroupVariantRepository::findMatchedAfasItemcodesForBase(int $baseId): list<string>` toe (of hergebruik bestaand). Tests met `InMemoryGroupVariantRepository`:
+  - Base met 3 gekoppelde variants → plan-engine pakt alleen die 3 + de base zelf, geen prefix-vangst.
+  - Base met 0 gekoppelde variants → alleen de base zelf in target-lijst.
+  - Twee bases met overlappende prefix (10144 + 10144-DE) → elke base produceert alleen z'n eigen targets; geen kruisbestuiving.
+  - No-op skip blijft werken via `AfasFreeFieldStateReader`.
+- **Slice 49.1** — Live verifiëren. Run dry-run `publications:sync` na de refactor: het plan zou moeten dalen van ~200 → ≤38 (alleen bucket A blijft, en alleen tot we de no_match-bug fixen). Verifieer dat de 84 bases + hun 639 gematchte varianten stabiel `Sync_NL=true,Tonen_NL=true` houden en dat geen taal-sibling per ongeluk uit-staat na een `--apply` rerun. Geen code-wijziging.
+- **Slice 49.2** — `PLAN.md §25` bijwerken: het oude "PUT'en die op de base zelf én op alle accessoire-varianten in AFAS die met `<baseSku>` of `<baseSku>-` beginnen" vervangen door "PUT'en op base + op alle door auto-sync gekoppelde varianten (`group_variants.afas_samenstelling_itemcode`)". Klein, alleen ter consistentie van de plan-doc.

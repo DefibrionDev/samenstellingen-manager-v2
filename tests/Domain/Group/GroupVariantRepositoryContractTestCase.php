@@ -115,4 +115,72 @@ abstract class GroupVariantRepositoryContractTestCase extends TestCase
 
         $this->variants->findAllForGroup('99999');
     }
+
+    #[Test]
+    public function returnsEmptyMatchedItemcodesForBaseWithoutMatches(): void
+    {
+        $base = $this->bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL', 'NL'));
+        self::assertNotNull($base->id);
+        $this->accessoires->save(new Accessoire('60110', 'Rugzak'));
+        $this->links->link('52112', '60110');
+        $this->variants->regenerateForGroup('52112');
+
+        self::assertSame([], $this->variants->findMatchedAfasItemcodesForBase($base->id));
+    }
+
+    #[Test]
+    public function returnsOnlyMatchedItemcodesForBase(): void
+    {
+        $base = $this->bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL', 'NL'));
+        self::assertNotNull($base->id);
+        $this->accessoires->save(new Accessoire('60110', 'Rugzak'));
+        $this->accessoires->save(new Accessoire('60112', 'ARKY witte binnenkast'));
+        $this->accessoires->save(new Accessoire('60122', 'ARKY groene binnenkast'));
+        $this->links->link('52112', '60110');
+        $this->links->link('52112', '60112');
+        $this->links->link('52112', '60122');
+        $this->variants->regenerateForGroup('52112');
+
+        foreach ($this->variants->findAllForGroup('52112') as $variant) {
+            self::assertNotNull($variant->id);
+            if ($variant->accessoireItemcode === '60110') {
+                $this->variants->markMatched($variant->id, '52112-60110');
+            } elseif ($variant->accessoireItemcode === '60112') {
+                $this->variants->markMatched($variant->id, '52112-60112');
+            } elseif ($variant->accessoireItemcode === '60122') {
+                $this->variants->markNoMatch($variant->id);
+            }
+        }
+
+        $result = $this->variants->findMatchedAfasItemcodesForBase($base->id);
+
+        self::assertSame(['52112-60110', '52112-60112'], $result);
+    }
+
+    #[Test]
+    public function matchedItemcodesAreScopedToTheBase(): void
+    {
+        $baseNl = $this->bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL', 'NL'));
+        $baseFr = $this->bases->saveForGroup('52112', new GroupBase(null, 'Pack DAE FR', 'FR'));
+        self::assertNotNull($baseNl->id);
+        self::assertNotNull($baseFr->id);
+        $this->accessoires->save(new Accessoire('60110', 'Rugzak'));
+        $this->links->link('52112', '60110');
+        $this->variants->regenerateForGroup('52112');
+
+        foreach ($this->variants->findAllForGroup('52112') as $variant) {
+            self::assertNotNull($variant->id);
+            $prefix = $variant->baseId === $baseNl->id ? 'NL-' : 'FR-';
+            $this->variants->markMatched($variant->id, $prefix . ($variant->accessoireItemcode ?? 'BASE'));
+        }
+
+        self::assertSame(['NL-60110', 'NL-BASE'], $this->variants->findMatchedAfasItemcodesForBase($baseNl->id));
+        self::assertSame(['FR-60110', 'FR-BASE'], $this->variants->findMatchedAfasItemcodesForBase($baseFr->id));
+    }
+
+    #[Test]
+    public function returnsEmptyForUnknownBaseId(): void
+    {
+        self::assertSame([], $this->variants->findMatchedAfasItemcodesForBase(99999));
+    }
 }

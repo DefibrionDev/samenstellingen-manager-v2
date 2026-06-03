@@ -1365,6 +1365,26 @@ Eindbeeld: op `/groups/<familyHead>` toont een MUI Alert ("X base(s) hebben een 
 
 ---
 
+## Slice 49 — Plan-engine: BOM-based target-matching i.p.v. itemcode-prefix
+
+Eindbeeld: `publications:sync` flipt alleen nog AFAS-flags op (a) de base's eigen `afasItemcode` en (b) de varianten waarvoor de auto-sync via BOM-equality een AFAS-itemcode heeft gekoppeld (`group_variants.afas_samenstelling_itemcode IS NOT NULL`). Geen tekenstring-prefix-iteratie meer. Taal-sibling-families (`10144-DE`, `10144-CZ`, `10144-ES`, …) worden niet meer per ongeluk meegesleept omdat hun BOM een andere AED-itemcode bevat dan die van onze base. Zie PLAN.md §29.
+
+### Sub-slice 49.0 — Refactor `SyncPublicationsHandler` + repo-methode
+- [x] `GroupVariantRepository::findMatchedAfasItemcodesForBase(int $baseId): list<string>` toegevoegd aan contract + `InMemoryGroupVariantRepository` + `SqliteGroupVariantRepository`. Retourneert distinct, alfabetisch gesorteerde lijst van `afas_samenstelling_itemcode`-waarden (non-null). Contract-tests (4×) in `GroupVariantRepositoryContractTestCase`: zonder matches → `[]`, met mix matched/no_match → alleen matched gesorteerd, scope per base, onbekend base-id → `[]`.
+- [x] `SyncPublicationsHandler::collectVariantItemcodes` (prefix-scan) vervangen door `collectTargetItemcodes(int $baseId, string $baseAfasItemcode)`: leest base-SKU + `variants->findMatchedAfasItemcodesForBase($base->id)`, dedupliceert via `array_unique`, sorteert met `SORT_STRING` (anders cast PHP numerieke string-SKUs naar int-keys). `AfasSamenstellingenRepository`-dependency niet meer nodig voor target-bepaling — uit constructor + `bin/samenstellingen`-bootstrap verwijderd, `GroupVariantRepository` ervoor in de plaats.
+- [x] Unit-tests in `SyncPublicationsHandlerTest` uitgebreid: bestaande tests gerefactord om matched variants via `markMatched` te zetten i.p.v. impliciet uit AFAS-snapshot. Twee nieuwe tests: `ignoresAfasItemcodesNotLinkedViaAutoSync` (prefix-collision: 10144 + 10144-CZ in DB-fixture — engine pakt alleen onze base + gekoppelde variant) + `siblingBasesWithSamePrefixAreScopedIndependently` (NL `10144` + DE `10144-DE` allebei in DB, elk z'n eigen targets, geen kruisbestuiving).
+- [x] `make check` groen. → 471 PHP-tests / 1176 assertions + 18 vitest + PHPStan 0 errors + CS-Fixer schoon.
+
+### Sub-slice 49.1 — Live verificatie
+- [x] `php bin/samenstellingen publications:sync` (dry-run): plan-count viel van **222 → 1** na de refactor. Het ene overgebleven item was `11047` (matched-variant van base `11043` Defibtech Lifeline VIEW semi, accessoire 91116 ARKY safeset) waarvan AFAS de flags nog niet op `true,true` had staan — echt werk, geen prefix-vangst.
+- [x] `publications:sync --apply` van die ene + tweede dry-run = volledig leeg: "Niets te doen — alle 639 itemcode(s) staan al goed in AFAS". Idempotent. (Candidate-count daalde 1003 → 639 omdat de plan-engine niet meer over taal-sibling-prefix-matches itereert.)
+- [x] Taal-sibling-leak-check: `grep -E "-(CZ|DE|ES|FIN|FR|UK)"` op dry-run-output → 0 hits.
+
+### Sub-slice 49.2 — PLAN.md §25 docstring-update
+- [x] PLAN.md §25 "Website-publicatie per variant" — de "AFAS-sync"-bullet verwijst nu naar `group_variants.afas_samenstelling_itemcode` (BOM-equality via `group:sync-afas`) en kruist door naar §29 voor de refactor-rationale. Prefix-formulering ("…die met `<baseSku>` of `<baseSku>-` beginnen") weg.
+
+---
+
 ## Slice 20 — Reconciliation in portal-CSV-import (vervang wipe)
 
 Eindbeeld: portal-CSV-import is idempotent. Bestaande groepen behouden hun `model_name` en `group_accessoires` over imports heen; alleen groepen die niet meer in de CSV staan worden opgeruimd. Geen `ToolDataWiper` meer in de import-flow.

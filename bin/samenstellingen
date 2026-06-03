@@ -342,7 +342,7 @@ if ($hasAfasCreds) {
     $syncPublicationsHandler = new SyncPublicationsHandler(
         $groupRepository,
         $baseRepository,
-        $afasSamenstellingenRepository,
+        $variantRepository,
         $websiteRepository,
         $basePublicationRepository,
         $publicationSyncWriter,

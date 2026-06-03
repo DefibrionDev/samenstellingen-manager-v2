@@ -4,24 +4,26 @@ declare(strict_types=1);
 
 namespace Defibrion\Samenstellingen\Application\Publications;
 
-use Defibrion\Samenstellingen\Domain\Afas\AfasSamenstellingenRepository;
 use Defibrion\Samenstellingen\Domain\Group\GroupBaseRepository;
 use Defibrion\Samenstellingen\Domain\Group\GroupRepository;
+use Defibrion\Samenstellingen\Domain\Group\GroupVariantRepository;
 use Defibrion\Samenstellingen\Domain\Website\BasePublicationRepository;
 use Defibrion\Samenstellingen\Domain\Website\WebsiteRepository;
 
 /**
  * Synchroniseer publicatie-state (per base × website) naar AFAS. Voor elke
  * base met SKU bouwen we een flag-map (per website: Sync + Tonen op true/false)
- * en PUT'en die op de base zelf én op alle accessoire-varianten in AFAS
- * die met `<baseSku>` of `<baseSku>-` beginnen. Zie PLAN.md §25.
+ * en PUT'en die op de base zelf én op elke variant in AFAS waarvoor de
+ * BOM-equality-matcher van `group:sync-afas` al een AFAS-itemcode heeft
+ * gekoppeld (`group_variants.afas_samenstelling_itemcode`). Zie PLAN.md §25
+ * en §29.
  */
 final readonly class SyncPublicationsHandler
 {
     public function __construct(
         private GroupRepository $groups,
         private GroupBaseRepository $bases,
-        private AfasSamenstellingenRepository $afasSamenstellingen,
+        private GroupVariantRepository $variants,
         private WebsiteRepository $websites,
         private BasePublicationRepository $publications,
         private PublicationSyncWriter $writer,
@@ -36,10 +38,6 @@ final readonly class SyncPublicationsHandler
             return new SyncPublicationsResult([], 0, []);
         }
 
-        $afasItemcodes = [];
-        foreach ($this->afasSamenstellingen->findAll() as $samenstelling) {
-            $afasItemcodes[$samenstelling->itemcode] = true;
-        }
         $afasFlagState = $this->afasState->readAll();
 
         $plans = [];
@@ -63,8 +61,7 @@ final readonly class SyncPublicationsHandler
                     $flags[$website->ffTonenUuid] = $isPublished;
                 }
 
-                // Verzamel base + accessoire-varianten (itemcode `<baseSku>` of `<baseSku>-…`).
-                $targetItemcodes = $this->collectVariantItemcodes($base->afasItemcode, $afasItemcodes);
+                $targetItemcodes = $this->collectTargetItemcodes($base->id, $base->afasItemcode);
                 foreach ($targetItemcodes as $itemcode) {
                     ++$totalCandidates;
                     // No-op skip: als AFAS al ALLE bekende flags op de gewenste waarde
@@ -122,20 +119,20 @@ final readonly class SyncPublicationsHandler
     }
 
     /**
-     * @param array<string, bool> $existing
+     * Base zelf + alle door auto-sync gekoppelde variant-itemcodes voor deze base.
+     * Geen prefix-iteratie meer: taal-siblings (`10144-CZ`, `10144-DE`-bases zonder
+     * eigen DB-entry, …) komen hier niet langer ongewenst tussendoor.
+     *
      * @return list<string>
      */
-    private function collectVariantItemcodes(string $baseSku, array $existing): array
+    private function collectTargetItemcodes(int $baseId, string $baseAfasItemcode): array
     {
-        $prefix = $baseSku . '-';
-        $result = [];
-        foreach ($existing as $itemcode => $_) {
-            $code = (string) $itemcode; // PHP cast numerieke string-keys naar int — terug naar string.
-            if ($code === $baseSku || str_starts_with($code, $prefix)) {
-                $result[] = $code;
-            }
+        $codes = [$baseAfasItemcode];
+        foreach ($this->variants->findMatchedAfasItemcodesForBase($baseId) as $itemcode) {
+            $codes[] = $itemcode;
         }
-        sort($result);
+        $result = array_values(array_unique($codes));
+        sort($result, SORT_STRING);
 
         return $result;
     }
