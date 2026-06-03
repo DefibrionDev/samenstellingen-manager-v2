@@ -4,26 +4,29 @@ declare(strict_types=1);
 
 namespace Defibrion\Samenstellingen\Application\Publications;
 
+use Defibrion\Samenstellingen\Domain\Afas\AfasSamenstellingenRepository;
+use Defibrion\Samenstellingen\Domain\Group\GroupAccessoireRepository;
 use Defibrion\Samenstellingen\Domain\Group\GroupBaseRepository;
 use Defibrion\Samenstellingen\Domain\Group\GroupRepository;
-use Defibrion\Samenstellingen\Domain\Group\GroupVariantRepository;
 use Defibrion\Samenstellingen\Domain\Website\BasePublicationRepository;
 use Defibrion\Samenstellingen\Domain\Website\WebsiteRepository;
 
 /**
  * Synchroniseer publicatie-state (per base × website) naar AFAS. Voor elke
- * base met SKU bouwen we een flag-map (per website: Sync + Tonen op true/false)
- * en PUT'en die op de base zelf én op elke variant in AFAS waarvoor de
- * BOM-equality-matcher van `group:sync-afas` al een AFAS-itemcode heeft
- * gekoppeld (`group_variants.afas_samenstelling_itemcode`). Zie PLAN.md §25
- * en §29.
+ * base bouwen we een flag-map (per website: Sync + Tonen op true/false) en
+ * PUT'en die op de base zelf én op elk `<base>-<accessoire>`-itemcode dat
+ * via de aan de groep gelinkte accessoires intent-based wordt afgeleid en
+ * effectief in `afas_samenstellingen` bestaat. `AfasFreeFieldStateReader`
+ * skipt no-ops: alleen PUT als de huidige AFAS-state afwijkt van desired.
+ * Zie PLAN.md §25 en §30.
  */
 final readonly class SyncPublicationsHandler
 {
     public function __construct(
         private GroupRepository $groups,
         private GroupBaseRepository $bases,
-        private GroupVariantRepository $variants,
+        private GroupAccessoireRepository $accessoires,
+        private AfasSamenstellingenRepository $afasSamenstellingen,
         private WebsiteRepository $websites,
         private BasePublicationRepository $publications,
         private PublicationSyncWriter $writer,
@@ -61,7 +64,7 @@ final readonly class SyncPublicationsHandler
                     $flags[$website->ffTonenUuid] = $isPublished;
                 }
 
-                $targetItemcodes = $this->collectTargetItemcodes($base->id, $base->afasItemcode);
+                $targetItemcodes = $this->collectTargetItemcodes($group->familyHeadItemcode, $base->afasItemcode);
                 foreach ($targetItemcodes as $itemcode) {
                     ++$totalCandidates;
                     // No-op skip: als AFAS al ALLE bekende flags op de gewenste waarde
@@ -119,17 +122,24 @@ final readonly class SyncPublicationsHandler
     }
 
     /**
-     * Base zelf + alle door auto-sync gekoppelde variant-itemcodes voor deze base.
-     * Geen prefix-iteratie meer: taal-siblings (`10144-CZ`, `10144-DE`-bases zonder
-     * eigen DB-entry, …) komen hier niet langer ongewenst tussendoor.
+     * Intent-based target-derivation: base zelf + `<base>-<accessoire>`-itemcodes
+     * voor elke accessoire die aan de groep gelinkt is, mits dat afgeleide
+     * itemcode effectief in `afas_samenstellingen` bestaat. Taal-siblings
+     * (`10144-CZ`, `10144-DE`-bases zonder eigen DB-entry) komen hier niet
+     * tussendoor omdat onze intent die strings nooit produceert; bucket-A items
+     * (variants waarvoor auto-sync's BOM-match faalt maar AFAS het itemcode wel
+     * kent) worden wél meegenomen.
      *
      * @return list<string>
      */
-    private function collectTargetItemcodes(int $baseId, string $baseAfasItemcode): array
+    private function collectTargetItemcodes(string $familyHeadItemcode, string $baseAfasItemcode): array
     {
         $codes = [$baseAfasItemcode];
-        foreach ($this->variants->findMatchedAfasItemcodesForBase($baseId) as $itemcode) {
-            $codes[] = $itemcode;
+        foreach ($this->accessoires->findAllForGroup($familyHeadItemcode) as $accessoire) {
+            $expected = $baseAfasItemcode . '-' . $accessoire->itemcode;
+            if ($this->afasSamenstellingen->findByItemcode($expected) !== null) {
+                $codes[] = $expected;
+            }
         }
         $result = array_values(array_unique($codes));
         sort($result, SORT_STRING);

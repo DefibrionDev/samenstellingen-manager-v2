@@ -1375,6 +1375,27 @@ Eindbeeld: `publications:sync` flipt alleen nog AFAS-flags op (a) de base's eige
 - [x] Unit-tests in `SyncPublicationsHandlerTest` uitgebreid: bestaande tests gerefactord om matched variants via `markMatched` te zetten i.p.v. impliciet uit AFAS-snapshot. Twee nieuwe tests: `ignoresAfasItemcodesNotLinkedViaAutoSync` (prefix-collision: 10144 + 10144-CZ in DB-fixture — engine pakt alleen onze base + gekoppelde variant) + `siblingBasesWithSamePrefixAreScopedIndependently` (NL `10144` + DE `10144-DE` allebei in DB, elk z'n eigen targets, geen kruisbestuiving).
 - [x] `make check` groen. → 471 PHP-tests / 1176 assertions + 18 vitest + PHPStan 0 errors + CS-Fixer schoon.
 
+---
+
+## Slice 50 — Intent-based target-derivation voor `publications:sync`
+
+Eindbeeld: `SyncPublicationsHandler::collectTargetItemcodes` leidt targets af uit onze intent — base + (base + gelinkte accessoire)-itemcodes die in `afas_samenstellingen` bestaan — in plaats van uit auto-sync's matched-output (slice 49). `AfasFreeFieldStateReader`, no-op-skip en `PublicationSyncPlan` blijven intact: we lezen huidige AFAS-state en PUT'en alleen als de waarde echt afwijkt. Lost het bucket-A-gat van slice 49 op (38 Philips FRx + Mindray-C2 + Zoll-AED-3-items waarvoor de auto-sync geen BOM-match heeft maar AFAS het itemcode wel kent). Zie PLAN.md §30.
+
+### Sub-slice 50.0 — Target-iterator + tests
+- [x] `SyncPublicationsHandler::collectTargetItemcodes` herschreven naar `(string $familyHeadItemcode, string $baseAfasItemcode)`: target-set = `{base.afasItemcode}` + voor elke aan de groep gelinkte accessoire `A`: `base.afasItemcode + "-" + A.itemcode` mits `afasSamenstellingen->findByItemcode(expected) !== null`. Dedupliceren via `array_unique`, sorteren met `SORT_STRING`.
+- [x] Constructor van `SyncPublicationsHandler`: `GroupVariantRepository` (slice-49-dep) eruit; `GroupAccessoireRepository` + `AfasSamenstellingenRepository` erin. `AfasFreeFieldStateReader` + plan/skip-flow ongemoeid. Container-bootstrap (`bin/samenstellingen`) gebruikt `$linkRepository` + `$afasSamenstellingenRepository`.
+- [x] Unit-tests in `SyncPublicationsHandlerTest` herschreven naar intent-based fixture (geen `markMatched` meer): bestaande 5 tests + 2 carry-overs uit slice 49 (CZ-collision + sibling-bases) + 2 nieuwe (`bucketAVariantIsTargetedEvenWhenAutoSyncDidNotLinkIt` + `accessoireVariantIsSkippedWhenItemcodeMissingFromAfas`).
+- [x] `make check` groen. → 473 PHP-tests / 1163 assertions + 18 vitest + PHPStan 0 errors + CS-Fixer schoon.
+
+### Sub-slice 50.1 — Live verificatie
+- [x] `php bin/samenstellingen publications:sync` (dry-run): **38 plans** — exact de bucket-A items van slice 49. Verdeling: Philips FRx (NL+DE+UK × 7 accessoires = 21), Mindray C2 vol (-DE × 5), Mindray C1 (21011/21011-FR/21012-FR × 1-2), Defibtech VIEW (11043 × 2), Reanibex (52199 × 2), Zoll AED 3 (11186/11187 × 2 each). Geen taal-siblings.
+- [x] `--apply` → 38 toegepast, 0 gefaald. Tweede dry-run = "Niets te doen — alle 675 itemcode(s) staan al goed in AFAS". Candidate-count groeide 639 → 675 (= +36 intent-based bucket-A varianten die de matched-lookup voorheen niet zag).
+
+### Sub-slice 50.2 — Documentatie-update
+- [x] PLAN.md §29 (slice 49) gemarkeerd met `> **Vervangen door §30.**`-quote — historische trail blijft staan, lezer wordt naar de juiste aanpak gewezen.
+- [x] PLAN.md §30 (slice 50) documenteert de definitieve intent-based aanpak met no-op-skip.
+- [x] TODO.md slice 49.0/49.1/49.2 blijven aangevinkt — historische trail.
+
 ### Sub-slice 49.1 — Live verificatie
 - [x] `php bin/samenstellingen publications:sync` (dry-run): plan-count viel van **222 → 1** na de refactor. Het ene overgebleven item was `11047` (matched-variant van base `11043` Defibtech Lifeline VIEW semi, accessoire 91116 ARKY safeset) waarvan AFAS de flags nog niet op `true,true` had staan — echt werk, geen prefix-vangst.
 - [x] `publications:sync --apply` van die ene + tweede dry-run = volledig leeg: "Niets te doen — alle 639 itemcode(s) staan al goed in AFAS". Idempotent. (Candidate-count daalde 1003 → 639 omdat de plan-engine niet meer over taal-sibling-prefix-matches itereert.)

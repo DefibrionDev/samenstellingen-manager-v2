@@ -1170,6 +1170,8 @@ Geen audit-handler, geen CLI — de UI is de signaal-laag. Audit-CLI's bestaan a
 
 ## 29. Plan-engine: BOM-based target-matching i.p.v. itemcode-prefix (slice 49 — concept)
 
+> **Vervangen door §30.** De matched-lookup-aanpak van slice 49 sloot taal-siblings (bucket B) correct uit maar haalde óók 38 bucket-A items (variants waarvoor onze DB intent kent maar de auto-sync geen BOM-match heeft) uit beeld. Slice 50 fixt dat met intent-based target-derivation, met behoud van `AfasFreeFieldStateReader`'s no-op-skip.
+
 ### Probleem
 
 `SyncPublicationsHandler::collectVariantItemcodes` (`src/Application/Publications/SyncPublicationsHandler.php:128`) verzamelt voor elke base in de DB alle AFAS-itemcodes die qua tekenstring matchen op `<base_sku>` of `<base_sku>-…` (zie `str_starts_with($code, $prefix)`). Het algoritme onderscheidt niet tussen accessoire-suffixen (`-60110`, `-60112`) en taal-suffixen (`-DE`, `-UK`, `-CZ`, `-ES`, `-FIN`, `-FR`).
@@ -1216,3 +1218,45 @@ Geen prefix-iteratie meer over `afas_samenstellingen.itemcode`. De plan-engine c
   - No-op skip blijft werken via `AfasFreeFieldStateReader`.
 - **Slice 49.1** — Live verifiëren. Run dry-run `publications:sync` na de refactor: het plan zou moeten dalen van ~200 → ≤38 (alleen bucket A blijft, en alleen tot we de no_match-bug fixen). Verifieer dat de 84 bases + hun 639 gematchte varianten stabiel `Sync_NL=true,Tonen_NL=true` houden en dat geen taal-sibling per ongeluk uit-staat na een `--apply` rerun. Geen code-wijziging.
 - **Slice 49.2** — `PLAN.md §25` bijwerken: het oude "PUT'en die op de base zelf én op alle accessoire-varianten in AFAS die met `<baseSku>` of `<baseSku>-` beginnen" vervangen door "PUT'en op base + op alle door auto-sync gekoppelde varianten (`group_variants.afas_samenstelling_itemcode`)". Klein, alleen ter consistentie van de plan-doc.
+
+---
+
+## 30. Intent-based target-derivation voor publicatie-sync (slice 50 — concept)
+
+### Probleem
+
+Slice 49 verving prefix-matching door auto-sync-matched-itemcodes. Dat sloot taal-siblings (bucket B) keurig uit, maar haalde óók 38 bucket-A items uit beeld: variants waarvoor onze DB **wel** een intent kent (base + gelinkte accessoire), maar de auto-sync de AFAS-itemcode niet gekoppeld krijgt door een BOM-discrepantie (Philips FRx: extra `10591`-component in onze base-BOM die in de variant-BOMs ontbreekt). De plan-engine ziet die 38 niet als target en schrijft hun flags niet — terwijl ze in AFAS gewoon bestaan met de verwachte itemcode `<base>-<accessoire>`.
+
+De rest van de plan-engine is wél correct: AFAS-state lezen voor no-op-skip vermijdt overbodige PUTs (audit-spoor blijft schoon, sync is snel), en `PublicationSyncPlan` toont in de dry-run wat er werkelijk zou veranderen. Alleen de **target-derivation** is fout — die moet uit onze intent komen, niet uit auto-sync-output.
+
+### Aanpak: alleen target-derivation veranderen
+
+`SyncPublicationsHandler::collectTargetItemcodes` (slice 49) wordt herschreven van "matched-lookup" naar "intent-lookup":
+
+1. **Target = base + (base + gelinkte accessoire)-itemcodes**. Voor elke base:
+   - target = `base.afasItemcode`.
+   - voor elke gelinkte accessoire `A`: target = `base.afasItemcode + "-" + A.itemcode`, **mits** dat itemcode bestaat in `afas_samenstellingen` (anti-noise: varianten die nog niet via `variants:fix-missing` aangemaakt zijn vallen weg).
+2. **Flag-map, no-op-skip, writer, PublicationSyncPlan** blijven exact zoals nu: `AfasFreeFieldStateReader` leest huidige AFAS-state, only-write-if-different is intact, dry-run toont alleen items die echt zouden flippen.
+
+### Wat verandert
+
+- Constructor van `SyncPublicationsHandler`: ruil `GroupVariantRepository` (slice 49) voor `GroupAccessoireRepository` + houd/herstel `AfasSamenstellingenRepository`. `AfasFreeFieldStateReader` blijft.
+- `collectTargetItemcodes(int $baseId, string $baseAfasItemcode)`-body: vervang `findMatchedAfasItemcodesForBase` door iteratie over gelinkte accessoires + `findByItemcode`-check.
+- Container-bootstrap (`bin/samenstellingen`) ctor-args bijwerken.
+
+### Wat NIET verandert
+
+- `AfasFreeFieldStateReader` (interface + impls) blijft — we willen no-op-skip behouden.
+- `PublicationSyncPlan` blijft als value object.
+- `GroupVariantRepository::findMatchedAfasItemcodesForBase` (toegevoegd in slice 49) blijft bestaan als API; gewoon niet meer door deze handler gebruikt. Mogelijk nuttig voor toekomstige features of UI.
+
+### Slices
+
+- **Slice 50.0** — Handler-target-iterator + tests. Refactor `collectTargetItemcodes` naar intent-based lookup. Constructor-deps + container-bootstrap bijwerken. Tests in `SyncPublicationsHandlerTest`:
+  - base published op NL, 2 gelinkte accessoires (60110 + 60112), `afas_samenstellingen` bevat `11111`, `11111-60110`, `11111-60112` → 3 targets met flags `{U_NL_SYNC: true, U_NL_TONEN: true}`.
+  - base met 1 gelinkte accessoire `60110` waarvoor variant-itemcode `11111-60110` **niet** in AFAS staat → 1 target (alleen de base zelf); de niet-bestaande variant wordt niet gefantomeerd.
+  - prefix-collision (carry-over uit slice 49): base `10144` + accessoire `60110` met `afas_samenstellingen` die óók `10144-CZ-60110` bevat → target is alleen `10144` + `10144-60110`, niet de CZ-variant (intent produceert die string nooit).
+  - sibling-bases: NL `10144` + DE `10144-DE` allebei in DB, elk z'n eigen targets.
+  - no-op skip via `AfasFreeFieldStateReader` blijft werken (AFAS-state matcht desired → 0 plannen).
+- **Slice 50.1** — Live verificatie. Run `publications:sync` (dry-run): verwachting is ~38 plans (de bucket-A items die slice 49 miste, mits hun AFAS-state nu nog false is). Run `--apply` → 0 failures. Tweede dry-run = "Niets te doen". Steekproef-check in AFAS-UI of `Get_Artikelen` op `10144-60110`: beide Reseller-NL-flags op `Ja`.
+- **Slice 50.2** — Documentatie-update. PLAN.md §25 "AFAS-sync"-bullet verwijst nu naar §30 als definitieve aanpak. §29 markeren als "vervangen door §30" (de matched-lookup was een intermediate fix). TODO.md slice 49 ongemoeid laten — historische trail.
