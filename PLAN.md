@@ -1260,3 +1260,31 @@ De rest van de plan-engine is wél correct: AFAS-state lezen voor no-op-skip ver
   - no-op skip via `AfasFreeFieldStateReader` blijft werken (AFAS-state matcht desired → 0 plannen).
 - **Slice 50.1** — Live verificatie. Run `publications:sync` (dry-run): verwachting is ~38 plans (de bucket-A items die slice 49 miste, mits hun AFAS-state nu nog false is). Run `--apply` → 0 failures. Tweede dry-run = "Niets te doen". Steekproef-check in AFAS-UI of `Get_Artikelen` op `10144-60110`: beide Reseller-NL-flags op `Ja`.
 - **Slice 50.2** — Documentatie-update. PLAN.md §25 "AFAS-sync"-bullet verwijst nu naar §30 als definitieve aanpak. §29 markeren als "vervangen door §30" (de matched-lookup was een intermediate fix). TODO.md slice 49 ongemoeid laten — historische trail.
+
+---
+
+## 31. `/missing`-pagina consistent met overzichts-telling (slice 51 — concept)
+
+### Probleem
+
+`ListMissingVariantsHandler` retourneert iedere `group_variants`-rij met `afas_status = 'no_match'`. Dat zijn op dit moment 38 bucket-A items (Philips FRx, Mindray C2-DE, …) die in AFAS wél bestaan onder het verwachte itemcode `<base>-<accessoire>` — de auto-sync heeft ze alleen niet aan een DB-rij gekoppeld door een BOM-discrepantie.
+
+`ListGroupsController` (overzichtspagina) past op die output nog een extra filter toe: een rij telt alleen als "missing" wanneer het verwachte SKU **niet** in `afas_samenstellingen` bestaat. Voor alle 38 bucket-A items bestaat het verwachte SKU wel → overzicht telt 0 "missend".
+
+Gevolg: `/missing`-pagina toont 38, overzicht toont 0. Inconsistent en verwarrend — de gebruiker denkt dat er 38 acties open staan terwijl `variants:fix-missing --apply` op die 38 alleen "bestaat al in AFAS" zou zeggen.
+
+### Aanpak
+
+De filter verhuist van `ListGroupsController` naar `ListMissingVariantsHandler` zelf. "Missing" krijgt één betekenis: een variant in onze DB waarvan het verwachte AFAS-itemcode **niet** in `afas_samenstellingen` bestaat — m.a.w. de set die `variants:fix-missing --apply` daadwerkelijk zou aanmaken. Beide consumers (overzicht + `/missing`-pagina) krijgen dezelfde lijst en de telling klopt automatisch.
+
+Effect:
+- 38 bucket-A items verdwijnen van `/missing`-pagina (`variants:fix-missing` zou ze toch overslaan).
+- Overzicht-telling blijft 0.
+- `ListGroupsController` hoeft geen `AfasSamenstellingenRepository` meer te raadplegen voor deze count, maar mag 'm wel houden voor de parent-mismatch-check.
+
+Zichtbaarheid op de auto-sync-no_match-bug (Philips FRx BOM-discrepantie) verdwijnt uit de UI. Voor nu accepteren we dat — de bug is bekend, gedocumenteerd in PLAN.md §29-vervangen-quote, en heeft geen acute productie-impact (intent-based publicatie-sync werkt eromheen). Een aparte audit-CLI voor "no_match ondanks aanwezig in AFAS" hoort in een eigen slice indien nodig.
+
+### Slices
+
+- **Slice 51.0** — Filter verhuizen + tests. `ListMissingVariantsHandler` krijgt `AfasSamenstellingenRepository` als ctor-dep en past de filter intern toe. Tests breiden uit met: variant met `no_match` + verwacht SKU bestaat in snapshot → niet in output; variant met `no_match` + verwacht SKU niet in snapshot → wel in output; variant met `no_match` zonder verwacht SKU (lege accessoire-code, lege baseAfasSku) → niet in output. `ListGroupsController` ontneemt z'n eigen filter en gebruikt de handler-output direct voor `missingByFamilyHead`. PHP-test in `ApiTest` voor `/api/missing-variants` blijft groen.
+- **Slice 51.1** — Live verificatie. Open `/missing` → 0 rijen. Open `/` → "Missend"-kolom alle nullen. Geen vitest-aanpassing nodig (UI raakt logica niet aan; alleen response-vorm).

@@ -1396,6 +1396,25 @@ Eindbeeld: `SyncPublicationsHandler::collectTargetItemcodes` leidt targets af ui
 - [x] PLAN.md §30 (slice 50) documenteert de definitieve intent-based aanpak met no-op-skip.
 - [x] TODO.md slice 49.0/49.1/49.2 blijven aangevinkt — historische trail.
 
+---
+
+## Slice 51 — `/missing`-pagina consistent met overzichts-telling
+
+Eindbeeld: `ListMissingVariantsHandler` past de "verwacht SKU bestaat niet in AFAS"-filter intern toe. Beide consumers — `/missing`-pagina én overzichtspagina-`missingVariantCount` — krijgen dezelfde lijst, namelijk de set die `variants:fix-missing --apply` daadwerkelijk zou aanmaken. De 38 bucket-A no_match-items die wel in AFAS bestaan verdwijnen uit beide tellingen. Zie PLAN.md §31.
+
+### Sub-slice 51.0 — Filter verhuizen + tests
+- [x] `ListMissingVariantsHandler` ctor: `AfasSamenstellingenRepository` toegevoegd. Filter intern toegepast: rij overslaan als `verwachteSkuVoorstel === ''` of als `findByItemcode($row->verwachteSkuVoorstel) !== null`.
+- [x] Container-bootstrap (`bin/samenstellingen`) + `AppFactory` beide constructie-sites: extra `$afasSamenstellingenRepository`-arg toegevoegd.
+- [x] `ListGroupsController` ontnomen van de eigen `$existingAfasCodes`-filter-loop. Gebruikt handler-output direct: `++$missingByFamilyHead[$row->familyHead]`. `AfasSamenstellingenRepository` blijft als ctor-dep voor parent-mismatch-check.
+- [x] Nieuw bestand `tests/Application/Audit/ListMissingVariantsHandlerTest.php` met 5 scenario's: verwacht-SKU-in-AFAS → uit, verwacht-SKU-niet-in-AFAS → wel, lege SKU (geen base-AFAS-koppeling) → uit, matched-status → uit, lege groep → leeg.
+- [x] Bestaande callers (`FixMissingVariantsHandlerTest`, `FixMissingVariantsWithPricesHandlerTest`) aangepast aan nieuwe ctor; ApiTest had geen wijziging nodig (test-fixture seedde geen overlappende AFAS-snapshot).
+- [x] `make check` + vitest groen. → 478 PHP-tests / 1182 assertions + 18 vitest + PHPStan 0 errors + CS-Fixer schoon.
+
+### Sub-slice 51.1 — Live verificatie
+- [x] `GET /api/missing-variants` retourneert `[]`. UI `/missing` toont dus 0 rijen.
+- [x] `GET /api/groups`: alle 26 groepen hebben `missingVariantCount: 0`. Overzichts-"Missend"-kolom alle nullen.
+- [x] CLI-steekproef: `php bin/samenstellingen variants:fix-missing` → "Geen missende varianten gevonden — alles aanwezig in AFAS of overgeslagen". Drie kanalen consistent.
+
 ### Sub-slice 49.1 — Live verificatie
 - [x] `php bin/samenstellingen publications:sync` (dry-run): plan-count viel van **222 → 1** na de refactor. Het ene overgebleven item was `11047` (matched-variant van base `11043` Defibtech Lifeline VIEW semi, accessoire 91116 ARKY safeset) waarvan AFAS de flags nog niet op `true,true` had staan — echt werk, geen prefix-vangst.
 - [x] `publications:sync --apply` van die ene + tweede dry-run = volledig leeg: "Niets te doen — alle 639 itemcode(s) staan al goed in AFAS". Idempotent. (Candidate-count daalde 1003 → 639 omdat de plan-engine niet meer over taal-sibling-prefix-matches itereert.)

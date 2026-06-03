@@ -148,7 +148,7 @@ final class FixMissingVariantsWithPricesHandlerTest extends TestCase
             new AfasPrijs('11142', '*****', null, 189900, null, '2025-01-01', null),
         ]);
 
-        $variantsAudit = new ListMissingVariantsHandler($groups, $variants, $baseItems);
+        $variantsAudit = new ListMissingVariantsHandler($groups, $variants, $baseItems, $afasSamenstellingen);
         $variantsHandler = new FixMissingVariantsHandler(
             $variantsAudit,
             $groups,

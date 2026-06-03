@@ -26,18 +26,8 @@ final readonly class ListGroupsController
 
     public function __invoke(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        // Echte missing-count = no_match-variant met suggested SKU die NIET in
-        // afas_samenstellingen voorkomt. Spiegelt FixMissingVariantsHandler-filter.
-        $existingAfasCodes = [];
-        foreach ($this->afasSamenstellingen->findAll() as $samenstelling) {
-            $existingAfasCodes[$samenstelling->itemcode] = true;
-        }
-
         $missingByFamilyHead = [];
         foreach (($this->missingVariants)(new ListMissingVariants()) as $row) {
-            if ($row->verwachteSkuVoorstel === '' || isset($existingAfasCodes[$row->verwachteSkuVoorstel])) {
-                continue;
-            }
             $missingByFamilyHead[$row->familyHead] = ($missingByFamilyHead[$row->familyHead] ?? 0) + 1;
         }
 

@@ -36,6 +36,7 @@ final class AppFactory
                 $container->groupRepository(),
                 $container->variantRepository(),
                 $container->baseItemRepository(),
+                $container->afasSamenstellingenRepository(),
             ),
             $container->afasSamenstellingenRepository(),
         );
@@ -72,6 +73,7 @@ final class AppFactory
                 $container->groupRepository(),
                 $container->variantRepository(),
                 $container->baseItemRepository(),
+                $container->afasSamenstellingenRepository(),
             ),
         );
         $listNameDrift = new ListNameDriftController(

@@ -162,7 +162,7 @@ final class FixMissingVariantsHandlerTest extends TestCase
             }
         }
 
-        $audit = new ListMissingVariantsHandler($groups, $variants, $baseItems);
+        $audit = new ListMissingVariantsHandler($groups, $variants, $baseItems, $afas);
         $writer = new InMemoryVariantFixMissingWriter($failOn);
         $websites = new \Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryWebsiteRepository();
         $publications = new \Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryBasePublicationRepository();

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Defibrion\Samenstellingen\Application\Audit;
 
+use Defibrion\Samenstellingen\Domain\Afas\AfasSamenstellingenRepository;
 use Defibrion\Samenstellingen\Domain\Group\GroupBaseItemRepository;
 use Defibrion\Samenstellingen\Domain\Group\GroupRepository;
 use Defibrion\Samenstellingen\Domain\Group\GroupVariant;
@@ -15,10 +16,17 @@ final readonly class ListMissingVariantsHandler
         private GroupRepository $groupRepository,
         private GroupVariantRepository $variantRepository,
         private GroupBaseItemRepository $baseItemRepository,
+        private AfasSamenstellingenRepository $afasSamenstellingen,
     ) {
     }
 
     /**
+     * Retourneert alleen variants die `variants:fix-missing --apply` daadwerkelijk
+     * zou aanmaken: status `no_match` én verwachte AFAS-SKU bestaat (nog) niet
+     * in `afas_samenstellingen`. Variants met een lege voorgestelde SKU (geen
+     * base-AFAS-koppeling, geen accessoire-code) vallen ook af — daar weten we
+     * niet welk itemcode we zouden POSTen.
+     *
      * @return list<MissingVariantRow>
      */
     public function __invoke(ListMissingVariants $command): array
@@ -42,7 +50,14 @@ final readonly class ListMissingVariantsHandler
                 if ($variant->afasStatus !== 'no_match') {
                     continue;
                 }
-                $rows[] = $this->buildRow($group->name, $group->familyHeadItemcode, $variant, $baseAfasSkuByBaseId);
+                $row = $this->buildRow($group->name, $group->familyHeadItemcode, $variant, $baseAfasSkuByBaseId);
+                if ($row->verwachteSkuVoorstel === '') {
+                    continue;
+                }
+                if ($this->afasSamenstellingen->findByItemcode($row->verwachteSkuVoorstel) !== null) {
+                    continue;
+                }
+                $rows[] = $row;
             }
         }
 
