@@ -72,14 +72,16 @@ Eindbeeld: één `wc:pull --store=defibrion.nl` haalt alle producten + variation
 Eindbeeld: `wc:index` toont per AFAS-itemcode in welke shops 'ie gepubliceerd staat. Filters voor drift-detectie. Zie PLAN §5.
 
 ### Sub-slice WC-3.0 — Index-handler
-- [ ] `ListWooIndex` command-VO (`?string $storeName`, `bool $missingOnly`, `bool $orphanOnly`) + `ListWooIndexHandler`: combineert `group_bases.afas_itemcode` + `group_variants.afas_samenstelling_itemcode` (uit AFAS-snapshot) met `woocommerce_products` (gegroepeerd per afas_itemcode × store). Output: list van `WooIndexRow` met `afasItemcode`, `afasName` (uit AFAS-snapshot), en per geregistreerde store een sub-VO `{wcProductId, wcType, status, name, permalink}` of `null` als ontbrekend.
-- [ ] `--missing` filter: alleen rijen waar minstens één store-kolom `null` is. `--orphan` filter: WC-producten zonder match in onze AFAS-managed-set (separate query-pad via `WooProductRepository::findOrphansForStore`).
-- [ ] Repository-uitbreidingen: `WooProductRepository::findGroupedByAfasItemcode(): array<string, list<…>>` voor de hoofd-index, `findOrphansForStore(int $storeId): list<…>` voor de orphan-mode. Contract-tests uitbreiden.
+- [x] `ListWooIndex` command-VO + `WooIndexCell` / `WooIndexRow` / `WooOrphanRow` / `WooIndexResult` value-objects.
+- [x] `ListWooIndexHandler`: bouwt managed-set uit `group_bases.afas_itemcode` + `group_variants.afas_samenstelling_itemcode` (matched), itereert per geregistreerde store de WC-producten, vult cells voor managed-matches en orphan-rijen voor non-matches (NULL-meta + niet-in-onze-set beide). Sorteert rows alfabetisch op itemcode.
+- [x] `--missing` filter: alleen rijen met ≥1 null-cell. `--orphan` filter wordt in de CLI gebruikt om alleen `result->orphans` te renderen.
+- [x] Geen aparte repo-methoden; bestaande `findAllForStore` is genoeg en handler doet de classificatie in PHP — eenvoudiger en gegeven de scale (~2.5k items) snel genoeg.
+- [x] 5 handler-tests: rows-acrosss-stores, missing-filter, orphans, store-scope, lege managed-set.
 
 ### Sub-slice WC-3.1 — `wc:index` CLI + output-formatting
-- [ ] `wc:index [--store=<name>] [--missing] [--orphan]` command. Output: tabel met `Itemcode | Naam` + één kolom per store (`✓` publish, `◐` draft, `✗` ontbreekt). Bij `--orphan`: tabel met `Store | WC-id | Type | SKU | Naam | Status | Permalink`.
-- [ ] Geen tests met live-data; alleen unit-tests op de handler (in-memory fixtures).
-- [ ] `make check` groen.
+- [x] `ListWooIndexCommand` met `--store=<name>`, `--missing`, `--orphan`. Default-output: tabel met itemcode + één kolom per store (`✓ id` publish, `◐ id (status)` draft/private/pending, `✗` ontbreekt). `--orphan`: tabel met `Store | WC-id | Type | SKU | Naam | Status | AFAS-meta`. Lege resultaten → succes-notice.
+- [x] Container/bin-bootstrap wire-up. `make check` groen → 538 PHP-tests / 1365 assertions + PHPStan 0 errors + CS-Fixer schoon.
+- [x] Live verificatie op `reseller.defibrion.nl`: `--missing` toont **73 ontbrekende managed-itemcodes** (Defibtech VIEW, Lifeline, Reanibex varianten); `--orphan` toont **1981 orphans** (1978 niet-managed AFAS-links + 3 zonder meta) — sluit aan op de WC-2.2-tellingen.
 
 ---
 

@@ -92,11 +92,13 @@ use Defibrion\Samenstellingen\Interface\Cli\ImportPortalCsvCommand;
 use Defibrion\Samenstellingen\Interface\Cli\ImportSamenstellingenCsvCommand;
 use Defibrion\Samenstellingen\Interface\Cli\ListBomBlacklistCommand;
 use Defibrion\Samenstellingen\Application\Woo\AddWooStoreHandler;
+use Defibrion\Samenstellingen\Application\Woo\ListWooIndexHandler;
 use Defibrion\Samenstellingen\Application\Woo\PullWooStoreHandler;
 use Defibrion\Samenstellingen\Application\Woo\RemoveWooStoreHandler;
 use Defibrion\Samenstellingen\Infrastructure\Woo\Http\HttpWooCommerceClientFactory;
 use Defibrion\Samenstellingen\Interface\Cli\AddWebsiteCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AddWooStoreCommand;
+use Defibrion\Samenstellingen\Interface\Cli\ListWooIndexCommand;
 use Defibrion\Samenstellingen\Interface\Cli\ListWooStoresCommand;
 use Defibrion\Samenstellingen\Interface\Cli\PullWooStoreCommand;
 use Defibrion\Samenstellingen\Interface\Cli\RemoveWooStoreCommand;
@@ -255,6 +257,16 @@ $application->addCommand(new PullWooStoreCommand(new PullWooStoreHandler(
     $wooProductRepository,
     $wooClientFactory,
 )));
+$application->addCommand(new ListWooIndexCommand(
+    new ListWooIndexHandler(
+        $baseRepository,
+        $variantRepository,
+        $groupRepository,
+        $wooStoreRepository,
+        $wooProductRepository,
+    ),
+    $wooStoreRepository,
+));
 $application->addCommand(new PublishBaseCommand($baseRepository, $websiteRepository, $basePublicationRepository));
 $application->addCommand(new UnpublishBaseCommand($baseRepository, $websiteRepository, $basePublicationRepository));
 $application->addCommand(new AddBaseCommand($addBaseHandler));
