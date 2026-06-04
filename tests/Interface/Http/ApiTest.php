@@ -370,6 +370,50 @@ final class ApiTest extends TestCase
         self::assertNull($baseOnly['afasSamenstellingItemcode']);
     }
 
+    #[Test]
+    public function exposesWooEndpoints(): void
+    {
+        $pdo = TestDatabase::pdo();
+        $pdo->exec('DELETE FROM woocommerce_products');
+        $pdo->exec('DELETE FROM woocommerce_stores');
+        $stores = new \Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteWooCommerceStoreRepository($pdo);
+        $products = new \Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteWooProductRepository($pdo);
+
+        // Seed: 1 group + 1 base met afas_itemcode 11111; 1 WC-store met 2 producten
+        $groups = new SqliteGroupRepository($pdo);
+        $bases = new SqliteGroupBaseRepository($pdo);
+        $groups->save(new Group('Heartsine 350P', '10013'));
+        $bases->saveForGroup('10013', new GroupBase(null, 'NL', 'NL', '11111'));
+
+        $saved = $stores->save(new \Defibrion\Samenstellingen\Domain\Woo\WooCommerceStore(null, 'defibrion.nl', 'https://defibrion.nl', 'ck', 'cs'));
+        self::assertNotNull($saved->id);
+        $products->replaceForStore($saved->id, [
+            new \Defibrion\Samenstellingen\Domain\Woo\WooProduct(1, 'simple', 'sku-1', 'Base op shop', 'publish', null, '11111'),
+            new \Defibrion\Samenstellingen\Domain\Woo\WooProduct(2, 'simple', 'sku-2', 'Orphan-product', 'publish', null, '99999'),
+        ]);
+
+        // /api/wc/stores
+        $storesResp = $this->call('GET', '/api/wc/stores');
+        self::assertSame(200, $storesResp['status']);
+        self::assertCount(1, $storesResp['body']);
+        self::assertSame('defibrion.nl', $storesResp['body'][0]['name']);
+        self::assertSame(2, $storesResp['body'][0]['itemCount']);
+
+        // /api/wc/index
+        $indexResp = $this->call('GET', '/api/wc/index');
+        self::assertSame(200, $indexResp['status']);
+        self::assertCount(1, $indexResp['body']['rows']);
+        self::assertSame('11111', $indexResp['body']['rows'][0]['afasItemcode']);
+        self::assertSame('publish', $indexResp['body']['rows'][0]['cells'][0]['cell']['status']);
+
+        // /api/wc/orphans
+        $orphansResp = $this->call('GET', '/api/wc/orphans');
+        self::assertSame(200, $orphansResp['status']);
+        self::assertCount(1, $orphansResp['body']);
+        self::assertSame(2, $orphansResp['body'][0]['wcProductId']);
+        self::assertSame('99999', $orphansResp['body'][0]['afasItemcode']);
+    }
+
     /**
      * @return array{status: int, body: mixed}
      */

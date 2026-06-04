@@ -90,16 +90,21 @@ Eindbeeld: `wc:index` toont per AFAS-itemcode in welke shops 'ie gepubliceerd st
 Eindbeeld: read-only React-pagina `/woocommerce` met tabs Index / Orphans / Stores. JSON-endpoints in `Interface/Http`. Strict read-only conform CLAUDE.md UI-policy.
 
 ### Sub-slice WC-4.0 — JSON-endpoints
-- [ ] `ListWooStoresController` → `GET /api/wc/stores` — geeft per store `id, name, base_url, meta_key, last_synced_at` (max van `woocommerce_products.synced_at` per store).
-- [ ] `ListWooIndexController` → `GET /api/wc/index` — wrapt `ListWooIndexHandler` met default params (geen filter).
-- [ ] `ListWooOrphansController` → `GET /api/wc/orphans` — gebruikt `--orphan`-pad.
-- [ ] PHP-tests in `tests/Interface/Http/ApiTest.php` voor alle 3 endpoints.
+- [x] `ListWooStoresController` → `GET /api/wc/stores`: `[{id, name, baseUrl, metaKey, itemCount}]`. `itemCount` = aantal rijen in `woocommerce_products` voor die store (handiger dan `last_synced_at` voor de UI).
+- [x] `ListWooIndexController` → `GET /api/wc/index`: response shape `{stores: [{id, name}], rows: [{afasItemcode, cells: [{storeId, storeName, cell|null}]}]}`. Query-params `?store=...` + `?missing=1`.
+- [x] `ListWooOrphansController` → `GET /api/wc/orphans`: flat list met store + WC-product-details + (optional) afasItemcode.
+- [x] PHP-test `exposesWooEndpoints` in `ApiTest.php`: seed 1 group + 1 store + 2 products (1 managed-match + 1 orphan) → 3 endpoints geven verwachte payloads. State-cleanup via `DELETE FROM woocommerce_products/stores` aan de start.
+- [x] Container + AppFactory wired-up; 3 routes onder `/api/wc/`.
 
 ### Sub-slice WC-4.1 — React-pagina
-- [ ] `web/src/pages/Woocommerce.tsx` met 3 tabs (MUI Tabs). Index-tab: DataGrid met itemcode + kolom-per-store (icon + tooltip). Orphans-tab: per-store gegroepeerde lijst. Stores-tab: tabel met name + last-synced.
-- [ ] `web/src/api.ts` uitgebreid met types + fetch-functies.
-- [ ] Vitest: per tab minimaal 1 test (fixture-data → expected rendering).
-- [ ] Routing in `App.tsx` + nav-link in de hoofdmenu.
+- [x] `web/src/pages/Woocommerce.tsx` met 3 MUI Tabs (Index / Orphans / Stores). Index: MUI Table met sticky header, itemcode + één kolom per store; `<StatusChip>`-component voor cell-rendering (✓ groen / ◐ oranje / − grijs + tooltip met wc-id + naam). Orphans: tabel met clickable WC-id (link naar permalink), Naam, Status, AFAS-meta (chip "geen meta" als null). Stores: name + base-url-link + meta-key + items-in-snapshot.
+- [x] `web/src/api.ts` uitgebreid met `WooStore`, `WooIndexCell`, `WooIndexCellEntry`, `WooIndexRow`, `WooIndexResponse`, `WooOrphan` types + `listWooStores/Index/Orphans` fetch-functies.
+- [x] Vitest in `web/src/pages/Woocommerce.test.tsx`: 3 tests (Index-tab toont itemcode + store-kolommen, Orphans-tab toont WC-producten zonder match, Stores-tab toont snapshot-aantal). Fetch wordt gemocked per URL.
+- [x] Routing in `main.tsx` + nav-link in `App.tsx` onder Settings.
+- [x] `make check` groen → 539 PHP-tests / 1378 assertions + 21 vitest-tests (incl. 3 nieuwe) + PHPStan 0 errors + CS-Fixer schoon.
 
 ### Sub-slice WC-4.2 — Live verificatie
-- [ ] Open `/woocommerce` in de UI met minstens 1 store geregistreerd + 1 succesvolle `wc:pull`. Verifieer dat: Index-tab AFAS-itemcodes toont met correcte ✓/◐/✗-status; Orphans-tab WC-producten zonder AFAS-link toont; Stores-tab last-synced-tijd correct toont.
+- [x] `/woocommerce` in Chrome geopend. Alle drie tabs werken met live data van `reseller.defibrion.nl`:
+  - Index: AFAS-itemcodes (b.v. `064.1308-SAM-DE`, `064.1308-SAM-DE-60110`) met ✓-icon in de `reseller.defibrion.nl`-kolom.
+  - Orphans: WC-producten zoals PRESTAN-Instructor-Kit (`PP-INSTRKIT-VAR`), `PP-FMP-300M-VAR` + variations — clickable WC-id-links, status-mix draft/private.
+  - Stores: `reseller.defibrion.nl | https://reseller.defibrion.nl | _afas_artikelnummer | 2577` items.

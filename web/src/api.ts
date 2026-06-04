@@ -127,7 +127,55 @@ export const api = {
   listDuplicateBoms: () => jsonGet<DuplicateBomGroup[]>('/api/duplicate-boms'),
   listStickerDrift: () => jsonGet<StickerDriftRow[]>('/api/sticker-drift'),
   listWebsites: () => jsonGet<Website[]>('/api/websites'),
+  listWooStores: () => jsonGet<WooStore[]>('/api/wc/stores'),
+  listWooIndex: () => jsonGet<WooIndexResponse>('/api/wc/index'),
+  listWooOrphans: () => jsonGet<WooOrphan[]>('/api/wc/orphans'),
 };
+
+export interface WooStore {
+  id: number;
+  name: string;
+  baseUrl: string;
+  metaKey: string;
+  itemCount: number;
+}
+
+export interface WooIndexCell {
+  wcProductId: number;
+  wcType: string;
+  sku: string | null;
+  name: string;
+  status: string;
+  permalink: string | null;
+}
+
+export interface WooIndexCellEntry {
+  storeId: number;
+  storeName: string;
+  cell: WooIndexCell | null;
+}
+
+export interface WooIndexRow {
+  afasItemcode: string;
+  cells: WooIndexCellEntry[];
+}
+
+export interface WooIndexResponse {
+  stores: { id: number; name: string }[];
+  rows: WooIndexRow[];
+}
+
+export interface WooOrphan {
+  storeId: number;
+  storeName: string;
+  wcProductId: number;
+  wcType: string;
+  sku: string | null;
+  name: string;
+  status: string;
+  afasItemcode: string | null;
+  permalink: string | null;
+}
 
 export interface StickerDriftRow {
   groupName: string;

@@ -10,6 +10,7 @@ use Defibrion\Samenstellingen\Application\Audit\NameAuditHandler;
 use Defibrion\Samenstellingen\Application\Audit\PriceAuditHandler;
 use Defibrion\Samenstellingen\Application\Audit\StickerAuditHandler;
 use Defibrion\Samenstellingen\Application\Audit\SuspiciousBaseAuditHandler;
+use Defibrion\Samenstellingen\Application\Woo\ListWooIndexHandler;
 use Defibrion\Samenstellingen\Bootstrap\Container;
 use Defibrion\Samenstellingen\Domain\Naming\VariantNamingPolicy;
 use Psr\Container\ContainerInterface;
@@ -119,6 +120,17 @@ final class AppFactory
                 $container->afasSamenstellingenRepository(),
             ),
         );
+        $wooIndexHandler = new ListWooIndexHandler(
+            $container->baseRepository(),
+            $container->variantRepository(),
+            $container->groupRepository(),
+            $container->wooStoreRepository(),
+            $container->wooProductRepository(),
+        );
+        $listWooStores = new ListWooStoresController($container->wooStoreRepository(), $container->wooProductRepository());
+        $listWooIndex = new ListWooIndexController($wooIndexHandler, $container->wooStoreRepository());
+        $listWooOrphans = new ListWooOrphansController($wooIndexHandler);
+
         $app->get('/api/groups', $listGroups);
         $app->get('/api/groups/{familyHead}', $showGroup);
         $app->get('/api/groups/{familyHead}/accessoires', $listGroupAccessoires);
@@ -134,6 +146,9 @@ final class AppFactory
         $app->get('/api/sticker-drift', $listStickerDrift);
         $app->get('/api/prijslijst-whitelist', $listPrijslijstWhitelist);
         $app->get('/api/websites', $listWebsites);
+        $app->get('/api/wc/stores', $listWooStores);
+        $app->get('/api/wc/index', $listWooIndex);
+        $app->get('/api/wc/orphans', $listWooOrphans);
 
         return $app;
     }

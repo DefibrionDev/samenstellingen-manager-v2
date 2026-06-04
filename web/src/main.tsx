@@ -18,6 +18,7 @@ import { PrijslijstWhitelist } from './pages/PrijslijstWhitelist';
 import { StickerDrift } from './pages/StickerDrift';
 import { SuspiciousBases } from './pages/SuspiciousBases';
 import { WebsiteSettings } from './pages/WebsiteSettings';
+import { Woocommerce } from './pages/Woocommerce';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, refetchOnWindowFocus: false } },
@@ -43,6 +44,7 @@ const router = createBrowserRouter([
       { path: 'duplicate-boms', element: <DuplicateBoms /> },
       { path: 'sticker-drift', element: <StickerDrift /> },
       { path: 'settings/websites', element: <WebsiteSettings /> },
+      { path: 'woocommerce', element: <Woocommerce /> },
       { path: '*', element: <NotFound /> },
     ],
   },

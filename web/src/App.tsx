@@ -54,7 +54,10 @@ const groups: NavGroup[] = [
   },
   {
     label: 'Settings',
-    links: [{ to: '/settings/websites', label: 'Websites' }],
+    links: [
+      { to: '/settings/websites', label: 'Websites' },
+      { to: '/woocommerce', label: 'WooCommerce' },
+    ],
   },
 ];
 
