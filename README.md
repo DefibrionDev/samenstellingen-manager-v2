@@ -2,7 +2,7 @@
 
 Beheertool voor Defibrion's AED-samenstellingen in AFAS. PHP 8.5 CLI + (sinds slice 14) een lokale read-only web-UI bovenop dezelfde SQLite-snapshot.
 
-Zie `PLAN.md` voor het concept en `TODO.md` voor de fasering.
+Zie `PLAN.md` + `TODO.md` voor de huidige cyclus (WooCommerce-koppeling). Eerdere cyclus over AFAS-management is gearchiveerd in `PLAN-AFAS.md` + `TODO-AFAS.md`.
 
 ## Quickstart
 
