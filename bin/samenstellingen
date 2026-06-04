@@ -92,10 +92,13 @@ use Defibrion\Samenstellingen\Interface\Cli\ImportPortalCsvCommand;
 use Defibrion\Samenstellingen\Interface\Cli\ImportSamenstellingenCsvCommand;
 use Defibrion\Samenstellingen\Interface\Cli\ListBomBlacklistCommand;
 use Defibrion\Samenstellingen\Application\Woo\AddWooStoreHandler;
+use Defibrion\Samenstellingen\Application\Woo\PullWooStoreHandler;
 use Defibrion\Samenstellingen\Application\Woo\RemoveWooStoreHandler;
+use Defibrion\Samenstellingen\Infrastructure\Woo\Http\HttpWooCommerceClientFactory;
 use Defibrion\Samenstellingen\Interface\Cli\AddWebsiteCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AddWooStoreCommand;
 use Defibrion\Samenstellingen\Interface\Cli\ListWooStoresCommand;
+use Defibrion\Samenstellingen\Interface\Cli\PullWooStoreCommand;
 use Defibrion\Samenstellingen\Interface\Cli\RemoveWooStoreCommand;
 use Defibrion\Samenstellingen\Interface\Cli\ListGroupsCommand;
 use Defibrion\Samenstellingen\Interface\Cli\ListWebsitesCommand;
@@ -242,9 +245,16 @@ $application->addCommand(new ListWebsitesCommand($websiteRepository));
 $application->addCommand(new RemoveWebsiteCommand($websiteRepository));
 
 $wooStoreRepository = $container->wooStoreRepository();
+$wooProductRepository = $container->wooProductRepository();
+$wooClientFactory = new HttpWooCommerceClientFactory();
 $application->addCommand(new AddWooStoreCommand(new AddWooStoreHandler($wooStoreRepository)));
 $application->addCommand(new ListWooStoresCommand($wooStoreRepository));
 $application->addCommand(new RemoveWooStoreCommand(new RemoveWooStoreHandler($wooStoreRepository)));
+$application->addCommand(new PullWooStoreCommand(new PullWooStoreHandler(
+    $wooStoreRepository,
+    $wooProductRepository,
+    $wooClientFactory,
+)));
 $application->addCommand(new PublishBaseCommand($baseRepository, $websiteRepository, $basePublicationRepository));
 $application->addCommand(new UnpublishBaseCommand($baseRepository, $websiteRepository, $basePublicationRepository));
 $application->addCommand(new AddBaseCommand($addBaseHandler));

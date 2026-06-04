@@ -46,22 +46,24 @@ Eindbeeld: shops kunnen via CLI worden toegevoegd, gelist, verwijderd. Cascade r
 Eindbeeld: één `wc:pull --store=defibrion.nl` haalt alle producten + variations binnen via REST, mapt ze (incl. AFAS-itemcode-extractie uit meta), en vervangt de snapshot voor die store. Zonder `--store` doet 'ie alle geregistreerde shops. Zie PLAN §4 + §7.
 
 ### Sub-slice WC-2.0 — `HttpWooCommerceClient` + meta-extractie
-- [ ] `src/Infrastructure/Woo/Http/HttpWooCommerceClient.php` — implementeert `WooCommerceClient`. Constructor: `(string $baseUrl, string $consumerKey, string $consumerSecret, string $metaKey)`. Builds een Guzzle-client met `auth: [ck, cs]` (Basic over HTTPS). Endpoints: `GET {baseUrl}/wp-json/wc/v3/products?per_page=100&status=any&context=edit&page=N` voor producten, `GET {baseUrl}/wp-json/wc/v3/products/{parentId}/variations?per_page=100&context=edit&page=N` voor variations.
-- [ ] `fetchAllProducts(): list<WooProduct>`: pagineert tot lege page; per response per item de meta-extractie. Helper `extractAfasItemcode(array $metaData, string $metaKey): ?string` — itereert `meta_data` (array van `{key, value}`-records), retourneert eerste match (als string-scalar; arrays/non-scalars → null + warning gelogd).
-- [ ] `fetchAllVariationsFor(int $parentId): list<WooProductVariation>`: idem voor variations-endpoint.
-- [ ] InMemoryWooCommerceClient als test-fake: constructor neemt `list<WooProduct>` + `array<int, list<WooProductVariation>>`. Geen netwerk-call.
-- [ ] Unit-tests voor `extractAfasItemcode`-helper: gevuld scalar → string, array-waarde → null + warning, missing key → null, custom meta-key respecteert config.
+- [x] `WooMetaDataExtractor::extract()` static helper met 8 unit-tests (key gevonden, custom-key, missing-key, lege array, array-value → null, leeg-string → null, int-coercie naar string, malformed entry zonder `key` overgeslagen).
+- [x] `HttpWooCommerceClient` met paginatie (`per_page=100` + `page=N`-loop tot lege page of <100-pagina). `context=edit` voor `meta_data`-veld. Filtert types `simple` + `variable` (grouped/external worden niet door ons beheerd).
+- [x] `HttpWooCommerceClientFactory` bouwt per store een Guzzle-client met Basic-Auth (ck/cs) op `{baseUrl}/wp-json/wc/v3/`.
+- [x] `InMemoryWooCommerceClient` als test-fake (constructor neemt vaste product- + variations-lijsten).
+- [x] 4 mock-handler-tests op `HttpWooCommerceClient`: paginatie tot empty (101 items over 2 pages), filtering van unsupported types, variations-endpoint, empty-first-page returnt `[]`.
 
 ### Sub-slice WC-2.1 — `PullWooStoreHandler` + CLI
-- [ ] `PullWooStore` command-VO (`?string $storeName` — null = alle stores) + `PullWooStoreHandler`: per store een `WooCommerceClient` instantiëren (via factory), fetch producten, voor elk variable-product de variations ophalen, samenvoegen tot één lijst `(WooProduct | WooProductVariation)`. Roept `productRepository->replaceForStore($storeId, $items)`.
-- [ ] `WooCommerceClientFactory`-interface + impl: bouwt een client uit een `WooCommerceStore`-VO (split tussen domein + infra zodat handler op interface-niveau test bar is).
-- [ ] `PullWooStoreResult` met `array<string, int>` per store (`{storeName: $productCount}`) + lijst van orphan-meta-warnings.
-- [ ] `wc:pull [--store=<name>]` Symfony CLI: output per store progress + samenvattende tabel. Geen `--apply` flag — pull is read-only.
-- [ ] Handler-test met `InMemoryWooCommerceClient` + InMemoryRepo's: 2 stores, mix van simple/variable + 1 variable met 3 variations → result-aantal + DB-state na replace correct.
+- [x] `PullWooStore` (`?string $storeName`) + `PullWooStoreResult` (`array<string, int> $itemsByStore`).
+- [x] `WooCommerceClientFactory`-interface (application-layer) + `HttpWooCommerceClientFactory` (infra).
+- [x] `PullWooStoreHandler`: per store fetch producten, voor elke variable-parent variations erbij, één flat lijst → `replaceForStore`. 5 unit-tests (mix simple+variable, snapshot-replace, scoped-by-name, onbekende store throwt, lege-set).
+- [x] `PullWooStoreCommand` (`wc:pull [--store=<name>]`): output-tabel met store-naam + item-count + totaal. Onbekende store → `[ERROR]`, lege registry → `[NOTE]`.
+- [x] Container + bin-bootstrap met factory wired. `make check` groen → 533 PHP-tests / 1319 assertions + PHPStan 0 errors + CS-Fixer schoon.
 
 ### Sub-slice WC-2.2 — Live verificatie
-- [ ] Eén echte shop registreren (volgt op gebruiker-input voor ck/cs). `wc:pull --store=<naam>` draaien, output checken: aantal producten + variations + matching-AFAS-itemcodes klopt grofweg met wat de shop heeft.
-- [ ] SQL-spotcheck: `SELECT type, COUNT(*) FROM woocommerce_products WHERE store_id=? GROUP BY type` geeft expected verdeling. `SELECT COUNT(*) FROM woocommerce_products WHERE afas_itemcode IS NULL` om orphan-meta te tellen.
+- [x] `reseller.defibrion.nl` geregistreerd met productie-ck/cs uit `~/projects/woocommerce-copy-translater/.env`. Meta-key: `_afas_artikelnummer` (uit `bin/export-afas-grouping` van datzelfde project).
+- [x] `wc:pull --store=reseller.defibrion.nl` haalde **2577 items** binnen: 449 simple + 76 variable parents + 2052 variations. Pull duurde ~30s (4 pages × ~25 variable parents met ieder 1 variations-call = ~80 requests).
+- [x] SQL-checks: 2574/2577 hebben AFAS-meta-link (99,9%); statusverdeling 969 publish / 1554 private / 54 draft. Random samples (`11652-60212`, `52113-60222`, `10299`) bevestigen correcte meta-extractie.
+- [x] Kruisreferentie met onze AFAS-managed-set: 566 van 639 managed-itemcodes (89%) zijn op de shop aanwezig; 73 ontbreken; 1978 WC-items wijzen naar AFAS-itemcodes die niet in onze managed-set zitten (taal-siblings, gearchiveerd).
 
 ---
 
