@@ -28,15 +28,16 @@ Eindbeeld: migratie `0024_woocommerce_stores_and_products.sql` is gedraaid. Doma
 Eindbeeld: shops kunnen via CLI worden toegevoegd, gelist, verwijderd. Cascade ruimt producten op. Zie PLAN §5.
 
 ### Sub-slice WC-1.0 — `wc:store:add` + handler
-- [ ] `AddWooStore` command-VO + `AddWooStoreHandler` (application-layer): valideert base-URL begint met `https://`, ck/cs niet-leeg, naam-uniciteit. Slaat op via repo, returnt nieuwe `WooCommerceStore`.
-- [ ] `wc:store:add <name> <base-url> <consumer-key> <consumer-secret> [--meta-key=_afas_itemcode]` Symfony CLI command. Argument-validatie via Symfony Console's input-defaults. Output: `[OK] Store '<name>' toegevoegd (id=<n>)`.
-- [ ] Handler-test in `tests/Application/Woo/`: succes-case, naam-duplicaat → exception, niet-HTTPS-URL → exception, lege ck/cs → exception.
+- [x] `AddWooStore` command-VO + `AddWooStoreHandler` met validatie: lege name/ck/cs → exception, non-https-url → exception, duplicate-name → exception. Trimt trailing-slash van base-url voordat 'ie opslaat.
+- [x] `AddWooStoreCommand` Symfony CLI (`wc:store:add <name> <base-url> <ck> <cs> [--meta-key=_afas_itemcode]`). `InvalidWooStoreException` → `FAILURE` met `[ERROR]`-output, succes → `[OK] Store '<name>' toegevoegd (id=<n>)`.
+- [x] 8 handler-tests: succes + custom meta-key + trailing-slash-trim + 5 rejection-paden.
 
 ### Sub-slice WC-1.1 — `wc:store:list` + `wc:store:remove`
-- [ ] `wc:store:list` CLI: tabel met `id | name | base_url | meta_key | consumer_key_masked` (eerste 6 chars + `…`). Geen handler nodig, direct via repo.
-- [ ] `wc:store:remove <name>` + `RemoveWooStoreHandler`: lookup via naam, delete via repo. Confirm-prompt tenzij `--force`. Output: `[OK] Store '<name>' verwijderd. <N> productrijen opgeruimd via cascade.`
-- [ ] Container/bin-bootstrap wire-up voor alle 3 commands.
-- [ ] `make check` groen.
+- [x] `ListWooStoresCommand`: tabel `id | name | base_url | meta_key | consumer_key (eerste 6 chars + …)`. Empty-set → note.
+- [x] `RemoveWooStore`-VO + `RemoveWooStoreHandler` (throwt `WooCommerceStoreNotFoundException` als naam onbekend) + `RemoveWooStoreCommand` (`wc:store:remove <name> [--force]`, confirm-prompt tenzij `--force`).
+- [x] `Container` uitgebreid met `wooStoreRepository()` + `wooProductRepository()`; bin/samenstellingen registreert alle 3 wc-commands.
+- [x] `make check` groen → 516 PHP-tests / 1285 assertions (+10 nieuwe) + PHPStan 0 errors + CS-Fixer schoon.
+- [x] End-to-end smoke: `wc:store:add defibrion.nl https://defibrion.nl ck_demo cs_demo` → list toont gemaskerde ck → `wc:store:remove defibrion.nl --force` → list leeg. ✓
 
 ---
 

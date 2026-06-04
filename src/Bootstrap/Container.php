@@ -19,6 +19,8 @@ use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteGroupRepos
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteGroupVariantRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqlitePrijslijstWhitelistRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteWebsiteRepository;
+use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteWooCommerceStoreRepository;
+use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteWooProductRepository;
 use PDO;
 
 /**
@@ -42,6 +44,8 @@ class Container
     private ?SqliteBomBlacklistRepository $bomBlacklistRepository = null;
     private ?SqliteWebsiteRepository $websiteRepository = null;
     private ?SqliteBasePublicationRepository $basePublicationRepository = null;
+    private ?SqliteWooCommerceStoreRepository $wooStoreRepository = null;
+    private ?SqliteWooProductRepository $wooProductRepository = null;
 
     public function __construct(
         private readonly string $dbPath,
@@ -133,5 +137,15 @@ class Container
     public function basePublicationRepository(): SqliteBasePublicationRepository
     {
         return $this->basePublicationRepository ??= new SqliteBasePublicationRepository($this->pdo());
+    }
+
+    public function wooStoreRepository(): SqliteWooCommerceStoreRepository
+    {
+        return $this->wooStoreRepository ??= new SqliteWooCommerceStoreRepository($this->pdo());
+    }
+
+    public function wooProductRepository(): SqliteWooProductRepository
+    {
+        return $this->wooProductRepository ??= new SqliteWooProductRepository($this->pdo());
     }
 }
