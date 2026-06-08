@@ -61,14 +61,18 @@ use Defibrion\Samenstellingen\Interface\Cli\AuditMissingCbsCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AuditNamesCommand;
 use Defibrion\Samenstellingen\Application\Audit\BaseParentAuditHandler;
 use Defibrion\Samenstellingen\Application\Audit\FamilyHeadParentAuditHandler;
+use Defibrion\Samenstellingen\Application\Audit\VariantParentAuditHandler;
 use Defibrion\Samenstellingen\Application\Fix\FixBaseParentHandler;
 use Defibrion\Samenstellingen\Application\Fix\FixFamilyHeadParentHandler;
+use Defibrion\Samenstellingen\Application\Fix\FixVariantParentHandler;
 use Defibrion\Samenstellingen\Infrastructure\Fix\HttpItemcodeParentWriter;
 use Defibrion\Samenstellingen\Interface\Cli\AuditBaseParentCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AuditDuplicateBomsCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AuditFamilyHeadParentCommand;
+use Defibrion\Samenstellingen\Interface\Cli\AuditVariantParentCommand;
 use Defibrion\Samenstellingen\Interface\Cli\FixBaseParentCommand;
 use Defibrion\Samenstellingen\Interface\Cli\FixFamilyHeadParentCommand;
+use Defibrion\Samenstellingen\Interface\Cli\FixVariantParentCommand;
 use Defibrion\Samenstellingen\Application\Fix\FixMissingVariantsHandler;
 use Defibrion\Samenstellingen\Application\Fix\FixMissingVariantsWithPricesHandler;
 use Defibrion\Samenstellingen\Application\Fix\FixNamesHandler;
@@ -317,6 +321,8 @@ $familyHeadParentAuditHandler = new FamilyHeadParentAuditHandler($groupRepositor
 $application->addCommand(new AuditFamilyHeadParentCommand($familyHeadParentAuditHandler));
 $baseParentAuditHandler = new BaseParentAuditHandler($groupRepository, $baseRepository, $afasSamenstellingenRepository);
 $application->addCommand(new AuditBaseParentCommand($baseParentAuditHandler));
+$variantParentAuditHandler = new VariantParentAuditHandler($groupRepository, $baseRepository, $variantRepository, $afasSamenstellingenRepository);
+$application->addCommand(new AuditVariantParentCommand($variantParentAuditHandler));
 $application->addCommand(new AuditStickersCommand(new StickerAuditHandler($groupRepository, $baseRepository, $afasSamenstellingenRepository)));
 $application->addCommand(new WhitelistPrijslijstCommand($prijslijstWhitelistRepository));
 $application->addCommand(new UnwhitelistPrijslijstCommand($prijslijstWhitelistRepository));
@@ -376,6 +382,10 @@ if ($hasAfasCreds) {
     )));
     $application->addCommand(new FixBaseParentCommand(new FixBaseParentHandler(
         $baseParentAuditHandler,
+        $itemcodeParentWriter,
+    )));
+    $application->addCommand(new FixVariantParentCommand(new FixVariantParentHandler(
+        $variantParentAuditHandler,
         $itemcodeParentWriter,
     )));
 

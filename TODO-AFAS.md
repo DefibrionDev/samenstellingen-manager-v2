@@ -1492,6 +1492,32 @@ Achtergrond: na slice 52 zijn de 9 family-heads goed. Maar er zijn nog **11 non-
 
 ---
 
+## Slice 54 — Matched accessoire-variants hebben Itemcode_Parent = family-head
+
+Eindbeeld: `audit:variant-parent` toont alle matched accessoire-variants waarvan AFAS' `Itemcode_Parent` leeg is of niet naar hun family-head wijst; `variant:fix-parent --apply` flipt de lege gevallen idempotent (nooit overschrijven). Hergebruikt `HttpItemcodeParentWriter` uit slice 52/53 zonder rename. Zie PLAN-AFAS.md §34.
+
+Achtergrond: na slice 52 + 53 zijn 9 family-heads + 11 non-head bases goed. Maar 1 matched accessoire-variant (`11043-91116`, Defibtech VIEW semi + draagtas) heeft nog steeds lege parent. Volume is klein nu, maar structureel risico: variants die buiten `variants:fix-missing` worden aangemaakt krijgen geen parent.
+
+### Sub-slice 54.0 — Audit-handler + CLI
+- [x] `AuditVariantParent` (VO) + `VariantParentDriftRow` (`afasItemcode`, `currentParent: ?string`, `expectedParent = family-head`, `groupName`).
+- [x] `VariantParentAuditHandler`: itereert `groups` → `bases` → `findMatchedAfasItemcodesForBase`, dedupliceert per itemcode, joint op `afas_samenstellingen`. Drift = `currentParent !== familyHead` (incl. null). Skipt items waar `afas_itemcode === familyHead` en items zonder snapshot-record.
+- [x] `AuditVariantParentCommand` (`audit:variant-parent`): tabel `variant | huidige_parent | verwacht | groep`. Lege resultset → success-notice.
+- [x] 4 handler-tests: self-parent → géén drift, lege parent → drift, afwijkende parent → drift, niet-in-snapshot → géén drift.
+- [x] Container/bin-wiring buiten de creds-block.
+
+### Sub-slice 54.1 — Fix-CLI + handler
+- [x] `FixVariantParent` + `FixVariantParentResult` + `FixVariantParentHandler` met skip-regel: leeg → plan; afwijkend → skippedFilled (nooit overschrijven). Apply invoceert `ItemcodeParentWriter` per plan + verzamelt failures.
+- [x] `FixVariantParentCommand` (`variant:fix-parent [--apply]`): dry-run-tabel + skipped-banner; apply-output + failures-CSV.
+- [x] 4 handler-tests met `VariantRecording`/`VariantFailing`-fakes (disambiguatie van slice-52/53-tests via prefix). Hergebruikt `ItemcodeParentWriter`-interface.
+- [x] Container/bin: command in de creds-block; deelt `HttpItemcodeParentWriter`-instance met slice-52/53.
+
+### Sub-slice 54.2 — Live verificatie
+- [x] `audit:variant-parent` toonde **79 drift-rijen** (de meeste afwijkend gevuld door de Mindray-C1-prefix-collision; slechts 1 met lege parent).
+- [x] `variant:fix-parent --apply` → 1/1 toegepast (`11043-91116` → 11043), 78 afwijkend gevulde rijen geskipt zoals beoogd.
+- [x] `afas:pull` + tweede `variant:fix-parent` (dry-run) = "Geen lege variant-parents — niets om te vullen". De 78 skipped blijven zichtbaar in `audit:variant-parent` als bewuste niet-overschrijven-cases (Mindray C1 prefix-collision uit slice 48/49-context).
+
+---
+
 ## Slice 20 — Reconciliation in portal-CSV-import (vervang wipe)
 
 Eindbeeld: portal-CSV-import is idempotent. Bestaande groepen behouden hun `model_name` en `group_accessoires` over imports heen; alleen groepen die niet meer in de CSV staan worden opgeruimd. Geen `ToolDataWiper` meer in de import-flow.

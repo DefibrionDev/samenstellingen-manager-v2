@@ -1353,3 +1353,29 @@ Symmetrisch aan slice 52, maar voor non-head bases:
 - **Slice 53.1** — Fix-CLI + writer. Hergebruik `HttpFamilyHeadParentWriter` (zelfde UUID, zelfde connector) — hernoemen naar `BaseParentWriter` zou strakker zijn, of erop voortborduren via een neutrale `ItemcodeParentWriter`-interface. `BaseParentFixHandler` met skip-regel (leeg → plan, afwijkend → skip). CLI `base:fix-parent [--apply]`.
 - **Slice 53.2** — Slice 48-banner uitbreiden. `GroupDetail.tsx`-Alert: parent-mismatch-trigger pakt nu óók `parent === null`-cases mee; banner-tabel toont "(leeg)" voor null. `ListGroupsController.parentMismatchCount` telt null ook mee. Vitest + PHP-tests bijwerken.
 - **Slice 53.3** — Live verificatie. `audit:base-parent` → 11 drift-rijen. `--apply` → 11/11 ge-PUT. `afas:pull` + tweede run = leeg. `/groups/11161` toont nieuwe banner-data verdwenen.
+
+---
+
+## 34. Matched accessoire-variants hebben Itemcode_Parent = family-head (slice 54 — concept)
+
+### Probleem
+
+Slice 52 fixte family-heads, slice 53 non-head bases. Maar **matched accessoire-variants** (records in `group_variants` met `afas_samenstelling_itemcode IS NOT NULL` en `accessoire_id IS NOT NULL`) konden óók een lege `Itemcode_Parent` in AFAS hebben — typisch voor variants die handmatig of via een ander pad dan `variants:fix-missing` in AFAS zijn aangemaakt (die hardcodet de parent wel netjes).
+
+Concrete observatie tijdens debugging: `11043-91116` (Defibtech VIEW semi NL + draagtas, matched onder base `11043`) stond met lege parent. Maar `11043-60110` t/m `-60223` (ARKY-cabinets, ook matched onder dezelfde base) hadden hun parent wél netjes ingevuld omdat ze via `variants:fix-missing` waren aangemaakt. Dus structureel risico, ook al is het volume nu klein (1 item).
+
+### Aanpak
+
+Symmetrisch aan slice 53, maar voor matched-variants i.p.v. bases:
+
+**A. Audit + fix CLI**:
+- `audit:variant-parent` (read-only): lijst van matched accessoire-variants waarvan AFAS' `Itemcode_Parent` leeg is OF naar iets anders wijst dan de family-head van hun base's groep.
+- `variant:fix-parent [--apply]`: PUT alleen waar veld leeg is, nooit overschrijven. Hergebruikt `HttpItemcodeParentWriter` (zelfde UUID, zelfde connector).
+
+**B. UI-uitbreiding** _(out of scope deze slice)_: de slice 48/53-banner toont nu base-mismatches. Variant-mismatches op de Variants-tab tonen zou consistent zijn, maar de huidige UI heeft geen geschikte plek — pas oppakken als 't volume groeit. Voor nu is de CLI-audit voldoende.
+
+### Slices
+
+- **Slice 54.0** — Audit-handler + CLI. `VariantParentAuditHandler` itereert `groups` → `bases` → `findMatchedAfasItemcodesForBase`, joint op `afas_samenstellingen`. Drift = `currentParent !== familyHead` (incl. null) **en** `afas_itemcode !== familyHead` (zodat de head zelf niet dubbel-getriggerd wordt, dat dekt slice 52). Output: `list<VariantParentDriftRow>` (afasItemcode, currentParent, expectedParent = familyHead, groupName). CLI `audit:variant-parent` met tabel-output.
+- **Slice 54.1** — Fix-CLI + handler. `FixVariantParent` + `FixVariantParentHandler` met dezelfde skip-regel (leeg → plan; afwijkend → skipped). CLI `variant:fix-parent [--apply]` met dry-run-tabel + apply-output + failures-CSV. 4 handler-tests.
+- **Slice 54.2** — Live verificatie. `audit:variant-parent` toont initieel **1 rij** (`11043-91116` → expected `11043`). `--apply` → 1/1 toegepast. `afas:pull` + tweede `audit:variant-parent` = leeg.
