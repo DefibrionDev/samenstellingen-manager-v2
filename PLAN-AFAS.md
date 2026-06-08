@@ -1288,3 +1288,32 @@ Zichtbaarheid op de auto-sync-no_match-bug (Philips FRx BOM-discrepantie) verdwi
 
 - **Slice 51.0** — Filter verhuizen + tests. `ListMissingVariantsHandler` krijgt `AfasSamenstellingenRepository` als ctor-dep en past de filter intern toe. Tests breiden uit met: variant met `no_match` + verwacht SKU bestaat in snapshot → niet in output; variant met `no_match` + verwacht SKU niet in snapshot → wel in output; variant met `no_match` zonder verwacht SKU (lege accessoire-code, lege baseAfasSku) → niet in output. `ListGroupsController` ontneemt z'n eigen filter en gebruikt de handler-output direct voor `missingByFamilyHead`. PHP-test in `ApiTest` voor `/api/missing-variants` blijft groen.
 - **Slice 51.1** — Live verificatie. Open `/missing` → 0 rijen. Open `/` → "Missend"-kolom alle nullen. Geen vitest-aanpassing nodig (UI raakt logica niet aan; alleen response-vorm).
+
+---
+
+## 32. Family-head's eigen `Itemcode_Parent` = self (slice 52 — concept)
+
+### Probleem
+
+In Defibrion's AFAS-data hoort `Itemcode_Parent` op een family-head naar **zichzelf** te wijzen — dat is de prevailing convention zodat een simpele filter `Itemcode_Parent = X` ALLE leden van familie X retourneert, inclusief de head. 17 van onze 26 family-heads volgen die conventie, **9 zijn leeg** (`11139`, `11148`, `11149`, `11153`, `11161`, `11197`, `21013`, `21014`, `21019`). Daardoor mist een rondvraag op `Itemcode_Parent` voor die families de head zelf — wat downstream-tools (de WC-plugin, exports, reports) verkeerd kan classificeren.
+
+Eerder werd dit gat alleen geïllustreerd door slice 48 (UI-banner als `base.Parent ≠ family_head`), maar die warning richt zich op bases binnen een familie, niet op de family-head zelf. Slice 43's auto-shift-flow ververst de family-head-koppeling intern bij `afas:pull` maar schrijft niets terug naar AFAS.
+
+### Aanpak
+
+**A. Dedicated audit + fix CLI**:
+- `audit:family-head-parent` (read-only): lijst van family-heads waarvan `Itemcode_Parent` leeg is OF naar iets anders wijst dan zichzelf. Output: tabel `family_head | huidige_parent | verwacht | groep`.
+- `family-head:fix-parent [--apply]`: voor elke family-head waar veld leeg is, PUT FbComposition met `Itemcode_Parent = <self>`. **Skipt** rijen waar veld al gevuld is (zelfs als het naar iets anders wijst — never overwrite, zelfde regel als het BHV-backfill-script). Dry-run default, failure-CSV-pattern.
+
+**C. UI-banner uitbreiden (slice 48-stijl)**:
+- `GroupDetail`-Alert toont nu "X base(s) hebben afwijkende parent". Uitbreiden met een tweede regel "Family-head zelf mist self-parent — run `family-head:fix-parent --apply`" wanneer family-head's `Itemcode_Parent` leeg is.
+- `GroupsList` "Parent-drift"-kolom telt nu alleen bases — uitbreiden zodat family-head's eigen drift óók meetelt in de chip.
+
+**B niet doen**: `variants:fix-missing` blijft puur voor accessoire-varianten. Family-heads worden zelden door deze tool aangemaakt; de A-CLI volstaat voor backfill en future drift-detectie.
+
+### Slices
+
+- **Slice 52.0** — `audit:family-head-parent` + handler + tests. `FamilyHeadParentAuditHandler` retourneert `list<FamilyHeadParentDriftRow>` (family_head, currentParent|null, expected = family_head, groupName). Source: `groups` × `afas_samenstellingen` snapshot. CLI rendert tabel.
+- **Slice 52.1** — `family-head:fix-parent --apply` + writer + tests. Hergebruik `AfasHttpClient::updateConnector('FbComposition', ...)` met `Itemcode_Parent`-UUID (`U298663A9447D4B4D8A0BB3FBC14A2C0B`). Idempotente skip-regel: alleen PUT als veld leeg. In-memory writer-fake voor tests. Failure-CSV in `tmp/`.
+- **Slice 52.2** — UI-uitbreiding. `ShowGroupController` voegt veld `familyHeadParentInAfas: string|null` toe aan de response. `GroupDetail.tsx` Alert breidt uit met self-parent-regel. `ListGroupsController` teller bestaande `parentMismatchCount` neemt ook de family-head zelf mee als z'n `Itemcode_Parent ≠ familyHead`. Vitest + PHP-tests bijwerken.
+- **Slice 52.3** — Live verificatie. `audit:family-head-parent` toont initieel 9 drift-rijen. `--apply` flipt ze. Tweede run = leeg. UI banner/chip verdwijnt op de 9 betreffende groepen.

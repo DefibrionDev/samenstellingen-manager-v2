@@ -1425,6 +1425,39 @@ Eindbeeld: `ListMissingVariantsHandler` past de "verwacht SKU bestaat niet in AF
 
 ---
 
+## Slice 52 — Family-head's eigen `Itemcode_Parent` = self
+
+Eindbeeld: `audit:family-head-parent` toont alle family-heads waar AFAS' `Itemcode_Parent` leeg is of niet naar zichzelf wijst; `family-head:fix-parent --apply` flipt de lege gevallen idempotent naar self (nooit overschrijven). UI in slice 48 wordt uitgebreid zodat de family-head's eigen drift ook zichtbaar is op `GroupDetail` + `GroupsList`. Zie PLAN-AFAS.md §32.
+
+Achtergrond: 17 van 26 family-heads volgen de prevailing convention `Itemcode_Parent = self`; 9 staan leeg (`11139`, `11148`, `11149`, `11153`, `11161`, `11197`, `21013`, `21014`, `21019`). Backfill is one-shot, daarna monitort de audit toekomstige drift.
+
+### Sub-slice 52.0 — Audit-handler + CLI
+- [x] `FamilyHeadParentAuditHandler` leest `groups` × `afas_samenstellingen`-snapshot en retourneert `list<FamilyHeadParentDriftRow>` (`familyHead`, `currentParent: ?string`, `expectedParent = familyHead`, `groupName`). Sorteert alfabetisch op familyHead. Skipt heads die niet in de snapshot voorkomen.
+- [x] `AuditFamilyHeadParentCommand` (`audit:family-head-parent`): tabel `family_head | huidige_parent | verwacht | groep`; lege resultset → success-notice.
+- [x] 4 handler-tests: leeg → drift, self → géén, afwijkend → drift, ontbrekend uit snapshot → géén.
+- [x] Container/bin-wiring buiten de creds-block (audit is read-only).
+
+### Sub-slice 52.1 — Fix-CLI + writer
+- [x] `FixFamilyHeadParent` + `FixFamilyHeadParentResult` (VO's) + `FamilyHeadParentWriter` (interface) + `HttpFamilyHeadParentWriter` (Itemcode_Parent-UUID `U298663A9447D4B4D8A0BB3FBC14A2C0B` op `FbComposition`).
+- [x] `FixFamilyHeadParentHandler`: skip-regel `currentParent === null || === ''` → plan; afwijkend → `skippedFilled` (nooit overschrijven). Apply-mode invoceert writer per plan + verzamelt failures.
+- [x] `FixFamilyHeadParentCommand` (`family-head:fix-parent [--apply]`): dry-run-tabel + skipped-banner; apply-output + failures-CSV in `sys_get_temp_dir()`.
+- [x] 4 handler-tests: dry-run plans+skipped+0-writer-calls, apply schrijft alleen plans, writer-failure verschijnt in `failures`, lege audit → lege resultset. Recording + Failing in-memory fakes.
+- [x] Container/bin: command in de creds-block (write requires AFAS-client).
+
+### Sub-slice 52.2 — UI-uitbreiding (slice 48-stijl)
+- [x] `ShowGroupController`: `familyHeadParentInAfas: string|null` toegevoegd via `findByItemcode($familyHead)?->itemcodeParent`. PHP-test `showGroupExposesFamilyHeadParentInAfas` verifieert.
+- [x] `GroupDetail.tsx`: nieuwe MUI Alert "warning" boven de bestaande base-mismatch-banner. Toont "geen Itemcode_Parent in AFAS" (null) of "afwijkende Itemcode_Parent: X" (mismatch). Bevat CLI-pointer naar `family-head:fix-parent --apply` met de "nooit overschrijven"-quote.
+- [x] `ListGroupsController`: head's eigen drift telt nu mee in `parentMismatchCount`. PHP-test `listGroupsCountsFamilyHeadSelfParentDriftToo` verifieert (head met `Itemcode_Parent=null` → count=1).
+- [x] Vitest in `GroupDetail.test.tsx`: nieuwe test "toont head-self-parent waarschuwing als familyHeadParentInAfas leeg is". Bestaande fixtures uitgebreid met `familyHeadParentInAfas: <self>` zodat geen vals positieven.
+- [x] `make check` + vitest groen → 549 PHP-tests / 1410 assertions + 5 vitest in GroupDetail-suite.
+
+### Sub-slice 52.3 — Live verificatie
+- [x] `audit:family-head-parent` toonde **9 drift-rijen** (11139, 11148, 11149, 11153, 11161, 11197, 21013, 21014, 21019) met `(leeg)`.
+- [x] `family-head:fix-parent --apply` → 9/9 toegepast, 0 gefaald.
+- [x] `afas:pull` + tweede `audit:family-head-parent` = success-notice "Alle family-heads in onze groepen wijzen naar zichzelf".
+
+---
+
 ## Slice 20 — Reconciliation in portal-CSV-import (vervang wipe)
 
 Eindbeeld: portal-CSV-import is idempotent. Bestaande groepen behouden hun `model_name` en `group_accessoires` over imports heen; alleen groepen die niet meer in de CSV staan worden opgeruimd. Geen `ToolDataWiper` meer in de import-flow.

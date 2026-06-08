@@ -56,6 +56,11 @@ final readonly class ListGroupsController
                 }
                 $itemCount += count($this->items->findAllForBase($base->id));
             }
+            // Family-head zelf: telt mee als Itemcode_Parent ≠ familyHead.
+            $headSamenstelling = $this->afasSamenstellingen->findByItemcode($group->familyHeadItemcode);
+            if ($headSamenstelling !== null && $headSamenstelling->itemcodeParent !== $group->familyHeadItemcode) {
+                ++$parentMismatchCount;
+            }
             $payload[] = [
                 'name' => $group->name,
                 'familyHead' => $group->familyHeadItemcode,

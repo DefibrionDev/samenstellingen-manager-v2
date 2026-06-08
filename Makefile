@@ -23,7 +23,7 @@ check: lint stan test ui-test ## Lint + stan + PHPUnit + vitest (CI-gate)
 clean: ## Verwijder caches en tmp-bestanden
 	rm -rf .phpunit.cache .phpunit.result.cache .php-cs-fixer.cache tmp/*.sqlite tmp/*.log
 
-ui-up: ## Start nginx + php-fpm containers (poort 8080)
+ui-up: ## Start nginx + php-fpm containers (poort 8181)
 	docker compose up -d
 
 ui-down: ## Stop de UI-containers

@@ -84,12 +84,15 @@ final readonly class ShowGroupController
             ];
         }
 
+        $familyHeadSamenstelling = $this->samenstellingen->findByItemcode($group->familyHeadItemcode);
+
         return Json::write($response, [
             'familyHead' => $group->familyHeadItemcode,
             'name' => $group->name,
             'modelNameNl' => $group->modelNameNl,
             'modelNameFr' => $group->modelNameFr,
             'modelNameEn' => $group->modelNameEn,
+            'familyHeadParentInAfas' => $familyHeadSamenstelling?->itemcodeParent,
             'bases' => $bases,
         ]);
     }

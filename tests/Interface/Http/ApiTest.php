@@ -130,6 +130,59 @@ final class ApiTest extends TestCase
     }
 
     #[Test]
+    public function listGroupsCountsFamilyHeadSelfParentDriftToo(): void
+    {
+        $pdo = TestDatabase::pdo();
+        $groups = new SqliteGroupRepository($pdo);
+        $bases = new SqliteGroupBaseRepository($pdo);
+
+        $groups->save(new Group('Mindray C2 vol', '21014'));
+        $groups->save(new Group('Cardiac G5 semi', '11148'));
+        $bases->saveForGroup('21014', new GroupBase(null, '3-talig', 'NL/EN/FR', '21014'));
+        $bases->saveForGroup('11148', new GroupBase(null, 'NL/EN', 'NL/EN', '11148'));
+
+        $samenstellingen = new \Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAfasSamenstellingenRepository($pdo);
+        $samenstellingen->replaceSnapshot([
+            // 21014 mist self-parent → telt mee als mismatch
+            new \Defibrion\Samenstellingen\Domain\Afas\AfasSamenstelling('21014', 'Mindray C2 vol', null, []),
+            // 11148 heeft wel self-parent → telt niet mee
+            new \Defibrion\Samenstellingen\Domain\Afas\AfasSamenstelling('11148', 'Cardiac G5 NL-EN', '11148', []),
+        ]);
+
+        $response = $this->call('GET', '/api/groups');
+
+        self::assertSame(200, $response['status']);
+        $byFh = [];
+        foreach ($response['body'] as $g) {
+            $byFh[$g['familyHead']] = $g;
+        }
+        self::assertSame(1, $byFh['21014']['parentMismatchCount']);
+        self::assertSame(0, $byFh['11148']['parentMismatchCount']);
+    }
+
+    #[Test]
+    public function showGroupExposesFamilyHeadParentInAfas(): void
+    {
+        $pdo = TestDatabase::pdo();
+        $groups = new SqliteGroupRepository($pdo);
+        $bases = new SqliteGroupBaseRepository($pdo);
+
+        $groups->save(new Group('Mindray C2 vol', '21014'));
+        $bases->saveForGroup('21014', new GroupBase(null, '3-talig', 'NL/EN/FR', '21014'));
+
+        $samenstellingen = new \Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAfasSamenstellingenRepository($pdo);
+        $samenstellingen->replaceSnapshot([
+            new \Defibrion\Samenstellingen\Domain\Afas\AfasSamenstelling('21014', 'Mindray C2 vol', null, []),
+        ]);
+
+        $response = $this->call('GET', '/api/groups/21014');
+
+        self::assertSame(200, $response['status']);
+        self::assertArrayHasKey('familyHeadParentInAfas', $response['body']);
+        self::assertNull($response['body']['familyHeadParentInAfas']);
+    }
+
+    #[Test]
     public function showsAfasItemcodeParentOnBasesWhenSnapshotHasIt(): void
     {
         $pdo = TestDatabase::pdo();

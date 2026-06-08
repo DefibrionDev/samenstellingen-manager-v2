@@ -59,7 +59,12 @@ use Defibrion\Samenstellingen\Interface\Cli\UnwhitelistPrijslijstCommand;
 use Defibrion\Samenstellingen\Application\Audit\MissingCbsAuditHandler;
 use Defibrion\Samenstellingen\Interface\Cli\AuditMissingCbsCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AuditNamesCommand;
+use Defibrion\Samenstellingen\Application\Audit\FamilyHeadParentAuditHandler;
+use Defibrion\Samenstellingen\Application\Fix\FixFamilyHeadParentHandler;
+use Defibrion\Samenstellingen\Infrastructure\Fix\HttpFamilyHeadParentWriter;
 use Defibrion\Samenstellingen\Interface\Cli\AuditDuplicateBomsCommand;
+use Defibrion\Samenstellingen\Interface\Cli\AuditFamilyHeadParentCommand;
+use Defibrion\Samenstellingen\Interface\Cli\FixFamilyHeadParentCommand;
 use Defibrion\Samenstellingen\Application\Fix\FixMissingVariantsHandler;
 use Defibrion\Samenstellingen\Application\Fix\FixMissingVariantsWithPricesHandler;
 use Defibrion\Samenstellingen\Application\Fix\FixNamesHandler;
@@ -292,6 +297,8 @@ $application->addCommand(new AuditMissingCbsCommand(new MissingCbsAuditHandler($
 $application->addCommand(new AuditSuspiciousBasesCommand($suspiciousBaseAuditHandler));
 $application->addCommand(new AuditPricesCommand($priceAuditHandler));
 $application->addCommand(new AuditDuplicateBomsCommand(new DuplicateBomAuditHandler($afasSamenstellingenRepository)));
+$familyHeadParentAuditHandler = new FamilyHeadParentAuditHandler($groupRepository, $afasSamenstellingenRepository);
+$application->addCommand(new AuditFamilyHeadParentCommand($familyHeadParentAuditHandler));
 $application->addCommand(new AuditStickersCommand(new StickerAuditHandler($groupRepository, $baseRepository, $afasSamenstellingenRepository)));
 $application->addCommand(new WhitelistPrijslijstCommand($prijslijstWhitelistRepository));
 $application->addCommand(new UnwhitelistPrijslijstCommand($prijslijstWhitelistRepository));
@@ -343,6 +350,11 @@ if ($hasAfasCreds) {
     $nameWriter = new HttpFbCompositionNameWriter($afasClient);
     $fixNamesHandler = new FixNamesHandler($nameAuditHandler, $nameWriter);
     $application->addCommand(new FixNamesCommand($fixNamesHandler));
+
+    $application->addCommand(new FixFamilyHeadParentCommand(new FixFamilyHeadParentHandler(
+        $familyHeadParentAuditHandler,
+        new HttpFamilyHeadParentWriter($afasClient),
+    )));
 
     $variantWriteContextLookup = new HttpVariantWriteContextLookup($afasClient);
     $variantWriter = new HttpFbCompositionVariantWriter(

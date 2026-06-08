@@ -95,7 +95,13 @@ export function GroupDetail() {
             </Tabs>
           </Paper>
 
-          {activeTab === 'bases' && <BasesTab bases={data.bases} familyHead={data.familyHead} />}
+          {activeTab === 'bases' && (
+            <BasesTab
+              bases={data.bases}
+              familyHead={data.familyHead}
+              familyHeadParentInAfas={data.familyHeadParentInAfas ?? null}
+            />
+          )}
           {activeTab === 'accessoires' && <AccessoiresTab familyHead={data.familyHead} />}
           {activeTab === 'variants' && <VariantsTab familyHead={data.familyHead} />}
         </>
@@ -104,13 +110,40 @@ export function GroupDetail() {
   );
 }
 
-function BasesTab({ bases, familyHead }: { bases: GroupDetailType['bases']; familyHead: string }) {
+function BasesTab({
+  bases,
+  familyHead,
+  familyHeadParentInAfas,
+}: {
+  bases: GroupDetailType['bases'];
+  familyHead: string;
+  familyHeadParentInAfas: string | null;
+}) {
   const parentMismatches = bases.filter(
     (b) => b.afasItemcodeParent && b.afasItemcodeParent !== familyHead,
   );
+  const headMissesSelfParent = familyHeadParentInAfas !== familyHead;
 
   return (
     <Stack spacing={1}>
+      {headMissesSelfParent && (
+        <Alert severity="warning">
+          <Typography variant="body2">
+            Family-head <code>{familyHead}</code> heeft zelf{' '}
+            {familyHeadParentInAfas === null
+              ? 'geen Itemcode_Parent in AFAS'
+              : (
+                <>
+                  een afwijkende Itemcode_Parent in AFAS:{' '}
+                  <code>{familyHeadParentInAfas}</code>
+                </>
+              )}
+            . Defibrion-conventie is dat de family-head naar zichzelf wijst — run{' '}
+            <code>bin/samenstellingen family-head:fix-parent --apply</code> om de lege gevallen te
+            vullen (afwijkend gevulde waardes worden NIET overschreven).
+          </Typography>
+        </Alert>
+      )}
       {parentMismatches.length > 0 && (
         <Alert severity="info">
           <Typography variant="body2" sx={{ mb: 1 }}>

@@ -40,6 +40,7 @@ beforeEach(() => {
           modelNameNl: null,
           modelNameFr: null,
           modelNameEn: null,
+          familyHeadParentInAfas: '52112',
           bases: [
             {
               id: 1,
@@ -114,6 +115,7 @@ test('toont parent-mismatch banner als een base een afwijkende afasItemcodeParen
           modelNameNl: null,
           modelNameFr: null,
           modelNameEn: null,
+          familyHeadParentInAfas: '21018',
           bases: [
             {
               id: 1,
@@ -154,4 +156,47 @@ test('geen parent-mismatch banner als alle bases dezelfde parent hebben als fami
   renderAt('/groups/52112');
   await waitFor(() => expect(screen.getByText('AED pakket NL')).toBeInTheDocument());
   expect(screen.queryByText(/afwijkt van de family-head/i)).not.toBeInTheDocument();
+});
+
+test('toont head-self-parent waarschuwing als familyHeadParentInAfas leeg is', async () => {
+  vi.unstubAllGlobals();
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url.includes('/prices')) {
+        return { ok: true, status: 200, statusText: 'OK', json: async () => [] };
+      }
+      return {
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        json: async () => ({
+          familyHead: '21014',
+          name: 'Mindray C2 vol',
+          modelNameNl: null,
+          modelNameFr: null,
+          modelNameEn: null,
+          familyHeadParentInAfas: null,
+          bases: [
+            {
+              id: 1,
+              name: '3-talig',
+              languageCode: 'NL/EN/FR',
+              afasItemcode: '21014',
+              afasItemcodeParent: '21014',
+              variantLabel: null,
+              publishedOn: [],
+              items: [],
+            },
+          ],
+        }),
+      };
+    }),
+  );
+
+  renderAt('/groups/21014');
+
+  await waitFor(() =>
+    expect(screen.getByText(/heeft zelf geen Itemcode_Parent in AFAS/i)).toBeInTheDocument(),
+  );
 });

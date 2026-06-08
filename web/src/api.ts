@@ -40,6 +40,7 @@ export interface GroupDetail {
   modelNameNl: string | null;
   modelNameFr: string | null;
   modelNameEn: string | null;
+  familyHeadParentInAfas?: string | null;
   bases: GroupBase[];
 }
 
