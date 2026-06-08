@@ -148,3 +148,39 @@ Vier slices, allemaal read-only. Mutatie-cyclus volgt later.
 - **WooCommerce REST API rate-limit**: bestaat niet standaard, maar reverse-proxies (Cloudflare) kunnen 'm afdwingen. Implementatie respecteert `Retry-After`-headers; voor MVP geen exponential backoff nodig.
 - **AFAS-itemcode-hergebruik tussen shops**: één AFAS-itemcode kan op meerdere shops staan (`defibrion.nl` én `defibrion.fr` verkopen `21011`). Schema staat dat toe (`UNIQUE(store_id, wc_product_id)`, geen unique op `afas_itemcode`). Index aggregeert per `(itemcode, store)`.
 - **Synchronisatie van AFAS-snapshot en WC-snapshot**: we pullen los van elkaar. UI moet voor de index gemarkeerd kunnen worden met "WC-data is van X uur geleden". Voor MVP: laat `synced_at` per rij zien.
+
+## 10. WooCommerce health-check (slice WC-5 — concept)
+
+### Probleem
+
+Cyclus 1 (WC-0 t/m WC-4) gaf zichtbaarheid op de presence van AFAS-managed itemcodes in elke shop. Maar **presence alleen is niet genoeg** — de WC-plugin van Defibrion converteert AFAS-samenstellingen naar variable-product-structuren (één variable parent per family, variations voor elke base + accessoire-combinatie). Wanneer een managed itemcode in WC als `simple` belandt (i.p.v. variation onder de juiste variable parent), is dat een **bug-signaal**: de plugin heeft 'm óf nooit geconverteerd (legacy import), óf hij behandelt 'm verkeerd (Itemcode_Parent niet gezet bij AFAS-creatie → plugin valt terug op simple).
+
+Concrete observatie tijdens debugging: na slice 53 bleven 5 bases in WC als `simple` staan (`11144`, `11154`, `11162`, `11166`, `21012`) terwijl AFAS hun `Itemcode_Parent` net was rechtgezet — de plugin loopt achter op de AFAS-state en wij hebben geen audit om dit systematisch te zien.
+
+### Aanpak
+
+Een dedicated `audit:wc-health`-CLI + `/woocommerce` UI-tab die per managed AFAS-itemcode (84 bases + 639 matched variants) één van vier statussen toont per geregistreerde shop:
+
+- ✅ **OK**: aanwezig als `variable` (voor heads) OF `variation` (voor non-heads + variants), publish-status `publish`.
+- ⚠️ **wrong-type**: aanwezig in WC, maar `simple` — moet variation worden.
+- ⚠️ **not-publish**: aanwezig met juist type, maar status `draft`/`private`/etc.
+- ❌ **missing**: helemaal niet in WC.
+
+Status-bepaling per itemcode:
+1. Lookup in `woocommerce_products` op `afas_itemcode = X` voor de shop.
+2. Bepaal verwachte type:
+   - Family-head (= `group_bases.afas_itemcode === group.familyHeadItemcode`) → verwacht `variable`.
+   - Alle andere managed-itemcodes (non-head bases + accessoire-variants) → verwacht `variation`.
+3. Vergelijk → status.
+
+### Slices
+
+- **Slice WC-5.0** — `WcHealthAuditHandler` + VO's. Output: `list<WcHealthRow>` met `afasItemcode`, `expectedType` (`variable`|`variation`), per shop `WcHealthCell` (`?wcProductId, ?actualType, ?status, healthStatus enum`). Hergebruik `WooProductRepository::findByAfasItemcode`. Unit-tests in `tests/Application/Woo/`.
+- **Slice WC-5.1** — `audit:wc-health [--store=<name>] [--missing] [--wrong-type] [--not-publish]` CLI. Output: tabel itemcode | expected-type | per-shop status. Filter-flags voor focus op één probleem-categorie.
+- **Slice WC-5.2** — UI: nieuwe tab "Health" op `/woocommerce`. Tabel met afas-itemcode + status-chips per shop (groen/oranje/rood). Filter-checkboxes voor missing/wrong-type/not-publish. JSON-endpoint `/api/wc/health`. Vitest + PHP-test.
+- **Slice WC-5.3** — Live verificatie. Run `audit:wc-health --wrong-type` → toont de 5 bekende simples (`11144` etc.) plus eventueel andere. Run zonder filter → totaal overzicht. UI-tab opent met dezelfde data.
+
+### Niet in scope
+
+- **Auto-fix**: deze cyclus blijft read-only. De plugin moet zelf de conversie doen (gegeven correcte AFAS-data). Onze tool signaleert, fixt niet.
+- **Sticker-status, prijsdrift, attribuut-validatie**: dat zijn aparte audits. Health-check focust strikt op `type`-mismatch + presence.

@@ -131,7 +131,30 @@ export const api = {
   listWooStores: () => jsonGet<WooStore[]>('/api/wc/stores'),
   listWooIndex: () => jsonGet<WooIndexResponse>('/api/wc/index'),
   listWooOrphans: () => jsonGet<WooOrphan[]>('/api/wc/orphans'),
+  listWcHealth: () => jsonGet<WcHealthResponse>('/api/wc/health'),
 };
+
+export type WcHealthStatus = 'ok' | 'wrong-type' | 'not-publish' | 'missing';
+
+export interface WcHealthCellEntry {
+  storeId: number;
+  storeName: string;
+  wcProductId: number | null;
+  actualType: string | null;
+  status: string | null;
+  healthStatus: WcHealthStatus;
+}
+
+export interface WcHealthRow {
+  afasItemcode: string;
+  expectedType: 'variable' | 'variation';
+  cells: WcHealthCellEntry[];
+}
+
+export interface WcHealthResponse {
+  stores: { id: number; name: string }[];
+  rows: WcHealthRow[];
+}
 
 export interface WooStore {
   id: number;

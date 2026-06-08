@@ -102,11 +102,13 @@ use Defibrion\Samenstellingen\Interface\Cli\ImportSamenstellingenCsvCommand;
 use Defibrion\Samenstellingen\Interface\Cli\ListBomBlacklistCommand;
 use Defibrion\Samenstellingen\Application\Woo\AddWooStoreHandler;
 use Defibrion\Samenstellingen\Application\Woo\ListWooIndexHandler;
+use Defibrion\Samenstellingen\Application\Woo\WcHealthAuditHandler;
 use Defibrion\Samenstellingen\Application\Woo\PullWooStoreHandler;
 use Defibrion\Samenstellingen\Application\Woo\RemoveWooStoreHandler;
 use Defibrion\Samenstellingen\Infrastructure\Woo\Http\HttpWooCommerceClientFactory;
 use Defibrion\Samenstellingen\Interface\Cli\AddWebsiteCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AddWooStoreCommand;
+use Defibrion\Samenstellingen\Interface\Cli\AuditWcHealthCommand;
 use Defibrion\Samenstellingen\Interface\Cli\ListWooIndexCommand;
 use Defibrion\Samenstellingen\Interface\Cli\ListWooStoresCommand;
 use Defibrion\Samenstellingen\Interface\Cli\PullWooStoreCommand;
@@ -271,6 +273,16 @@ $application->addCommand(new ListWooIndexCommand(
         $baseRepository,
         $variantRepository,
         $groupRepository,
+        $wooStoreRepository,
+        $wooProductRepository,
+    ),
+    $wooStoreRepository,
+));
+$application->addCommand(new AuditWcHealthCommand(
+    new WcHealthAuditHandler(
+        $groupRepository,
+        $baseRepository,
+        $variantRepository,
         $wooStoreRepository,
         $wooProductRepository,
     ),

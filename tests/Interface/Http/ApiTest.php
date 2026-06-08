@@ -493,6 +493,18 @@ final class ApiTest extends TestCase
         self::assertCount(1, $orphansResp['body']);
         self::assertSame(2, $orphansResp['body'][0]['wcProductId']);
         self::assertSame('99999', $orphansResp['body'][0]['afasItemcode']);
+
+        // /api/wc/health
+        $healthResp = $this->call('GET', '/api/wc/health');
+        self::assertSame(200, $healthResp['status']);
+        self::assertCount(1, $healthResp['body']['rows']);
+        $healthRow = $healthResp['body']['rows'][0];
+        self::assertSame('11111', $healthRow['afasItemcode']);
+        // 11111 is een non-head base (family-head = 10013) → verwacht 'variation'.
+        self::assertSame('variation', $healthRow['expectedType']);
+        // Fixture heeft 11111 als 'simple' → wrong-type.
+        self::assertSame('wrong-type', $healthRow['cells'][0]['healthStatus']);
+        self::assertSame('simple', $healthRow['cells'][0]['actualType']);
     }
 
     /**

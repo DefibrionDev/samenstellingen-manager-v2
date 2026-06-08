@@ -22,9 +22,9 @@ import {
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
-import { api, WooIndexCell } from '../api';
+import { api, WcHealthCellEntry, WooIndexCell } from '../api';
 
-type TabKey = 'index' | 'orphans' | 'stores';
+type TabKey = 'index' | 'orphans' | 'stores' | 'health';
 
 function StatusChip({ cell }: { cell: WooIndexCell | null }) {
   if (cell === null) {
@@ -222,6 +222,114 @@ function StoresTab() {
   );
 }
 
+function HealthCellChip({ cell }: { cell: WcHealthCellEntry }) {
+  switch (cell.healthStatus) {
+    case 'ok':
+      return (
+        <Tooltip title={`#${cell.wcProductId} • ${cell.actualType} • publish`}>
+          <Chip label={cell.wcProductId ?? '?'} size="small" color="success" />
+        </Tooltip>
+      );
+    case 'wrong-type':
+      return (
+        <Tooltip title={`#${cell.wcProductId} staat als ${cell.actualType}`}>
+          <Chip label={`${cell.actualType} #${cell.wcProductId}`} size="small" color="warning" />
+        </Tooltip>
+      );
+    case 'not-publish':
+      return (
+        <Tooltip title={`#${cell.wcProductId} status=${cell.status}`}>
+          <Chip label={`${cell.status} #${cell.wcProductId}`} size="small" color="warning" variant="outlined" />
+        </Tooltip>
+      );
+    case 'missing':
+    default:
+      return (
+        <Tooltip title="Niet gevonden in deze shop">
+          <Chip label="—" size="small" />
+        </Tooltip>
+      );
+  }
+}
+
+function HealthTab() {
+  const [filter, setFilter] = useState<'all' | 'wrong-type' | 'not-publish' | 'missing'>('wrong-type');
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ['wc', 'health'],
+    queryFn: api.listWcHealth,
+  });
+
+  if (isError) {
+    return <Alert severity="error">Kon health-data niet laden: {(error as Error).message}</Alert>;
+  }
+  if (isLoading || !data) {
+    return <Skeleton variant="rectangular" height={400} />;
+  }
+  if (data.stores.length === 0) {
+    return (
+      <Alert severity="info">
+        Geen shops geregistreerd. Voeg toe via <code>bin/samenstellingen wc:store:add</code>.
+      </Alert>
+    );
+  }
+
+  const filteredRows =
+    filter === 'all'
+      ? data.rows
+      : data.rows.filter((row) => row.cells.some((c) => c.healthStatus === filter));
+
+  return (
+    <Stack spacing={2}>
+      <Stack direction="row" spacing={1}>
+        {(['all', 'wrong-type', 'not-publish', 'missing'] as const).map((value) => (
+          <Chip
+            key={value}
+            label={value}
+            color={filter === value ? 'primary' : 'default'}
+            onClick={() => setFilter(value)}
+            size="small"
+          />
+        ))}
+        <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center' }}>
+          {filteredRows.length} / {data.rows.length} itemcodes
+        </Typography>
+      </Stack>
+      <Paper>
+        <TableContainer>
+          <Table size="small" stickyHeader>
+            <TableHead>
+              <TableRow>
+                <TableCell>AFAS-itemcode</TableCell>
+                <TableCell>Verwacht</TableCell>
+                {data.stores.map((store) => (
+                  <TableCell key={store.id} align="center">
+                    {store.name}
+                  </TableCell>
+                ))}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {filteredRows.map((row) => (
+                <TableRow key={row.afasItemcode}>
+                  <TableCell>
+                    <code>{row.afasItemcode}</code>
+                  </TableCell>
+                  <TableCell>{row.expectedType}</TableCell>
+                  {row.cells.map((entry) => (
+                    <TableCell key={entry.storeId} align="center">
+                      <HealthCellChip cell={entry} />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
+    </Stack>
+  );
+}
+
 export function Woocommerce() {
   const [tab, setTab] = useState<TabKey>('index');
 
@@ -239,11 +347,13 @@ export function Woocommerce() {
           <Tab value="index" label="Index" />
           <Tab value="orphans" label="Orphans" />
           <Tab value="stores" label="Stores" />
+          <Tab value="health" label="Health" />
         </Tabs>
       </Box>
       {tab === 'index' && <IndexTab />}
       {tab === 'orphans' && <OrphansTab />}
       {tab === 'stores' && <StoresTab />}
+      {tab === 'health' && <HealthTab />}
     </Stack>
   );
 }

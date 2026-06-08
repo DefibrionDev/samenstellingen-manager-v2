@@ -11,6 +11,7 @@ use Defibrion\Samenstellingen\Application\Audit\PriceAuditHandler;
 use Defibrion\Samenstellingen\Application\Audit\StickerAuditHandler;
 use Defibrion\Samenstellingen\Application\Audit\SuspiciousBaseAuditHandler;
 use Defibrion\Samenstellingen\Application\Woo\ListWooIndexHandler;
+use Defibrion\Samenstellingen\Application\Woo\WcHealthAuditHandler;
 use Defibrion\Samenstellingen\Bootstrap\Container;
 use Defibrion\Samenstellingen\Domain\Naming\VariantNamingPolicy;
 use Psr\Container\ContainerInterface;
@@ -130,6 +131,16 @@ final class AppFactory
         $listWooStores = new ListWooStoresController($container->wooStoreRepository(), $container->wooProductRepository());
         $listWooIndex = new ListWooIndexController($wooIndexHandler, $container->wooStoreRepository());
         $listWooOrphans = new ListWooOrphansController($wooIndexHandler);
+        $listWcHealth = new ListWcHealthController(
+            new WcHealthAuditHandler(
+                $container->groupRepository(),
+                $container->baseRepository(),
+                $container->variantRepository(),
+                $container->wooStoreRepository(),
+                $container->wooProductRepository(),
+            ),
+            $container->wooStoreRepository(),
+        );
 
         $app->get('/api/groups', $listGroups);
         $app->get('/api/groups/{familyHead}', $showGroup);
@@ -149,6 +160,7 @@ final class AppFactory
         $app->get('/api/wc/stores', $listWooStores);
         $app->get('/api/wc/index', $listWooIndex);
         $app->get('/api/wc/orphans', $listWooOrphans);
+        $app->get('/api/wc/health', $listWcHealth);
 
         return $app;
     }

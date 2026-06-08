@@ -108,3 +108,38 @@ Eindbeeld: read-only React-pagina `/woocommerce` met tabs Index / Orphans / Stor
   - Index: AFAS-itemcodes (b.v. `064.1308-SAM-DE`, `064.1308-SAM-DE-60110`) met ✓-icon in de `reseller.defibrion.nl`-kolom.
   - Orphans: WC-producten zoals PRESTAN-Instructor-Kit (`PP-INSTRKIT-VAR`), `PP-FMP-300M-VAR` + variations — clickable WC-id-links, status-mix draft/private.
   - Stores: `reseller.defibrion.nl | https://reseller.defibrion.nl | _afas_artikelnummer | 2577` items.
+
+---
+
+## Slice WC-5 — WooCommerce health-check (managed itemcodes ↔ verwachte WC-type)
+
+Eindbeeld: `audit:wc-health` toont per managed AFAS-itemcode in welke shop 'ie staat én of het correcte WC-type wordt gebruikt. Family-head → moet `variable` zijn; non-head bases + accessoire-variants → moeten `variation` zijn onder de juiste parent. Mismatches (b.v. `simple` waar `variation` verwacht) krijgen een gele waarschuwing; afwezigheid een rode. UI-tab "Health" op `/woocommerce` toont dezelfde data per shop-kolom. Zie PLAN.md §10.
+
+Aanleiding: na slice 53 stonden er nog 5 managed bases (`11144`, `11154`, `11162`, `11166`, `21012`) als `simple` in WC — terwijl onze tool ze als variation onder family-heads `11197`/`21019` verwacht. Geen audit-flow → ontdek je 't pas bij toeval. Health-check vult dat gat.
+
+### Sub-slice WC-5.0 — Handler + VO's
+- [x] `AuditWcHealth` + `WcHealthRow` (`afasItemcode`, `expectedType: 'variable'|'variation'`, `cellsByStore: array<int, WcHealthCell>`).
+- [x] `WcHealthCell` (`wcProductId: ?int`, `actualType: ?string`, `status: ?string`, `healthStatus: enum WcHealthStatus { Ok, WrongType, NotPublish, Missing }`).
+- [x] `WcHealthAuditHandler`: family-heads → variable, rest → variation. Pre-loads producten per store + groepeert op afas_itemcode voor O(1)-lookup. Bij meerdere hits prioriteert match op verwacht type (anders eerste hit).
+- [x] 6 handler-tests: head als variable+publish → Ok; matched variant als variation → Ok; non-head als simple → WrongType; missing → Missing; head als draft → NotPublish; store-filter respect.
+
+### Sub-slice WC-5.1 — `audit:wc-health` CLI
+- [x] `AuditWcHealthCommand` (`audit:wc-health [--store=<name>] [--missing] [--wrong-type] [--not-publish]`). Filter-flags OR-combineren.
+- [x] Cel-rendering: `✓ {id}`, `⚠ {actualType}:{id}`, `◐ {id} ({status})`, `✗`. Bij `--store=...` één kolom; default alle stores.
+- [x] Container/bin-wiring (audit-pad buiten creds-block).
+
+### Sub-slice WC-5.2 — UI-tab "Health" + JSON-endpoint
+- [x] `ListWcHealthController` op `GET /api/wc/health` met optionele `?store=<name>`. Response: `{ stores, rows: [{afasItemcode, expectedType, cells: [...]}] }`.
+- [x] AppFactory wiring; PHP-test in `ApiTest::exposesWooEndpoints` uitgebreid (asserties op de fixture-rij `11111` → wrong-type/simple).
+- [x] React: extra tab "Health" op `/woocommerce`. `<HealthCellChip>`-component met 4 status-renderingen (groen Ok, oranje wrong-type, oranje-outlined not-publish, grijze missing).
+- [x] Filter-chip-rij bovenaan (`all` / `wrong-type` / `not-publish` / `missing`) — default `wrong-type` zoals user-relevantie. Teller `X / Y itemcodes`.
+- [x] `web/src/api.ts` uitgebreid met `WcHealthStatus`/`WcHealthCellEntry`/`WcHealthRow`/`WcHealthResponse` + `listWcHealth` fetcher.
+- [x] Vitest "Health-tab toont wrong-type chip" toegevoegd. `make check` + vitest groen → 564 PHP-tests / 1489 assertions + 22 vitest + PHPStan 0 errors.
+
+### Sub-slice WC-5.3 — Live verificatie
+- [x] `wc:pull --store=reseller.defibrion.nl` ververst snapshot.
+- [x] `audit:wc-health --wrong-type` toonde **3 rijen** (plugin had de Lifepak CR2-vol cases al opgelost tussen pulls):
+  - `11043` (Defibtech Lifeline VIEW semi head) → variation #4871 (verwacht variable)
+  - `11043-91116` (variant) → simple #5495 (verwacht variation)
+  - `21019` (Mindray C1 vol head) → variation #979 (verwacht variable)
+- [x] UI: `/woocommerce` → tab "Health" toont 3 oranje chips in de reseller.defibrion.nl-kolom; teller `3 / 639 itemcodes`. Filter-chips wisselen werkt.

@@ -85,6 +85,44 @@ test('Orphans-tab toont WC-producten zonder match', async () => {
   expect(screen.getByText('geen meta')).toBeInTheDocument();
 });
 
+test('Health-tab toont wrong-type chip', async () => {
+  vi.unstubAllGlobals();
+  const healthResponse = {
+    stores: [{ id: 1, name: 'defibrion.nl' }],
+    rows: [
+      {
+        afasItemcode: '11111',
+        expectedType: 'variable',
+        cells: [
+          {
+            storeId: 1,
+            storeName: 'defibrion.nl',
+            wcProductId: 999,
+            actualType: 'simple',
+            status: 'publish',
+            healthStatus: 'wrong-type',
+          },
+        ],
+      },
+    ],
+  };
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => ({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      json: async () => (url === '/api/wc/health' ? healthResponse : null),
+    })),
+  );
+
+  renderWithProviders(<Woocommerce />);
+
+  fireEvent.click(screen.getByRole('tab', { name: 'Health' }));
+  await waitFor(() => expect(screen.getByText('simple #999')).toBeInTheDocument());
+  expect(screen.getByText('11111')).toBeInTheDocument();
+});
+
 test('Stores-tab toont snapshot-aantal per shop', async () => {
   renderWithProviders(<Woocommerce />);
 
