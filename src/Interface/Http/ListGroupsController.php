@@ -43,9 +43,12 @@ final readonly class ListGroupsController
                 }
                 if ($base->afasItemcode !== null) {
                     $samenstelling = $this->afasSamenstellingen->findByItemcode($base->afasItemcode);
+                    // Drift = parent leeg OF parent ≠ family-head (slice 53). Base zelf
+                    // wordt nooit als drift gerekend wanneer 'ie de family-head IS — die
+                    // beslissing zit in de head-eigen-check verderop.
                     if (
                         $samenstelling !== null
-                        && $samenstelling->itemcodeParent !== null
+                        && $base->afasItemcode !== $group->familyHeadItemcode
                         && $samenstelling->itemcodeParent !== $group->familyHeadItemcode
                     ) {
                         ++$parentMismatchCount;

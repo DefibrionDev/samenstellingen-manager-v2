@@ -17,7 +17,7 @@ final readonly class FixFamilyHeadParentHandler
 {
     public function __construct(
         private FamilyHeadParentAuditHandler $audit,
-        private FamilyHeadParentWriter $writer,
+        private ItemcodeParentWriter $writer,
     ) {
     }
 
@@ -43,7 +43,7 @@ final readonly class FixFamilyHeadParentHandler
             try {
                 $this->writer->write($plan->familyHead, $plan->expectedParent);
                 ++$applied;
-            } catch (FamilyHeadParentWriteFailedException $e) {
+            } catch (ItemcodeParentWriteFailedException $e) {
                 $failures[] = ['plan' => $plan, 'error' => $e->getMessage()];
             }
         }

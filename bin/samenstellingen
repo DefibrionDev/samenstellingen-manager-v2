@@ -59,11 +59,15 @@ use Defibrion\Samenstellingen\Interface\Cli\UnwhitelistPrijslijstCommand;
 use Defibrion\Samenstellingen\Application\Audit\MissingCbsAuditHandler;
 use Defibrion\Samenstellingen\Interface\Cli\AuditMissingCbsCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AuditNamesCommand;
+use Defibrion\Samenstellingen\Application\Audit\BaseParentAuditHandler;
 use Defibrion\Samenstellingen\Application\Audit\FamilyHeadParentAuditHandler;
+use Defibrion\Samenstellingen\Application\Fix\FixBaseParentHandler;
 use Defibrion\Samenstellingen\Application\Fix\FixFamilyHeadParentHandler;
-use Defibrion\Samenstellingen\Infrastructure\Fix\HttpFamilyHeadParentWriter;
+use Defibrion\Samenstellingen\Infrastructure\Fix\HttpItemcodeParentWriter;
+use Defibrion\Samenstellingen\Interface\Cli\AuditBaseParentCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AuditDuplicateBomsCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AuditFamilyHeadParentCommand;
+use Defibrion\Samenstellingen\Interface\Cli\FixBaseParentCommand;
 use Defibrion\Samenstellingen\Interface\Cli\FixFamilyHeadParentCommand;
 use Defibrion\Samenstellingen\Application\Fix\FixMissingVariantsHandler;
 use Defibrion\Samenstellingen\Application\Fix\FixMissingVariantsWithPricesHandler;
@@ -299,6 +303,8 @@ $application->addCommand(new AuditPricesCommand($priceAuditHandler));
 $application->addCommand(new AuditDuplicateBomsCommand(new DuplicateBomAuditHandler($afasSamenstellingenRepository)));
 $familyHeadParentAuditHandler = new FamilyHeadParentAuditHandler($groupRepository, $afasSamenstellingenRepository);
 $application->addCommand(new AuditFamilyHeadParentCommand($familyHeadParentAuditHandler));
+$baseParentAuditHandler = new BaseParentAuditHandler($groupRepository, $baseRepository, $afasSamenstellingenRepository);
+$application->addCommand(new AuditBaseParentCommand($baseParentAuditHandler));
 $application->addCommand(new AuditStickersCommand(new StickerAuditHandler($groupRepository, $baseRepository, $afasSamenstellingenRepository)));
 $application->addCommand(new WhitelistPrijslijstCommand($prijslijstWhitelistRepository));
 $application->addCommand(new UnwhitelistPrijslijstCommand($prijslijstWhitelistRepository));
@@ -351,9 +357,14 @@ if ($hasAfasCreds) {
     $fixNamesHandler = new FixNamesHandler($nameAuditHandler, $nameWriter);
     $application->addCommand(new FixNamesCommand($fixNamesHandler));
 
+    $itemcodeParentWriter = new HttpItemcodeParentWriter($afasClient);
     $application->addCommand(new FixFamilyHeadParentCommand(new FixFamilyHeadParentHandler(
         $familyHeadParentAuditHandler,
-        new HttpFamilyHeadParentWriter($afasClient),
+        $itemcodeParentWriter,
+    )));
+    $application->addCommand(new FixBaseParentCommand(new FixBaseParentHandler(
+        $baseParentAuditHandler,
+        $itemcodeParentWriter,
     )));
 
     $variantWriteContextLookup = new HttpVariantWriteContextLookup($afasClient);

@@ -1317,3 +1317,39 @@ Eerder werd dit gat alleen geïllustreerd door slice 48 (UI-banner als `base.Par
 - **Slice 52.1** — `family-head:fix-parent --apply` + writer + tests. Hergebruik `AfasHttpClient::updateConnector('FbComposition', ...)` met `Itemcode_Parent`-UUID (`U298663A9447D4B4D8A0BB3FBC14A2C0B`). Idempotente skip-regel: alleen PUT als veld leeg. In-memory writer-fake voor tests. Failure-CSV in `tmp/`.
 - **Slice 52.2** — UI-uitbreiding. `ShowGroupController` voegt veld `familyHeadParentInAfas: string|null` toe aan de response. `GroupDetail.tsx` Alert breidt uit met self-parent-regel. `ListGroupsController` teller bestaande `parentMismatchCount` neemt ook de family-head zelf mee als z'n `Itemcode_Parent ≠ familyHead`. Vitest + PHP-tests bijwerken.
 - **Slice 52.3** — Live verificatie. `audit:family-head-parent` toont initieel 9 drift-rijen. `--apply` flipt ze. Tweede run = leeg. UI banner/chip verdwijnt op de 9 betreffende groepen.
+
+---
+
+## 33. Non-head bases hebben Itemcode_Parent = family-head (slice 53 — concept)
+
+### Probleem
+
+Slice 52 fixt het zelf-parent-veld op family-heads. Maar **non-head bases** (taal-siblings + connectivity-bases binnen een groep) horen óók een `Itemcode_Parent` te hebben — namelijk naar de family-head van hun groep. In de huidige AFAS-data zijn er 11 non-head bases waarvan dat veld leeg staat:
+
+- `11142-EN` → moet wijzen naar `11142`
+- `11155`, `11156`, `11164` → moeten wijzen naar `11161`
+- `11187EN` → naar `11187`
+- `11144`, `11154`, `11162`, `11166` → naar `11197`
+- `21011` → naar `21018`
+- `21012` → naar `21019`
+
+Slice 48's banner detecteert dit gat niet: hij triggert alleen op `base.Itemcode_Parent ≠ familyHead` waarbij een lege parent door de `parent && …`-check valt. Slice 52 dekt alleen family-heads.
+
+### Aanpak
+
+Symmetrisch aan slice 52, maar voor non-head bases:
+
+**A. Audit + fix CLI**:
+- `audit:base-parent` (read-only): lijst van non-head bases waar `Itemcode_Parent` leeg is OF naar iets anders wijst dan z'n family-head. Output: `base | huidige_parent | verwacht | groep | taal`.
+- `base:fix-parent [--apply]`: voor elke non-head base waar veld leeg is, PUT FbComposition met `Itemcode_Parent = <family-head>`. **Skipt** rijen met afwijkende parent (never overwrite, zelfde regel als slice 52).
+
+**B. Slice 48-banner aanpassen**:
+- Bestaande "base.Parent ≠ family_head"-trigger uitbreiden naar `base.Parent ≠ family_head` **OF** `base.Parent === null`. Een lege parent toont nu in de banner als "(leeg)".
+- `parentMismatchCount` in `ListGroupsController` telt lege parents nu ook mee.
+
+### Slices
+
+- **Slice 53.0** — Audit-handler + CLI. `BaseParentAuditHandler` itereert per groep over non-head bases (`afas_itemcode !== family_head`), join op `afas_samenstellingen`. Drift-criterium: `currentParent !== familyHead` (incl. null). Sorteert per family-head + base. CLI `audit:base-parent`.
+- **Slice 53.1** — Fix-CLI + writer. Hergebruik `HttpFamilyHeadParentWriter` (zelfde UUID, zelfde connector) — hernoemen naar `BaseParentWriter` zou strakker zijn, of erop voortborduren via een neutrale `ItemcodeParentWriter`-interface. `BaseParentFixHandler` met skip-regel (leeg → plan, afwijkend → skip). CLI `base:fix-parent [--apply]`.
+- **Slice 53.2** — Slice 48-banner uitbreiden. `GroupDetail.tsx`-Alert: parent-mismatch-trigger pakt nu óók `parent === null`-cases mee; banner-tabel toont "(leeg)" voor null. `ListGroupsController.parentMismatchCount` telt null ook mee. Vitest + PHP-tests bijwerken.
+- **Slice 53.3** — Live verificatie. `audit:base-parent` → 11 drift-rijen. `--apply` → 11/11 ge-PUT. `afas:pull` + tweede run = leeg. `/groups/11161` toont nieuwe banner-data verdwenen.

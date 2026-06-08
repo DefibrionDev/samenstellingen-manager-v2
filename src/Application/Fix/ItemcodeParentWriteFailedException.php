@@ -7,7 +7,7 @@ namespace Defibrion\Samenstellingen\Application\Fix;
 use RuntimeException;
 use Throwable;
 
-final class FamilyHeadParentWriteFailedException extends RuntimeException
+final class ItemcodeParentWriteFailedException extends RuntimeException
 {
     public static function from(string $itemcode, Throwable $cause): self
     {

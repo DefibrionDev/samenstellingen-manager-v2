@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Defibrion\Samenstellingen\Tests\Application\Fix;
 
 use Defibrion\Samenstellingen\Application\Audit\FamilyHeadParentAuditHandler;
-use Defibrion\Samenstellingen\Application\Fix\FamilyHeadParentWriteFailedException;
-use Defibrion\Samenstellingen\Application\Fix\FamilyHeadParentWriter;
 use Defibrion\Samenstellingen\Application\Fix\FixFamilyHeadParent;
 use Defibrion\Samenstellingen\Application\Fix\FixFamilyHeadParentHandler;
+use Defibrion\Samenstellingen\Application\Fix\ItemcodeParentWriteFailedException;
+use Defibrion\Samenstellingen\Application\Fix\ItemcodeParentWriter;
 use Defibrion\Samenstellingen\Domain\Afas\AfasSamenstelling;
 use Defibrion\Samenstellingen\Domain\Group\Group;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryAfasSamenstellingenRepository;
@@ -22,7 +22,7 @@ final class FixFamilyHeadParentHandlerTest extends TestCase
     #[Test]
     public function dryRunListsPlansAndSkippedWithoutInvokingWriter(): void
     {
-        $writer = new RecordingFamilyHeadParentWriter();
+        $writer = new FamilyHeadRecordingItemcodeParentWriter();
         $handler = $this->makeHandler($writer, [
             new AfasSamenstelling('11148', 'Cardiac G5', null, []),     // leeg → plan
             new AfasSamenstelling('11197', 'Lifepak CR2 vol', null, []), // leeg → plan
@@ -40,7 +40,7 @@ final class FixFamilyHeadParentHandlerTest extends TestCase
     #[Test]
     public function applyInvokesWriterPerPlanOnly(): void
     {
-        $writer = new RecordingFamilyHeadParentWriter();
+        $writer = new FamilyHeadRecordingItemcodeParentWriter();
         $handler = $this->makeHandler($writer, [
             new AfasSamenstelling('11148', 'Cardiac G5', null, []),
             new AfasSamenstelling('21018', 'Mindray C1 semi', '21017', []),
@@ -57,7 +57,7 @@ final class FixFamilyHeadParentHandlerTest extends TestCase
     #[Test]
     public function applyReportsWriterFailures(): void
     {
-        $writer = new FailingFamilyHeadParentWriter('AFAS schreeuwt');
+        $writer = new FamilyHeadFailingItemcodeParentWriter('AFAS schreeuwt');
         $handler = $this->makeHandler($writer, [
             new AfasSamenstelling('11148', 'Cardiac G5', null, []),
         ]);
@@ -73,7 +73,7 @@ final class FixFamilyHeadParentHandlerTest extends TestCase
     #[Test]
     public function emptyAuditResultYieldsEmptyResult(): void
     {
-        $writer = new RecordingFamilyHeadParentWriter();
+        $writer = new FamilyHeadRecordingItemcodeParentWriter();
         $handler = $this->makeHandler($writer, [
             new AfasSamenstelling('11111', 'PAD 350P', '11111', []), // self ✓
         ]);
@@ -90,7 +90,7 @@ final class FixFamilyHeadParentHandlerTest extends TestCase
     /**
      * @param list<AfasSamenstelling> $snapshot
      */
-    private function makeHandler(FamilyHeadParentWriter $writer, array $snapshot): FixFamilyHeadParentHandler
+    private function makeHandler(ItemcodeParentWriter $writer, array $snapshot): FixFamilyHeadParentHandler
     {
         $groups = new InMemoryGroupRepository();
         foreach ($snapshot as $s) {
@@ -106,7 +106,7 @@ final class FixFamilyHeadParentHandlerTest extends TestCase
     }
 }
 
-final class RecordingFamilyHeadParentWriter implements FamilyHeadParentWriter
+final class FamilyHeadRecordingItemcodeParentWriter implements ItemcodeParentWriter
 {
     /** @var list<array{0: string, 1: string}> */
     public array $writes = [];
@@ -117,7 +117,7 @@ final class RecordingFamilyHeadParentWriter implements FamilyHeadParentWriter
     }
 }
 
-final readonly class FailingFamilyHeadParentWriter implements FamilyHeadParentWriter
+final readonly class FamilyHeadFailingItemcodeParentWriter implements ItemcodeParentWriter
 {
     public function __construct(private string $message)
     {
@@ -125,6 +125,6 @@ final readonly class FailingFamilyHeadParentWriter implements FamilyHeadParentWr
 
     public function write(string $itemcode, string $parent): void
     {
-        throw FamilyHeadParentWriteFailedException::from($itemcode, new RuntimeException($this->message));
+        throw ItemcodeParentWriteFailedException::from($itemcode, new RuntimeException($this->message));
     }
 }

@@ -130,6 +130,34 @@ final class ApiTest extends TestCase
     }
 
     #[Test]
+    public function listGroupsCountsBasesWithEmptyParentInAfas(): void
+    {
+        $pdo = TestDatabase::pdo();
+        $groups = new SqliteGroupRepository($pdo);
+        $bases = new SqliteGroupBaseRepository($pdo);
+
+        $groups->save(new Group('Lifepak CR2 semi', '11161'));
+        $bases->saveForGroup('11161', new GroupBase(null, 'NL', 'NL', '11161'));
+        // Non-head base met lege parent in AFAS → moet meetellen onder slice 53.
+        $bases->saveForGroup('11161', new GroupBase(null, 'WiFi', 'NL/EN', '11164'));
+
+        $samenstellingen = new \Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAfasSamenstellingenRepository($pdo);
+        $samenstellingen->replaceSnapshot([
+            new \Defibrion\Samenstellingen\Domain\Afas\AfasSamenstelling('11161', 'CR2 semi NL', '11161', []),
+            // 11164 mist parent → drift
+            new \Defibrion\Samenstellingen\Domain\Afas\AfasSamenstelling('11164', 'CR2 semi WiFi', null, []),
+        ]);
+
+        $response = $this->call('GET', '/api/groups');
+
+        $byFh = [];
+        foreach ($response['body'] as $g) {
+            $byFh[$g['familyHead']] = $g;
+        }
+        self::assertSame(1, $byFh['11161']['parentMismatchCount']);
+    }
+
+    #[Test]
     public function listGroupsCountsFamilyHeadSelfParentDriftToo(): void
     {
         $pdo = TestDatabase::pdo();

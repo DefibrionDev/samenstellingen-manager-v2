@@ -119,8 +119,11 @@ function BasesTab({
   familyHead: string;
   familyHeadParentInAfas: string | null;
 }) {
+  // Een base met `afasItemcodeParent === null` is ook drift — slice 53 detecteert
+  // dit naast de bestaande `!== familyHead`-case. Bases zonder AFAS-koppeling
+  // (`afasItemcode === null`) blijven buiten beeld.
   const parentMismatches = bases.filter(
-    (b) => b.afasItemcodeParent && b.afasItemcodeParent !== familyHead,
+    (b) => b.afasItemcode && b.afasItemcodeParent !== familyHead,
   );
   const headMissesSelfParent = familyHeadParentInAfas !== familyHead;
 
@@ -166,7 +169,11 @@ function BasesTab({
                       <code>{b.afasItemcode}</code>
                     </TableCell>
                     <TableCell>
-                      <code>{b.afasItemcodeParent}</code>
+                      {b.afasItemcodeParent === null ? (
+                        <em>(leeg)</em>
+                      ) : (
+                        <code>{b.afasItemcodeParent}</code>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}

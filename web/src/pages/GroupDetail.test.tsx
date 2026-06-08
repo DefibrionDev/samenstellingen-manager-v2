@@ -47,6 +47,7 @@ beforeEach(() => {
               name: 'AED pakket NL',
               languageCode: 'NL',
               afasItemcode: '11142',
+              afasItemcodeParent: '52112',
               variantLabel: null,
               publishedOn: ['Reseller NL'],
               items: [
@@ -59,6 +60,7 @@ beforeEach(() => {
               name: 'AED pakket DE 4G',
               languageCode: 'DE',
               afasItemcode: '21018-DE',
+              afasItemcodeParent: '52112',
               variantLabel: '4G',
               publishedOn: [],
               items: [{ itemcode: '50014', label: 'AED DE' }],
@@ -156,6 +158,58 @@ test('geen parent-mismatch banner als alle bases dezelfde parent hebben als fami
   renderAt('/groups/52112');
   await waitFor(() => expect(screen.getByText('AED pakket NL')).toBeInTheDocument());
   expect(screen.queryByText(/afwijkt van de family-head/i)).not.toBeInTheDocument();
+});
+
+test('toont base-parent mismatch banner met (leeg) voor null parent', async () => {
+  vi.unstubAllGlobals();
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url.includes('/prices')) {
+        return { ok: true, status: 200, statusText: 'OK', json: async () => [] };
+      }
+      return {
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        json: async () => ({
+          familyHead: '11161',
+          name: 'Lifepak CR2 semi',
+          modelNameNl: null,
+          modelNameFr: null,
+          modelNameEn: null,
+          familyHeadParentInAfas: '11161',
+          bases: [
+            {
+              id: 1,
+              name: 'NL base',
+              languageCode: 'NL',
+              afasItemcode: '11161',
+              afasItemcodeParent: '11161',
+              variantLabel: null,
+              publishedOn: [],
+              items: [],
+            },
+            {
+              id: 2,
+              name: 'WiFi NL/EN',
+              languageCode: 'NL/EN',
+              afasItemcode: '11164',
+              afasItemcodeParent: null,
+              variantLabel: null,
+              publishedOn: [],
+              items: [],
+            },
+          ],
+        }),
+      };
+    }),
+  );
+
+  renderAt('/groups/11161');
+
+  await waitFor(() => expect(screen.getByText(/1 base\(s\) hebben een AFAS-parent/i)).toBeInTheDocument());
+  expect(screen.getByText('(leeg)')).toBeInTheDocument();
 });
 
 test('toont head-self-parent waarschuwing als familyHeadParentInAfas leeg is', async () => {

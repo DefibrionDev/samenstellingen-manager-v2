@@ -1458,6 +1458,40 @@ Achtergrond: 17 van 26 family-heads volgen de prevailing convention `Itemcode_Pa
 
 ---
 
+## Slice 53 — Non-head bases hebben Itemcode_Parent = family-head
+
+Eindbeeld: `audit:base-parent` toont alle non-head bases waar AFAS' `Itemcode_Parent` leeg is of niet naar de family-head wijst; `base:fix-parent --apply` flipt de lege gevallen idempotent naar family-head (nooit overschrijven). Slice 48's UI-banner detecteert nu ook lege parents (niet alleen `parent ≠ familyHead`). Zie PLAN-AFAS.md §33.
+
+Achtergrond: na slice 52 zijn de 9 family-heads goed. Maar er zijn nog **11 non-head bases** met lege `Itemcode_Parent`: `11142-EN` → 11142; `11155`/`11156`/`11164` → 11161; `11187EN` → 11187; `11144`/`11154`/`11162`/`11166` → 11197; `21011` → 21018; `21012` → 21019.
+
+### Sub-slice 53.0 — Audit-handler + CLI
+- [x] `AuditBaseParent` (VO) + `BaseParentDriftRow` (`afasItemcode, currentParent: ?string, expectedParent = family-head, groupName, languageCode`).
+- [x] `BaseParentAuditHandler` itereert per groep over `group_bases` waar `afas_itemcode !== familyHead`, joint op `afas_samenstellingen`. Drift = `currentParent !== familyHead` (incl. null). Sorteert per familyHead → base. Skipt bases die niet in de snapshot voorkomen.
+- [x] `AuditBaseParentCommand` (`audit:base-parent`): tabel `base | huidige_parent | verwacht | groep | taal`. Lege resultset → success-notice.
+- [x] 4 handler-tests: leeg parent → drift, family-head wijst correct → géén drift voor head, afwijkend → drift, niet-in-snapshot → géén drift.
+- [x] Container/bin: command + handler buiten de creds-block.
+
+### Sub-slice 53.1 — Fix-CLI + writer (writer-rename naar ItemcodeParentWriter)
+- [x] Refactor: `FamilyHeadParentWriter` + `FamilyHeadParentWriteFailedException` + `HttpFamilyHeadParentWriter` hernoemd naar **`ItemcodeParentWriter`** / `ItemcodeParentWriteFailedException` / `HttpItemcodeParentWriter`. Bestaande `FixFamilyHeadParentHandler` blijft consumer (slice 52). Test-fixtures `Recording`/`FailingItemcodeParentWriter` gedisambiguateerd met `FamilyHead`-prefix om class-name-collision met slice-53-test te vermijden.
+- [x] `FixBaseParent` + `FixBaseParentResult` (VO's) + `FixBaseParentHandler`: skip-regel `currentParent === null || === ''` → plan; afwijkend → `skippedFilled` (never overwrite). Apply-mode invoceert `ItemcodeParentWriter` per plan + verzamelt failures.
+- [x] `FixBaseParentCommand` (`base:fix-parent [--apply]`): dry-run-tabel + skipped-banner; apply-output + failures-CSV in `sys_get_temp_dir()`.
+- [x] 4 handler-tests: dry-run plans+skipped+0-writer-calls, apply schrijft alleen plans, writer-failure verschijnt in `failures`, lege audit → lege resultset.
+- [x] Container/bin: command in de creds-block; deelt `HttpItemcodeParentWriter`-instance met slice-52's fix-command.
+
+### Sub-slice 53.2 — Slice 48-banner uitbreiden (parent === null ook detecteren)
+- [x] `GroupDetail.tsx`: `parentMismatches.filter` aanpast naar `b.afasItemcode && b.afasItemcodeParent !== familyHead`. Banner-cell rendert `<em>(leeg)</em>` wanneer `afasItemcodeParent === null`.
+- [x] `ListGroupsController`: `parentMismatchCount` telt nu ook null-parent. Conditie aangepast naar `base.afas_itemcode !== familyHead && samenstelling->itemcodeParent !== familyHead` (zonder de `&& parent !== null`-precondition).
+- [x] PHP-test `listGroupsCountsBasesWithEmptyParentInAfas` in `ApiTest` — base met `Itemcode_Parent=null` telt mee.
+- [x] Vitest "toont base-parent mismatch banner met (leeg) voor null parent". Bestaande fixtures uitgebreid met `afasItemcodeParent: <familyHead>` om geen vals positieven te triggeren.
+- [x] `make check` + vitest groen → 558 PHP-tests / 1439 assertions + 6 vitest in GroupDetail-suite + PHPStan 0 errors.
+
+### Sub-slice 53.3 — Live verificatie
+- [x] `audit:base-parent` toonde **11 drift-rijen** (11142-EN, 11144/11154/11162/11166, 11155/11156/11164, 11187EN, 21011, 21012), allemaal `(leeg)`.
+- [x] `base:fix-parent --apply` → 11/11 toegepast, 0 gefaald.
+- [x] `afas:pull` + tweede `audit:base-parent` = success-notice "Alle non-head bases wijzen naar hun family-head".
+
+---
+
 ## Slice 20 — Reconciliation in portal-CSV-import (vervang wipe)
 
 Eindbeeld: portal-CSV-import is idempotent. Bestaande groepen behouden hun `model_name` en `group_accessoires` over imports heen; alleen groepen die niet meer in de CSV staan worden opgeruimd. Geen `ToolDataWiper` meer in de import-flow.

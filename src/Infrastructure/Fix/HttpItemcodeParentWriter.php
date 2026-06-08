@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Defibrion\Samenstellingen\Infrastructure\Fix;
 
-use Defibrion\Samenstellingen\Application\Fix\FamilyHeadParentWriteFailedException;
-use Defibrion\Samenstellingen\Application\Fix\FamilyHeadParentWriter;
+use Defibrion\Samenstellingen\Application\Fix\ItemcodeParentWriteFailedException;
+use Defibrion\Samenstellingen\Application\Fix\ItemcodeParentWriter;
 use Defibrion\Samenstellingen\Infrastructure\Afas\Http\AfasHttpClient;
 use Throwable;
 
@@ -14,7 +14,7 @@ use Throwable;
  * U298663A9447D4B4D8A0BB3FBC14A2C0B — zelfde veld dat
  * `afas-connector-tools/bin/set-itemcode-parent.php` gebruikt).
  */
-final readonly class HttpFamilyHeadParentWriter implements FamilyHeadParentWriter
+final readonly class HttpItemcodeParentWriter implements ItemcodeParentWriter
 {
     private const string FIELD_UUID = 'U298663A9447D4B4D8A0BB3FBC14A2C0B';
 
@@ -36,7 +36,7 @@ final readonly class HttpFamilyHeadParentWriter implements FamilyHeadParentWrite
                 ],
             ]);
         } catch (Throwable $e) {
-            throw FamilyHeadParentWriteFailedException::from($itemcode, $e);
+            throw ItemcodeParentWriteFailedException::from($itemcode, $e);
         }
     }
 }
