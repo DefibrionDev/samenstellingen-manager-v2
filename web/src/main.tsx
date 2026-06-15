@@ -16,6 +16,7 @@ import { DuplicateBoms } from './pages/DuplicateBoms';
 import { PriceDrift } from './pages/PriceDrift';
 import { PrijslijstWhitelist } from './pages/PrijslijstWhitelist';
 import { StickerDrift } from './pages/StickerDrift';
+import { ProductTypeIssues } from './pages/ProductTypeIssues';
 import { SuspiciousBases } from './pages/SuspiciousBases';
 import { WebsiteSettings } from './pages/WebsiteSettings';
 import { Woocommerce } from './pages/Woocommerce';
@@ -43,6 +44,7 @@ const router = createBrowserRouter([
       { path: 'prijslijst-whitelist', element: <PrijslijstWhitelist /> },
       { path: 'duplicate-boms', element: <DuplicateBoms /> },
       { path: 'sticker-drift', element: <StickerDrift /> },
+      { path: 'product-type-issues', element: <ProductTypeIssues /> },
       { path: 'settings/websites', element: <WebsiteSettings /> },
       { path: 'woocommerce', element: <Woocommerce /> },
       { path: '*', element: <NotFound /> },

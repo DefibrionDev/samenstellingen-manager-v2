@@ -13,6 +13,8 @@ final readonly class AfasSamenstelling
     public ?string $itemcodeParent;
     public ?string $duplicateOfItemcode;
     public ?string $cbsCode;
+    public ?string $productType01;
+    public ?string $productType02;
 
     /** @var list<string> Gesorteerd, gededupliceerd. */
     public array $bomItemcodes;
@@ -27,6 +29,8 @@ final readonly class AfasSamenstelling
         array $bomItemcodes,
         ?string $duplicateOfItemcode = null,
         ?string $cbsCode = null,
+        ?string $productType01 = null,
+        ?string $productType02 = null,
     ) {
         $trimmedItemcode = trim($itemcode);
         if ($trimmedItemcode === '') {
@@ -57,6 +61,18 @@ final readonly class AfasSamenstelling
         $this->bomItemcodes = $normalisedKeys;
         $this->duplicateOfItemcode = ($trimmedDuplicateOf === null || $trimmedDuplicateOf === '') ? null : $trimmedDuplicateOf;
         $this->cbsCode = ($trimmedCbs === null || $trimmedCbs === '') ? null : $trimmedCbs;
+        $this->productType01 = self::normaliseOptional($productType01);
+        $this->productType02 = self::normaliseOptional($productType02);
+    }
+
+    private static function normaliseOptional(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+        $trimmed = trim($value);
+
+        return $trimmed === '' ? null : $trimmed;
     }
 
     public function isCanonical(): bool

@@ -8,6 +8,7 @@ use Defibrion\Samenstellingen\Application\Audit\DuplicateBomAuditHandler;
 use Defibrion\Samenstellingen\Application\Audit\ListMissingVariantsHandler;
 use Defibrion\Samenstellingen\Application\Audit\NameAuditHandler;
 use Defibrion\Samenstellingen\Application\Audit\PriceAuditHandler;
+use Defibrion\Samenstellingen\Application\Audit\ProductTypeAuditHandler;
 use Defibrion\Samenstellingen\Application\Audit\StickerAuditHandler;
 use Defibrion\Samenstellingen\Application\Audit\SuspiciousBaseAuditHandler;
 use Defibrion\Samenstellingen\Application\Woo\ListWooIndexHandler;
@@ -114,6 +115,14 @@ final class AppFactory
         $listDuplicateBoms = new ListDuplicateBomsController(
             new DuplicateBomAuditHandler($container->afasSamenstellingenRepository()),
         );
+        $listProductTypeIssues = new ListProductTypeIssuesController(
+            new ProductTypeAuditHandler(
+                $container->groupRepository(),
+                $container->baseRepository(),
+                $container->variantRepository(),
+                $container->afasSamenstellingenRepository(),
+            ),
+        );
         $listStickerDrift = new ListStickerDriftController(
             new StickerAuditHandler(
                 $container->groupRepository(),
@@ -154,6 +163,7 @@ final class AppFactory
         $app->get('/api/articles/{itemcode}/prices', $listArticlePrices);
         $app->get('/api/price-drift', $listPriceDrift);
         $app->get('/api/duplicate-boms', $listDuplicateBoms);
+        $app->get('/api/product-type-issues', $listProductTypeIssues);
         $app->get('/api/sticker-drift', $listStickerDrift);
         $app->get('/api/prijslijst-whitelist', $listPrijslijstWhitelist);
         $app->get('/api/websites', $listWebsites);

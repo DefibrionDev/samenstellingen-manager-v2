@@ -108,6 +108,20 @@ export interface MissingVariantRow {
   suggestedSku: string;
 }
 
+export type ProductTypeIssueType = 'base-leeg' | 'variant-fixbaar' | 'variant-geblokkeerd';
+
+export interface ProductTypeIssueRow {
+  afasItemcode: string;
+  issueType: ProductTypeIssueType;
+  baseItemcode: string;
+  current01: string | null;
+  current02: string | null;
+  expected01: string | null;
+  expected02: string | null;
+  groupName: string;
+  cliHint: string;
+}
+
 export const api = {
   listGroups: () => jsonGet<GroupSummary[]>('/api/groups'),
   showGroup: (familyHead: string) => jsonGet<GroupDetail>(`/api/groups/${encodeURIComponent(familyHead)}`),
@@ -126,6 +140,7 @@ export const api = {
   listPrijslijstWhitelist: () =>
     jsonGet<PrijslijstWhitelistEntry[]>('/api/prijslijst-whitelist'),
   listDuplicateBoms: () => jsonGet<DuplicateBomGroup[]>('/api/duplicate-boms'),
+  listProductTypeIssues: () => jsonGet<ProductTypeIssueRow[]>('/api/product-type-issues'),
   listStickerDrift: () => jsonGet<StickerDriftRow[]>('/api/sticker-drift'),
   listWebsites: () => jsonGet<Website[]>('/api/websites'),
   listWooStores: () => jsonGet<WooStore[]>('/api/wc/stores'),

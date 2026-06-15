@@ -31,6 +31,7 @@ use Defibrion\Samenstellingen\Domain\Afas\VariantMatcher;
 use Defibrion\Samenstellingen\Domain\Naming\VariantNamingPolicy;
 use Defibrion\Samenstellingen\Infrastructure\Afas\Http\AfasClientFactory;
 use Defibrion\Samenstellingen\Infrastructure\Afas\Http\HttpAfasArticlesFetcher;
+use Defibrion\Samenstellingen\Infrastructure\Afas\Http\HttpPowerBiItemFetcher;
 use Defibrion\Samenstellingen\Infrastructure\Afas\Http\HttpAfasPrijslijstenFetcher;
 use Defibrion\Samenstellingen\Infrastructure\Afas\Http\HttpAfasPrijzenFetcher;
 use Defibrion\Samenstellingen\Infrastructure\Afas\Http\HttpAfasSamenstellingenFetcher;
@@ -62,17 +63,23 @@ use Defibrion\Samenstellingen\Interface\Cli\AuditNamesCommand;
 use Defibrion\Samenstellingen\Application\Audit\BaseParentAuditHandler;
 use Defibrion\Samenstellingen\Application\Audit\FamilyHeadParentAuditHandler;
 use Defibrion\Samenstellingen\Application\Audit\VariantParentAuditHandler;
+use Defibrion\Samenstellingen\Application\Audit\ProductTypeAuditHandler;
 use Defibrion\Samenstellingen\Application\Fix\FixBaseParentHandler;
 use Defibrion\Samenstellingen\Application\Fix\FixFamilyHeadParentHandler;
 use Defibrion\Samenstellingen\Application\Fix\FixVariantParentHandler;
+use Defibrion\Samenstellingen\Application\Fix\FixVariantProductTypeHandler;
 use Defibrion\Samenstellingen\Infrastructure\Fix\HttpItemcodeParentWriter;
+use Defibrion\Samenstellingen\Infrastructure\Fix\HttpProductTypeWriter;
+use Defibrion\Samenstellingen\Infrastructure\Fix\FbCompositionEnumResolver;
 use Defibrion\Samenstellingen\Interface\Cli\AuditBaseParentCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AuditDuplicateBomsCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AuditFamilyHeadParentCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AuditVariantParentCommand;
+use Defibrion\Samenstellingen\Interface\Cli\AuditProductTypeCommand;
 use Defibrion\Samenstellingen\Interface\Cli\FixBaseParentCommand;
 use Defibrion\Samenstellingen\Interface\Cli\FixFamilyHeadParentCommand;
 use Defibrion\Samenstellingen\Interface\Cli\FixVariantParentCommand;
+use Defibrion\Samenstellingen\Interface\Cli\FixVariantProductTypeCommand;
 use Defibrion\Samenstellingen\Application\Fix\FixMissingVariantsHandler;
 use Defibrion\Samenstellingen\Application\Fix\FixMissingVariantsWithPricesHandler;
 use Defibrion\Samenstellingen\Application\Fix\FixNamesHandler;
@@ -323,6 +330,8 @@ $baseParentAuditHandler = new BaseParentAuditHandler($groupRepository, $baseRepo
 $application->addCommand(new AuditBaseParentCommand($baseParentAuditHandler));
 $variantParentAuditHandler = new VariantParentAuditHandler($groupRepository, $baseRepository, $variantRepository, $afasSamenstellingenRepository);
 $application->addCommand(new AuditVariantParentCommand($variantParentAuditHandler));
+$productTypeAuditHandler = new ProductTypeAuditHandler($groupRepository, $baseRepository, $variantRepository, $afasSamenstellingenRepository);
+$application->addCommand(new AuditProductTypeCommand($productTypeAuditHandler));
 $application->addCommand(new AuditStickersCommand(new StickerAuditHandler($groupRepository, $baseRepository, $afasSamenstellingenRepository)));
 $application->addCommand(new WhitelistPrijslijstCommand($prijslijstWhitelistRepository));
 $application->addCommand(new UnwhitelistPrijslijstCommand($prijslijstWhitelistRepository));
@@ -336,11 +345,13 @@ if ($hasAfasCreds) {
     $afasClient = AfasClientFactory::fromEnv();
     $fetcher = new HttpAfasSamenstellingenFetcher($afasClient);
     $articlesFetcher = new HttpAfasArticlesFetcher($afasClient);
+    $productTypeFetcher = new HttpPowerBiItemFetcher($afasClient);
     $prijzenFetcher = new HttpAfasPrijzenFetcher($afasClient, $prijslijstWhitelistRepository);
     $prijslijstenFetcher = new HttpAfasPrijslijstenFetcher($afasClient);
     $pullHandler = new PullAfasSamenstellingenHandler(
         $fetcher,
         $afasSamenstellingenRepository,
+        $productTypeFetcher,
         $articlesFetcher,
         $afasArticleRepository,
         $syncAllGroupsHandler,
@@ -387,6 +398,12 @@ if ($hasAfasCreds) {
     $application->addCommand(new FixVariantParentCommand(new FixVariantParentHandler(
         $variantParentAuditHandler,
         $itemcodeParentWriter,
+    )));
+
+    $productTypeWriter = new HttpProductTypeWriter($afasClient, new FbCompositionEnumResolver($afasClient));
+    $application->addCommand(new FixVariantProductTypeCommand(new FixVariantProductTypeHandler(
+        $productTypeAuditHandler,
+        $productTypeWriter,
     )));
 
     $variantWriteContextLookup = new HttpVariantWriteContextLookup($afasClient);

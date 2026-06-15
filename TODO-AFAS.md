@@ -1518,6 +1518,43 @@ Achtergrond: na slice 52 + 53 zijn 9 family-heads + 11 non-head bases goed. Maar
 
 ---
 
+## Slice 55 — Producttype-classificatie: pull, overerving, audit & fix
+
+Eindbeeld: `afas:pull` slaat `Product_type___01_/02_` (bv. "AED pakket" / "350P") uit `PowerBI_Item` op in de snapshot; `audit:product-type` waarschuwt voor elke samenstelling waar 01 óf 02 leeg is en de UI toont dat read-only met een CLI-aanwijzing; `producttype:fix-variants --apply` trekt alle accessoire-varianten gelijk aan hun base (leeg én afwijkend overschreven). Bases worden nooit geschreven — alleen gewaarschuwd ("vul in AFAS"). Zie PLAN-AFAS.md §35.
+
+Achtergrond: de lees- (PowerBI_Item → enum-resolve via FbComposition-metainfo) en schrijf-mechaniek (`FF_PRODUCT_TYPE`/`FF_SUBCATEGORIE` op variant-POST) bestaan al in `HttpVariantWriteContextLookup` / `FbCompositionVariantPayloadBuilder`. Nieuw: persistente kolommen, audit, UI-waarschuwing, gerichte variant-PUT voor bestaande varianten. Bevestigde keuzes: drift óók overschrijven; "leeg" = 01 óf 02 leeg; Merknaam buiten scope. Source-of-truth = base-variant (`accessoire_id IS NULL`), varianten erven via `base_id`.
+
+### Sub-slice 55.0 — Snapshot-kolommen + PowerBI_Item-pull
+- [x] Migratie `0025`: `product_type_01 TEXT NULL` + `product_type_02 TEXT NULL` op `afas_samenstellingen` (we slaan de description op, niet de enum-id).
+- [x] `PowerBiItemFetcher`-contract + `HttpPowerBiItemFetcher` (levert alleen items met ≥1 gevuld producttype) + `InMemoryPowerBiItemFetcher`-fake. DTO `ItemProductTypes`.
+- [x] `afas:pull` uitgebreid met PowerBI_Item-pass die `product_type_01/02` op bestaande `afas_samenstellingen`-rijen zet (join op `Itemcode`); niet-samenstelling-itemcodes genegeerd (repo-no-op). Repo-methode `updateProductTypes(list<ItemProductTypes>)` + velden op `AfasSamenstelling`.
+- [x] Integratietest (SQLite-repo) + handler-test (fake-fetcher) → `11111-60110` krijgt "AED pakket" / "350P"; onbekend itemcode overgeslagen. Live `afas:pull`: 1950/2059 gevuld, base + varianten van 11111 = "AED pakket"/"350P".
+
+### Sub-slice 55.1 — Audit-handler + CLI
+- [x] `ProductTypeIssueRow` (VO) + `ProductTypeIssueType` enum (BaseEmpty | VariantFixable | VariantBlocked): `afasItemcode`, `issueType`, `baseItemcode`, `current01/02`, `expected01/02`, `groupName`.
+- [x] `ProductTypeAuditHandler`: per groep → base → varianten. Base-01/02 canoniek. base met 01 óf 02 leeg → `base-leeg`; variant ≠ base & base gevuld → `variant-fixbaar`; variant ≠ base & base leeg → `variant-geblokkeerd`; variant == base → schoon. Base niet in snapshot → overgeslagen.
+- [x] `AuditProductTypeCommand` (`audit:product-type`): tabel `itemcode | issue | base | huidig 01/02 | verwacht 01/02 | groep` + telling-note; lege resultset → success.
+- [x] 5 handler-tests (base+variant gelijk→schoon, variant-leeg→fixbaar, variant-drift→fixbaar, base-leeg+variant→base-leeg+geblokkeerd, base+variant beide leeg→alleen base-leeg). Live: 46 issues (11 base-leeg, 20 fixbaar, 15 geblokkeerd).
+
+### Sub-slice 55.2 — UI-waarschuwing (read-only)
+- [x] `ListProductTypeIssuesController` (read-only JSON, `/api/product-type-issues`) die `ProductTypeAuditHandler` hergebruikt; per rij een `cliHint`. PHP API-test in `ApiTest`.
+- [x] Frontend-pagina `ProductTypeIssues` (DataGrid: itemcode, issue-chip, base, huidig/verwacht 01/02, groep, CLI-actie) + nav-link onder Audits + route. Géén mutatie-knop.
+- [x] AppFactory-wiring + 2 vitest-tests (rij-rendering met CLI-actie + success-state). `make check` groen (581 PHP, 26 vitest).
+
+### Sub-slice 55.3 — Writer + fix-CLI
+- [x] `FbCompositionEnumResolver` (description→enum-id via `metainfo/update/FbComposition`, pure `buildMaps` + lazy `resolve`) geëxtraheerd; `HttpVariantWriteContextLookup` hergebruikt 'm nu. 2 unit-tests.
+- [x] `ProductTypeWriter`-contract + `ProductTypeWriteFailedException` + `HttpProductTypeWriter`: PUT `FbComposition` met `ItCd` + `FF_PRODUCT_TYPE` + `FF_SUBCATEGORIE` = enum-id's uit de base-descriptions; onbekende description → fail (nooit leeg schrijven).
+- [x] `FixVariantProductType` + result + `FixVariantProductTypeHandler`: VariantFixable → plan (leeg én drift overschrijven); BaseEmpty/VariantBlocked → skipped; apply schrijft + verzamelt failures.
+- [x] `FixVariantProductTypeCommand` (`producttype:fix-variants [--apply]`): skipped-banner + dry-run-tabel `mutatie (01/02)`; apply-output + failures-CSV.
+- [x] 4 handler-tests (variant-leeg→plan+write, drift→overschrijven, base-leeg+geblokkeerd→skip zonder write, writer-throw→failure). Bin-wiring in creds-block. Live dry-run: 20 plannen.
+
+### Sub-slice 55.4 — Live verificatie
+- [x] `audit:product-type` toonde initieel 46 issues (11 base-leeg, 20 variant-fixbaar, 15 geblokkeerd).
+- [x] `producttype:fix-variants --apply` → **20/20 toegepast, 0 gefaald** (11111/11112/11113/11114-60212, 11121-11134-60212, 21012-*, 21012-UK-60212).
+- [x] `afas:pull` + her-audit = **26 issues, 0 variant-fixbaar** — alleen base-leeg (11153, 11187EN, 21019) + geblokkeerde varianten daaronder, die op handmatige AFAS-invoer wachten.
+
+---
+
 ## Slice 20 — Reconciliation in portal-CSV-import (vervang wipe)
 
 Eindbeeld: portal-CSV-import is idempotent. Bestaande groepen behouden hun `model_name` en `group_accessoires` over imports heen; alleen groepen die niet meer in de CSV staan worden opgeruimd. Geen `ToolDataWiper` meer in de import-flow.

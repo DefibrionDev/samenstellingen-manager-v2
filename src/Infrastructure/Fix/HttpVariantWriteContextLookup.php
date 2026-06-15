@@ -28,11 +28,11 @@ final class HttpVariantWriteContextLookup implements VariantWriteContextLookup
     /** @var array<string, string>|null */
     private ?array $typeIdCache = null;
 
-    /** @var array<string, array<string, string>>|null description→id per veld-UUID */
-    private ?array $enumLabelToId = null;
+    private readonly FbCompositionEnumResolver $enumResolver;
 
     public function __construct(private readonly AfasHttpClient $client)
     {
+        $this->enumResolver = new FbCompositionEnumResolver($client);
     }
 
     public function lookupReferenceFields(string $referenceItemcode): array
@@ -80,78 +80,23 @@ final class HttpVariantWriteContextLookup implements VariantWriteContextLookup
 
         // Tweede bron: PowerBI_Item voor de drie webshop-free-fields. AFAS levert
         // hier de description ("AED pakket"), maar de UpdateConnector eist de id
-        // ("08"). Resolve via metainfo van FbComposition (zie buildEnumMaps).
-        $enumMaps = $this->enumLabelToId ??= $this->buildEnumMaps();
-
+        // ("08"). Resolve via gedeelde FbComposition-enum-resolver.
         foreach ($this->client->getConnectorAll('PowerBI_Item') as $row) {
             $code = $row['Itemcode'] ?? null;
             if (!is_string($code) || !isset($cache[$code])) {
                 continue;
             }
-            $cache[$code]['productType'] = $this->resolveEnumId($row['Product_type___01_'] ?? null, $enumMaps[self::FIELD_PRODUCT_TYPE] ?? []);
-            $cache[$code]['subcategorie'] = $this->resolveEnumId($row['Product_type___02_'] ?? null, $enumMaps[self::FIELD_SUBCATEGORIE] ?? []);
-            $cache[$code]['merknaam'] = $this->resolveEnumId($row['Merknaam'] ?? null, $enumMaps[self::FIELD_MERKNAAM] ?? []);
+            $cache[$code]['productType'] = $this->enumResolver->resolve(self::FIELD_PRODUCT_TYPE, self::asString($row['Product_type___01_'] ?? null));
+            $cache[$code]['subcategorie'] = $this->enumResolver->resolve(self::FIELD_SUBCATEGORIE, self::asString($row['Product_type___02_'] ?? null));
+            $cache[$code]['merknaam'] = $this->enumResolver->resolve(self::FIELD_MERKNAAM, self::asString($row['Merknaam'] ?? null));
         }
 
         return $cache;
     }
 
-    /**
-     * @param array<string, string> $labelToId
-     */
-    private function resolveEnumId(mixed $rawDescription, array $labelToId): string
+    private static function asString(mixed $value): ?string
     {
-        if (!is_scalar($rawDescription)) {
-            return '';
-        }
-        $description = trim((string) $rawDescription);
-        if ($description === '') {
-            return '';
-        }
-
-        return $labelToId[$description] ?? '';
-    }
-
-    /**
-     * Pull metainfo van FbComposition en bouw description→id voor de drie
-     * relevante free-field UUIDs. Zo blijft de mapping in sync met de echte
-     * AFAS-enum (geen hardcoding).
-     *
-     * @return array<string, array<string, string>>
-     */
-    private function buildEnumMaps(): array
-    {
-        $maps = [
-            self::FIELD_PRODUCT_TYPE => [],
-            self::FIELD_SUBCATEGORIE => [],
-            self::FIELD_MERKNAAM => [],
-        ];
-
-        $payload = $this->client->getMetainfoUpdate('FbComposition');
-        $fields = $payload['fields'] ?? null;
-        if (!is_array($fields)) {
-            return $maps;
-        }
-
-        foreach ($fields as $field) {
-            $fieldId = $field['fieldId'] ?? null;
-            if (!is_string($fieldId) || !isset($maps[$fieldId])) {
-                continue;
-            }
-            $values = $field['values'] ?? null;
-            if (!is_array($values)) {
-                continue;
-            }
-            foreach ($values as $v) {
-                $id = $v['id'] ?? null;
-                $desc = $v['description'] ?? null;
-                if (is_scalar($id) && is_scalar($desc) && (string) $desc !== '') {
-                    $maps[$fieldId][(string) $desc] = (string) $id;
-                }
-            }
-        }
-
-        return $maps;
+        return is_scalar($value) ? (string) $value : null;
     }
 
     /**

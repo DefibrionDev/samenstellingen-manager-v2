@@ -1,4 +1,4 @@
-# Plan: samenstellingen-manager
+gec# Plan: samenstellingen-manager
 
 ## 1. Doel
 
@@ -1379,3 +1379,54 @@ Symmetrisch aan slice 53, maar voor matched-variants i.p.v. bases:
 - **Slice 54.0** — Audit-handler + CLI. `VariantParentAuditHandler` itereert `groups` → `bases` → `findMatchedAfasItemcodesForBase`, joint op `afas_samenstellingen`. Drift = `currentParent !== familyHead` (incl. null) **en** `afas_itemcode !== familyHead` (zodat de head zelf niet dubbel-getriggerd wordt, dat dekt slice 52). Output: `list<VariantParentDriftRow>` (afasItemcode, currentParent, expectedParent = familyHead, groupName). CLI `audit:variant-parent` met tabel-output.
 - **Slice 54.1** — Fix-CLI + handler. `FixVariantParent` + `FixVariantParentHandler` met dezelfde skip-regel (leeg → plan; afwijkend → skipped). CLI `variant:fix-parent [--apply]` met dry-run-tabel + apply-output + failures-CSV. 4 handler-tests.
 - **Slice 54.2** — Live verificatie. `audit:variant-parent` toont initieel **1 rij** (`11043-91116` → expected `11043`). `--apply` → 1/1 toegepast. `afas:pull` + tweede `audit:variant-parent` = leeg.
+
+## 35. Producttype-classificatie op samenstellingen: pull, overerving, audit & fix (slice 55 — concept)
+
+### Probleem
+
+AFAS kent op elk artikel twee webshop-classificatievelden — `Product_type___01_` (bv. "AED pakket") en `Product_type___02_` (bv. "350P"). Ze sturen categorisatie/filtering in de webshop. Twee gebreken:
+
+1. **Niet in de snapshot.** `afas:pull` haalt ze niet op — `Get_Artikelen` levert ze niet uit. Alleen `HttpVariantWriteContextLookup` leest ze nu lazy uit `PowerBI_Item` tijdens `variants:fix-missing`, puur efemeer. Er is dus geen lokaal beeld en geen audit mogelijk.
+2. **Drift tussen base en varianten.** De waarde hoort op de base-samenstelling (bv. `11111`) gevuld te zijn en identiek overgenomen op alle accessoire-varianten (`11111-60110…-60223`). In de praktijk staan varianten leeg of afwijkend — alleen bij generatie via `variants:fix-missing` worden ze meegekopieerd; handmatig/anders aangemaakte varianten missen ze.
+
+Geverifieerd op `11111-60110`: `PowerBI_Item.Product_type___01_` = "AED pakket", `Product_type___02_` = "350P".
+
+### Inzicht: lees- én schrijf-mechaniek bestaat al
+
+- **Lezen**: `HttpVariantWriteContextLookup::buildReferenceCache()` leest `PowerBI_Item.Product_type___01_/02_` en resolvet de description → AFAS enum-id via `metainfo/update/FbComposition` (UUID's `U5C3C0BC…` = type-01, `U79C8521E…` = type-02). Geen hardcoding.
+- **Schrijven**: `FbCompositionVariantPayloadBuilder` zet die enum-id's al op de variant-POST (`FF_PRODUCT_TYPE`, `FF_SUBCATEGORIE`). Voor *bestaande* varianten is er nog geen gerichte update, maar `HttpItemcodeParentWriter` levert het exacte patroon: PUT `FbComposition` met `ItCd` + één vrijeveld-UUID.
+
+Nieuw in deze slice is dus alleen: persistente kolommen, een audit, een UI-waarschuwing en een variant-fix-CLI. (NB: het codebase-label voor veld-02 is "subcategorie"; functioneel is dat `Product_type___02_`.)
+
+### Datamodel
+
+- **Bron van waarheid**: de base-samenstelling (`group_variants`-rij met `accessoire_id IS NULL`; `afas_samenstelling_itemcode` == `group_bases.afas_itemcode`). Elke base is per-taal (11111 NL, 11111-DE …); varianten erven van *hun eigen* base via `base_id`.
+- **Snapshot**: twee nieuwe kolommen op `afas_samenstellingen`: `product_type_01 TEXT NULL`, `product_type_02 TEXT NULL`. We slaan de **description** op ("AED pakket"/"350P") voor weergave; de writer reresolvet naar enum-id bij schrijven, net als nu.
+
+### Aanpak
+
+**A. Pull-uitbreiding (`afas:pull`)** — nieuwe pass die `PowerBI_Item` ophaalt en `product_type_01/02` op `afas_samenstellingen` zet, gejoind op `Itemcode`. Alleen voor itemcodes die al als samenstelling in de snapshot staan.
+
+**B. Audit (`audit:product-type`, read-only)** — itereert groepen → bases → varianten en classificeert per samenstelling:
+- **base-leeg** (`accessoire_id IS NULL` én 01 of 02 leeg): *niet auto-fixbaar* → "vul in AFAS".
+- **variant-leeg-of-drift** (variant ≠ base, base wél gevuld): *auto-fixbaar* via fix-CLI.
+- **variant geblokkeerd** (variant leeg/afwijkend maar base zelf leeg): kan niet erven → zelfde "vul base in AFAS"-waarschuwing.
+CLI-tabel + telling.
+
+**C. UI-waarschuwing** — `ListProductTypeIssuesController` (read-only, conform UI-conventie) voedt een lijst/banner. Per rij: itemcode, groep, type-issue, en — conform de strict-read-only-regel — de **CLI-aanwijzing** i.p.v. een knop (base-leeg → "vul in AFAS op `<itemcode>`"; variant-fixbaar → "draai `producttype:fix-variants --apply`").
+
+**D. Fix-CLI (`producttype:fix-variants [--apply]`)** — voor elke auto-fixbare variant: PUT `FbComposition` met `ItCd` + `FF_PRODUCT_TYPE` + `FF_SUBCATEGORIE` = enum-id's geresolved uit de **base**-descriptions. Nieuwe `HttpProductTypeWriter` (model: `HttpItemcodeParentWriter`); enum-resolve hergebruikt uit `HttpVariantWriteContextLookup`. Dry-run default, `--apply` schrijft, failures-CSV. Bases worden **nooit** geschreven (alleen gewaarschuwd).
+
+### Bevestigde keuzes
+
+1. **Drift óók overschrijven.** De fix-CLI trekt elke variant met `accessoire_id IS NOT NULL` waarvan 01/02 ≠ base gelijk aan de base — leeg én afwijkend. Bewuste afwijkingen op varianten zijn dus niet houdbaar; de base is altijd leidend.
+2. **"Leeg" = 01 óf 02 leeg.** Waarschuwing zodra één van de twee producttypes ontbreekt; beide moeten gevuld zijn.
+3. **Merknaam buiten scope.** Alleen `Product_type___01_/02_`. Merknaam (`UE10D…`) volgt eventueel later in een aparte slice met dezelfde mechaniek.
+
+### Slices
+
+- **Slice 55.0** — Snapshot-kolommen + pull. Migratie `product_type_01/02` op `afas_samenstellingen`; PowerBI_Item-pass in de afas-pull-pipeline; repo-write. Integratietest via in-memory/fake fetcher.
+- **Slice 55.1** — Audit-handler + `audit:product-type` CLI (classificatie base-leeg / variant-fixbaar / geblokkeerd). Unit-tests op de classificatie.
+- **Slice 55.2** — `ListProductTypeIssuesController` + UI-lijst/banner met CLI-aanwijzingen. Frontend-test.
+- **Slice 55.3** — `HttpProductTypeWriter` + `producttype:fix-variants [--apply]` + handler. Enum-resolve hergebruikt; dry-run/apply/failures-CSV. Handler-tests met fake-writer.
+- **Slice 55.4** — Live verificatie: `audit:product-type` toont initiële issues; `--apply` op een echte base+varianten; `afas:pull` + her-audit = schoon (op base-leeg-gevallen na, die wachten op AFAS-invoer).

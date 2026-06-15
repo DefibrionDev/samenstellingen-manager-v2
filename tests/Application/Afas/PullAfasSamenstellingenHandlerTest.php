@@ -15,6 +15,7 @@ use Defibrion\Samenstellingen\Domain\Afas\AfasPrijslijst;
 use Defibrion\Samenstellingen\Domain\Afas\AfasPrijslijstenFetcher;
 use Defibrion\Samenstellingen\Domain\Afas\AfasPrijzenFetcher;
 use Defibrion\Samenstellingen\Domain\Afas\AfasSamenstelling;
+use Defibrion\Samenstellingen\Domain\Afas\ItemProductTypes;
 use Defibrion\Samenstellingen\Domain\Afas\VariantMatcher;
 use Defibrion\Samenstellingen\Domain\Group\FamilyHeadShiftDetector;
 use Defibrion\Samenstellingen\Domain\Group\Group;
@@ -24,6 +25,7 @@ use Defibrion\Samenstellingen\Domain\Group\GroupBaseItemRepository;
 use Defibrion\Samenstellingen\Domain\Group\GroupVariant;
 use Defibrion\Samenstellingen\Domain\Group\GroupVariantRepository;
 use Defibrion\Samenstellingen\Infrastructure\Afas\InMemory\InMemoryAfasSamenstellingenFetcher;
+use Defibrion\Samenstellingen\Infrastructure\Afas\InMemory\InMemoryPowerBiItemFetcher;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryAfasArticleRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryAfasPrijslijstRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryAfasPrijsRepository;
@@ -62,6 +64,35 @@ final class PullAfasSamenstellingenHandlerTest extends TestCase
     }
 
     #[Test]
+    public function appliesProductTypesFromPowerBiOntoSnapshot(): void
+    {
+        $groups = new InMemoryGroupRepository();
+        $bases = new InMemoryGroupBaseRepository($groups);
+        $samenstellingenRepo = new InMemoryAfasSamenstellingenRepository();
+
+        $samenstellingenFetcher = (new InMemoryAfasSamenstellingenFetcher())->withSamenstellingen(
+            new AfasSamenstelling('11111-60110', 'AED Pakket met Rugtas', '11111', []),
+            new AfasSamenstelling('11111', 'AED Pakket', '11111', []),
+        );
+        $productTypeFetcher = (new InMemoryPowerBiItemFetcher())->withProductTypes(
+            new ItemProductTypes('11111-60110', 'AED pakket', '350P'),
+            new ItemProductTypes('99999-onbekend', 'X', 'Y'),
+        );
+
+        $handler = $this->buildHandler($groups, $bases, $samenstellingenFetcher, $samenstellingenRepo, $productTypeFetcher);
+        ($handler)(new PullAfasSamenstellingen());
+
+        $variant = $samenstellingenRepo->findByItemcode('11111-60110');
+        self::assertNotNull($variant);
+        self::assertSame('AED pakket', $variant->productType01);
+        self::assertSame('350P', $variant->productType02);
+
+        $base = $samenstellingenRepo->findByItemcode('11111');
+        self::assertNotNull($base);
+        self::assertNull($base->productType01);
+    }
+
+    #[Test]
     public function leavesBaseUntouchedWhenAfasNameUnchanged(): void
     {
         $groups = new InMemoryGroupRepository();
@@ -88,8 +119,11 @@ final class PullAfasSamenstellingenHandlerTest extends TestCase
         InMemoryGroupRepository $groups,
         InMemoryGroupBaseRepository $bases,
         InMemoryAfasSamenstellingenFetcher $samenstellingenFetcher,
+        ?InMemoryAfasSamenstellingenRepository $samenstellingenRepo = null,
+        ?InMemoryPowerBiItemFetcher $productTypeFetcher = null,
     ): PullAfasSamenstellingenHandler {
-        $samenstellingenRepo = new InMemoryAfasSamenstellingenRepository();
+        $samenstellingenRepo ??= new InMemoryAfasSamenstellingenRepository();
+        $productTypeFetcher ??= new InMemoryPowerBiItemFetcher();
 
         $variantRepo = new class () implements GroupVariantRepository {
             public function regenerateForGroup(string $familyHeadItemcode): void
@@ -138,6 +172,7 @@ final class PullAfasSamenstellingenHandlerTest extends TestCase
         return new PullAfasSamenstellingenHandler(
             $samenstellingenFetcher,
             $samenstellingenRepo,
+            $productTypeFetcher,
             new class () implements AfasArticlesFetcher {
                 /** @return list<AfasArticle> */
                 public function fetchAll(): array

@@ -39,6 +39,7 @@ const groups: NavGroup[] = [
       { to: '/suspicious-bases', label: 'Suspicious bases' },
       { to: '/duplicate-boms', label: 'Duplicate BOMs' },
       { to: '/sticker-drift', label: 'Sticker drift' },
+      { to: '/product-type-issues', label: 'Producttype-issues' },
     ],
   },
   {

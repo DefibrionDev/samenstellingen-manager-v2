@@ -25,6 +25,35 @@ final class InMemoryAfasSamenstellingenRepository implements AfasSamenstellingen
         $this->samenstellingen = $this->detector->annotate($samenstellingen);
     }
 
+    public function updateProductTypes(array $productTypes): void
+    {
+        $byItemcode = [];
+        foreach ($productTypes as $productType) {
+            $byItemcode[$productType->itemcode] = $productType;
+        }
+
+        $this->samenstellingen = array_map(
+            static function (AfasSamenstelling $s) use ($byItemcode): AfasSamenstelling {
+                $update = $byItemcode[$s->itemcode] ?? null;
+                if ($update === null) {
+                    return $s;
+                }
+
+                return new AfasSamenstelling(
+                    $s->itemcode,
+                    $s->name,
+                    $s->itemcodeParent,
+                    $s->bomItemcodes,
+                    $s->duplicateOfItemcode,
+                    $s->cbsCode,
+                    $update->productType01,
+                    $update->productType02,
+                );
+            },
+            $this->samenstellingen,
+        );
+    }
+
     public function findAll(): array
     {
         return $this->samenstellingen;

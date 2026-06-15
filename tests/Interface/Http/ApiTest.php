@@ -353,6 +353,53 @@ final class ApiTest extends TestCase
     }
 
     #[Test]
+    public function listsProductTypeIssuesWithCliHint(): void
+    {
+        $pdo = TestDatabase::pdo();
+        $groups = new SqliteGroupRepository($pdo);
+        $bases = new SqliteGroupBaseRepository($pdo);
+        $accessoires = new SqliteAccessoireRepository($pdo);
+        $links = new SqliteGroupAccessoireRepository($pdo);
+        $variants = new SqliteGroupVariantRepository($pdo);
+        $afasRepo = new \Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAfasSamenstellingenRepository($pdo);
+
+        $groups->save(new Group('Heartsine 350P', '11111'));
+        $base = $bases->saveForGroup('11111', new GroupBase(null, 'AED pakket NL', 'NL', '11111'));
+        self::assertNotNull($base->id);
+        $accessoires->save(new Accessoire('60110', 'EHBO-Rugzak'));
+        $links->link('11111', '60110');
+        $variants->regenerateForGroup('11111');
+        foreach ($variants->findAllForGroup('11111') as $variant) {
+            self::assertNotNull($variant->id);
+            if ($variant->accessoireItemcode === null) {
+                $variants->markMatched($variant->id, '11111');
+            } elseif ($variant->accessoireItemcode === '60110') {
+                $variants->markMatched($variant->id, '11111-60110');
+            }
+        }
+
+        $afasRepo->replaceSnapshot([
+            new \Defibrion\Samenstellingen\Domain\Afas\AfasSamenstelling('11111', 'AED Pakket', '11111', []),
+            new \Defibrion\Samenstellingen\Domain\Afas\AfasSamenstelling('11111-60110', 'AED Pakket + Rugtas', '11111', []),
+        ]);
+        // Base gevuld, variant leeg → variant-fixbaar.
+        $afasRepo->updateProductTypes([
+            new \Defibrion\Samenstellingen\Domain\Afas\ItemProductTypes('11111', 'AED pakket', '350P'),
+        ]);
+
+        $response = $this->call('GET', '/api/product-type-issues');
+
+        self::assertSame(200, $response['status']);
+        self::assertCount(1, $response['body']);
+        self::assertSame('11111-60110', $response['body'][0]['afasItemcode']);
+        self::assertSame('variant-fixbaar', $response['body'][0]['issueType']);
+        self::assertSame('11111', $response['body'][0]['baseItemcode']);
+        self::assertSame('AED pakket', $response['body'][0]['expected01']);
+        self::assertSame('350P', $response['body'][0]['expected02']);
+        self::assertStringContainsString('producttype:fix-variants', $response['body'][0]['cliHint']);
+    }
+
+    #[Test]
     public function listsSuspiciousBases(): void
     {
         $pdo = TestDatabase::pdo();

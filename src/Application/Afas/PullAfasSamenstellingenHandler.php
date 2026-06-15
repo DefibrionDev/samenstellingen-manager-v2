@@ -14,6 +14,7 @@ use Defibrion\Samenstellingen\Domain\Afas\AfasPrijsRepository;
 use Defibrion\Samenstellingen\Domain\Afas\AfasPrijzenFetcher;
 use Defibrion\Samenstellingen\Domain\Afas\AfasSamenstellingenFetcher;
 use Defibrion\Samenstellingen\Domain\Afas\AfasSamenstellingenRepository;
+use Defibrion\Samenstellingen\Domain\Afas\PowerBiItemFetcher;
 use Defibrion\Samenstellingen\Domain\Group\FamilyHeadShiftDetector;
 use Defibrion\Samenstellingen\Domain\Group\GroupBaseRepository;
 use Defibrion\Samenstellingen\Domain\Group\GroupRepository;
@@ -23,6 +24,7 @@ final readonly class PullAfasSamenstellingenHandler
     public function __construct(
         private AfasSamenstellingenFetcher $fetcher,
         private AfasSamenstellingenRepository $repository,
+        private PowerBiItemFetcher $productTypeFetcher,
         private AfasArticlesFetcher $articlesFetcher,
         private AfasArticleRepository $articleRepository,
         private SyncAllGroupsHandler $syncAllGroups,
@@ -59,6 +61,11 @@ final readonly class PullAfasSamenstellingenHandler
             static fn ($s): bool => !isset($blockedItemcodes[$s->itemcode]),
         ));
         $this->repository->replaceSnapshot($samenstellingen);
+
+        // Tweede pass: webshop-producttypes uit PowerBI_Item (Get_Artikelen
+        // levert ze niet). Itemcodes die geen samenstelling zijn worden door de
+        // repo genegeerd. Zie PLAN-AFAS.md §35.
+        $this->repository->updateProductTypes($this->productTypeFetcher->fetchProductTypes());
 
         // AFAS is leidend voor de naam. Trek elke rename door naar group_bases
         // zodat de UI niet bij oude namen blijft hangen. Zie PLAN.md §26.
