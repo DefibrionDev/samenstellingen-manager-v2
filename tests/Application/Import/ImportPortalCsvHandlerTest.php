@@ -306,9 +306,9 @@ final class ImportPortalCsvHandlerTest extends TestCase
     }
 
     #[Test]
-    public function rejectsEnglishBaseWithoutStickerset(): void
+    public function acceptsEnglishBaseWithoutStickerset(): void
     {
-        // EN moet sinds eind mei 2026 ook stickerset hebben (oude uitzondering vervallen).
+        // EN/UK mogen zonder stickerset: de internationale stickerset 81611 is out of stock.
         // UK is in onze tool een markt, geen taal — taal-code is EN.
         $bag = $this->emptyBag();
         $bag['accessoires']->save(new Accessoire('60110', 'EHBO-Rugzak'));
@@ -321,8 +321,27 @@ final class ImportPortalCsvHandlerTest extends TestCase
 
         $summary = $this->makeHandler($bag, $reader)(new ImportPortalCsv('/irrelevant.csv'));
 
-        self::assertCount(1, $summary->unresolved);
-        self::assertSame('11000', $summary->unresolved[0]['code']);
+        self::assertSame(1, $summary->basesCreated);
+        self::assertCount(0, $summary->unresolved);
+    }
+
+    #[Test]
+    public function acceptsInternationalBaseWithoutStickerset(): void
+    {
+        // Alle talen behalve NL/FR/DK/DE (de talen met eigen stickerset) mogen zonder 81xxx.
+        $bag = $this->emptyBag();
+        $bag['accessoires']->save(new Accessoire('60110', 'EHBO-Rugzak'));
+        $bag['afas']->replaceSnapshot([
+            new AfasSamenstelling('50500', 'Reanibex 100 Polish', null, ['50021', '70112']), // geen 81xxx
+        ]);
+        $reader = $this->reader([
+            new PortalCsvRow('50021', 'Reanibex', 'AED PL', '', 'PL'),
+        ]);
+
+        $summary = $this->makeHandler($bag, $reader)(new ImportPortalCsv('/irrelevant.csv'));
+
+        self::assertSame(1, $summary->basesCreated);
+        self::assertCount(0, $summary->unresolved);
     }
 
     #[Test]

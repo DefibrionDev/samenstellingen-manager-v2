@@ -1664,6 +1664,21 @@ Achtergrond: empirisch bevestigd dat 1 rij importeren 25 van 26 groepen wist (ca
 
 ---
 
+## Slice 57 — Import-base-poort: stickerset alleen vereist voor NL/FR/DK/DE
+
+Eindbeeld: `group:import-portal-csv` herkent internationale/Engelse bases zonder stickerset weer als geldige base; alleen NL/FR/DK/DE-bases moeten nog een `81xxx` hebben. `21011-UK` (en de internationale Reanibex/Zoll/FRx/HS1-varianten) resolven weer. Zie PLAN-AFAS.md §37.
+
+Achtergrond: slice 35 (eind mei 2026) draaide de slice-21-EN/UK-uitzondering terug → sticker-eis taal-onafhankelijk. Internationale stickerset `81611` is out of stock en uit de BOMs gehaald (slice 47-strip), waardoor de import-poort die bases niet meer herkent. Strikt scope: **alleen** de import-poort; `StickerPolicy`/`audit:stickers`/`restore:stickers`/BOM-blacklist blijven ongemoeid.
+
+### Sub-slice 57.0 — `sellableCandidatesFor` taal-bewust
+- [x] `rejectsEnglishBaseWithoutStickerset` omgedraaid naar `acceptsEnglishBaseWithoutStickerset` (EN-base zonder 81xxx resolvet, basesCreated=1).
+- [x] Nieuwe test `acceptsInternationalBaseWithoutStickerset` (PL zonder sticker resolvet).
+- [x] `sellableCandidatesFor` gebruikt nu `$language`: `81xxx` alleen verplicht als eerste taal-token ∈ {NL,FR,DK,DE} (inline set + comment naar `StickerPolicy`); `70112` altijd vereist.
+- [x] `stillRejectsNonEnglishBaseWithoutStickerset` (NL) + `compoundLanguageStillRequiresStickerset` (NL/EN) blijven groen; `audit:stickers`-tests ongemoeid. 19 import-tests groen.
+- [x] `make check` groen + live (op backup-kopie): ARKY-import → `21011-UK` resolvet, unresolved ~100 → 21.
+
+---
+
 ## Beslissingen
 
 - CLI-library: `symfony/console`.

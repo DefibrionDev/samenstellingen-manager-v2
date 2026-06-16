@@ -234,12 +234,22 @@ final readonly class ImportPortalCsvHandler
     {
         $bases = $this->lookup->findCanonicalBasesContaining($articleCode, $blockedBomCodes);
 
+        // Stickerset (81xxx) is alleen verplicht voor de talen met een eigen
+        // stickerset — NL/FR/DK/DE (spiegelt StickerPolicy::STICKER_FOR_LANGUAGE).
+        // EN/UK + internationaal mogen zonder: de internationale stickerset 81611
+        // is out of stock en uit die BOMs gehaald. Zie PLAN-AFAS.md §37.
+        $firstLanguage = strtoupper(explode('/', trim($language))[0]);
+        $stickerRequired = in_array($firstLanguage, ['NL', 'FR', 'DK', 'DE'], true);
+
         $candidates = array_values(array_filter(
             $bases,
-            static function (AfasSamenstelling $s): bool {
+            static function (AfasSamenstelling $s) use ($stickerRequired): bool {
                 $bom = $s->bomItemcodes;
                 if (!in_array('70112', $bom, true)) {
                     return false;
+                }
+                if (!$stickerRequired) {
+                    return true;
                 }
                 foreach ($bom as $code) {
                     if (str_starts_with($code, '81')) {

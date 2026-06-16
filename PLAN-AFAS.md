@@ -1450,3 +1450,30 @@ De wipe zit op één plek: alleen `ImportPortalCsvHandler`. De legacy `group:imp
 ### Slices
 
 - **Slice 56.0** — Test `removesGroupsThatNoLongerAppearInCsv` omdraaien naar `preservesGroupsThatNoLongerAppearInCsv` (groep buiten de CSV blijft bestaan na import). `reconcileOrphanGroups` + aanroep + `resolvedFamilyHeads`-loop verwijderen; comment + command-description bijwerken. Overige import-tests (idempotentie, resolutie, ambiguïteit) blijven groen. `make check` groen.
+
+## 37. Import-base-poort: stickerset alleen vereist voor NL/FR/DK/DE (slice 57 — concept)
+
+### Probleem
+
+De import-base-poort (`ImportPortalCsvHandler::sellableCandidatesFor`) eist dat een AFAS-samenstelling `70112` (reanimatiekit) **én** een `81xxx`-stickerset bevat om als verkoopbare base te tellen. Die eis is sinds eind mei 2026 (slice 35) **taal-onafhankelijk** — de slice-21-uitzondering voor EN/UK is teruggedraaid.
+
+Gevolg: internationale/Engelse bases zonder stickerset resolven niet. Concreet `21011-UK` (BOM = `20011-UK` + `70112`, géén 81xxx) wordt als "unresolved" gerapporteerd, terwijl het een geldige base is. De internationale stickerset `81611` is **out of stock** en daarom uit die BOMs gehaald (de strip-flow van slice 47); de import-poort herkent zo'n base vervolgens niet meer. Dit raakt een grote groep ARKY-AED's (internationale Reanibex/Zoll/FRx/HS1-varianten).
+
+### Aanpak (strikt: alleen de import-poort)
+
+`sellableCandidatesFor` taal-bewust maken via de al-doorgegeven (maar nu ongebruikte) `$language`-parameter:
+
+- `70112` blijft altijd vereist; accessoire/blacklist-disqualifiers blijven ongewijzigd.
+- `81xxx`-stickerset is **alleen verplicht als de eerste taal-token `NL`, `FR`, `DK` of `DE`** is — precies de talen met een eigen stickerset (`81111/81211/81411/81511`).
+- Voor alle overige talen (EN/UK + de internationale `81611`-groep): stickerset **optioneel** — base resolvet mét of zónder.
+- Compound (`NL/EN/FR`): eerste token telt (valt onder NL → sticker vereist), consistent met `StickerPolicy`.
+
+**Buiten scope — bewust niet aanraken:** `StickerPolicy`, `audit:stickers`/`StickerAuditHandler`, `restore:stickers`, de BOM-blacklist. De taal→sticker-mapping, de drift-audit en de strip/restore-flow blijven exact zoals ze zijn. De audit blijft dus melden dat een internationale base z'n `81611` mist (feitelijk waar: out of stock) — dat is gewenst als signaal.
+
+De taal-set {NL, FR, DK, DE} wordt in de import-handler inline gehouden (kleine, stabiele set) met een comment dat 'ie `StickerPolicy::STICKER_FOR_LANGUAGE` spiegelt; we voegen géén methode aan `StickerPolicy` toe, om de afspraak "rest van sticker-logica niet aanraken" letterlijk te respecteren.
+
+**Reden vastgelegd (zodat dit niet wéér omgekeerd wordt):** internationale stickerset out of stock; internationale/Engelse bases shippen legitiem zonder stickerset. Dit verbreedt bewust de oude slice-21-uitzondering (alleen EN/UK) naar "alles behalve NL/FR/DK/DE", en draait daarmee slice 35 terug — uitsluitend voor de import-poort.
+
+### Slices
+
+- **Slice 57.0** — `sellableCandidatesFor` taal-bewust: 81xxx alleen vereist voor eerste-token ∈ {NL,FR,DK,DE}. Bestaande test `rejectsEnglishBaseWithoutStickerset` omdraaien naar `acceptsEnglishBaseWithoutStickerset` (EN-base zonder sticker resolvet). `stillRejectsNonEnglishBaseWithoutStickerset` (NL) en `compoundLanguageStillRequiresStickerset` (NL/EN) blijven rood→groen ongewijzigd geldig. Nieuwe test: internationale taal (bv. `PL`) zonder sticker resolvet. `audit:stickers`-tests ongemoeid. `make check` groen + live: `group:import-portal-csv` van de ARKY-CSV laat de internationale bases (incl. `21011-UK`) resolven.
