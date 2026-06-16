@@ -61,21 +61,12 @@ final readonly class ImportPortalCsvHandler
         $rowsByGroep = $this->groupRows($command->csvPath, $summary);
         $this->prevalidateResolvable($rowsByGroep, $blockedBomCodes, $pinnedAfasCodes, $summary);
 
-        // Idempotent reconciliation — geen wipe meer.
-        // 1) Bouw target-set van family-heads die de CSV oplevert.
-        // 2) Verwijder groepen die NIET in de target-set staan (cascade ruimt op).
-        // 3) Per CSV-groep: insert als 'ie niet bestaat; bestaande blijft met haar
-        //    model_name + group_accessoires. Bases zijn ook insert-if-not-exists.
-        // 4) Regenereer variants per geraakte groep zodat de matrix klopt.
-        $resolvedFamilyHeads = [];
-        foreach ($rowsByGroep as $rows) {
-            $familyHead = $this->resolveFamilyHead($rows, $blockedBomCodes, $pinnedAfasCodes);
-            if ($familyHead !== null) {
-                $resolvedFamilyHeads[] = $familyHead;
-            }
-        }
-        $this->reconcileOrphanGroups($resolvedFamilyHeads);
-
+        // Puur additief/idempotent — de import wist nooit iets:
+        // - Per CSV-groep: insert als 'ie niet bestaat; bestaande blijft met haar
+        //   model_name + group_accessoires. Bases zijn insert-if-not-exists.
+        // - Regenereer variants per geraakte groep zodat de matrix klopt.
+        // Groepen die niet (meer) in de CSV staan blijven ongemoeid; verwijderen
+        // gaat altijd expliciet via `group:remove-base` / het verwijder-pad.
         foreach ($rowsByGroep as $groep => $rows) {
             $familyHead = $this->resolveFamilyHead($rows, $blockedBomCodes, $pinnedAfasCodes);
             if ($familyHead === null) {
@@ -103,22 +94,6 @@ final readonly class ImportPortalCsvHandler
         $summary->sync = ($this->syncAllGroups)(new SyncAllGroups());
 
         return $summary;
-    }
-
-    /**
-     * Verwijder groepen waarvan de family-head niet meer in de huidige CSV staat.
-     * Cascade ruimt bases/items/variants/group_accessoires van die groep op.
-     *
-     * @param list<string> $targetFamilyHeads
-     */
-    private function reconcileOrphanGroups(array $targetFamilyHeads): void
-    {
-        $target = array_fill_keys($targetFamilyHeads, true);
-        foreach ($this->groupRepository->findAll() as $group) {
-            if (!isset($target[$group->familyHeadItemcode])) {
-                $this->groupRepository->delete($group->familyHeadItemcode);
-            }
-        }
     }
 
     /**

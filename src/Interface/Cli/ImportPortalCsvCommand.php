@@ -16,7 +16,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(
     name: 'group:import-portal-csv',
-    description: 'Wis de tool-data en herimporteer groepen/bases/items uit de AED-portal CSV met AFAS-BOM auto-fill.',
+    description: 'Voeg groepen/bases/items toe of werk ze bij uit de AED-portal CSV met AFAS-BOM auto-fill (puur additief; wist niets).',
 )]
 final class ImportPortalCsvCommand extends Command
 {

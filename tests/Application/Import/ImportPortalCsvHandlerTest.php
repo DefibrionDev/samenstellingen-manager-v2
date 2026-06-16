@@ -277,7 +277,7 @@ final class ImportPortalCsvHandlerTest extends TestCase
     }
 
     #[Test]
-    public function removesGroupsThatNoLongerAppearInCsv(): void
+    public function preservesGroupsThatNoLongerAppearInCsv(): void
     {
         // Eerste import zet twee groepen op.
         $bag = $this->emptyBag();
@@ -299,10 +299,10 @@ final class ImportPortalCsvHandlerTest extends TestCase
         ]);
         $this->makeHandler($bag, $shrunkReader)(new ImportPortalCsv('/irrelevant.csv'));
 
-        // 'Andere groep' is weggevallen → opgeruimd.
-        self::assertCount(1, $bag['groups']->findAll());
+        // Import is puur additief: 'Andere groep' staat niet in de CSV maar blijft bestaan.
+        self::assertCount(2, $bag['groups']->findAll());
         self::assertNotNull($bag['groups']->findByFamilyHeadItemcode('11142'));
-        self::assertNull($bag['groups']->findByFamilyHeadItemcode('22222'));
+        self::assertNotNull($bag['groups']->findByFamilyHeadItemcode('22222'));
     }
 
     #[Test]

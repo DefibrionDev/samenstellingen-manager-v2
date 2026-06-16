@@ -1430,3 +1430,23 @@ CLI-tabel + telling.
 - **Slice 55.2** — `ListProductTypeIssuesController` + UI-lijst/banner met CLI-aanwijzingen. Frontend-test.
 - **Slice 55.3** — `HttpProductTypeWriter` + `producttype:fix-variants [--apply]` + handler. Enum-resolve hergebruikt; dry-run/apply/failures-CSV. Handler-tests met fake-writer.
 - **Slice 55.4** — Live verificatie: `audit:product-type` toont initiële issues; `--apply` op een echte base+varianten; `afas:pull` + her-audit = schoon (op base-leeg-gevallen na, die wachten op AFAS-invoer).
+
+## 36. Portal-CSV-import puur additief: orphan-delete verwijderen (slice 56 — concept)
+
+### Probleem
+
+`group:import-portal-csv` (`ImportPortalCsvHandler`) is bedoeld als toevoeg-/bijwerk-import, maar bevat nog steeds een **reconcile-wipe**: `reconcileOrphanGroups()` verwijdert élke groep waarvan de family-head niet in de geïmporteerde CSV staat (cascade ruimt bases, varianten en accessoire-links op). De inline-comment beweert "geen wipe meer", maar dat klopt niet.
+
+Empirisch bevestigd (16-06-2026, op een backup-restore-test): een CSV met **1 rij** importeren liet van 26 groepen er **1** over (bases 98→8, varianten 789→64) — alles behalve de family-head van die ene rij werd gewist. Voor incrementele imports (en zeker voor het ARKY-migratietraject, waar we ARKY-AED's willen toevoegen zonder de bestaande Defibrion-groepen te verliezen) is dit schadelijk en ongewenst.
+
+De wipe zit op één plek: alleen `ImportPortalCsvHandler`. De legacy `group:import-csv` (`ImportSamenstellingenCsvHandler`) is al puur additief; losse verwijder-commando's (`RemoveBaseHandler`, `DeleteAccessoireHandler`, etc.) blijven ongemoeid.
+
+### Aanpak (gekozen: optie 1 — orphan-delete volledig verwijderen)
+
+- `reconcileOrphanGroups()` + de aanroep + de `resolvedFamilyHeads`-verzamelloop die er enkel voor bestaat uit `ImportPortalCsvHandler` halen. Import wordt daarmee puur additief/idempotent (insert-if-not-exists voor groepen/bases/items; bestaande config blijft staan).
+- Stale comment en de command-`description` ("Wis de tool-data en herimporteer…") bijwerken naar de additieve realiteit.
+- Geen `--prune`-flag: de full-rebuild-mogelijkheid vervalt bewust; wie een groep weg wil, gebruikt het bestaande expliciete verwijder-pad.
+
+### Slices
+
+- **Slice 56.0** — Test `removesGroupsThatNoLongerAppearInCsv` omdraaien naar `preservesGroupsThatNoLongerAppearInCsv` (groep buiten de CSV blijft bestaan na import). `reconcileOrphanGroups` + aanroep + `resolvedFamilyHeads`-loop verwijderen; comment + command-description bijwerken. Overige import-tests (idempotentie, resolutie, ambiguïteit) blijven groen. `make check` groen.
