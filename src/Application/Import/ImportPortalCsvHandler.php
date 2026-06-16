@@ -124,7 +124,7 @@ final readonly class ImportPortalCsvHandler
     }
 
     /**
-     * @param array<string, list<array{code: string, item: string, language: string}>> $rowsByGroep
+     * @param array<string, list<array{code: string, item: string, language: string, connectivity: ?string}>> $rowsByGroep
      * @param list<string> $blockedBomCodes
      * @param list<string> $pinnedAfasCodes
      */
@@ -162,7 +162,7 @@ final readonly class ImportPortalCsvHandler
     }
 
     /**
-     * @return array<string, list<array{code: string, item: string, language: string}>>
+     * @return array<string, list<array{code: string, item: string, language: string, connectivity: ?string}>>
      */
     private function groupRows(string $csvPath, PortalImportSummary $summary): array
     {
@@ -187,6 +187,7 @@ final readonly class ImportPortalCsvHandler
                 'code' => $row->code,
                 'item' => $row->item,
                 'language' => $language,
+                'connectivity' => $row->connectivityLabel(),
             ];
         }
 
@@ -194,11 +195,11 @@ final readonly class ImportPortalCsvHandler
     }
 
     /**
-     * @param list<array{code: string, item: string, language: string}> $rows
+     * @param list<array{code: string, item: string, language: string, connectivity: ?string}> $rows
      * @param list<string> $blockedBomCodes
      */
     /**
-     * @param list<array{code: string, item: string, language: string}> $rows
+     * @param list<array{code: string, item: string, language: string, connectivity: ?string}> $rows
      * @param list<string> $blockedBomCodes
      * @param list<string> $pinnedAfasCodes
      */
@@ -278,11 +279,11 @@ final readonly class ImportPortalCsvHandler
     }
 
     /**
-     * @param array{code: string, item: string, language: string} $row
+     * @param array{code: string, item: string, language: string, connectivity: ?string} $row
      * @param list<string> $blockedBomCodes
      */
     /**
-     * @param array{code: string, item: string, language: string} $row
+     * @param array{code: string, item: string, language: string, connectivity: ?string} $row
      * @param list<string> $blockedBomCodes
      * @param list<string> $pinnedAfasCodes
      */
@@ -321,6 +322,16 @@ final readonly class ImportPortalCsvHandler
 
             if ($persisted?->id === null) {
                 continue;
+            }
+
+            // Optionele connectiviteit (slice 58): zet `variant_label` op een
+            // nieuwe base of een bestaande met leeg label. Een bestaand niet-leeg
+            // label wordt nooit overschreven (import wist/overschrijft niets).
+            $connectivity = $row['connectivity'] ?? null;
+            if ($connectivity !== null
+                && ($persisted->variantLabel === null || $persisted->variantLabel === '')
+                && $samenstelling->itemcode !== '') {
+                $this->baseRepository->setVariantLabelByAfasItemcode($samenstelling->itemcode, $connectivity);
             }
 
             foreach ($samenstelling->bomItemcodes as $itemcode) {

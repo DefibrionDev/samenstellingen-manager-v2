@@ -12,6 +12,7 @@ final readonly class PortalCsvRow
         public string $item,
         public string $merknaam,
         public string $taal = '',
+        public string $connectivity = '',
     ) {
     }
 
@@ -23,6 +24,13 @@ final readonly class PortalCsvRow
     public function languageCode(): ?string
     {
         $trimmed = trim($this->taal);
+
+        return $trimmed === '' ? null : $trimmed;
+    }
+
+    public function connectivityLabel(): ?string
+    {
+        $trimmed = trim($this->connectivity);
 
         return $trimmed === '' ? null : $trimmed;
     }

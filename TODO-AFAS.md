@@ -1679,6 +1679,20 @@ Achtergrond: slice 35 (eind mei 2026) draaide de slice-21-EN/UK-uitzondering ter
 
 ---
 
+## Slice 58 — Portal-CSV-import: optionele Connectiviteit-kolom → variant_label
+
+Eindbeeld: `group:import-portal-csv` accepteert een optionele kolom `Connectiviteit` en zet die als `variant_label` op de base. Kolom afwezig/leeg → geen label (backwards-compatibel). Zie PLAN-AFAS.md §38.
+
+Achtergrond: connectiviteit (WiFi/4G/SIGFOX/USB) leeft als `variant_label` (slice 38) en moet nu apart via `base:set-variant-label`. Update-regel: nieuw aangemaakte base krijgt het label; bestaande base met leeg label wordt gevuld; bestaand niet-leeg label nooit overschreven (consistent met slice 56). Strikt scope: `base:set-variant-label` blijft ongemoeid.
+
+### Sub-slice 58.0 — Connectiviteit-kolom lezen + toepassen
+- [x] `FilePortalCsvReader` leest optionele kolom `Connectiviteit` (aliassen `Connect`/`Connectivity`); `PortalCsvRow.connectivity` + `connectivityLabel()`. 3 reader-tests (+ fgetcsv-deprecatie gefixt: expliciete `escape: ''`).
+- [x] `ImportPortalCsvHandler` neemt connectiviteit mee in de per-rij-data en zet `variant_label` via `setVariantLabelByAfasItemcode` op nieuwe base + bestaande met leeg label; niet-leeg label ongemoeid.
+- [x] 4 handler-tests: nieuw mét label, bestaand-leeg → gevuld, bestaand-niet-leeg → ongemoeid, geen kolom → leeg label.
+- [x] `make check` groen. Live (op wegwerp-kopie): `Connectiviteit`-kolom zet `variant_label` op 52112; echte DB ongemoeid.
+
+---
+
 ## Beslissingen
 
 - CLI-library: `symfony/console`.

@@ -31,7 +31,7 @@ final readonly class FilePortalCsvReader implements PortalCsvReader
         }
 
         try {
-            $header = fgetcsv($handle);
+            $header = fgetcsv($handle, escape: '');
             if (!is_array($header)) {
                 return;
             }
@@ -48,6 +48,8 @@ final readonly class FilePortalCsvReader implements PortalCsvReader
             $merkIdx = $colIndex['Merknaam'] ?? null;
             // Taal-kolom: accepteer 'Taal', 'NL' of 'Language' als header.
             $taalIdx = $colIndex['Taal'] ?? $colIndex['NL'] ?? $colIndex['Language'] ?? null;
+            // Optionele connectiviteit-kolom: 'Connectiviteit', 'Connect' of 'Connectivity'.
+            $connectIdx = $colIndex['Connectiviteit'] ?? $colIndex['Connect'] ?? $colIndex['Connectivity'] ?? null;
 
             if ($codeIdx === null || $groepIdx === null || $itemIdx === null) {
                 throw new RuntimeException(
@@ -55,16 +57,17 @@ final readonly class FilePortalCsvReader implements PortalCsvReader
                 );
             }
 
-            while (($row = fgetcsv($handle)) !== false) {
+            while (($row = fgetcsv($handle, escape: '')) !== false) {
                 $code = self::cell($row, $codeIdx);
                 $groep = self::cell($row, $groepIdx);
                 $item = self::cell($row, $itemIdx);
                 $merknaam = $merkIdx !== null ? self::cell($row, $merkIdx) : '';
                 $taal = $taalIdx !== null ? self::cell($row, $taalIdx) : '';
+                $connectivity = $connectIdx !== null ? self::cell($row, $connectIdx) : '';
                 if ($code === '') {
                     continue;
                 }
-                yield new PortalCsvRow($code, $groep, $item, $merknaam, $taal);
+                yield new PortalCsvRow($code, $groep, $item, $merknaam, $taal, $connectivity);
             }
         } finally {
             fclose($handle);

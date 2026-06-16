@@ -1477,3 +1477,25 @@ De taal-set {NL, FR, DK, DE} wordt in de import-handler inline gehouden (kleine,
 ### Slices
 
 - **Slice 57.0** — `sellableCandidatesFor` taal-bewust: 81xxx alleen vereist voor eerste-token ∈ {NL,FR,DK,DE}. Bestaande test `rejectsEnglishBaseWithoutStickerset` omdraaien naar `acceptsEnglishBaseWithoutStickerset` (EN-base zonder sticker resolvet). `stillRejectsNonEnglishBaseWithoutStickerset` (NL) en `compoundLanguageStillRequiresStickerset` (NL/EN) blijven rood→groen ongewijzigd geldig. Nieuwe test: internationale taal (bv. `PL`) zonder sticker resolvet. `audit:stickers`-tests ongemoeid. `make check` groen + live: `group:import-portal-csv` van de ARKY-CSV laat de internationale bases (incl. `21011-UK`) resolven.
+
+## 38. Portal-CSV-import: optionele Connectiviteit-kolom → variant_label (slice 58 — concept)
+
+### Probleem
+
+De portal-CSV-import leest `Code, Groep, Item, Merknaam, Taal` en zet bij het aanmaken van een base géén connectiviteit. "Connectiviteit" leeft in het model als `variant_label` op een base (slice 38: WiFi/4G/SIGFOX/USB/GPS+WiFi+SIGFOX) en moet nu apart via `base:set-variant-label` gezet worden. Voor het ARKY-traject (items met WIFI/SIGFOX/4G in hun naam) is het handig dat de import dat label meteen kan zetten.
+
+### Aanpak
+
+Optionele kolom `Connectiviteit` toevoegen aan de portal-CSV; ontbreekt 'ie of is de cel leeg → geen label (volledig backwards-compatibel met bestaande CSV's).
+
+- `FilePortalCsvReader`: optionele kolom-header `Connectiviteit` (aliassen `Connect`/`Connectivity`), net zoals `Taal` meerdere headers accepteert.
+- `PortalCsvRow`: veld `connectivity` (default `''`) + `connectivityLabel(): ?string` (trim, leeg → null).
+- `ImportPortalCsvHandler`: connectiviteit meenemen in de per-rij-data en bij base-verwerking als `variant_label` toepassen.
+
+**Update-regel voor bestaande bases (gekozen):** alleen zetten op een **nieuw aangemaakte** base (via `GroupBase`-constructor, 5e param `variantLabel`), én een **leeg** label vullen op een bestaande base (via `setVariantLabelByAfasItemcode`). Een bestaand **niet-leeg** label wordt nooit overschreven — consistent met "import wist/overschrijft niets" (slice 56). Hergebruikt de bestaande repo-methode; geen wijziging aan `base:set-variant-label`.
+
+Geen normalisatie/validatie van de waarde: de string uit de CSV wordt 1-op-1 het label (zoals `base:set-variant-label` ook doet).
+
+### Slices
+
+- **Slice 58.0** — `Connectiviteit`-kolom lezen + toepassen. Reader-uitbreiding + `PortalCsvRow.connectivity`. Handler zet `variant_label` op nieuwe base (constructor) en vult leeg label op bestaande base; niet-leeg label ongemoeid; lege/afwezige kolom → geen label. 4 handler-tests (nieuw mét label, bestaand-leeg → gevuld, bestaand-niet-leeg → ongemoeid, geen kolom → backwards-compatible) + reader-test. `make check` groen.

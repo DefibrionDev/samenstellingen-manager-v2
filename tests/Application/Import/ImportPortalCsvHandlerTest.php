@@ -434,6 +434,81 @@ final class ImportPortalCsvHandlerTest extends TestCase
         self::assertSame(1, $summary->basesCreated);
     }
 
+    #[Test]
+    public function setsVariantLabelOnNewBaseFromConnectivity(): void
+    {
+        $bag = $this->emptyBag();
+        $bag['accessoires']->save(new Accessoire('60110', 'EHBO-Rugzak'));
+        $bag['afas']->replaceSnapshot([
+            new AfasSamenstelling('11142', 'AED pakket NL', null, ['50013', '70112', '81111']),
+        ]);
+        $reader = $this->reader([
+            new PortalCsvRow('50013', 'Reanibex', 'AED NL', '', 'NL', '4G'),
+        ]);
+
+        $this->makeHandler($bag, $reader)(new ImportPortalCsv('/irrelevant.csv'));
+
+        $bases = $bag['bases']->findAllForGroup('11142');
+        self::assertCount(1, $bases);
+        self::assertSame('4G', $bases[0]->variantLabel);
+    }
+
+    #[Test]
+    public function fillsEmptyVariantLabelOnExistingBase(): void
+    {
+        $bag = $this->emptyBag();
+        $bag['accessoires']->save(new Accessoire('60110', 'EHBO-Rugzak'));
+        $bag['afas']->replaceSnapshot([
+            new AfasSamenstelling('11142', 'AED pakket NL', null, ['50013', '70112', '81111']),
+        ]);
+        // Eerste import zonder connectiviteit → base met leeg label.
+        $this->makeHandler($bag, $this->reader([
+            new PortalCsvRow('50013', 'Reanibex', 'AED NL', '', 'NL'),
+        ]))(new ImportPortalCsv('/irrelevant.csv'));
+        self::assertNull($bag['bases']->findAllForGroup('11142')[0]->variantLabel);
+
+        // Tweede import mét connectiviteit → leeg label gevuld.
+        $this->makeHandler($bag, $this->reader([
+            new PortalCsvRow('50013', 'Reanibex', 'AED NL', '', 'NL', 'WiFi'),
+        ]))(new ImportPortalCsv('/irrelevant.csv'));
+        self::assertSame('WiFi', $bag['bases']->findAllForGroup('11142')[0]->variantLabel);
+    }
+
+    #[Test]
+    public function doesNotOverwriteNonEmptyVariantLabel(): void
+    {
+        $bag = $this->emptyBag();
+        $bag['accessoires']->save(new Accessoire('60110', 'EHBO-Rugzak'));
+        $bag['afas']->replaceSnapshot([
+            new AfasSamenstelling('11142', 'AED pakket NL', null, ['50013', '70112', '81111']),
+        ]);
+        $this->makeHandler($bag, $this->reader([
+            new PortalCsvRow('50013', 'Reanibex', 'AED NL', '', 'NL', 'WiFi'),
+        ]))(new ImportPortalCsv('/irrelevant.csv'));
+
+        // Tweede import met afwijkende connectiviteit mag het bestaande label niet overschrijven.
+        $this->makeHandler($bag, $this->reader([
+            new PortalCsvRow('50013', 'Reanibex', 'AED NL', '', 'NL', '4G'),
+        ]))(new ImportPortalCsv('/irrelevant.csv'));
+
+        self::assertSame('WiFi', $bag['bases']->findAllForGroup('11142')[0]->variantLabel);
+    }
+
+    #[Test]
+    public function leavesVariantLabelEmptyWhenNoConnectivity(): void
+    {
+        $bag = $this->emptyBag();
+        $bag['accessoires']->save(new Accessoire('60110', 'EHBO-Rugzak'));
+        $bag['afas']->replaceSnapshot([
+            new AfasSamenstelling('11142', 'AED pakket NL', null, ['50013', '70112', '81111']),
+        ]);
+        $this->makeHandler($bag, $this->reader([
+            new PortalCsvRow('50013', 'Reanibex', 'AED NL', '', 'NL'),
+        ]))(new ImportPortalCsv('/irrelevant.csv'));
+
+        self::assertNull($bag['bases']->findAllForGroup('11142')[0]->variantLabel);
+    }
+
     /**
      * @param array<string, mixed> $bag
      */
