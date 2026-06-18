@@ -18,3 +18,6 @@
 .phpunit.cache/
 .php-cs-fixer.cache
 output.txt
+
+# migratie-mapping is wél onderdeel van de tooling
+!migration/*.csv
