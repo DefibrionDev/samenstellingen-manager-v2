@@ -24,8 +24,13 @@ B="${ARKY_STORE_URL:-https://arkycase.defibrion.dev}/wp-json/wc/v3"
 CK="${ARKY_CK:?zet ARKY_CK}"; CS="${ARKY_CS:?zet ARKY_CS}"
 UA='Mozilla/5.0'
 
-# Permanent verwijderen (force=true) — simple-producten en variable-parents:
-for id in 4726 4887 3080 2830 1895 1542 1287 1218 1300 1826 1407 3444; do
+# Permanent verwijderen (force=true) — simple-producten en variable-parents.
+# (Een variable-parent neemt z'n child-variations mee.)
+# Laatste blok = PRESTAN-artikelen die niet in Josca's publicatielijst staan.
+for id in 4726 4887 3080 2830 1895 1542 1287 1218 1300 1826 1407 3444 \
+          3679 3680 3681 3682 3687 3688 3689 3690 3691 3695 3696 3697 3698 \
+          3758 3759 3760 3761 3826 3850 3922 3953 3966 3970 3973 3989 4021 \
+          4024 4030 4037 4045 4052 4056 4060 4070 4073 4076; do
   curl -s -o /dev/null -w "delete product $id -> %{http_code}\n" \
     -u "$CK:$CS" -A "$UA" -X DELETE "$B/products/$id?force=true"
 done
@@ -34,7 +39,8 @@ done
 for pv in 2829/3005 2829/5626 2829/5627 2829/3007 \
           3762/3786 3762/3810 3874/3898 3949/3946 3957/3960 3949/3976 3949/3979 \
           3957/3983 3957/3986 3992/3995 3999/4002 4005/4008 4012/4015 4027/4033 \
-          4027/4041 4064/4067; do
+          4027/4041 4064/4067 \
+          3762/3780 3874/3892 4018/4020 4049/4051; do
   curl -s -o /dev/null -w "delete variation $pv -> %{http_code}\n" \
     -u "$CK:$CS" -A "$UA" -X DELETE "$B/products/${pv%/*}/variations/${pv#*/}?force=true"
 done
