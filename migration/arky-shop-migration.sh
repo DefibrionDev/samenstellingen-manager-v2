@@ -91,15 +91,19 @@ ctx = ssl.create_default_context(); ctx.check_hostname = False; ctx.verify_mode 
 auth = base64.b64encode(f"{ck}:{cs}".encode()).decode()
 ok = fail = skip = 0
 with open(mapfile) as f:
-    for row in csv.DictReader(f):
-        wid, typ, par, sku, meta = row['wc_id'], row['type'], row['parent_id'], row['sku'], row['meta']
-        body = {}
-        if sku:
-            body['sku'] = sku
-        if meta:
-            body['meta_data'] = [{'key': '_afas_artikelnummer', 'value': meta}]
-        if not body:
-            skip += 1; continue
+    rows = list(csv.DictReader(f))
+total = len(rows)
+print(f"  {total} producten te herstellen", flush=True)
+for i, row in enumerate(rows, 1):
+    wid, typ, par, sku, meta = row['wc_id'], row['type'], row['parent_id'], row['sku'], row['meta']
+    body = {}
+    if sku:
+        body['sku'] = sku
+    if meta:
+        body['meta_data'] = [{'key': '_afas_artikelnummer', 'value': meta}]
+    if not body:
+        skip += 1
+    else:
         ep = f"products/{par}/variations/{wid}" if typ == 'variation' and par else f"products/{wid}"
         req = urllib.request.Request(f"{base}/{ep}", data=json.dumps(body).encode(), method='PUT')
         req.add_header('Authorization', 'Basic ' + auth)
@@ -108,6 +112,9 @@ with open(mapfile) as f:
         try:
             urllib.request.urlopen(req, timeout=60, context=ctx); ok += 1
         except Exception as e:
-            fail += 1; print(f"  FAIL {ep}: {str(e)[:90]}")
+            fail += 1; print(f"  FAIL {ep}: {str(e)[:90]}", flush=True)
+    # voortgang elke 50 producten + op het einde
+    if i % 50 == 0 or i == total:
+        print(f"  [{i}/{total}] ok={ok} fail={fail} skip={skip}", flush=True)
 print(f"restore: ok={ok} fail={fail} skip(geen sku/meta)={skip}")
 PYEOF
