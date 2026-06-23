@@ -353,6 +353,53 @@ final class ApiTest extends TestCase
     }
 
     #[Test]
+    public function exposesNoMatchEndpointFlaggingExistingAfasComposition(): void
+    {
+        $pdo = TestDatabase::pdo();
+        $groups = new SqliteGroupRepository($pdo);
+        $bases = new SqliteGroupBaseRepository($pdo);
+        $items = new SqliteGroupBaseItemRepository($pdo);
+        $accessoires = new SqliteAccessoireRepository($pdo);
+        $links = new SqliteGroupAccessoireRepository($pdo);
+        $variants = new SqliteGroupVariantRepository($pdo);
+        $afasRepo = new \Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAfasSamenstellingenRepository($pdo);
+
+        $groups->save(new Group('Reanibex', '52112'));
+        $base = $bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL', 'NL', '52112'));
+        self::assertNotNull($base->id);
+        $items->saveForBase($base->id, new GroupBaseItem('50013', 'AED NL'));
+        $accessoires->save(new Accessoire('60110', 'EHBO-Rugzak'));
+        $links->link('52112', '60110');
+        $variants->regenerateForGroup('52112');
+        foreach ($variants->findAllForGroup('52112') as $variant) {
+            self::assertNotNull($variant->id);
+            if ($variant->accessoireItemcode === null) {
+                $variants->markMatched($variant->id, '52112');
+            } else {
+                $variants->markNoMatch($variant->id);
+            }
+        }
+        // De samenstelling bestaat in AFAS (BOM wijkt af: mist 60110) → de variant is
+        // no_match maar de compositie is er wél.
+        $afasRepo->replaceSnapshot([
+            new \Defibrion\Samenstellingen\Domain\Afas\AfasSamenstelling('52112-60110', 'Variant met Rugzak', '52112', ['50013']),
+        ]);
+
+        $response = $this->call('GET', '/api/wc/no-match');
+
+        self::assertSame(200, $response['status']);
+        self::assertCount(1, $response['body']);
+        self::assertSame('Reanibex', $response['body'][0]['groupName']);
+        self::assertSame('60110', $response['body'][0]['accessoireItemcode']);
+        self::assertSame('52112-60110', $response['body'][0]['verwachteItemcode']);
+        self::assertSame('52112-60110', $response['body'][0]['bestaandeAfasItemcode']);
+        self::assertNull($response['body'][0]['exacteBomMatchItemcode']);
+        // Verwachte BOM = [50013, 60110]; bestaande compositie mist 60110 en heeft niets teveel.
+        self::assertSame(['60110'], $response['body'][0]['ontbrekendeItemcodes']);
+        self::assertSame([], $response['body'][0]['extraItemcodes']);
+    }
+
+    #[Test]
     public function listsProductTypeIssuesWithCliHint(): void
     {
         $pdo = TestDatabase::pdo();

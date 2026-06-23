@@ -184,3 +184,33 @@ Status-bepaling per itemcode:
 
 - **Auto-fix**: deze cyclus blijft read-only. De plugin moet zelf de conversie doen (gegeven correcte AFAS-data). Onze tool signaleert, fixt niet.
 - **Sticker-status, prijsdrift, attribuut-validatie**: dat zijn aparte audits. Health-check focust strikt op `type`-mismatch + presence.
+
+## 11. No_match-audit-pagina
+
+### Probleem
+
+Er is geen overzicht van álle `no_match`-varianten. De bestaande "missende variaties"-audit toont alleen de subset die `fix-missing` zou aanmaken: ze laat `no_match`-rijen weg zodra er een AFAS-samenstelling met de voorgestelde itemcode al bestaat (`ListMissingVariantsHandler` regel 57). Daardoor zie je niet welke no_match-varianten eigenlijk al een compositie in AFAS hebben (die alleen niet matchte).
+
+Of een variant matcht beslist `VariantMatcher` puur op exacte BOM-gelijkheid (base-items + accessoire); itemcodes spelen geen rol. `no_match` = "geen AFAS-compositie met deze verwachte componenten". Een variant kan dus `no_match` zijn terwijl er wél een samenstelling met de verwachte itemcode bestaat (de compositie wijkt inhoudelijk af). Voorbeeld (geverifieerd): `21012-FR-60110` is no_match; de samenstelling `21012-FR-60110` bestaat in AFAS maar diens BOM mist component `81211`.
+
+### Aanpak
+
+Een **aparte, read-only no_match-audit-pagina** die élke `no_match`-variant toont. Per rij:
+- groep, base-naam, accessoire (itemcode + label);
+- verwachte itemcodes (BOM): de componenten die in de compositie horen;
+- **bestaat al in AFAS?** — of er een AFAS-compositie is met de verwachte itemcode (zo ja: welke), zodat zichtbaar is welke no_match-varianten eigenlijk al bestaan;
+- *eventueel*: of er een compositie bestaat die exact de juiste itemcodes (BOM) heeft (bv. een als duplicaat gemarkeerde compositie die buiten de matcher valt) — toon dan dat itemcode.
+
+De bestaande missing-variants-audit en `fix-missing` blijven ongemoeid; dit is puur een extra inzicht-pagina.
+
+### Slices
+
+- **Slice NM-0** — handler die alle `no_match`-varianten verzamelt + per rij bepaalt of/welke AFAS-compositie al bestaat. Row-DTO. Unit-tests met in-memory AFAS-snapshot.
+- **Slice NM-1** — CLI-commando + HTTP-endpoint (JSON).
+- **Slice NM-2** — web-UI: nieuwe no_match-audit-pagina/tab.
+- **Slice NM-3** — live verificatie tegen de echte snapshot (o.a. `21012-FR-60110` / `-60223` verschijnen, met de melding dat de compositie al bestaat).
+
+### Niet in scope
+
+- Corrigeren van de AFAS-data zelf. De pagina signaleert alleen.
+- Wijzigingen aan de bestaande missing-variants-audit of aan `fix-missing`.

@@ -10,6 +10,7 @@ import { BlacklistList } from './pages/BlacklistList';
 import { GroupsList } from './pages/GroupsList';
 import { GroupDetail } from './pages/GroupDetail';
 import { MissingVariants } from './pages/MissingVariants';
+import { NoMatchVariants } from './pages/NoMatchVariants';
 import { NameDrift } from './pages/NameDrift';
 import { NotFound } from './pages/NotFound';
 import { DuplicateBoms } from './pages/DuplicateBoms';
@@ -38,6 +39,7 @@ const router = createBrowserRouter([
       { path: 'accessoires', element: <AccessoiresList /> },
       { path: 'blacklist', element: <BlacklistList /> },
       { path: 'missing', element: <MissingVariants /> },
+      { path: 'no-match', element: <NoMatchVariants /> },
       { path: 'name-drift', element: <NameDrift /> },
       { path: 'suspicious-bases', element: <SuspiciousBases /> },
       { path: 'price-drift', element: <PriceDrift /> },

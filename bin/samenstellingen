@@ -10,6 +10,7 @@ use Defibrion\Samenstellingen\Application\Afas\BlacklistBomCodeHandler;
 use Defibrion\Samenstellingen\Application\Afas\ListBomBlacklistHandler;
 use Defibrion\Samenstellingen\Application\Afas\PullAfasSamenstellingenHandler;
 use Defibrion\Samenstellingen\Application\Audit\ListMissingVariantsHandler;
+use Defibrion\Samenstellingen\Application\Audit\ListNoMatchVariantsHandler;
 use Defibrion\Samenstellingen\Application\Audit\NameAuditHandler;
 use Defibrion\Samenstellingen\Application\Audit\DuplicateBomAuditHandler;
 use Defibrion\Samenstellingen\Application\Audit\PriceAuditHandler;
@@ -108,6 +109,7 @@ use Defibrion\Samenstellingen\Interface\Cli\SetBaseVariantLabelCommand;
 use Defibrion\Samenstellingen\Interface\Cli\SetGroupModelNaamCommand;
 use Defibrion\Samenstellingen\Interface\Cli\CreateGroupCommand;
 use Defibrion\Samenstellingen\Interface\Cli\ExportMissingVariantsCommand;
+use Defibrion\Samenstellingen\Interface\Cli\AuditNoMatchVariantsCommand;
 use Defibrion\Samenstellingen\Interface\Cli\ImportPortalCsvCommand;
 use Defibrion\Samenstellingen\Interface\Cli\ImportSamenstellingenCsvCommand;
 use Defibrion\Samenstellingen\Interface\Cli\ListBomBlacklistCommand;
@@ -236,6 +238,12 @@ $listMissingHandler = new ListMissingVariantsHandler(
     $baseItemRepository,
     $afasSamenstellingenRepository,
 );
+$listNoMatchHandler = new ListNoMatchVariantsHandler(
+    $groupRepository,
+    $variantRepository,
+    $baseItemRepository,
+    $afasSamenstellingenRepository,
+);
 $nameAuditHandler = new NameAuditHandler(
     $groupRepository,
     $baseRepository,
@@ -319,6 +327,7 @@ $application->addCommand(new AfasListDuplicatesCommand($afasSamenstellingenRepos
 $application->addCommand(new BlacklistBomCommand($blacklistBomHandler));
 $application->addCommand(new ListBomBlacklistCommand($listBomBlacklistHandler));
 $application->addCommand(new ExportMissingVariantsCommand($listMissingHandler));
+$application->addCommand(new AuditNoMatchVariantsCommand($listNoMatchHandler));
 $application->addCommand(new AuditNamesCommand($nameAuditHandler));
 $application->addCommand(new AuditMissingCbsCommand(new MissingCbsAuditHandler($afasSamenstellingenRepository)));
 $application->addCommand(new AuditSuspiciousBasesCommand($suspiciousBaseAuditHandler));

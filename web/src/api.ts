@@ -108,6 +108,21 @@ export interface MissingVariantRow {
   suggestedSku: string;
 }
 
+export interface NoMatchVariantRow {
+  groupName: string;
+  familyHead: string;
+  baseName: string;
+  baseAfasSku: string;
+  accessoireItemcode: string;
+  accessoireLabel: string;
+  expectedBom: string[];
+  verwachteItemcode: string;
+  bestaandeAfasItemcode: string | null;
+  exacteBomMatchItemcode: string | null;
+  ontbrekendeItemcodes: string[];
+  extraItemcodes: string[];
+}
+
 export type ProductTypeIssueType = 'base-leeg' | 'variant-fixbaar' | 'variant-geblokkeerd';
 
 export interface ProductTypeIssueRow {
@@ -132,6 +147,7 @@ export const api = {
   listGroupVariants: (familyHead: string) =>
     jsonGet<GroupVariantRow[]>(`/api/groups/${encodeURIComponent(familyHead)}/variants`),
   listMissingVariants: () => jsonGet<MissingVariantRow[]>('/api/missing-variants'),
+  listNoMatchVariants: () => jsonGet<NoMatchVariantRow[]>('/api/wc/no-match'),
   listNameDrift: () => jsonGet<NameDriftRow[]>('/api/name-drift'),
   listSuspiciousBases: () => jsonGet<SuspiciousBaseRow[]>('/api/suspicious-bases'),
   listArticlePrices: (itemcode: string) =>

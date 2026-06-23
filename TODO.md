@@ -2,7 +2,7 @@
 
 > Vorige cyclus (AFAS-management) is gearchiveerd in `TODO-AFAS.md`. Dit document tracked alleen de WooCommerce-cyclus.
 
-Driven door `PLAN.md` §1–§9. Per CLAUDE.md: één todo per keer, TDD red-green-refactor, mark-and-move-on, per-fase commit + push.
+Driven door `PLAN.md` §1–§11. Per CLAUDE.md: één todo per keer, TDD red-green-refactor, mark-and-move-on, per-fase commit + push.
 
 ---
 
@@ -143,3 +143,31 @@ Aanleiding: na slice 53 stonden er nog 5 managed bases (`11144`, `11154`, `11162
   - `11043-91116` (variant) → simple #5495 (verwacht variation)
   - `21019` (Mindray C1 vol head) → variation #979 (verwacht variable)
 - [x] UI: `/woocommerce` → tab "Health" toont 3 oranje chips in de reseller.defibrion.nl-kolom; teller `3 / 639 itemcodes`. Filter-chips wisselen werkt.
+
+---
+
+## Slice NM — No_match-audit-pagina
+
+Eindbeeld: een aparte, read-only audit die **álle** `no_match`-varianten toont (groep, base, accessoire, verwachte BOM-itemcodes), met per rij of er al een AFAS-compositie met de verwachte itemcode bestaat (en welke), plus — indien aanwezig — een compositie met exact de juiste BOM. Surfaces: CLI + JSON-endpoint + web-UI-pagina. Raakt de bestaande missing-variants-audit en `fix-missing` niet. Zie PLAN.md §11.
+
+Aanleiding: de bestaande missing-variants-audit verbergt no_match-rijen zodra een samenstelling met de voorgestelde itemcode al bestaat (`ListMissingVariantsHandler` regel 57). Daardoor zie je niet welke no_match-varianten eigenlijk al een (afwijkende) compositie in AFAS hebben — bv. `21012-FR-60110` (no_match, maar de samenstelling bestaat; diens BOM mist component `81211`).
+
+### Sub-slice NM-0 — Handler + row-DTO
+- [x] `ListNoMatchVariants` command-VO + `NoMatchVariantRow` DTO (`groep`, `familyHead`, `baseNaam`, `baseAfasSku`, `accessoireItemcode`, `accessoireLabel`, `verwachteBom: list<string>`, `verwachteItemcode`, `bestaandeAfasItemcode: ?string`, `exacteBomMatchItemcode: ?string`).
+- [x] `ListNoMatchVariantsHandler`: itereert alle groepen → variants → houdt `afas_status === 'no_match'` met een afleidbare verwachte BOM. Bepaalt per rij de verwachte itemcode (base-afas-sku + accessoire) en zet `bestaandeAfasItemcode` via `AfasSamenstellingenRepository::findByItemcode`; zet `exacteBomMatchItemcode` via een BOM-key-index over álle samenstellingen (canonical wint van duplicaten). Base-afas-sku afgeleid uit de matched base-variant van dezelfde base (zelfde aanpak als de missing-variants-audit).
+- [x] Unit-tests (in-memory AFAS-snapshot): no_match met bestaande verwachte itemcode → rij met `bestaandeAfasItemcode` gevuld; no_match zonder → null; `matched`-variant verschijnt niet; compositie met exact de juiste BOM → `exacteBomMatchItemcode` gevuld.
+- [x] BOM-verschil t.o.v. de bestaande compositie: `ontbrekendeItemcodes` ("mist") + `extraItemcodes` ("teveel") op de DTO; handler vult ze via set-diff tegen `bestaandeAfasItemcode`'s BOM. (Op verzoek: tonen welke itemcodes missen/teveel zijn.)
+
+### Sub-slice NM-1 — CLI + JSON-endpoint
+- [x] `AuditNoMatchVariantsCommand` (`audit:no-match`): tabel groep | base | accessoire | verwachte_bom | bestaat_in_afas | mist | teveel. Lege set → succes-notice; note telt rijen + exacte-BOM-duplicaten.
+- [x] `ListNoMatchVariantsController` → `GET /api/wc/no-match` (JSON: alle DTO-velden incl. `ontbrekendeItemcodes`/`extraItemcodes`). AppFactory + bin-bootstrap wiring.
+- [x] PHP-tests: ApiTest-endpoint (drift-rij met `bestaandeAfasItemcode` + `mist`) + CLI-test (tabel toont bestaande itemcode + "teveel"-code).
+
+### Sub-slice NM-2 — Web-UI-pagina
+- [x] React-pagina `NoMatchVariants.tsx` (route `/no-match` + nav-link onder Audits): DataGrid met groep, base, accessoire, verwachte BOM, "bestaat in AFAS", "mist", "teveel".
+- [x] `web/src/api.ts` `NoMatchVariantRow` type + `listNoMatchVariants` fetcher.
+- [x] Vitest: pagina rendert de no_match-rij + bestaande itemcode + ontbrekende itemcode. (Tevens een pre-existing `tsc`-fout in `ProductTypeIssues.test.tsx` opgeruimd zodat `tsc -b` weer groen is.)
+
+### Sub-slice NM-3 — Live verificatie
+- [x] CLI + HTTP-endpoint tegen de echte snapshot: **87 no_match-varianten** shop-breed; `21012-FR-60110` / `21012-FR-60223` tonen `bestaat_in_afas = 21012-FR-60110/-60223` met `mist = 81211`, `teveel = —`.
+- [x] UI-pagina `/no-match` geopend: rendert de 87 rijen incl. de 21012-FR-cases (mist 81211) én een echte "teveel"-case (Defibtech: mist 70112, teveel 10788).

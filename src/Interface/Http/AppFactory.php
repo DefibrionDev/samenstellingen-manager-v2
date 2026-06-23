@@ -6,6 +6,7 @@ namespace Defibrion\Samenstellingen\Interface\Http;
 
 use Defibrion\Samenstellingen\Application\Audit\DuplicateBomAuditHandler;
 use Defibrion\Samenstellingen\Application\Audit\ListMissingVariantsHandler;
+use Defibrion\Samenstellingen\Application\Audit\ListNoMatchVariantsHandler;
 use Defibrion\Samenstellingen\Application\Audit\NameAuditHandler;
 use Defibrion\Samenstellingen\Application\Audit\PriceAuditHandler;
 use Defibrion\Samenstellingen\Application\Audit\ProductTypeAuditHandler;
@@ -73,6 +74,14 @@ final class AppFactory
         );
         $listMissing = new ListMissingVariantsController(
             new ListMissingVariantsHandler(
+                $container->groupRepository(),
+                $container->variantRepository(),
+                $container->baseItemRepository(),
+                $container->afasSamenstellingenRepository(),
+            ),
+        );
+        $listNoMatch = new ListNoMatchVariantsController(
+            new ListNoMatchVariantsHandler(
                 $container->groupRepository(),
                 $container->variantRepository(),
                 $container->baseItemRepository(),
@@ -171,6 +180,7 @@ final class AppFactory
         $app->get('/api/wc/index', $listWooIndex);
         $app->get('/api/wc/orphans', $listWooOrphans);
         $app->get('/api/wc/health', $listWcHealth);
+        $app->get('/api/wc/no-match', $listNoMatch);
 
         return $app;
     }

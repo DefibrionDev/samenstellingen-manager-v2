@@ -35,6 +35,7 @@ const groups: NavGroup[] = [
     label: 'Audits',
     links: [
       { to: '/missing', label: 'Missing variants' },
+      { to: '/no-match', label: 'No-match varianten' },
       { to: '/name-drift', label: 'Name drift' },
       { to: '/suspicious-bases', label: 'Suspicious bases' },
       { to: '/duplicate-boms', label: 'Duplicate BOMs' },
