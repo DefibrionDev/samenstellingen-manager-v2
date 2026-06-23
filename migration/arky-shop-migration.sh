@@ -26,7 +26,10 @@ UA='Mozilla/5.0'
 
 # Permanent verwijderen (force=true) — simple-producten en variable-parents.
 # (Een variable-parent neemt z'n child-variations mee.)
-# Laatste blok = PRESTAN-artikelen die niet in Josca's publicatielijst staan.
+# Blok "PRESTAN niet-gepubliceerd" = artikelen die niet in Josca's publicatielijst staan.
+# Laatste blok (3786..4067) = niet-gekoppelde legacy/-VAR variable-containers: hun
+# children horen bij een al-bestaande correcte container; de cascade ruimt ze op en
+# de AFAS->Woo-sync herbouwt de variations onder de juiste parent.
 for id in 4726 4887 3080 2830 1895 1542 1287 1218 1300 1826 1407 3444 \
           3679 3680 3681 3682 3687 3688 3689 3690 3691 3695 3696 3697 3698 \
           3758 3759 3760 3761 3826 3850 3922 3953 3966 3970 3973 3989 4021 \
@@ -37,17 +40,19 @@ for id in 4726 4887 3080 2830 1895 1542 1287 1218 1300 1826 1407 3444 \
           3716 3717 3718 3719 3720 3721 3722 3723 3724 3725 3726 3727 3728 \
           3729 3730 3731 3732 3733 3734 3735 3736 3737 3738 3739 3740 3741 \
           3742 3743 3744 3748 3749 3750 3751 3752 3753 3754 3755 3756 \
-          2054 2053 1997 2003 1996 2051 2052; do
+          2054 2053 1997 2003 1996 2051 2052 \
+          1288 3757 6151 \
+          3786 3810 3898 3946 3960 3976 3979 3983 3986 3995 4002 4008 4015 4033 4041 4067; do
   curl -s -o /dev/null -w "delete product $id -> %{http_code}\n" \
     -u "$CK:$CS" -A "$UA" -X DELETE "$B/products/$id?force=true"
 done
 
 # Permanent verwijderen (force=true) — variations (parent/variation):
-for pv in 2829/3005 2829/5626 2829/5627 2829/3007 \
-          3762/3786 3762/3810 3874/3898 3949/3946 3957/3960 3949/3976 3949/3979 \
-          3957/3983 3957/3986 3992/3995 3999/4002 4005/4008 4012/4015 4027/4033 \
-          4027/4041 4064/4067 \
-          3762/3780 3874/3892 4018/4020 4049/4051 \
+# 2829/3006 = stale oude 21015 (geblokkeerd, vervangen door 21011-DE; bezet SKU 21015).
+# 4018/4019 + 4049/4051 = self-variations van PP-JTM/PP-IULM die simple-producten worden
+#   (zie variable->simple conversie-blok hieronder).
+for pv in 2829/3005 2829/5626 2829/5627 2829/3007 2829/3006 \
+          3762/3780 3874/3892 4018/4020 4049/4051 4018/4019 4049/4050 \
           1600/5219 1600/5220 1600/5221 1600/5222 1600/5223 1600/5224 1600/5225 \
           2971/5404 2971/5405 2971/5406 2971/5407 2971/5408 2971/5409 2971/5411 \
           2971/5412 2971/5413 2971/5414 2971/5415 2971/5416 2971/5417 \
@@ -74,6 +79,20 @@ for pv in 2829/3005 2829/5626 2829/5627 2829/3007 \
   curl -s -o /dev/null -w "delete variation $pv -> %{http_code}\n" \
     -u "$CK:$CS" -A "$UA" -X DELETE "$B/products/${pv%/*}/variations/${pv#*/}?force=true"
 done
+
+# Variable-parent -> simple converteren (single-producten zonder AFAS-kinderen die
+# onterecht een variable-container met één self-variation kregen). De self-variation
+# is hierboven al verwijderd, dus de bare SKU is vrij om op de simple te zetten.
+# Format: "<wc_id> <bare_sku>"
+while read -r id sku; do
+  [ -z "$id" ] && continue
+  curl -s -o /dev/null -w "convert $id -> simple ($sku) -> %{http_code}\n" \
+    -u "$CK:$CS" -A "$UA" -X PUT "$B/products/$id" \
+    -H 'Content-Type: application/json' -d "{\"type\":\"simple\",\"sku\":\"$sku\"}"
+done <<'CONV'
+4018 PP-JTM-100M-MS
+4049 PP-IULM-100M-MS
+CONV
 
 # ───────────────────────────────────────────────────────────────────────────
 # Restore — zet sku + _afas_artikelnummer terug per WC-id (uit mapping-CSV)
