@@ -25,7 +25,24 @@ wp plugin deactivate woocommerce-wholesale-prices
 wp plugin deactivate woocommerce-wholesale-prices-premium
 ```
 
-## Stap 3 — Migratiescript draaien (lokaal)
+## Stap 3 — AFAS-plugin aanzetten + settings restoren (server)
+
+Importeer de plugin-config (connectors, credentials, mappings, filters) en activeer
+de plugin, zodat de AFAS→Woo sync in stap 6 met de juiste instellingen draait. De
+settings-map staat in appendix B; details daar.
+
+```bash
+for f in /home/defibrion-arkycase/afas-settings/*.json; do opt="$(basename "$f" .json)"; wp option update "$opt" "$(cat "$f")" --format=json --skip-themes --skip-plugins; done
+wp plugin activate lefcreative-afas-b2b
+```
+
+Controleren dat kerninstellingen staan:
+```bash
+wp option get afas_base_url --skip-themes --skip-plugins
+wp option get afas_connector_artikelen --skip-themes --skip-plugins
+```
+
+## Stap 4 — Migratiescript draaien (lokaal)
 
 Verwijdert de te-verwijderen producten, converteert de losse variable→simple gevallen,
 en herstelt sku + AFAS-meta uit `migration/wc-sku-meta-map.csv`.
@@ -40,7 +57,7 @@ export ARKY_CK=ck_... ARKY_CS=cs_...     # keys van de verse kopie (appendix A)
 bash migration/arky-shop-migration.sh
 ```
 
-## Stap 4 — Klanten omzetten: afas_id → afas_klant (server)
+## Stap 5 — Klanten omzetten: afas_id → afas_klant (server)
 
 ARKY-klanten dragen meta `afas_id` + rol `role_00X`; de plugin koppelt op
 `afas_relatie_id` + rol `afas_klant`. Zet per klant met gevulde `afas_id`:
@@ -69,13 +86,13 @@ Verifiëren:
 wp user list --role=afas_klant --format=count --skip-themes --skip-plugins
 ```
 
-## Stap 5 — AFAS→Woo sync draaien (plugin, server)
+## Stap 6 — AFAS→Woo sync draaien (plugin, server)
 
 Herbouwt de variations (o.a. de families waarvan we de legacy-containers verwijderden)
 onder de juiste parent, en zet status/naam/prijs vanuit AFAS. Draai via de plugin-pagina
 of de scheduler. Controleer daarna de sync-logs op resterende warnings.
 
-## Stap 6 — Mail weer AAN (WordPress, server)
+## Stap 7 — Mail weer AAN (WordPress, server)
 
 Vergeet dit niet, anders verstuurt de shop geen enkele mail meer.
 
@@ -83,7 +100,7 @@ Vergeet dit niet, anders verstuurt de shop geen enkele mail meer.
 wp plugin deactivate disable-emails
 ```
 
-## Stap 7 — Snapshot verversen ter controle (lokaal, laatste stap)
+## Stap 8 — Snapshot verversen ter controle (lokaal, laatste stap)
 
 Haal de eindstaat op zodat de lokale snapshot klopt en je kunt verifiëren. Vereist de
 REST-keys in de DB (appendix A).
@@ -107,25 +124,19 @@ sqlite3 tmp/samenstellingen.sqlite "UPDATE woocommerce_stores SET consumer_key='
 ```
 Het migratiescript leest de keys uit env (`ARKY_CK` / `ARKY_CS`).
 
-# Appendix B — AFAS-plugin settings export/import
+# Appendix B — AFAS-plugin settings (import = stap 3)
 
-Alleen nodig wanneer de doel-shop de plugin-config mist. Alle config zit in
-`wp_options` met prefix `afas_` (connectors, credentials, sync-intervallen, mappings,
-filters, order-config), inclusief de dynamische sleutels `afas_connector_{slug}`,
-`afas_mapping_{slug}`, `afas_custom_fields_{slug}`. De opgehaalde AFAS-*data*
-(`tNEXYW_lef_afas_*`-tabellen) gaat NIET mee — die herbouwt zich via de syncs.
+De plugin-config zit in `wp_options` met prefix `afas_` (connectors, credentials,
+sync-intervallen, mappings, filters, order-config), inclusief de dynamische sleutels
+`afas_connector_{slug}`, `afas_mapping_{slug}`, `afas_custom_fields_{slug}`. De opgehaalde
+AFAS-*data* (`tNEXYW_lef_afas_*`-tabellen) gaat NIET mee — die herbouwt zich via de syncs.
 
-Exporteren (bron-shop):
+De settings-map `/home/defibrion-arkycase/afas-settings/` bevat één JSON per optie.
+Importeren + plugin activeren = stap 3. Een verse export (bron-shop) maak je zo:
 ```bash
 mkdir -p /home/defibrion-arkycase/afas-settings; wp option list --search='afas_*' --field=option_name --skip-themes --skip-plugins | while read -r opt; do wp option get "$opt" --format=json --skip-themes --skip-plugins > "/home/defibrion-arkycase/afas-settings/$opt.json"; done
 ```
 
-Importeren (doel-shop):
-```bash
-for f in /home/defibrion-arkycase/afas-settings/*.json; do opt="$(basename "$f" .json)"; wp option update "$opt" "$(cat "$f")" --format=json --skip-themes --skip-plugins; done
-wp plugin activate lefcreative-afas-b2b
-```
-
 Let op: `afas_app_token.json` bevat de AFAS-token — map veilig bewaren en opruimen na import.
-Open na import één keer de schedule-pagina (of de-/heractiveer de plugin) zodat de cron-jobs
-opnieuw ingepland worden.
+Open na de import (stap 3) één keer de schedule-pagina (of de-/heractiveer de plugin) zodat
+de cron-jobs opnieuw ingepland worden.
