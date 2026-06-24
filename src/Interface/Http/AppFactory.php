@@ -88,6 +88,7 @@ final class AppFactory
                 $container->afasSamenstellingenRepository(),
             ),
         );
+        $listOnlineNotAssigned = new ListOnlineNotAssignedController($container->onlineNotAssignedHandler());
         $listNameDrift = new ListNameDriftController(
             new NameAuditHandler(
                 $container->groupRepository(),
@@ -181,6 +182,7 @@ final class AppFactory
         $app->get('/api/wc/orphans', $listWooOrphans);
         $app->get('/api/wc/health', $listWcHealth);
         $app->get('/api/wc/no-match', $listNoMatch);
+        $app->get('/api/wc/online-not-assigned', $listOnlineNotAssigned);
 
         return $app;
     }

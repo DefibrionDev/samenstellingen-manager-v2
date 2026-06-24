@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Defibrion\Samenstellingen\Bootstrap;
 
+use Defibrion\Samenstellingen\Application\Publications\ListOnlineNotAssignedHandler;
+use Defibrion\Samenstellingen\Application\Publications\SyncPublicationsHandler;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\Migrator;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAccessoireRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAfasArticleRepository;
+use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAfasFreeFieldStateRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAfasPrijslijstRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAfasPrijsRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAfasSamenstellingenRepository;
@@ -21,6 +24,7 @@ use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqlitePrijslijst
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteWebsiteRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteWooCommerceStoreRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteWooProductRepository;
+use Defibrion\Samenstellingen\Infrastructure\Publications\InMemoryPublicationSyncWriter;
 use PDO;
 
 /**
@@ -147,5 +151,24 @@ class Container
     public function wooProductRepository(): SqliteWooProductRepository
     {
         return $this->wooProductRepository ??= new SqliteWooProductRepository($this->pdo());
+    }
+
+    /**
+     * Read-only "online maar niet toegekend"-audit. Bouwt de publicatie-sync in
+     * dry-run met de LOKALE snapshot-reader (geen live AFAS) + een no-op writer,
+     * en levert daaruit de online-niet-toegekend-set.
+     */
+    public function onlineNotAssignedHandler(): ListOnlineNotAssignedHandler
+    {
+        return new ListOnlineNotAssignedHandler(new SyncPublicationsHandler(
+            $this->groupRepository(),
+            $this->baseRepository(),
+            $this->linkRepository(),
+            $this->afasSamenstellingenRepository(),
+            $this->websiteRepository(),
+            $this->basePublicationRepository(),
+            new InMemoryPublicationSyncWriter(),
+            new SqliteAfasFreeFieldStateRepository($this->pdo()),
+        ));
     }
 }

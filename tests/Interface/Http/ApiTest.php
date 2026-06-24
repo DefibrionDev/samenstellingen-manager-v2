@@ -400,6 +400,36 @@ final class ApiTest extends TestCase
     }
 
     #[Test]
+    public function exposesOnlineNotAssignedEndpoint(): void
+    {
+        $pdo = TestDatabase::pdo();
+        $groups = new SqliteGroupRepository($pdo);
+        $bases = new SqliteGroupBaseRepository($pdo);
+        $afasRepo = new \Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAfasSamenstellingenRepository($pdo);
+        $websites = new \Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteWebsiteRepository($pdo);
+        $publications = new \Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteBasePublicationRepository($pdo);
+        $freeField = new \Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAfasFreeFieldStateRepository($pdo);
+
+        $groups->save(new Group('Heartsine 350P', '10013'));
+        $base = $bases->saveForGroup('10013', new GroupBase(null, 'NL', 'NL', '11111'));
+        self::assertNotNull($base->id);
+        $afasRepo->replaceSnapshot([new \Defibrion\Samenstellingen\Domain\Afas\AfasSamenstelling('11111', 'Base', '10013', [])]);
+        $wNl = $websites->save(new \Defibrion\Samenstellingen\Domain\Website\Website(null, 'Reseller NL', 'U_NL_SYNC', 'U_NL_TONEN'));
+        $websites->save(new \Defibrion\Samenstellingen\Domain\Website\Website(null, 'ARKY', 'U_ARKY_SYNC', 'U_ARKY_TONEN'));
+        self::assertNotNull($wNl->id);
+        $publications->setPublished($base->id, $wNl->id, true); // alleen NL toegekend
+        // Snapshot: 11111 staat online op ARKY (sync) maar is daar niet toegekend.
+        $freeField->replaceSnapshot(['11111' => ['U_ARKY_SYNC' => true]]);
+
+        $response = $this->call('GET', '/api/wc/online-not-assigned');
+
+        self::assertSame(200, $response['status']);
+        self::assertCount(1, $response['body']);
+        self::assertSame('11111', $response['body'][0]['afasItemcode']);
+        self::assertSame('ARKY', $response['body'][0]['websiteName']);
+    }
+
+    #[Test]
     public function listsProductTypeIssuesWithCliHint(): void
     {
         $pdo = TestDatabase::pdo();

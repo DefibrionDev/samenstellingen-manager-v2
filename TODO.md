@@ -190,7 +190,7 @@ Aanleiding: de huidige sync PUT't de volledige flag-set (true én false) → zou
 - [x] Migratie `0026_afas_free_field_state.sql` + `AfasFreeFieldStateRepository` (Sqlite + InMemory) + `FreeFieldStateRefresher` (Http + Null). `afas:pull` ververst de snapshot (1 extra dep op de pull-handler, null-refresher in tests). Contract-tests. Reden voor optie A: de web-app leest alleen de lokale snapshot (snel + testbaar; geen live-AFAS in tests). Live: 46.872 rijen (11.718 itemcodes × 4 uuids).
 
 ### Sub-slice PS-1b — Audit (online maar niet toegekend)
-- [ ] Read-only `ListOnlineNotAssignedHandler` die de online-niet-toegekend-set oplevert via de sync-vergelijking met de **snapshot**-reader (lokaal, geen AFAS). CLI-commando + `GET /api/...`-endpoint + tests (ApiTest seeds de snapshot-tabel → geen live AFAS).
+- [x] Read-only `ListOnlineNotAssignedHandler` (wrapt `SyncPublicationsHandler` dry-run met de snapshot-reader, geen AFAS) + `audit:online-not-assigned` CLI + `GET /api/wc/online-not-assigned` (Container-wiring met `SqliteAfasFreeFieldStateRepository`). Handler-unit-test + ApiTest (seedt de snapshot-tabel). Live: CLI + endpoint tonen de 9 NL-bases (ARKY online, niet toegekend).
 
 ### Sub-slice PS-2 — Web-UI audit-pagina
 - [ ] React-pagina (route + nav-link onder Audits) + `web/src/api.ts` types + fetcher + vitest.
