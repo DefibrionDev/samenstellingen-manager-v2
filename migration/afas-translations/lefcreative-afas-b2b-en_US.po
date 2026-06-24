@@ -1,0 +1,125 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: lefcreative-afas-b2b\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: en_US\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "+ Nieuw adres"
+msgstr "+ New address"
+
+msgid "- Selecteer een afleveradres -"
+msgstr "- Select a delivery address -"
+
+msgid "Adres"
+msgstr "Address"
+
+msgid "Adres aangemaakt."
+msgstr "Address created."
+
+msgid "Adres bewerken"
+msgstr "Edit address"
+
+msgid "Adres bijgewerkt."
+msgstr "Address updated."
+
+msgid "Adres niet gevonden."
+msgstr "Address not found."
+
+msgid "Adresboek"
+msgstr "Address book"
+
+msgid "Adressen ophalen"
+msgstr "Fetch addresses"
+
+msgid "Afleveradres"
+msgstr "Delivery address"
+
+msgid "Annuleren"
+msgstr "Cancel"
+
+msgid "Automatisch op voltooid gezet na succesvolle AFAS push."
+msgstr "Automatically set to completed after a successful AFAS push."
+
+msgid "Bewerken"
+msgstr "Edit"
+
+msgid "Bezig..."
+msgstr "Processing..."
+
+msgid "Er ging iets mis."
+msgstr "Something went wrong."
+
+msgid "Het veld %s is verplicht."
+msgstr "The %s field is required."
+
+msgid "Huidige mapping vervangen door de standaard AFAS-enum? Niet-opgeslagen wijzigingen gaan verloren."
+msgstr "Replace the current mapping with the default AFAS enum? Unsaved changes will be lost."
+
+msgid "Huisnummer"
+msgstr "House number"
+
+msgid "Klaar."
+msgstr "Done."
+
+msgid "Laad standaard waardes"
+msgstr "Load default values"
+
+msgid "Land"
+msgstr "Country"
+
+msgid "Mislukt."
+msgstr "Failed."
+
+msgid "Nieuw adres"
+msgstr "New address"
+
+msgid "Omschrijving"
+msgstr "Description"
+
+msgid "Opslaan"
+msgstr "Save"
+
+msgid "Plaats"
+msgstr "City"
+
+msgid "Postbusadres"
+msgstr "PO box address"
+
+msgid "Postcode"
+msgstr "Postcode"
+
+msgid "Straat"
+msgstr "Street"
+
+msgid "Toevoegen"
+msgstr "Add"
+
+msgid "Toevoeging"
+msgstr "Addition"
+
+msgid "U heeft geen gekoppeld AFAS account."
+msgstr "You have no linked AFAS account."
+
+msgid "U heeft nog geen adressen."
+msgstr "You don't have any addresses yet."
+
+msgid "Verbindingsfout."
+msgstr "Connection error."
+
+msgid "Verbindingsfout. Probeer het opnieuw."
+msgstr "Connection error. Please try again."
+
+msgid "Wij konden het adres niet opslaan. Probeer het later opnieuw."
+msgstr "We could not save the address. Please try again later."
+
+msgid "Wij konden het adres niet opslaan: %s"
+msgstr "We could not save the address: %s"
+
+msgid "bijv. Magazijn, Filiaal Rotterdam"
+msgstr "e.g. Warehouse, Rotterdam branch"
+
+msgid "verplicht"
+msgstr "required"
