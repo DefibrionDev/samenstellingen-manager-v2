@@ -16,13 +16,16 @@ Voorkomt dat klanten welkomst-/account-mails krijgen tijdens het syncen/omzetten
 wp plugin activate disable-emails
 ```
 
-## Stap 2 — Wholesale-plugins UIT (server)
+## Stap 2 — Storende plugins UIT (server)
 
-Eerst de niet-premium, dan de premium:
+Zet de plugins uit die tijdens de migratie/sync zouden interfereren: de wholesale-plugins
+(eerst niet-premium, dan premium) en de automatische order-status-controller — die kan
+anders ongewenst order-statussen wijzigen tijdens de AFAS→Woo-sync.
 
 ```bash
 wp plugin deactivate woocommerce-wholesale-prices
 wp plugin deactivate woocommerce-wholesale-prices-premium
+wp plugin deactivate order-status-rules-for-woocommerce
 ```
 
 ## Stap 3 — AFAS-plugin aanzetten + settings restoren (server)
@@ -32,14 +35,14 @@ de plugin, zodat de AFAS→Woo sync in stap 6 met de juiste instellingen draait.
 settings-map staat in appendix B; details daar.
 
 ```bash
-for f in /home/defibrion-arkycase/afas-settings/*.json; do opt="$(basename "$f" .json)"; wp option update "$opt" "$(cat "$f")" --format=json --skip-themes --skip-plugins; done
+for f in /home/defibrion-arkycase/afas-settings/*.json; do opt="$(basename "$f" .json)"; wp option update "$opt" "$(cat "$f")" --format=json; done
 wp plugin activate lefcreative-afas-b2b
 ```
 
 Controleren dat kerninstellingen staan:
 ```bash
-wp option get afas_base_url --skip-themes --skip-plugins
-wp option get afas_connector_artikelen --skip-themes --skip-plugins
+wp option get afas_base_url
+wp option get afas_connector_artikelen
 ```
 
 ## Stap 4 — Migratiescript draaien (lokaal)
@@ -86,12 +89,12 @@ foreach($users as $u){
   $done++;
 }
 echo "klaar: omgezet=$done overgeslagen=$skip\n";
-' --skip-themes --skip-plugins
+'
 ```
 
 Verifiëren:
 ```bash
-wp user list --role=afas_klant --format=count --skip-themes --skip-plugins
+wp user list --role=afas_klant --format=count
 ```
 
 ## Stap 6 — AFAS→Woo sync draaien (plugin, server)
@@ -100,12 +103,14 @@ Herbouwt de variations (o.a. de families waarvan we de legacy-containers verwijd
 onder de juiste parent, en zet status/naam/prijs vanuit AFAS. Draai via de plugin-pagina
 of de scheduler. Controleer daarna de sync-logs op resterende warnings.
 
-## Stap 7 — Mail weer AAN (WordPress, server)
+## Stap 7 — Mail + order-status-controller weer AAN (WordPress, server)
 
-Vergeet dit niet, anders verstuurt de shop geen enkele mail meer.
+Vergeet dit niet — anders verstuurt de shop geen enkele mail meer en blijft de
+automatische order-status-controller uit. (De wholesale-plugins blijven bewust uit.)
 
 ```bash
 wp plugin deactivate disable-emails
+wp plugin activate order-status-rules-for-woocommerce
 ```
 
 ## Stap 8 — Snapshot verversen (lokaal)
@@ -166,7 +171,7 @@ AFAS-*data* (`tNEXYW_lef_afas_*`-tabellen) gaat NIET mee — die herbouwt zich v
 De settings-map `/home/defibrion-arkycase/afas-settings/` bevat één JSON per optie.
 Importeren + plugin activeren = stap 3. Een verse export (bron-shop) maak je zo:
 ```bash
-mkdir -p /home/defibrion-arkycase/afas-settings; wp option list --search='afas_*' --field=option_name --skip-themes --skip-plugins | while read -r opt; do wp option get "$opt" --format=json --skip-themes --skip-plugins > "/home/defibrion-arkycase/afas-settings/$opt.json"; done
+mkdir -p /home/defibrion-arkycase/afas-settings; wp option list --search='afas_*' --field=option_name | while read -r opt; do wp option get "$opt" --format=json > "/home/defibrion-arkycase/afas-settings/$opt.json"; done
 ```
 
 Let op: `afas_app_token.json` bevat de AFAS-token — map veilig bewaren en opruimen na import.
