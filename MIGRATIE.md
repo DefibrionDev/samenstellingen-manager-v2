@@ -57,6 +57,14 @@ export ARKY_CK=ck_... ARKY_CS=cs_...     # keys van de verse kopie (appendix A)
 bash migration/arky-shop-migration.sh
 ```
 
+Duur (gemeten run 2026-06-23, ~325 deletes + 2036 restore-PUT's):
+- fase 1 product/parent-deletes (~151 calls): ~2½ min
+- fase 2 variation-deletes + conversies (~176 calls): ~2 min
+- restore sku+meta (2036 PUT's): ~22 min  ← veruit de langste
+- **totaal ~27 min.** De restore logt voortgang per 50 producten; klaar bij de
+  eindregel `restore: ok=… fail=…`. Een hoog fail-aantal is grotendeels verwacht
+  (verwijderde producten + cascade-children staan nog in de mapping → 404).
+
 ## Stap 5 — Klanten omzetten: afas_id → afas_klant (server)
 
 ARKY-klanten dragen meta `afas_id` + rol `role_00X`; de plugin koppelt op
@@ -100,14 +108,38 @@ Vergeet dit niet, anders verstuurt de shop geen enkele mail meer.
 wp plugin deactivate disable-emails
 ```
 
-## Stap 8 — Snapshot verversen ter controle (lokaal, laatste stap)
+## Stap 8 — Snapshot verversen (lokaal)
 
 Haal de eindstaat op zodat de lokale snapshot klopt en je kunt verifiëren. Vereist de
-REST-keys in de DB (appendix A).
+REST-keys in de DB (appendix A). Nodig vóór stap 9 (die leest de ARKY-parents uit de snapshot).
 
 ```bash
 php bin/samenstellingen wc:pull --store=arkycase.defibrion.dev
 ```
+
+## Stap 9 — AED-variaties herstructureren op ARKY (lokaal, laatste stap)
+
+Zet alle variabele AED-parents op ARKY naar het juiste attribuut-model — vast `Brand` +
+variatie-assen `Language` / `Connectivity` / `Options` (Engelstalig) — en vult elke variatie
+uit de tool-data (gekoppeld via de `_afas_artikelnummer`-meta). Spiegelt het reseller-873-model.
+
+Voorwaarden: `afas:pull` is gedraaid (matched variants + `naam_kort_en`) én stap 8 (`wc:pull`,
+zodat de snapshot de ARKY variable-parents kent en de variaties live bestaan).
+
+Eerst dry-run — controleer dat overal `niet-mapbaar = 0` staat:
+```bash
+python3 migration/arky-aed-restructure.py --all
+```
+Dan toepassen:
+```bash
+python3 migration/arky-aed-restructure.py --apply --all
+```
+
+Gedrag: dry-run is default, `--apply` muteert. Een as wordt alléén een variatie-attribuut bij
+>1 waarde (bv. enkel Connectivity `None` → vast attribuut). Default-variatie = `English / None /
+Defibrillator`. Brand-overrides voor Heartsine + CU Medical zitten in het script. De 9 groepen
+zonder ARKY variable-parent (Cardiac Science, Defibtech, Lifepak) vallen buiten scope tot hun
+WC-type is rechtgezet.
 
 ---
 
