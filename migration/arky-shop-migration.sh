@@ -30,6 +30,9 @@ UA='Mozilla/5.0'
 # Laatste blok (3786..4067) = niet-gekoppelde legacy/-VAR variable-containers: hun
 # children horen bij een al-bestaande correcte container; de cascade ruimt ze op en
 # de AFAS->Woo-sync herbouwt de variations onder de juiste parent.
+# 1286/1284/2002 = niet-beheerde simple AED's in categorie "AED Defibrillators"
+# (Defibtech Lifeline View, Defibtech Lifeline semi, Lifepak CR2 USB) — hun
+# itemcodes (10140/10142/10189FR) zijn onbekend in de tool en niet gepubliceerd op ARKY.
 for id in 4726 4887 3080 2830 1895 1542 1287 1218 1300 1826 1407 3444 \
           3679 3680 3681 3682 3687 3688 3689 3690 3691 3695 3696 3697 3698 \
           3758 3759 3760 3761 3826 3850 3922 3953 3966 3970 3973 3989 4021 \
@@ -41,7 +44,7 @@ for id in 4726 4887 3080 2830 1895 1542 1287 1218 1300 1826 1407 3444 \
           3729 3730 3731 3732 3733 3734 3735 3736 3737 3738 3739 3740 3741 \
           3742 3743 3744 3748 3749 3750 3751 3752 3753 3754 3755 3756 \
           2054 2053 1997 2003 1996 2051 2052 \
-          1288 3757 6151 \
+          1288 3757 6151 1286 1284 2002 \
           3786 3810 3898 3946 3960 3976 3979 3983 3986 3995 4002 4008 4015 4033 4041 4067; do
   curl -s -o /dev/null -w "delete product $id -> %{http_code}\n" \
     -u "$CK:$CS" -A "$UA" -X DELETE "$B/products/$id?force=true"
