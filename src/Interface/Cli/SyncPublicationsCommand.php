@@ -42,6 +42,21 @@ final class SyncPublicationsCommand extends Command
             limit: $limit > 0 ? $limit : null,
         ));
 
+        if ($result->onlineNotAssigned !== []) {
+            $io->warning(sprintf(
+                '%d itemcode×website staat online in AFAS maar is niet toegekend in de tool — NIET uitgezet, alleen gemeld:',
+                count($result->onlineNotAssigned),
+            ));
+            $rows = [];
+            foreach (array_slice($result->onlineNotAssigned, 0, 40) as $r) {
+                $rows[] = [$r->afasItemcode, $r->baseAfasItemcode, $r->websiteName];
+            }
+            $io->table(['itemcode', 'base', 'website'], $rows);
+            if (count($result->onlineNotAssigned) > 40) {
+                $io->writeln(sprintf('<comment>… +%d meer (zie de "online niet toegekend"-audit).</comment>', count($result->onlineNotAssigned) - 40));
+            }
+        }
+
         if ($result->plans === []) {
             if ($result->totalCandidates === 0) {
                 $io->success('Geen plans — geen websites of geen bases met SKU.');

@@ -46,6 +46,7 @@ final readonly class SyncPublicationsHandler
         $plans = [];
         $noopSkipped = 0;
         $totalCandidates = 0;
+        $onlineNotAssigned = [];
         foreach ($this->groups->findAll() as $group) {
             foreach ($this->bases->findAllForGroup($group->familyHeadItemcode) as $base) {
                 if ($base->id === null || $base->afasItemcode === null) {
@@ -57,24 +58,42 @@ final readonly class SyncPublicationsHandler
                         $publishedWebsiteIds[$pub->websiteId] = true;
                     }
                 }
-                $flags = [];
-                foreach ($allWebsites as $website) {
-                    $isPublished = $website->id !== null && isset($publishedWebsiteIds[$website->id]);
-                    $flags[$website->ffSyncUuid] = $isPublished;
-                    $flags[$website->ffTonenUuid] = $isPublished;
-                }
 
                 $targetItemcodes = $this->collectTargetItemcodes($group->familyHeadItemcode, $base->afasItemcode);
                 foreach ($targetItemcodes as $itemcode) {
                     ++$totalCandidates;
-                    // No-op skip: als AFAS al ALLE bekende flags op de gewenste waarde
-                    // heeft staan, slaan we over (geen PUT). Onbekende flags →
-                    // veiligheid voorrang → wel PUT'en.
-                    if ($this->matchesCurrentState($itemcode, $flags, $afasFlagState)) {
+                    $current = $afasFlagState[$itemcode] ?? [];
+
+                    // Additief: verzamel alléén de flags die de tool eist (desired=true) als
+                    // AAN. We zetten nooit een flag uit — niet-toegekende websites komen niet
+                    // in de payload. Een plan is alleen nodig als minstens één gewenste flag
+                    // nog niet AAN staat in AFAS (onbekend telt als "moet aangezet").
+                    $turnOn = [];
+                    $needsPlan = false;
+                    foreach ($allWebsites as $website) {
+                        $published = $website->id !== null && isset($publishedWebsiteIds[$website->id]);
+                        if ($published) {
+                            foreach ([$website->ffSyncUuid, $website->ffTonenUuid] as $uuid) {
+                                $turnOn[$uuid] = true;
+                                if (($current[$uuid] ?? false) !== true) {
+                                    $needsPlan = true;
+                                }
+                            }
+                        } elseif (
+                            ($current[$website->ffSyncUuid] ?? false) === true
+                            || ($current[$website->ffTonenUuid] ?? false) === true
+                        ) {
+                            // Staat online in AFAS maar niet toegekend in de tool: niet uitzetten,
+                            // wél melden.
+                            $onlineNotAssigned[] = new OnlineNotAssignedRow($itemcode, $base->afasItemcode, $website->name);
+                        }
+                    }
+
+                    if (!$needsPlan) {
                         ++$noopSkipped;
                         continue;
                     }
-                    $plans[] = new PublicationSyncPlan($itemcode, $base->afasItemcode, $flags);
+                    $plans[] = new PublicationSyncPlan($itemcode, $base->afasItemcode, $turnOn);
                     if ($command->limit !== null && count($plans) >= $command->limit) {
                         break 3;
                     }
@@ -95,30 +114,7 @@ final readonly class SyncPublicationsHandler
             }
         }
 
-        return new SyncPublicationsResult($plans, $applied, $failures, $noopSkipped, $totalCandidates);
-    }
-
-    /**
-     * Returnt true wanneer ALLE gewenste flags al de juiste waarde hebben in
-     * AFAS. Een onbekende flag (niet in de reader-output) betekent "we weten
-     * het niet" → return false (= wel PUT'en, veilig).
-     *
-     * @param array<string, bool>                  $desired
-     * @param array<string, array<string, bool>>   $currentState  per itemcode → uuid → bool
-     */
-    private function matchesCurrentState(string $itemcode, array $desired, array $currentState): bool
-    {
-        $current = $currentState[$itemcode] ?? null;
-        if ($current === null) {
-            return false;
-        }
-        foreach ($desired as $uuid => $expected) {
-            if (!array_key_exists($uuid, $current) || $current[$uuid] !== $expected) {
-                return false;
-            }
-        }
-
-        return true;
+        return new SyncPublicationsResult($plans, $applied, $failures, $noopSkipped, $totalCandidates, $onlineNotAssigned);
     }
 
     /**

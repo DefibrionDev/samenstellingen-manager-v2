@@ -8,19 +8,21 @@ use Defibrion\Samenstellingen\Application\Publications\AfasFreeFieldStateReader;
 use Defibrion\Samenstellingen\Infrastructure\Afas\Http\AfasHttpClient;
 
 /**
- * Pull Get_Artikelen één keer en map de bekende NL-website-vrije-velden
- * (Sync_Reseller_NL + Tonen_Reseller_NL) naar hun UUID's. Voor andere
- * websites (geen alias in Get_Artikelen) blijft de map leeg → handler
- * skipt niet en PUT'et alsnog.
+ * Pull Get_Artikelen één keer en map de bekende website-vrije-velden naar hun
+ * UUID's (Reseller NL + ARKY). Voor websites zonder alias in Get_Artikelen
+ * blijft de map leeg → handler skipt niet en PUT'et alsnog.
  *
- * Als Defibrion meer free-field aliassen in Get_Artikelen ontsluit, breid
- * dan COLUMN_TO_UUID uit met de bijbehorende mapping.
+ * Als Defibrion meer free-field aliassen in Get_Artikelen ontsluit (bv.
+ * Sync_Defib24_ES), breid dan COLUMN_TO_UUID uit met de bijbehorende mapping.
+ * UUID's spiegelen de websites-tabel.
  */
 final readonly class HttpAfasFreeFieldStateReader implements AfasFreeFieldStateReader
 {
     private const COLUMN_TO_UUID = [
         'Sync_Reseller_NL' => 'U4E3E32DEFB374A1BA9F8680B8C405907',
         'Tonen_Reseller_NL' => 'UD77EC755E2F1404EB184A956685A7C0C',
+        'Sync_ARKY' => 'U50A21258B95F4493986990B0141049C8',
+        'Tonen_ARKY' => 'U620F63CE511E4308923C155399EE8EAE',
     ];
 
     public function __construct(private AfasHttpClient $client)

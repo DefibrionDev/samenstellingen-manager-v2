@@ -38,12 +38,13 @@ final class SyncPublicationsHandlerTest extends TestCase
         sort($codes, SORT_STRING);
         self::assertSame(['11111', '11111-60110', '11111-60112'], $codes);
 
-        // Flags: Reseller NL gepubliceerd → sync+tonen true; Reseller FR niet → false
+        // Additief: Reseller NL gepubliceerd → sync+tonen in de payload (true); Reseller FR
+        // niet gepubliceerd → NIET in de payload, zodat de PUT 'm nooit kan uitzetten.
         $flags = $result->plans[0]->freeFieldFlags;
         self::assertTrue($flags['U_NL_SYNC']);
         self::assertTrue($flags['U_NL_TONEN']);
-        self::assertFalse($flags['U_FR_SYNC']);
-        self::assertFalse($flags['U_FR_TONEN']);
+        self::assertArrayNotHasKey('U_FR_SYNC', $flags);
+        self::assertArrayNotHasKey('U_FR_TONEN', $flags);
     }
 
     #[Test]
@@ -330,5 +331,101 @@ final class SyncPublicationsHandlerTest extends TestCase
 
         self::assertCount(1, $result->plans);
         self::assertSame('11111', $result->plans[0]->afasItemcode);
+    }
+
+    #[Test]
+    public function additiveSyncOnlyCarriesDesiredTrueFlags(): void
+    {
+        $bag = $this->makeWiringWithState([]); // AFAS leeg → NL onbekend → aanzetten
+
+        $result = ($bag['handler'])(new SyncPublications(apply: false));
+
+        self::assertCount(2, $result->plans);
+        self::assertSame(['U_NL_SYNC' => true, 'U_NL_TONEN' => true], $result->plans[0]->freeFieldFlags);
+        self::assertSame([], $result->onlineNotAssigned);
+    }
+
+    #[Test]
+    public function reportsOnlineNotAssignedAndNeverTurnsOff(): void
+    {
+        // NL al aan in AFAS (matcht desired) + FR aan in AFAS (niet toegekend in de tool).
+        $online = ['U_NL_SYNC' => true, 'U_NL_TONEN' => true, 'U_FR_SYNC' => true, 'U_FR_TONEN' => true];
+        $bag = $this->makeWiringWithState(['11111' => $online, '11111-60110' => $online]);
+
+        $result = ($bag['handler'])(new SyncPublications(apply: true));
+
+        // Niets aan te zetten (NL al goed) → geen plans, writer niet aangeroepen → niets uitgezet.
+        self::assertSame([], $result->plans);
+        self::assertSame(0, $result->appliedCount);
+        self::assertSame([], $bag['writer']->applied);
+        // FR staat online maar is niet toegekend → meldingen voor beide itemcodes.
+        self::assertCount(2, $result->onlineNotAssigned);
+        $codes = array_map(static fn ($r) => $r->afasItemcode, $result->onlineNotAssigned);
+        sort($codes, SORT_STRING);
+        self::assertSame(['11111', '11111-60110'], $codes);
+        self::assertSame('Reseller FR', $result->onlineNotAssigned[0]->websiteName);
+    }
+
+    #[Test]
+    public function turnsOnMissingDesiredFlagButLeavesUnassignedOnlineFlagUntouched(): void
+    {
+        // FR aan in AFAS (niet toegekend), NL onbekend (moet aan).
+        $state = ['U_FR_SYNC' => true, 'U_FR_TONEN' => true];
+        $bag = $this->makeWiringWithState(['11111' => $state, '11111-60110' => $state]);
+
+        $result = ($bag['handler'])(new SyncPublications(apply: false));
+
+        self::assertCount(2, $result->plans);
+        $flags = $result->plans[0]->freeFieldFlags;
+        self::assertSame(['U_NL_SYNC' => true, 'U_NL_TONEN' => true], $flags); // alleen NL aan
+        self::assertArrayNotHasKey('U_FR_SYNC', $flags);                       // FR niet aangeraakt
+        self::assertCount(2, $result->onlineNotAssigned);                      // FR gemeld
+    }
+
+    /**
+     * Wiring met 1 base (11111, NL gepubliceerd) + 1 accessoire (60110) en websites
+     * Reseller NL + Reseller FR. AFAS-free-field-state injecteerbaar per test.
+     *
+     * @param array<int|string, array<string, bool>> $afasState (numerieke itemcode-keys worden door PHP naar int gecast)
+     *
+     * @return array{handler: SyncPublicationsHandler, writer: InMemoryPublicationSyncWriter}
+     */
+    private function makeWiringWithState(array $afasState): array
+    {
+        $groups = new InMemoryGroupRepository();
+        $bases = new InMemoryGroupBaseRepository($groups);
+        $accessoires = new InMemoryAccessoireRepository();
+        $links = new InMemoryGroupAccessoireRepository($groups, $accessoires);
+        $afas = new InMemoryAfasSamenstellingenRepository();
+        $websites = new InMemoryWebsiteRepository();
+        $publications = new InMemoryBasePublicationRepository();
+        $writer = new InMemoryPublicationSyncWriter();
+
+        $groups->save(new Group('Heartsine 350P', '10013'));
+        $base = $bases->saveForGroup('10013', new GroupBase(null, 'NL', 'NL', '11111'));
+        $accessoires->save(new Accessoire('60110', 'Rugzak'));
+        $links->link('10013', '60110');
+        $afas->replaceSnapshot([
+            new AfasSamenstelling('11111', 'Base', '10013', []),
+            new AfasSamenstelling('11111-60110', 'Variant 1', '11111', []),
+        ]);
+        $wNl = $websites->save(new Website(null, 'Reseller NL', 'U_NL_SYNC', 'U_NL_TONEN'));
+        $websites->save(new Website(null, 'Reseller FR', 'U_FR_SYNC', 'U_FR_TONEN'));
+        self::assertNotNull($base->id);
+        self::assertNotNull($wNl->id);
+        $publications->setPublished($base->id, $wNl->id, true);
+
+        $handler = new SyncPublicationsHandler(
+            $groups,
+            $bases,
+            $links,
+            $afas,
+            $websites,
+            $publications,
+            $writer,
+            new InMemoryAfasFreeFieldStateReader($afasState),
+        );
+
+        return ['handler' => $handler, 'writer' => $writer];
     }
 }

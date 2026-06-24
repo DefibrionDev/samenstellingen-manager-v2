@@ -171,3 +171,28 @@ Aanleiding: de bestaande missing-variants-audit verbergt no_match-rijen zodra ee
 ### Sub-slice NM-3 — Live verificatie
 - [x] CLI + HTTP-endpoint tegen de echte snapshot: **87 no_match-varianten** shop-breed; `21012-FR-60110` / `21012-FR-60223` tonen `bestaat_in_afas = 21012-FR-60110/-60223` met `mist = 81211`, `teveel = —`.
 - [x] UI-pagina `/no-match` geopend: rendert de 87 rijen incl. de 21012-FR-cases (mist 81211) én een echte "teveel"-case (Defibtech: mist 70112, teveel 10788).
+
+---
+
+## Slice PS — Publicatie-sync additief + "online maar niet toegekend"-audit
+
+Eindbeeld: `publications:sync` zet alléén AFAS free-field-vlaggen AAN die de tool eist en zet **nooit** iets uit; vlaggen die in AFAS aanstaan maar in de tool niet zijn toegekend worden niet aangeraakt maar gemeld op een read-only audit-pagina ("staat online, maar niet door jou toegekend"). Zie PLAN.md §12.
+
+Aanleiding: de huidige sync PUT't de volledige flag-set (true én false) → zou 9 NL-bases (Heartsine 350P/360P/500P, Philips HS1 + FRx, Reanibex 100 semi/vol, Zoll AED 3 vol + Plus vol) van ARKY afhalen (AFAS `Sync_ARKY=1`, tool reseller-only). De 7 `10144-FR`-variants zijn juist additief (lege `Tonen_ARKY` afmaken).
+
+### Sub-slice PS-0 — Additieve sync + online-niet-toegekend-detectie
+- [x] Reader-fix (ARKY-kolommen `Sync_ARKY`/`Tonen_ARKY` in `HttpAfasFreeFieldStateReader`) — meegecommit (+ mock-handler-test).
+- [x] `SyncPublicationsHandler` additief: plan per itemcode alléén als ∃ flag (desired=true ∧ current≠true); plan-flags = enkel de desired=true-velden (assert true), nooit false → kan niet uitzetten. `SyncPublicationsResult` + `OnlineNotAssignedRow` voor de "online-niet-toegekend"-rijen (current=true ∧ desired=false).
+- [x] `HttpPublicationSyncWriter` doet al een partial PUT (Fields = ItCd + enkel de meegegeven uuids) → geen writer-wijziging nodig; de additieve plan-flags maken het automatisch additief.
+- [x] Unit-tests (12): zet aan wat de tool eist; laat een AFAS-true-die-niet-toegekend-is staan (géén uitzet-plan); detecteert online-niet-toegekend. `publications:sync` toont een WARNING-sectie "online maar niet toegekend (niet gemuteerd)". Live: 80 → 71 plans + 9 online-niet-toegekend.
+
+### Sub-slice PS-1 — Audit-CLI + JSON-endpoint
+- [ ] Read-only audit-handler + row-DTO (itemcode, base, groep, website, welke flag staat online) die de online-niet-toegekend-set oplevert (deelt de vergelijk-logica met de sync).
+- [ ] CLI-commando + `GET /api/...`-endpoint + tests (ApiTest + CLI).
+
+### Sub-slice PS-2 — Web-UI audit-pagina
+- [ ] React-pagina (route + nav-link onder Audits) + `web/src/api.ts` types + fetcher + vitest.
+
+### Sub-slice PS-3 — Live verificatie
+- [ ] `publications:sync` dry-run tegen de echte snapshot: de 7 `10144-FR`-variants additief AAN (lege `Tonen_ARKY`→AAN), **0 uitzettingen**; apply maakt ze af.
+- [ ] Audit toont de 9 NL-bases (ARKY online, niet toegekend); UI-pagina geverifieerd.

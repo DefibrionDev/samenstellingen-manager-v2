@@ -214,3 +214,54 @@ De bestaande missing-variants-audit en `fix-missing` blijven ongemoeid; dit is p
 
 - Corrigeren van de AFAS-data zelf. De pagina signaleert alleen.
 - Wijzigingen aan de bestaande missing-variants-audit of aan `fix-missing`.
+
+## 12. Publicatie-sync additief + "online-maar-niet-toegekend"-audit
+
+### Probleem
+
+`publications:sync` PUT't de volledige flag-set (true én false) per itemcode, dus het kan
+flags **uitzetten** die in AFAS aanstaan maar in de tool niet zijn toegekend. Concreet gezien
+(geverifieerd): 9 NL-bases (Heartsine 350P/360P/500P, Philips HS1 + FRx, Reanibex 100 semi/vol,
+Zoll AED 3 vol + Plus vol) hebben in AFAS `Sync_ARKY=1`, maar staan in de tool als reseller-only
+→ de sync zou ze van ARKY afhalen. Ongewenst: de tool mag publiceren wat ze eist, maar niet
+ongevraagd depubliceren wat handmatig in AFAS is aangezet.
+
+Voorwaarde-fix (al geïmplementeerd, nog te committen): de free-field-reader leest nu ook
+`Sync_ARKY`/`Tonen_ARKY` uit `Get_Artikelen`, zodat de vergelijking überhaupt klopt
+(zonder die fix: 1549 false plans; mét: 80 echte diffs).
+
+### Gewenst gedrag
+
+1. **Additieve sync.** `publications:sync` zet alléén flags AAN die de tool eist (desired=true
+   terwijl AFAS ≠ true, incl. onbekend). Het zet **nooit** een flag uit (true→false blijft staan).
+   De PUT bevat enkel de aan-te-zetten velden → een partial update die de rest ongemoeid laat.
+2. **Audit "online maar niet toegekend".** Waar een AFAS-flag AAN staat terwijl de tool die
+   website níét heeft toegekend (desired=false ∧ AFAS=true) → meld op een aparte read-only
+   audit-pagina ("staat online, maar niet door jou toegekend"). Geen mutatie.
+
+### Aanpak
+
+- `SyncPublicationsHandler`:
+  - plan per itemcode alléén als ∃ flag (desired=true ∧ current≠true); plan-flags = enkel de
+    desired=true-velden (assert true). Geen false-velden in de payload → kan nooit uitzetten.
+  - verzamel "online-niet-toegekend"-rijen (current=true ∧ desired=false) apart in het resultaat,
+    voor de audit — niet voor de PUT.
+- Verifieer dat `HttpPublicationSyncWriter` / `FbCompositionVariantPayloadBuilder` met enkel de
+  aan-velden een partial PUT doet (overige free-fields onaangeroerd).
+- Nieuwe audit (handler + DTO + CLI + JSON-endpoint + web-pagina), spiegelt de no_match-audit:
+  per itemcode × website welke flag AAN staat zonder tool-toekenning, met groep/base/itemcode.
+
+### Slices
+
+- **Slice PS-0** — `SyncPublicationsHandler` additief + "online-niet-toegekend" in het resultaat;
+  unit-tests (zet aan wat de tool eist; zet nooit uit; detecteert online-niet-toegekend). Payload-
+  builder partial-update geverifieerd.
+- **Slice PS-1** — audit-handler + row-DTO + CLI-commando + JSON-endpoint + tests.
+- **Slice PS-2** — web-UI audit-pagina (route + nav-link).
+- **Slice PS-3** — live verificatie: de 7 `10144-FR`-variants worden additief aangezet (lege
+  `Tonen_ARKY`→AAN); de 9 NL-bases worden **niet** uitgezet maar verschijnen in de nieuwe audit.
+
+### Niet in scope
+
+- Automatisch uitzetten/depubliceren in AFAS — bewust nooit; alleen melden.
+- De free-field-reader-uitbreiding zelf (al gedaan; aparte commit).
