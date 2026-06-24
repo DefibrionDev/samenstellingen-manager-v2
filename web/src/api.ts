@@ -123,6 +123,12 @@ export interface NoMatchVariantRow {
   extraItemcodes: string[];
 }
 
+export interface OnlineNotAssignedRow {
+  afasItemcode: string;
+  baseAfasItemcode: string;
+  websiteName: string;
+}
+
 export type ProductTypeIssueType = 'base-leeg' | 'variant-fixbaar' | 'variant-geblokkeerd';
 
 export interface ProductTypeIssueRow {
@@ -148,6 +154,7 @@ export const api = {
     jsonGet<GroupVariantRow[]>(`/api/groups/${encodeURIComponent(familyHead)}/variants`),
   listMissingVariants: () => jsonGet<MissingVariantRow[]>('/api/missing-variants'),
   listNoMatchVariants: () => jsonGet<NoMatchVariantRow[]>('/api/wc/no-match'),
+  listOnlineNotAssigned: () => jsonGet<OnlineNotAssignedRow[]>('/api/wc/online-not-assigned'),
   listNameDrift: () => jsonGet<NameDriftRow[]>('/api/name-drift'),
   listSuspiciousBases: () => jsonGet<SuspiciousBaseRow[]>('/api/suspicious-bases'),
   listArticlePrices: (itemcode: string) =>

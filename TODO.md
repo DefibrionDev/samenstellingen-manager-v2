@@ -193,8 +193,8 @@ Aanleiding: de huidige sync PUT't de volledige flag-set (true én false) → zou
 - [x] Read-only `ListOnlineNotAssignedHandler` (wrapt `SyncPublicationsHandler` dry-run met de snapshot-reader, geen AFAS) + `audit:online-not-assigned` CLI + `GET /api/wc/online-not-assigned` (Container-wiring met `SqliteAfasFreeFieldStateRepository`). Handler-unit-test + ApiTest (seedt de snapshot-tabel). Live: CLI + endpoint tonen de 9 NL-bases (ARKY online, niet toegekend).
 
 ### Sub-slice PS-2 — Web-UI audit-pagina
-- [ ] React-pagina (route + nav-link onder Audits) + `web/src/api.ts` types + fetcher + vitest.
+- [x] React-pagina `OnlineNotAssigned.tsx` (route `/online-not-assigned` + nav-link onder Audits) + `web/src/api.ts` `OnlineNotAssignedRow`-type + `listOnlineNotAssigned`-fetcher + vitest. DataGrid: itemcode | base | online-op-website.
 
 ### Sub-slice PS-3 — Live verificatie
-- [ ] `publications:sync` dry-run tegen de echte snapshot: de 7 `10144-FR`-variants additief AAN (lege `Tonen_ARKY`→AAN), **0 uitzettingen**; apply maakt ze af.
-- [ ] Audit toont de 9 NL-bases (ARKY online, niet toegekend); UI-pagina geverifieerd.
+- [x] `publications:sync --apply` tegen de echte snapshot: **71 additieve plannen toegepast, 0 uitzettingen** (64 Reanibex-reseller + 7 `10144-FR` ARKY-tonen); re-dry-run = "niets te doen".
+- [x] Audit toont de **9 NL-bases** (ARKY online, niet toegekend) — CLI, endpoint én web-pagina geverifieerd.
