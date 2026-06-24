@@ -6,6 +6,7 @@ namespace Defibrion\Samenstellingen\Application\Afas;
 
 use Defibrion\Samenstellingen\Application\Group\SyncAllGroups;
 use Defibrion\Samenstellingen\Application\Group\SyncAllGroupsHandler;
+use Defibrion\Samenstellingen\Application\Publications\FreeFieldStateRefresher;
 use Defibrion\Samenstellingen\Domain\Afas\AfasArticleRepository;
 use Defibrion\Samenstellingen\Domain\Afas\AfasArticlesFetcher;
 use Defibrion\Samenstellingen\Domain\Afas\AfasPrijslijstenFetcher;
@@ -35,6 +36,7 @@ final readonly class PullAfasSamenstellingenHandler
         private GroupRepository $groupRepository,
         private GroupBaseRepository $groupBaseRepository,
         private FamilyHeadShiftDetector $shiftDetector,
+        private FreeFieldStateRefresher $freeFieldStateRefresher,
     ) {
     }
 
@@ -54,6 +56,11 @@ final readonly class PullAfasSamenstellingenHandler
             $activeArticles[] = $article;
         }
         $this->articleRepository->replaceSnapshot($activeArticles);
+
+        // Ververs de lokale free-field-state-snapshot (Sync_*/Tonen_* per website)
+        // zodat de "online maar niet toegekend"-audit lokaal kan lezen. No-op
+        // zonder AFAS-credentials. Zie PLAN.md §12.
+        $this->freeFieldStateRefresher->refresh();
 
         $allSamenstellingen = $this->fetcher->fetchAll();
         $samenstellingen = array_values(array_filter(

@@ -32,6 +32,7 @@ use Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryAfasPr
 use Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryAfasSamenstellingenRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryGroupBaseRepository;
 use Defibrion\Samenstellingen\Infrastructure\Persistence\InMemory\InMemoryGroupRepository;
+use Defibrion\Samenstellingen\Infrastructure\Publications\NullFreeFieldStateRefresher;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -201,6 +202,7 @@ final class PullAfasSamenstellingenHandlerTest extends TestCase
             $groups,
             $bases,
             new FamilyHeadShiftDetector(),
+            new NullFreeFieldStateRefresher(),
         );
     }
 }

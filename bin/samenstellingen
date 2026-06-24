@@ -137,7 +137,9 @@ use Defibrion\Samenstellingen\Infrastructure\Bom\Http\HttpBomComponentRestoreWri
 use Defibrion\Samenstellingen\Infrastructure\Bom\Http\HttpBomComponentStripWriter;
 use Defibrion\Samenstellingen\Infrastructure\Bom\Http\HttpBomLineReader;
 use Defibrion\Samenstellingen\Infrastructure\Publications\HttpAfasFreeFieldStateReader;
+use Defibrion\Samenstellingen\Infrastructure\Publications\HttpFreeFieldStateRefresher;
 use Defibrion\Samenstellingen\Infrastructure\Publications\HttpPublicationSyncWriter;
+use Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAfasFreeFieldStateRepository;
 use Defibrion\Samenstellingen\Interface\Cli\RestoreStickersCommand;
 use Defibrion\Samenstellingen\Interface\Cli\StripBomComponentCommand;
 use Defibrion\Samenstellingen\Interface\Cli\SyncPublicationsCommand;
@@ -357,6 +359,11 @@ if ($hasAfasCreds) {
     $productTypeFetcher = new HttpPowerBiItemFetcher($afasClient);
     $prijzenFetcher = new HttpAfasPrijzenFetcher($afasClient, $prijslijstWhitelistRepository);
     $prijslijstenFetcher = new HttpAfasPrijslijstenFetcher($afasClient);
+    $freeFieldStateRepository = new SqliteAfasFreeFieldStateRepository($pdo);
+    $freeFieldStateRefresher = new HttpFreeFieldStateRefresher(
+        new HttpAfasFreeFieldStateReader($afasClient),
+        $freeFieldStateRepository,
+    );
     $pullHandler = new PullAfasSamenstellingenHandler(
         $fetcher,
         $afasSamenstellingenRepository,
@@ -371,6 +378,7 @@ if ($hasAfasCreds) {
         $groupRepository,
         $baseRepository,
         new \Defibrion\Samenstellingen\Domain\Group\FamilyHeadShiftDetector(),
+        $freeFieldStateRefresher,
     );
     $application->addCommand(new AfasPullCommand($pullHandler));
 

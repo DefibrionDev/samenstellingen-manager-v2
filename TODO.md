@@ -186,9 +186,11 @@ Aanleiding: de huidige sync PUT't de volledige flag-set (true én false) → zou
 - [x] `HttpPublicationSyncWriter` doet al een partial PUT (Fields = ItCd + enkel de meegegeven uuids) → geen writer-wijziging nodig; de additieve plan-flags maken het automatisch additief.
 - [x] Unit-tests (12): zet aan wat de tool eist; laat een AFAS-true-die-niet-toegekend-is staan (géén uitzet-plan); detecteert online-niet-toegekend. `publications:sync` toont een WARNING-sectie "online maar niet toegekend (niet gemuteerd)". Live: 80 → 71 plans + 9 online-niet-toegekend.
 
-### Sub-slice PS-1 — Audit-CLI + JSON-endpoint
-- [ ] Read-only audit-handler + row-DTO (itemcode, base, groep, website, welke flag staat online) die de online-niet-toegekend-set oplevert (deelt de vergelijk-logica met de sync).
-- [ ] CLI-commando + `GET /api/...`-endpoint + tests (ApiTest + CLI).
+### Sub-slice PS-1a — Free-field-state snapshot-persistentie (gekozen optie A)
+- [x] Migratie `0026_afas_free_field_state.sql` + `AfasFreeFieldStateRepository` (Sqlite + InMemory) + `FreeFieldStateRefresher` (Http + Null). `afas:pull` ververst de snapshot (1 extra dep op de pull-handler, null-refresher in tests). Contract-tests. Reden voor optie A: de web-app leest alleen de lokale snapshot (snel + testbaar; geen live-AFAS in tests). Live: 46.872 rijen (11.718 itemcodes × 4 uuids).
+
+### Sub-slice PS-1b — Audit (online maar niet toegekend)
+- [ ] Read-only `ListOnlineNotAssignedHandler` die de online-niet-toegekend-set oplevert via de sync-vergelijking met de **snapshot**-reader (lokaal, geen AFAS). CLI-commando + `GET /api/...`-endpoint + tests (ApiTest seeds de snapshot-tabel → geen live AFAS).
 
 ### Sub-slice PS-2 — Web-UI audit-pagina
 - [ ] React-pagina (route + nav-link onder Audits) + `web/src/api.ts` types + fetcher + vitest.
