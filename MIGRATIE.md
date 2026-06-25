@@ -1,6 +1,6 @@
 # ARKY-migratie runbook
 
-Stappenplan voor de migratie van de ARKY-shop (`arkycase.defibrion.dev`, CloudPanel).
+Stappenplan voor de migratie van de ARKY-shop (live: `https://partner.arkycase.eu`; tool-store-naam blijft `arkycase.defibrion.dev` als identifier, CloudPanel).
 Draai de stappen in volgorde. Commando's met `wp` draaien op de server; commando's met
 `php bin/samenstellingen` of het migratiescript draaien lokaal vanuit deze repo.
 

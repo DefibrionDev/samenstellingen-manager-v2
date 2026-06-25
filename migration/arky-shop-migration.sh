@@ -20,7 +20,7 @@
 #     ORDER BY wp.type, wp.wc_product_id;" > migration/wc-sku-meta-map.csv
 #
 set -euo pipefail
-B="${ARKY_STORE_URL:-https://arkycase.defibrion.dev}/wp-json/wc/v3"
+B="${ARKY_STORE_URL:-https://partner.arkycase.eu}/wp-json/wc/v3"
 CK="${ARKY_CK:?zet ARKY_CK}"; CS="${ARKY_CS:?zet ARKY_CS}"
 UA='Mozilla/5.0'
 
