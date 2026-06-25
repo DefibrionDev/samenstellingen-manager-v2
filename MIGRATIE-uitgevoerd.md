@@ -1,4 +1,10 @@
-# ARKY-migratie runbook
+# ARKY-migratie runbook (GEARCHIVEERD)
+
+> **Gearchiveerd — de migratie is uitgevoerd (juni 2026).** Dit document is een
+> historische referentie van het stappenplan; het is geen actief runbook meer.
+> De gebruikte one-off scripts staan in `migration/`. Eventuele losse na-migratie-
+> ingrepen (bv. de `wc-variation-threshold` mu-plugin) worden niet meer als stap
+> hier toegevoegd.
 
 Stappenplan voor de migratie van de ARKY-shop (`partner.arkycase.eu`, CloudPanel).
 Draai de stappen in volgorde. Commando's met `wp` draaien op de server; commando's met
