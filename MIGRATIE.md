@@ -152,23 +152,32 @@ Zet alle variabele AED-parents op ARKY naar het juiste attribuut-model — vast 
 variatie-assen `Language` / `Connectivity` / `Options` (Engelstalig) — en vult elke variatie
 uit de tool-data (gekoppeld via de `_afas_artikelnummer`-meta). Spiegelt het reseller-873-model.
 
+De variatie-assen worden als **globale** attribuut-taxonomieën (`pa_language` / `pa_connectivity`
+/ `pa_options`) met termen aangemaakt en gekoppeld — zoals reseller — i.p.v. platte per-product
+strings. `Brand` blijft bewust een **custom** vast attribuut. Het script maakt ontbrekende termen
++ `pa_connectivity` aan (bestaande termen worden hergebruikt; stale termen blijven staan).
+
 Voorwaarden: `afas:pull` is gedraaid (matched variants + `naam_kort_en`) én stap 9 (`wc:pull`,
 zodat de snapshot de ARKY variable-parents kent en de variaties live bestaan).
 
 Eerst dry-run — controleer dat overal `niet-mapbaar = 0` staat:
 ```bash
-python3 migration/arky-aed-restructure.py --all
+python3 migration/arky-aed-global-attributes.py --all
 ```
 Dan toepassen:
 ```bash
-python3 migration/arky-aed-restructure.py --apply --all
+python3 migration/arky-aed-global-attributes.py --apply --all
 ```
 
-Gedrag: dry-run is default, `--apply` muteert. Een as wordt alléén een variatie-attribuut bij
->1 waarde (bv. enkel Connectivity `None` → vast attribuut). Default-variatie = `English / None /
-Defibrillator`. Brand-overrides voor Heartsine + CU Medical zitten in het script. De 9 groepen
-zonder ARKY variable-parent (Cardiac Science, Defibtech, Lifepak) vallen buiten scope tot hun
-WC-type is rechtgezet.
+Gedrag: dry-run is default, `--apply` muteert, idempotent (her-draaien is veilig). Een as wordt
+alléén een variatie-attribuut bij >1 waarde (bv. enkel Connectivity `None` → vast attribuut).
+Default-variatie = `English / None / Defibrillator`. Brand-overrides voor Heartsine + CU Medical
+zitten in het script. De groepen zonder ARKY variable-parent (Cardiac Science, Defibtech, Lifepak)
+vallen buiten scope tot hun WC-type is rechtgezet.
+
+> Het oudere `arky-aed-restructure.py` (zelfde herstructurering maar met **platte custom**-
+> attributen) is hierdoor vervangen; bewaard als historische referentie. Gebruik voortaan
+> `arky-aed-global-attributes.py`.
 
 ---
 
