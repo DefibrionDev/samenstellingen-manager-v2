@@ -1,6 +1,6 @@
 # ARKY-migratie runbook
 
-Stappenplan voor de migratie van de ARKY-shop (live: `https://partner.arkycase.eu`; tool-store-naam blijft `arkycase.defibrion.dev` als identifier, CloudPanel).
+Stappenplan voor de migratie van de ARKY-shop (`partner.arkycase.eu`, CloudPanel).
 Draai de stappen in volgorde. Commando's met `wp` draaien op de server; commando's met
 `php bin/samenstellingen` of het migratiescript draaien lokaal vanuit deze repo.
 
@@ -135,7 +135,6 @@ automatische order-status-controller uit. (De wholesale-plugins blijven bewust u
 
 ```bash
 wp plugin deactivate disable-emails
-wp plugin activate order-status-rules-for-woocommerce
 ```
 
 ## Stap 9 — Snapshot verversen (lokaal)
@@ -144,7 +143,7 @@ Haal de eindstaat op zodat de lokale snapshot klopt en je kunt verifiëren. Vere
 REST-keys in de DB (appendix A). Nodig vóór stap 10 (die leest de ARKY-parents uit de snapshot).
 
 ```bash
-php bin/samenstellingen wc:pull --store=arkycase.defibrion.dev
+php bin/samenstellingen wc:pull --store=partner.arkycase.eu
 ```
 
 ## Stap 10 — AED-variaties herstructureren op ARKY (lokaal, laatste stap)
@@ -182,7 +181,7 @@ cs_9d66418dd5d45b3d3991e3a57d5a8e47d59f3dce
 
 In lokale DB zetten (voor `wc:pull`):
 ```bash
-sqlite3 tmp/samenstellingen.sqlite "UPDATE woocommerce_stores SET consumer_key='ck_...', consumer_secret='cs_...' WHERE name='arkycase.defibrion.dev';"
+sqlite3 tmp/samenstellingen.sqlite "UPDATE woocommerce_stores SET consumer_key='ck_...', consumer_secret='cs_...' WHERE name='partner.arkycase.eu';"
 ```
 Het migratiescript leest de keys uit env (`ARKY_CK` / `ARKY_CS`).
 

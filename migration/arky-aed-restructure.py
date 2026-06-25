@@ -18,7 +18,7 @@ Elke WC-variatie wordt aan de tool-data gekoppeld via de _afas_artikelnummer-met
 
 VOORWAARDEN (anders mist 'ie data):
   * `afas:pull` is gedraaid -> group_variants matched + accessoires.naam_kort_en gevuld.
-  * `wc:pull --store=arkycase.defibrion.dev` is gedraaid -> de snapshot kent de
+  * `wc:pull --store=partner.arkycase.eu` is gedraaid -> de snapshot kent de
     ARKY variable-parents (wc_product_id) en de variaties bestaan live op de shop.
   * REST-keys van ARKY staan in de snapshot (woocommerce_stores) — die leest dit script.
 
@@ -38,7 +38,7 @@ NO_VARS = "--no-variations" in sys.argv   # alleen parent (attrs + default_attri
 ALL = "--all" in sys.argv                 # alle ARKY variable-parents i.p.v. de 2 test-AED's
 args = [a for a in sys.argv[1:] if not a.startswith("--")]
 
-STORE = "arkycase.defibrion.dev"
+STORE = "partner.arkycase.eu"
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB_PATH = os.path.join(REPO_ROOT, "tmp", "samenstellingen.sqlite")
 
