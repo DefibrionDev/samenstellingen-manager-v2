@@ -78,6 +78,16 @@ ALIAS = {
 }
 
 
+# Handmatige merk-overrides per wc-id (uit AFAS-naam afgeleid; gaat vóór naam-proxy).
+# Voor producten waar de WC-naam het merk niet toont maar de AFAS-naam wel.
+MANUAL_BRAND = {
+    191: "Ambu", 192: "Ambu", 1367: "Ambu", 1425: "Ambu",   # Ambu Choking/Baby
+    1635: "Laerdal", 1824: "Laerdal",                         # Laerdal Mini-Anne / Manikin Filters
+    2103: "Mindray",                                          # AFAS: Mindray Beneheart-trainer (WC zegt "Universal")
+    6266: "PRESTAN",                                          # PPA-prefix = Prestan
+}
+
+
 def resolve_brand(text):
     if not text:
         return None
@@ -123,7 +133,9 @@ if ONLY:
 plan = []          # (wcid, type, sku, name, brand, bron)
 skipped = []       # (wcid, type, sku, name)
 for wcid, typ, sku, name in parents:
-    if wcid in aed_brand_by_wcid:
+    if wcid in MANUAL_BRAND:
+        brand, bron = MANUAL_BRAND[wcid], "manual"
+    elif wcid in aed_brand_by_wcid:
         brand, bron = aed_brand_by_wcid[wcid], "aed-head"
     else:
         brand = resolve_brand(name)
