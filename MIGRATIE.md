@@ -179,6 +179,12 @@ vallen buiten scope tot hun WC-type is rechtgezet.
 > attributen) is hierdoor vervangen; bewaard als historische referentie. Gebruik voortaan
 > `arky-aed-global-attributes.py`.
 
+> **Option-termen:** de tool leidt Options-labels af uit `accessoires.naam_kort_en`, maar in
+> de shop zijn de `pa_options`-termen handmatig hernoemd (bv. `Backpack` → `First Aid Backpack`).
+> De `OPTION_TERM_OVERRIDE`-map in het script vertaalt tool-naam → shop-term zodat een her-run de
+> bestaande termen **hergebruikt** i.p.v. dubbele aanmaakt. Houd die map in sync als je termen
+> in de shop hernoemt.
+
 ## Stap 11 — Merken zetten op alle producten (lokaal)
 
 Zet per product het merk op **twee** plekken: de WC-native **Brands-taxonomie** (`product_brand`,

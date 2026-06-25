@@ -119,10 +119,27 @@ def conn_str(label):
     return 'None' if (label or '').strip() == '' else label.strip()
 
 
+# De tool leidt Options-labels af uit accessoires.naam_kort_en, maar in de shop
+# zijn de pa_options-termen handmatig hernoemd naar nettere labels. Map de
+# tool-naam naar de bestaande shop-term, zodat een her-run die termen HERGEBRUIKT
+# i.p.v. dubbele aanmaakt. Sleutel = tool-naam (naam_kort_en), waarde = shop-term.
+OPTION_TERM_OVERRIDE = {
+    "ARKY Core Classic outdoor cabinet": "ARKY CORE Classic",
+    "ARKY Core Plus outdoor cabinet": "ARKY CORE Plus",
+    "ARKY outdoor cabinet (heated)": "ARKY Outdoor Cabinet Heated",
+    "ARKY outdoor cabinet (unheated)": "ARKY Outdoor Cabinet Unheated",
+    "Backpack": "First Aid Backpack",
+    "green ARKY indoor cabinet": "ARKY Indoor Cabinet Green",
+    "white ARKY indoor cabinet": "ARKY Indoor Cabinet White",
+    # "Defibrillator" is in beide gelijk.
+}
+
+
 def options_label(acc_ic, acc_en):
     if acc_ic is None:
         return "Defibrillator"
-    return (acc_en or "").strip() or None
+    label = (acc_en or "").strip() or None
+    return OPTION_TERM_OVERRIDE.get(label, label) if label else None
 
 
 # tool: afas_itemcode -> (language_code, variant_label, accessoire_itemcode|None, naam_kort_en|None)
