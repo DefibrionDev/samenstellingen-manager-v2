@@ -400,6 +400,36 @@ final class ApiTest extends TestCase
     }
 
     #[Test]
+    public function exposesBasePriceGapsEndpoint(): void
+    {
+        $pdo = TestDatabase::pdo();
+        $groups = new SqliteGroupRepository($pdo);
+        $bases = new SqliteGroupBaseRepository($pdo);
+        $prijzen = new \Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAfasPrijsRepository($pdo);
+        $prijslijsten = new \Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqliteAfasPrijslijstRepository($pdo);
+        $whitelist = new \Defibrion\Samenstellingen\Infrastructure\Persistence\Sqlite\SqlitePrijslijstWhitelistRepository($pdo);
+
+        $groups->save(new Group('Reanibex', '52112'));
+        $bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL', 'NL', '52112'));
+        $prijslijsten->replaceSnapshot([
+            new \Defibrion\Samenstellingen\Domain\Afas\AfasPrijslijst('003', 'Dealers FR'),
+        ]);
+        $whitelist->add('003', 'test');
+        // Base heeft géén prijslijst-prijs in de whitelisted lijst 003 → gap.
+        $prijzen->replaceSnapshot([]);
+
+        $response = $this->call('GET', '/api/base-price-gaps');
+
+        self::assertSame(200, $response['status']);
+        self::assertCount(1, $response['body']);
+        self::assertSame('003', $response['body'][0]['prijslijstId']);
+        self::assertSame('Dealers FR', $response['body'][0]['prijslijstOmschrijving']);
+        self::assertSame('52112', $response['body'][0]['baseAfasItemcode']);
+        self::assertSame('Reanibex', $response['body'][0]['groupName']);
+        self::assertSame('AED pakket NL', $response['body'][0]['baseName']);
+    }
+
+    #[Test]
     public function exposesOnlineNotAssignedEndpoint(): void
     {
         $pdo = TestDatabase::pdo();

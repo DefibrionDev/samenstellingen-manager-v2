@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Defibrion\Samenstellingen\Interface\Http;
 
+use Defibrion\Samenstellingen\Application\Audit\BasePriceGapsHandler;
 use Defibrion\Samenstellingen\Application\Audit\DuplicateBomAuditHandler;
 use Defibrion\Samenstellingen\Application\Audit\ListMissingVariantsHandler;
 use Defibrion\Samenstellingen\Application\Audit\ListNoMatchVariantsHandler;
@@ -122,6 +123,15 @@ final class AppFactory
                 $container->prijslijstWhitelistRepository(),
             ),
         );
+        $listBasePriceGaps = new ListBasePriceGapsController(
+            new BasePriceGapsHandler(
+                $container->groupRepository(),
+                $container->baseRepository(),
+                $container->afasPrijsRepository(),
+                $container->afasPrijslijstRepository(),
+                $container->prijslijstWhitelistRepository(),
+            ),
+        );
         $listDuplicateBoms = new ListDuplicateBomsController(
             new DuplicateBomAuditHandler($container->afasSamenstellingenRepository()),
         );
@@ -172,6 +182,7 @@ final class AppFactory
         $app->get('/api/suspicious-bases', $listSuspiciousBases);
         $app->get('/api/articles/{itemcode}/prices', $listArticlePrices);
         $app->get('/api/price-drift', $listPriceDrift);
+        $app->get('/api/base-price-gaps', $listBasePriceGaps);
         $app->get('/api/duplicate-boms', $listDuplicateBoms);
         $app->get('/api/product-type-issues', $listProductTypeIssues);
         $app->get('/api/sticker-drift', $listStickerDrift);

@@ -160,6 +160,7 @@ export const api = {
   listArticlePrices: (itemcode: string) =>
     jsonGet<ArticlePrice[]>(`/api/articles/${encodeURIComponent(itemcode)}/prices`),
   listPriceDrift: () => jsonGet<PriceDriftRow[]>('/api/price-drift'),
+  listBasePriceGaps: () => jsonGet<BasePriceGapRow[]>('/api/base-price-gaps'),
   listPrijslijstWhitelist: () =>
     jsonGet<PrijslijstWhitelistEntry[]>('/api/prijslijst-whitelist'),
   listDuplicateBoms: () => jsonGet<DuplicateBomGroup[]>('/api/duplicate-boms'),
@@ -281,6 +282,14 @@ export interface PriceDriftRow {
   actualDeltaCents: number | null;
   actualDeltaEur: string | null;
   status: 'toeslag-drift' | 'missing' | 'inconsistent-staffel';
+}
+
+export interface BasePriceGapRow {
+  prijslijstId: string;
+  prijslijstOmschrijving: string | null;
+  baseAfasItemcode: string;
+  groupName: string;
+  baseName: string;
 }
 
 export interface ArticlePrice {

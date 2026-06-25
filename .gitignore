@@ -21,3 +21,7 @@ output.txt
 
 # migratie-mapping is wél onderdeel van de tooling
 !migration/*.csv
+
+# Python bytecode-cache (migratiescripts)
+__pycache__/
+*.pyc

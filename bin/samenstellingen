@@ -13,6 +13,7 @@ use Defibrion\Samenstellingen\Application\Audit\ListMissingVariantsHandler;
 use Defibrion\Samenstellingen\Application\Audit\ListNoMatchVariantsHandler;
 use Defibrion\Samenstellingen\Application\Audit\NameAuditHandler;
 use Defibrion\Samenstellingen\Application\Audit\DuplicateBomAuditHandler;
+use Defibrion\Samenstellingen\Application\Audit\BasePriceGapsHandler;
 use Defibrion\Samenstellingen\Application\Audit\PriceAuditHandler;
 use Defibrion\Samenstellingen\Application\Audit\StickerAuditHandler;
 use Defibrion\Samenstellingen\Application\Audit\SuspiciousBaseAuditHandler;
@@ -93,6 +94,7 @@ use Defibrion\Samenstellingen\Infrastructure\Fix\HttpVariantWriteContextLookup;
 use Defibrion\Samenstellingen\Infrastructure\Fix\PullAfasVariantSnapshotRefresher;
 use Defibrion\Samenstellingen\Infrastructure\Fix\HttpFbSalesPriceWriter;
 use Defibrion\Samenstellingen\Infrastructure\Fix\HttpGetPrijzenBeginDateLookup;
+use Defibrion\Samenstellingen\Interface\Cli\AuditBasePricesCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AuditPricesCommand;
 use Defibrion\Samenstellingen\Interface\Cli\AuditStickersCommand;
 use Defibrion\Samenstellingen\Interface\Cli\FixMissingVariantsCommand;
@@ -267,6 +269,13 @@ $priceAuditHandler = new PriceAuditHandler(
     $afasPrijslijstRepository,
     $prijslijstWhitelistRepository,
 );
+$basePriceGapsHandler = new BasePriceGapsHandler(
+    $groupRepository,
+    $baseRepository,
+    $afasPrijsRepository,
+    $afasPrijslijstRepository,
+    $prijslijstWhitelistRepository,
+);
 
 $application = new Application('samenstellingen-manager');
 $application->addCommand(new CreateGroupCommand($createGroupHandler));
@@ -336,6 +345,7 @@ $application->addCommand(new AuditNamesCommand($nameAuditHandler));
 $application->addCommand(new AuditMissingCbsCommand(new MissingCbsAuditHandler($afasSamenstellingenRepository)));
 $application->addCommand(new AuditSuspiciousBasesCommand($suspiciousBaseAuditHandler));
 $application->addCommand(new AuditPricesCommand($priceAuditHandler));
+$application->addCommand(new AuditBasePricesCommand($basePriceGapsHandler));
 $application->addCommand(new AuditDuplicateBomsCommand(new DuplicateBomAuditHandler($afasSamenstellingenRepository)));
 $familyHeadParentAuditHandler = new FamilyHeadParentAuditHandler($groupRepository, $afasSamenstellingenRepository);
 $application->addCommand(new AuditFamilyHeadParentCommand($familyHeadParentAuditHandler));

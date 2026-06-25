@@ -198,3 +198,30 @@ Aanleiding: de huidige sync PUT't de volledige flag-set (true én false) → zou
 ### Sub-slice PS-3 — Live verificatie
 - [x] `publications:sync --apply` tegen de echte snapshot: **71 additieve plannen toegepast, 0 uitzettingen** (64 Reanibex-reseller + 7 `10144-FR` ARKY-tonen); re-dry-run = "niets te doen".
 - [x] Audit toont de **9 NL-bases** (ARKY online, niet toegekend) — CLI, endpoint én web-pagina geverifieerd.
+
+---
+
+## Slice BP — Audit "base ontbreekt in whitelist-prijslijst"
+
+Eindbeeld: een aparte, read-only audit die per managed base-samenstelling × whitelist-prijslijst meldt waar een prijslijst-prijs (`debiteur_id IS NULL`) ontbreekt — het gat dat `audit:prices` niet ziet (die vergelijkt alleen variant-vs-base waar de base al in een lijst staat). Surfaces: CLI `audit:base-prices` + JSON-endpoint `GET /api/base-price-gaps` + web-pagina. Scope = bases, niet de accessoire-varianten. Raakt `audit:prices` / `price-drift` niet. Zie PLAN.md §13.
+
+Aanleiding: handmatig opgespoorde gaten (`tmp/bases-zonder-prijslijstprijs.csv`): 003=10, 026=32, 029=32 bases ontbreken in de whitelist-lijsten (027=0). Geen audit-flow → onzichtbaar naast `audit:prices`.
+
+### Sub-slice BP-0 — Handler + row-DTO
+- [x] `ListBasePriceGaps` command-VO + `BasePriceGapRow` DTO (`prijslijstId`, `prijslijstOmschrijving: ?string`, `baseAfasItemcode`, `groupName`, `baseName`).
+- [x] `BasePriceGapsHandler`: itereert groepen → bases met `afas_itemcode <> ''`; per whitelist-prijslijst (gesorteerd) één rij als er géén prijslijst-prijs-rij (`debiteur_id IS NULL`) voor `(itemcode, prijslijst_id)` bestaat. Omschrijving uit `afas_prijslijsten`. Klant-prijzen tellen niet als dekking; base zonder itemcode overgeslagen.
+- [x] 7 unit-tests (in-memory repo's): base zonder prijs in whitelist-lijst → rij; base mét prijs → geen rij; niet-whitelist-lijst genegeerd; alleen-klant-prijs → telt als ontbrekend; base zonder itemcode overgeslagen; onbekende prijslijst → null-omschrijving.
+
+### Sub-slice BP-1 — CLI + JSON-endpoint
+- [x] `AuditBasePricesCommand` (`audit:base-prices`): tabel prijslijst | base-itemcode | groep | base-naam. Lege set → succes-notice; note telt rijen + ontbrekende-per-lijst. Informatief → exit SUCCESS (spiegelt `audit:no-match`).
+- [x] `ListBasePriceGapsController` → `GET /api/base-price-gaps` (JSON: alle DTO-velden). AppFactory + bin-bootstrap wiring.
+- [x] PHP-tests: ApiTest-endpoint (seed base + whitelist-lijst zonder prijs → rij) + 2 CLI-tests (tabel toont ontbrekende base + per-lijst-note; lege set → notice).
+
+### Sub-slice BP-2 — Web-UI-pagina
+- [x] React-pagina `BasePriceGaps.tsx` (route `/base-price-gaps` + nav-link onder **Prijzen**, naast Price drift — daar staan de prijs-audits): DataGrid met prijslijst, base-itemcode, groep, base-naam.
+- [x] `web/src/api.ts` `BasePriceGapRow`-type + `listBasePriceGaps`-fetcher.
+- [x] Vitest: pagina rendert de gap-rij (base-itemcode + prijslijst).
+
+### Sub-slice BP-3 — Live verificatie
+- [x] CLI + HTTP-endpoint tegen de echte snapshot: **74 rijen, 003=10 / 026=32 / 029=32** (027 whitelisted maar 0 gaten) — exact gelijk aan `tmp/bases-zonder-prijslijstprijs.csv`.
+- [x] UI-pagina `/base-price-gaps` geopend (Vite 5173 + docker-backend 8181): rendert de 74 ontbrekende bases per whitelist-prijslijst, nav-link onder Prijzen.

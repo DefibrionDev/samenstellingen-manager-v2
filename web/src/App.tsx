@@ -48,6 +48,7 @@ const groups: NavGroup[] = [
     label: 'Prijzen',
     links: [
       { to: '/price-drift', label: 'Price drift' },
+      { to: '/base-price-gaps', label: 'Base-prijs-gaten' },
       { to: '/prijslijst-whitelist', label: 'Prijslijst-whitelist' },
     ],
   },

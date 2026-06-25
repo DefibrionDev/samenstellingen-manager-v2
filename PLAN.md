@@ -265,3 +265,57 @@ Voorwaarde-fix (al geïmplementeerd, nog te committen): de free-field-reader lee
 
 - Automatisch uitzetten/depubliceren in AFAS — bewust nooit; alleen melden.
 - De free-field-reader-uitbreiding zelf (al gedaan; aparte commit).
+
+## 13. Audit "base ontbreekt in whitelist-prijslijst"
+
+### Probleem
+
+`audit:prices` (`PriceAuditHandler`) kan **niet** zien dat een base-samenstelling helemaal
+géén prijs heeft in een whitelist-prijslijst. Die audit indexeert per base de prijzen die
+er al zijn (`baseIndex`) en vergelijkt vervolgens per `(prijslijst, staffel)` de variant
+tegen de base. Heeft een base in een whitelist-prijslijst geen enkele rij — of staat-ie in
+géén enkele prijslijst — dan is `baseIndex` voor die lijst leeg en produceert de audit
+0 rijen: er valt niets te vergelijken. Precies die "hele base mist in deze lijst"-gaten
+zijn onzichtbaar. Handmatig opgespoord (zie `tmp/bases-zonder-prijslijstprijs.csv`): in de
+whitelist-lijsten ontbreken nu 003=10, 026=32, 029=32 bases (027=0).
+
+### Aanpak
+
+Een **aparte, read-only audit** die per managed base × whitelist-prijslijst meldt waar een
+prijslijst-prijs ontbreekt. Spiegelt `audit:prices` / `price-drift` (zelfde lagen, eigen
+handler + endpoint + pagina), maar met de omgekeerde vraag: niet "klopt de toeslag?" maar
+"staat de base überhaupt in deze lijst?".
+
+- **Scope = base-samenstellingen** (`group_bases.afas_itemcode <> ''`), **niet** de
+  accessoire-varianten (kast e.d.) — bevestigd door de gebruiker. Variant-gaten zitten al
+  in `audit:prices` (status `missing`), en alleen waar de base er wél is.
+- **Per whitelist-prijslijst** (`prijslijst_whitelist`): voor elke base, als er géén
+  prijslijst-prijs-rij (`afas_prijzen` met `debiteur_id IS NULL`) voor die `(itemcode,
+  prijslijst_id)` bestaat → één rij. Klant-prijzen (`debiteur_id` gevuld) tellen niet mee.
+- **Read-only, lokale snapshot** — leest `group_bases × groups`, `prijslijst_whitelist`,
+  `afas_prijslijsten` (voor de omschrijving) en `afas_prijzen`. Muteert niets.
+
+Row-DTO (per `base × ontbrekende prijslijst`): `prijslijstId`, `prijslijstOmschrijving`,
+`baseAfasItemcode`, `groupName`, `baseName`. Dit matcht de CSV-kolommen 1-op-1, zodat de
+bestaande CSV een dump van deze audit wordt.
+
+Voorgestelde namen (aanpasbaar): CLI `audit:base-prices`, endpoint `GET /api/base-price-gaps`,
+pagina `BasePriceGaps.tsx`, nav-link "Base-prijs-gaten" onder Audits.
+
+### Slices
+
+- **Slice BP-0** — handler die per base × whitelist-prijslijst de ontbrekende prijs vindt +
+  row-DTO. Unit-tests met in-memory repo's (base zonder prijs → rij; base mét prijs → geen
+  rij; niet-whitelist-lijst genegeerd; klant-prijs telt niet als dekking; base zonder
+  itemcode overgeslagen).
+- **Slice BP-1** — CLI-commando + HTTP-endpoint (JSON) + endpoint-test (seed-snapshot).
+- **Slice BP-2** — web-UI: nieuwe audit-pagina + route + nav-link; vitest.
+- **Slice BP-3** — live verificatie tegen de echte snapshot: de aantallen sluiten aan op de
+  handmatige CSV (003=10, 026=32, 029=32, 027=0).
+
+### Niet in scope
+
+- Prijzen in AFAS aanmaken/wijzigen — dit is de data-gap die AFAS-zijdig opgelost wordt; de
+  audit signaleert alleen.
+- Accessoire-varianten (kast e.d.) — die dekt `audit:prices`.
+- Wijzigingen aan `audit:prices` / `price-drift` zelf.

@@ -16,6 +16,7 @@ import { NameDrift } from './pages/NameDrift';
 import { NotFound } from './pages/NotFound';
 import { DuplicateBoms } from './pages/DuplicateBoms';
 import { PriceDrift } from './pages/PriceDrift';
+import { BasePriceGaps } from './pages/BasePriceGaps';
 import { PrijslijstWhitelist } from './pages/PrijslijstWhitelist';
 import { StickerDrift } from './pages/StickerDrift';
 import { ProductTypeIssues } from './pages/ProductTypeIssues';
@@ -45,6 +46,7 @@ const router = createBrowserRouter([
       { path: 'name-drift', element: <NameDrift /> },
       { path: 'suspicious-bases', element: <SuspiciousBases /> },
       { path: 'price-drift', element: <PriceDrift /> },
+      { path: 'base-price-gaps', element: <BasePriceGaps /> },
       { path: 'prijslijst-whitelist', element: <PrijslijstWhitelist /> },
       { path: 'duplicate-boms', element: <DuplicateBoms /> },
       { path: 'sticker-drift', element: <StickerDrift /> },
