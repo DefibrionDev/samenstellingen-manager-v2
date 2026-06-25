@@ -16,7 +16,7 @@
 #     wp.type, COALESCE(wp.wc_parent_id,'') AS parent_id, COALESCE(wp.sku,'') AS sku,
 #     COALESCE(wp.afas_itemcode,'') AS meta FROM woocommerce_products wp
 #     JOIN woocommerce_stores ws ON ws.id=wp.store_id
-#     WHERE ws.name='arkycase.defibrion.dev' AND wp.status<>'trash'
+#     WHERE ws.name='partner.arkycase.eu' AND wp.status<>'trash'
 #     ORDER BY wp.type, wp.wc_product_id;" > migration/wc-sku-meta-map.csv
 #
 set -euo pipefail
