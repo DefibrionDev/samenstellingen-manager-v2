@@ -179,6 +179,26 @@ vallen buiten scope tot hun WC-type is rechtgezet.
 > attributen) is hierdoor vervangen; bewaard als historische referentie. Gebruik voortaan
 > `arky-aed-global-attributes.py`.
 
+## Stap 11 — Merken zetten op alle producten (lokaal)
+
+Zet per product het merk op **twee** plekken: de WC-native **Brands-taxonomie** (`product_brand`,
+het echte merk) én het globale **`pa_brand`-attribuut** (vast, zichtbaar). Merk-bepaling:
+managed AED-parents uit de groeps-data; overige producten via een naam-alias-map (eerste woord),
+met een hele-naam-fallback die alléén toekent als er precies één bekend merk in de naam staat.
+Generieke/Ilcor-genormeerde accessoires (choking-manikins, tourniquets, pocket masks, signs)
+krijgen geen merk.
+
+```bash
+python3 migration/arky-set-brands.py            # dry-run (toont mapping + overgeslagen)
+python3 migration/arky-set-brands.py --apply
+```
+
+Gedrag: dry-run default, `--apply`, idempotent. Maakt ontbrekende Brands- + `pa_brand`-termen aan
+(case-insensitief hergebruik; `Prestan` → `PRESTAN`). Attributen worden **gemerged** — de globale
+Language/Connectivity/Options op AED-parents blijven staan, alleen het custom `Brand` wordt
+vervangen door het globale `pa_brand`. Eén of meer wc-id's als argument beperkt tot die producten
+(handig om de merge eerst op één AED-parent te testen).
+
 ---
 
 # Appendix A — ARKY REST-keys (verse kopie)
