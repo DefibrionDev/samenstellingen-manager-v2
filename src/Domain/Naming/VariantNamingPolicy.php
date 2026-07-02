@@ -28,10 +28,18 @@ use RuntimeException;
  *   - groep `model_name_{nl|fr|en|de}`
  *   - accessoire `naam_kort_{nl|fr|en|de}`
  *
+ * AFAS' Omschrijving-veld (FbItemArticle.Ds) is maximaal 100 tekens. Namen die
+ * daar overheen gaan worden ingekort met een zichtbare ellipsis (…) in het
+ * MODEL-deel; variant-label, taalset en accessoire blijven volledig staan zodat
+ * het onderscheidende deel leesbaar en de naam uniek blijft. Namen die passen
+ * worden nooit aangeraakt.
+ *
  * Falt netjes met een uitvoerbare CLI-suggestie als een veld nog leeg is.
  */
 final readonly class VariantNamingPolicy
 {
+    private const MAX_NAME_LENGTH = 100; // AFAS FbItemArticle 'Omschrijving' (Ds)
+
     private const TEMPLATES = [
         'nl' => ['prefix' => 'AED Pakket:', 'connector' => 'met'],
         'fr' => ['prefix' => 'Pack DAE:', 'connector' => 'avec'],
@@ -61,26 +69,51 @@ final readonly class VariantNamingPolicy
             ));
         }
 
-        $modelWithLabel = $base->variantLabel !== null
-            ? sprintf('%s %s', $modelName, $base->variantLabel)
+        $accessoireNaam = null;
+        if ($accessoire !== null) {
+            $accessoireNaam = $accessoire->naamKort($taalBucket);
+            if ($accessoireNaam === null) {
+                throw new RuntimeException(sprintf(
+                    "Accessoire '%s' mist naam_kort_%s — vul via: `bin/samenstellingen accessoire:set-naam-kort %s %s '<naam>'`",
+                    $accessoire->itemcode,
+                    $taalBucket,
+                    $accessoire->itemcode,
+                    $taalBucket,
+                ));
+            }
+        }
+
+        $name = $this->render($prefix, $modelName, $base->variantLabel, $langSuffix, $connector, $accessoireNaam);
+        if (mb_strlen($name) <= self::MAX_NAME_LENGTH) {
+            return $name;
+        }
+
+        // Te lang voor AFAS: alleen het model-deel inkorten met zichtbare "…".
+        $budget = mb_strlen($modelName) - (mb_strlen($name) - self::MAX_NAME_LENGTH) - 1;
+        if ($budget < 1) {
+            // Extreem geval: zelfs zonder model past 'ie niet — hard afkappen.
+            return rtrim(mb_substr($name, 0, self::MAX_NAME_LENGTH - 1)) . '…';
+        }
+        $ingekortModel = rtrim(mb_substr($modelName, 0, $budget)) . '…';
+
+        return $this->render($prefix, $ingekortModel, $base->variantLabel, $langSuffix, $connector, $accessoireNaam);
+    }
+
+    private function render(
+        string $prefix,
+        string $modelName,
+        ?string $variantLabel,
+        string $langSuffix,
+        string $connector,
+        ?string $accessoireNaam,
+    ): string {
+        $modelWithLabel = $variantLabel !== null
+            ? sprintf('%s %s', $modelName, $variantLabel)
             : $modelName;
 
-        if ($accessoire === null) {
-            return sprintf('%s %s (%s)', $prefix, $modelWithLabel, $langSuffix);
-        }
-
-        $accessoireNaam = $accessoire->naamKort($taalBucket);
-        if ($accessoireNaam === null) {
-            throw new RuntimeException(sprintf(
-                "Accessoire '%s' mist naam_kort_%s — vul via: `bin/samenstellingen accessoire:set-naam-kort %s %s '<naam>'`",
-                $accessoire->itemcode,
-                $taalBucket,
-                $accessoire->itemcode,
-                $taalBucket,
-            ));
-        }
-
-        return sprintf('%s %s (%s) %s %s', $prefix, $modelWithLabel, $langSuffix, $connector, $accessoireNaam);
+        return $accessoireNaam === null
+            ? sprintf('%s %s (%s)', $prefix, $modelWithLabel, $langSuffix)
+            : sprintf('%s %s (%s) %s %s', $prefix, $modelWithLabel, $langSuffix, $connector, $accessoireNaam);
     }
 
     private function firstLanguageToken(string $languageCode): string

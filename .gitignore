@@ -25,3 +25,6 @@ output.txt
 # Python bytecode-cache (migratiescripts)
 __pycache__/
 *.pyc
+
+# One-off WooCommerce-migratie, bewust niet versioneren
+migration/reanibex-multilang-attributes.py

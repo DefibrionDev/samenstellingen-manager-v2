@@ -243,6 +243,37 @@ final class VariantNamingPolicyTest extends TestCase
         $this->policy->expectedName($group, $base, null);
     }
 
+    #[Test]
+    public function truncatesOverlongNameInModelPartKeepingLabelSuffixAndAccessoire(): void
+    {
+        // Volledige naam is 112 tekens (> AFAS-limiet 100): alleen de modelnaam
+        // krijgt puntjes; 4G-label, taalset en accessoire blijven volledig staan.
+        $group = $this->group(modelFr: 'Mindray Beneheart C1 Entièrement automatique');
+        $base = new GroupBase(15, 'irrelevant', 'FR/EN/NL', '21019-FR', '4G');
+        $accessoire = new Accessoire('60212', 'buitenkast', naamKortFr: 'Armoire Extérieure ARKY (Non Chauffée)');
+
+        $name = $this->policy->expectedName($group, $base, $accessoire);
+
+        self::assertLessThanOrEqual(100, mb_strlen($name));
+        self::assertStringStartsWith('Pack DAE: Mindray Beneheart C1', $name);
+        self::assertStringContainsString('… 4G (FR-EN-NL) avec Armoire Extérieure ARKY (Non Chauffée)', $name);
+    }
+
+    #[Test]
+    public function nameAtOrUnderLimitIsNotTruncated(): void
+    {
+        $group = $this->group(modelFr: 'Mindray Beneheart C1 Entièrement automatique');
+        $base = new GroupBase(16, 'irrelevant', 'FR/EN/NL', '21019-FR', '4G');
+        $accessoire = new Accessoire('60110', 'rugzak', naamKortFr: 'Sac à Dos');
+
+        $name = $this->policy->expectedName($group, $base, $accessoire);
+
+        self::assertSame(
+            'Pack DAE: Mindray Beneheart C1 Entièrement automatique 4G (FR-EN-NL) avec Sac à Dos',
+            $name,
+        );
+    }
+
     private function group(
         ?string $modelNl = null,
         ?string $modelFr = null,
