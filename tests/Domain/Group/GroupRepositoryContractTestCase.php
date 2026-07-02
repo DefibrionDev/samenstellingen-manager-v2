@@ -131,4 +131,42 @@ abstract class GroupRepositoryContractTestCase extends TestCase
 
         $repo->updateFamilyHeadItemcode('52112', '52199');
     }
+
+    #[Test]
+    public function renameChangesTheGroupName(): void
+    {
+        $repo = $this->repository();
+        $repo->save(new \Defibrion\Samenstellingen\Domain\Group\Group('Reanibex 100 semi-automaat', '52120', 'Reanibex 100 Halfautomaat'));
+
+        $repo->rename('52120', 'Reanibex 100 Halfautomaat');
+
+        $renamed = $repo->findByFamilyHeadItemcode('52120');
+        self::assertNotNull($renamed);
+        self::assertSame('Reanibex 100 Halfautomaat', $renamed->name);
+        self::assertSame('Reanibex 100 Halfautomaat', $renamed->modelNameNl);
+        self::assertNull($repo->findByName('Reanibex 100 semi-automaat'));
+        self::assertNotNull($repo->findByName('Reanibex 100 Halfautomaat'));
+    }
+
+    #[Test]
+    public function renameRejectsUnknownFamilyHead(): void
+    {
+        $repo = $this->repository();
+
+        $this->expectException(\Defibrion\Samenstellingen\Domain\Group\GroupNotFoundException::class);
+
+        $repo->rename('99999', 'Wat dan ook');
+    }
+
+    #[Test]
+    public function renameRejectsNameOfOtherGroup(): void
+    {
+        $repo = $this->repository();
+        $repo->save(new \Defibrion\Samenstellingen\Domain\Group\Group('Eerste', '52112'));
+        $repo->save(new \Defibrion\Samenstellingen\Domain\Group\Group('Tweede', '52199'));
+
+        $this->expectException(\Defibrion\Samenstellingen\Domain\Group\GroupAlreadyExistsException::class);
+
+        $repo->rename('52112', 'Tweede');
+    }
 }

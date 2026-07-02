@@ -54,6 +54,7 @@ final class InMemoryAccessoireRepository implements AccessoireRepository
             $existing->naamKortNl,
             $existing->naamKortFr,
             $existing->naamKortEn,
+            $existing->naamKortDe,
         );
     }
 
@@ -71,6 +72,7 @@ final class InMemoryAccessoireRepository implements AccessoireRepository
             $taal === 'nl' ? $clean : $existing->naamKortNl,
             $taal === 'fr' ? $clean : $existing->naamKortFr,
             $taal === 'en' ? $clean : $existing->naamKortEn,
+            $taal === 'de' ? $clean : $existing->naamKortDe,
         );
     }
 }

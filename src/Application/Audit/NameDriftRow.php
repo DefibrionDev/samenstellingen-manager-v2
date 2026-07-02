@@ -11,6 +11,7 @@ final readonly class NameDriftRow
         public string $groupName,
         public string $familyHead,
         public string $baseName,
+        public ?string $baseItemcode,
         public string $languageCode,
         public ?string $accessoireItemcode,
         public ?string $accessoireLabel,

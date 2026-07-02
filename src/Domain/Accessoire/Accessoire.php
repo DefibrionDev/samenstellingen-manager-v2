@@ -14,6 +14,7 @@ final readonly class Accessoire
     public ?string $naamKortNl;
     public ?string $naamKortFr;
     public ?string $naamKortEn;
+    public ?string $naamKortDe;
 
     public function __construct(
         string $itemcode,
@@ -22,6 +23,7 @@ final readonly class Accessoire
         ?string $naamKortNl = null,
         ?string $naamKortFr = null,
         ?string $naamKortEn = null,
+        ?string $naamKortDe = null,
     ) {
         $trimmedItemcode = trim($itemcode);
         if ($trimmedItemcode === '') {
@@ -46,10 +48,11 @@ final readonly class Accessoire
         $this->naamKortNl = self::nullIfEmpty($naamKortNl);
         $this->naamKortFr = self::nullIfEmpty($naamKortFr);
         $this->naamKortEn = self::nullIfEmpty($naamKortEn);
+        $this->naamKortDe = self::nullIfEmpty($naamKortDe);
     }
 
     /**
-     * @param 'nl'|'fr'|'en' $taal
+     * @param 'nl'|'fr'|'en'|'de' $taal
      */
     public function naamKort(string $taal): ?string
     {
@@ -57,6 +60,7 @@ final readonly class Accessoire
             'nl' => $this->naamKortNl,
             'fr' => $this->naamKortFr,
             'en' => $this->naamKortEn,
+            'de' => $this->naamKortDe,
         };
     }
 

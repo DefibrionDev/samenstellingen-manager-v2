@@ -28,7 +28,7 @@ final class SetGroupModelNaamCommand extends Command
     {
         $this
             ->addArgument('family-head', InputArgument::REQUIRED, 'Family-head itemcode van de groep (bv. 11111)')
-            ->addArgument('taal', InputArgument::REQUIRED, 'Taal-bucket: nl, fr of en')
+            ->addArgument('taal', InputArgument::REQUIRED, 'Taal-bucket: nl, fr, en of de')
             ->addArgument('naam', InputArgument::REQUIRED, "Canonical model-naam (bv. 'Heartsine Samaritan PAD 350P')");
     }
 
@@ -39,8 +39,8 @@ final class SetGroupModelNaamCommand extends Command
         $taal = strtolower(trim((string) $input->getArgument('taal')));
         $naam = (string) $input->getArgument('naam');
 
-        if (!in_array($taal, ['nl', 'fr', 'en'], true)) {
-            $io->error("Onbekende taal '$taal' — gebruik nl, fr of en.");
+        if (!in_array($taal, ['nl', 'fr', 'en', 'de'], true)) {
+            $io->error("Onbekende taal '$taal' — gebruik nl, fr, en of de.");
 
             return Command::INVALID;
         }

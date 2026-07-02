@@ -21,7 +21,7 @@ final readonly class SqliteGroupRepository implements GroupRepository
     {
         try {
             $stmt = $this->pdo->prepare(
-                'INSERT INTO groups (name, family_head_itemcode, model_name_nl, model_name_fr, model_name_en) VALUES (:name, :itemcode, :modelNl, :modelFr, :modelEn)'
+                'INSERT INTO groups (name, family_head_itemcode, model_name_nl, model_name_fr, model_name_en, model_name_de) VALUES (:name, :itemcode, :modelNl, :modelFr, :modelEn, :modelDe)'
             );
             $stmt->execute([
                 ':name' => $group->name,
@@ -29,6 +29,7 @@ final readonly class SqliteGroupRepository implements GroupRepository
                 ':modelNl' => $group->modelNameNl,
                 ':modelFr' => $group->modelNameFr,
                 ':modelEn' => $group->modelNameEn,
+                ':modelDe' => $group->modelNameDe,
             ]);
         } catch (PDOException $e) {
             $message = $e->getMessage();
@@ -45,7 +46,7 @@ final readonly class SqliteGroupRepository implements GroupRepository
     public function findByName(string $name): ?Group
     {
         $stmt = $this->pdo->prepare(
-            'SELECT name, family_head_itemcode, model_name_nl, model_name_fr, model_name_en FROM groups WHERE name = :name'
+            'SELECT name, family_head_itemcode, model_name_nl, model_name_fr, model_name_en, model_name_de FROM groups WHERE name = :name'
         );
         $stmt->execute([':name' => $name]);
 
@@ -55,7 +56,7 @@ final readonly class SqliteGroupRepository implements GroupRepository
     public function findByFamilyHeadItemcode(string $familyHeadItemcode): ?Group
     {
         $stmt = $this->pdo->prepare(
-            'SELECT name, family_head_itemcode, model_name_nl, model_name_fr, model_name_en FROM groups WHERE family_head_itemcode = :itemcode'
+            'SELECT name, family_head_itemcode, model_name_nl, model_name_fr, model_name_en, model_name_de FROM groups WHERE family_head_itemcode = :itemcode'
         );
         $stmt->execute([':itemcode' => $familyHeadItemcode]);
 
@@ -77,6 +78,7 @@ final readonly class SqliteGroupRepository implements GroupRepository
             'nl' => 'model_name_nl',
             'fr' => 'model_name_fr',
             'en' => 'model_name_en',
+            'de' => 'model_name_de',
         };
         $stmt = $this->pdo->prepare("UPDATE groups SET $column = :naam WHERE family_head_itemcode = :itemcode");
         $stmt->execute([
@@ -85,6 +87,22 @@ final readonly class SqliteGroupRepository implements GroupRepository
         ]);
         if ($stmt->rowCount() === 0 && $this->findByFamilyHeadItemcode($familyHeadItemcode) === null) {
             throw GroupNotFoundException::forFamilyHeadItemcode($familyHeadItemcode);
+        }
+    }
+
+    public function rename(string $familyHeadItemcode, string $newName): void
+    {
+        if ($this->findByFamilyHeadItemcode($familyHeadItemcode) === null) {
+            throw GroupNotFoundException::forFamilyHeadItemcode($familyHeadItemcode);
+        }
+        try {
+            $stmt = $this->pdo->prepare('UPDATE groups SET name = :name WHERE family_head_itemcode = :itemcode');
+            $stmt->execute([':name' => $newName, ':itemcode' => $familyHeadItemcode]);
+        } catch (\PDOException $e) {
+            if (str_contains($e->getMessage(), 'UNIQUE constraint failed')) {
+                throw GroupAlreadyExistsException::forName($newName);
+            }
+            throw $e;
         }
     }
 
@@ -109,7 +127,7 @@ final readonly class SqliteGroupRepository implements GroupRepository
 
     public function findAll(): array
     {
-        $stmt = $this->pdo->query('SELECT name, family_head_itemcode, model_name_nl, model_name_fr, model_name_en FROM groups ORDER BY name');
+        $stmt = $this->pdo->query('SELECT name, family_head_itemcode, model_name_nl, model_name_fr, model_name_en, model_name_de FROM groups ORDER BY name');
         if ($stmt === false) {
             return [];
         }
@@ -141,6 +159,7 @@ final readonly class SqliteGroupRepository implements GroupRepository
         $modelNl = $row['model_name_nl'] ?? null;
         $modelFr = $row['model_name_fr'] ?? null;
         $modelEn = $row['model_name_en'] ?? null;
+        $modelDe = $row['model_name_de'] ?? null;
 
         return new Group(
             $name,
@@ -148,6 +167,7 @@ final readonly class SqliteGroupRepository implements GroupRepository
             is_string($modelNl) ? $modelNl : null,
             is_string($modelFr) ? $modelFr : null,
             is_string($modelEn) ? $modelEn : null,
+            is_string($modelDe) ? $modelDe : null,
         );
     }
 }

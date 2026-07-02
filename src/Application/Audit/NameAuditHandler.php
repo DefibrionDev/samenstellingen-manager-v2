@@ -43,9 +43,6 @@ final readonly class NameAuditHandler
 
         $drift = [];
         foreach ($this->groups->findAll() as $group) {
-            if ($group->modelNameNl === null) {
-                continue; // Audit kan niet zonder model_name — sla over (zie /api/groups om te zien welke).
-            }
             $basesById = [];
             foreach ($this->bases->findAllForGroup($group->familyHeadItemcode) as $base) {
                 if ($base->id !== null) {
@@ -70,6 +67,11 @@ final readonly class NameAuditHandler
                     $expected = ($this->policy)->expectedName($group, $base, $accessoire);
                 } catch (UnknownLanguageException) {
                     continue; // taal niet in template-set — overslaan.
+                } catch (\RuntimeException) {
+                    // model_name/naam_kort voor de taal-bucket ontbreekt nog — de rij
+                    // kan niet vergeleken worden. Vul via group:set-model-naam /
+                    // accessoire:set-naam-kort; base:normalize-names rapporteert welke.
+                    continue;
                 }
 
                 $actual = $afasByItemcode[$variant->afasSamenstellingItemcode]->name ?? '';
@@ -82,6 +84,7 @@ final readonly class NameAuditHandler
                     groupName: $group->name,
                     familyHead: $group->familyHeadItemcode,
                     baseName: $base->name,
+                    baseItemcode: $base->afasItemcode,
                     languageCode: $base->languageCode,
                     accessoireItemcode: $variant->accessoireItemcode,
                     accessoireLabel: $accessoire?->label,

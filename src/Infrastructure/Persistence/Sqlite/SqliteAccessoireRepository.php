@@ -21,8 +21,8 @@ final readonly class SqliteAccessoireRepository implements AccessoireRepository
     {
         try {
             $stmt = $this->pdo->prepare(
-                'INSERT INTO accessoires (itemcode, label, delta_cents, naam_kort_nl, naam_kort_fr, naam_kort_en)
-                 VALUES (:itemcode, :label, :delta, :nl, :fr, :en)'
+                'INSERT INTO accessoires (itemcode, label, delta_cents, naam_kort_nl, naam_kort_fr, naam_kort_en, naam_kort_de)
+                 VALUES (:itemcode, :label, :delta, :nl, :fr, :en, :de)'
             );
             $stmt->execute([
                 ':itemcode' => $accessoire->itemcode,
@@ -31,6 +31,7 @@ final readonly class SqliteAccessoireRepository implements AccessoireRepository
                 ':nl' => $accessoire->naamKortNl,
                 ':fr' => $accessoire->naamKortFr,
                 ':en' => $accessoire->naamKortEn,
+                ':de' => $accessoire->naamKortDe,
             ]);
         } catch (PDOException $e) {
             if (str_contains($e->getMessage(), 'UNIQUE constraint failed: accessoires.itemcode')) {
@@ -43,7 +44,7 @@ final readonly class SqliteAccessoireRepository implements AccessoireRepository
     public function findByItemcode(string $itemcode): ?Accessoire
     {
         $stmt = $this->pdo->prepare(
-            'SELECT itemcode, label, delta_cents, naam_kort_nl, naam_kort_fr, naam_kort_en
+            'SELECT itemcode, label, delta_cents, naam_kort_nl, naam_kort_fr, naam_kort_en, naam_kort_de
              FROM accessoires WHERE itemcode = :itemcode'
         );
         $stmt->execute([':itemcode' => $itemcode]);
@@ -72,6 +73,7 @@ final readonly class SqliteAccessoireRepository implements AccessoireRepository
             $this->stringOrNull($row, 'naam_kort_nl'),
             $this->stringOrNull($row, 'naam_kort_fr'),
             $this->stringOrNull($row, 'naam_kort_en'),
+            $this->stringOrNull($row, 'naam_kort_de'),
         );
     }
 
@@ -111,6 +113,7 @@ final readonly class SqliteAccessoireRepository implements AccessoireRepository
             'nl' => 'naam_kort_nl',
             'fr' => 'naam_kort_fr',
             'en' => 'naam_kort_en',
+            'de' => 'naam_kort_de',
         };
         $stmt = $this->pdo->prepare("UPDATE accessoires SET $column = :naam WHERE itemcode = :itemcode");
         $stmt->execute([':itemcode' => $itemcode, ':naam' => $naam !== null && trim($naam) !== '' ? trim($naam) : null]);
@@ -132,7 +135,7 @@ final readonly class SqliteAccessoireRepository implements AccessoireRepository
     public function findAll(): array
     {
         $stmt = $this->pdo->query(
-            'SELECT itemcode, label, delta_cents, naam_kort_nl, naam_kort_fr, naam_kort_en
+            'SELECT itemcode, label, delta_cents, naam_kort_nl, naam_kort_fr, naam_kort_en, naam_kort_de
              FROM accessoires ORDER BY itemcode'
         );
         if ($stmt === false) {

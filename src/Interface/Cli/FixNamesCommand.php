@@ -28,7 +28,8 @@ final class FixNamesCommand extends Command
     {
         $this
             ->addOption('apply', null, InputOption::VALUE_NONE, 'Echt PUT naar AFAS. Default = dry-run.')
-            ->addOption('limit', null, InputOption::VALUE_REQUIRED, 'Beperk tot N drift-rijen.', '0');
+            ->addOption('limit', null, InputOption::VALUE_REQUIRED, 'Beperk tot N drift-rijen.', '0')
+            ->addOption('base', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Alleen drift van deze base-itemcode(s) fixen (herhaalbaar).');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -36,10 +37,13 @@ final class FixNamesCommand extends Command
         $io = new SymfonyStyle($input, $output);
         $apply = (bool) $input->getOption('apply');
         $limit = (int) $input->getOption('limit');
+        /** @var list<string> $baseItemcodes */
+        $baseItemcodes = $input->getOption('base');
 
         $result = ($this->handler)(new FixNames(
             apply: $apply,
             limit: $limit > 0 ? $limit : null,
+            baseItemcodes: $baseItemcodes === [] ? null : $baseItemcodes,
         ));
 
         if ($result->plans === []) {

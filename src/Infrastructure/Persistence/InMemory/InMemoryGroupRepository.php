@@ -69,6 +69,7 @@ final class InMemoryGroupRepository implements GroupRepository
             $taal === 'nl' ? $clean : $existing->modelNameNl,
             $taal === 'fr' ? $clean : $existing->modelNameFr,
             $taal === 'en' ? $clean : $existing->modelNameEn,
+            $taal === 'de' ? $clean : $existing->modelNameDe,
         );
         $this->byFamilyHead[$familyHeadItemcode] = $updated;
         $this->byName[$existing->name] = $updated;
@@ -92,9 +93,33 @@ final class InMemoryGroupRepository implements GroupRepository
             $existing->modelNameNl,
             $existing->modelNameFr,
             $existing->modelNameEn,
+            $existing->modelNameDe,
         );
         unset($this->byFamilyHead[$oldFamilyHead]);
         $this->byFamilyHead[$newFamilyHead] = $updated;
         $this->byName[$existing->name] = $updated;
+    }
+
+    public function rename(string $familyHeadItemcode, string $newName): void
+    {
+        $existing = $this->byFamilyHead[$familyHeadItemcode] ?? null;
+        if ($existing === null) {
+            throw GroupNotFoundException::forFamilyHeadItemcode($familyHeadItemcode);
+        }
+        $other = $this->byName[$newName] ?? null;
+        if ($other !== null && $other->familyHeadItemcode !== $familyHeadItemcode) {
+            throw GroupAlreadyExistsException::forName($newName);
+        }
+        $renamed = new Group(
+            $newName,
+            $existing->familyHeadItemcode,
+            $existing->modelNameNl,
+            $existing->modelNameFr,
+            $existing->modelNameEn,
+            $existing->modelNameDe,
+        );
+        unset($this->byName[$existing->name]);
+        $this->byName[$renamed->name] = $renamed;
+        $this->byFamilyHead[$familyHeadItemcode] = $renamed;
     }
 }

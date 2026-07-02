@@ -13,6 +13,7 @@ final readonly class Group
     public ?string $modelNameNl;
     public ?string $modelNameFr;
     public ?string $modelNameEn;
+    public ?string $modelNameDe;
 
     public function __construct(
         string $name,
@@ -20,6 +21,7 @@ final readonly class Group
         ?string $modelNameNl = null,
         ?string $modelNameFr = null,
         ?string $modelNameEn = null,
+        ?string $modelNameDe = null,
     ) {
         $trimmedName = trim($name);
         if ($trimmedName === '') {
@@ -36,10 +38,11 @@ final readonly class Group
         $this->modelNameNl = self::nullIfEmpty($modelNameNl);
         $this->modelNameFr = self::nullIfEmpty($modelNameFr);
         $this->modelNameEn = self::nullIfEmpty($modelNameEn);
+        $this->modelNameDe = self::nullIfEmpty($modelNameDe);
     }
 
     /**
-     * @param 'nl'|'fr'|'en' $taal
+     * @param 'nl'|'fr'|'en'|'de' $taal
      */
     public function modelNameForTaal(string $taal): ?string
     {
@@ -47,6 +50,7 @@ final readonly class Group
             'nl' => $this->modelNameNl,
             'fr' => $this->modelNameFr,
             'en' => $this->modelNameEn,
+            'de' => $this->modelNameDe,
         };
     }
 

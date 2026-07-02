@@ -31,7 +31,7 @@ interface GroupRepository
      * Wijzig één van de model-namen (nl/fr/en) — gebruikt door
      * `group:set-model-naam`. `$naam` mag null zijn om te wissen.
      *
-     * @param 'nl'|'fr'|'en' $taal
+     * @param 'nl'|'fr'|'en'|'de' $taal
      * @throws GroupNotFoundException wanneer de family-head niet bestaat.
      */
     public function updateModelNaam(string $familyHeadItemcode, string $taal, ?string $naam): void;
@@ -45,4 +45,13 @@ interface GroupRepository
      * @throws GroupAlreadyExistsException wanneer `$newFamilyHead` al claimt.
      */
     public function updateFamilyHeadItemcode(string $oldFamilyHead, string $newFamilyHead): void;
+
+    /**
+     * Hernoem een groep (weergavenaam); de family-head blijft ongewijzigd.
+     * Gebruikt door `group:rename`.
+     *
+     * @throws GroupNotFoundException      wanneer de family-head niet bestaat.
+     * @throws GroupAlreadyExistsException wanneer een andere groep deze naam al draagt.
+     */
+    public function rename(string $familyHeadItemcode, string $newName): void;
 }

@@ -49,6 +49,18 @@ final class FixNamesHandlerTest extends TestCase
     }
 
     #[Test]
+    public function baseFilterLimitsPlansToMatchingBases(): void
+    {
+        $bag = $this->wiringWithTwoDrifts();
+
+        $result = ($bag['handler'])(new FixNames(apply: true, baseItemcodes: ['52112']));
+
+        self::assertCount(1, $result->plans);
+        self::assertSame(1, $result->appliedCount);
+        self::assertSame('52112', $bag['writer']->applied[0]->afasItemcode);
+    }
+
+    #[Test]
     public function failureDoesNotBlockOthers(): void
     {
         $bag = $this->wiringWithTwoDrifts(failOn: '52112');

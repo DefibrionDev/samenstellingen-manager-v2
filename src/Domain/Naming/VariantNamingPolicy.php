@@ -12,32 +12,43 @@ use RuntimeException;
 /**
  * Canonieke AFAS-samenstelling-naam volgens PLAN.md §18.
  *
- * Twee templates op basis van het eerste taal-token van de base:
+ * Vier taal-templates op basis van het eerste taal-token van de base;
+ * alles buiten NL/FR/DE valt terug op de Engelse template:
  *
- *   Zuiver FR:    Pack DAE: {ModelFR} {LangSuffix} avec {AccessoireFR}
- *   Anders:       AED Pakket: {ModelNL} {LangSuffix} met {AccessoireNL}
+ *   NL:      AED Pakket: {ModelNL} ({LangSuffix}) met {AccessoireNL}
+ *   FR:      Pack DAE: {ModelFR} ({LangSuffix}) avec {AccessoireFR}
+ *   DE:      AED Paket: {ModelDE} ({LangSuffix}) mit {AccessoireDE}
+ *   Anders:  AED Package: {ModelEN} ({LangSuffix}) with {AccessoireEN}
  *
- * LangSuffix:
- *   NL → NL, FR → FR, DE → DE, DK → DK, EN → UK, WAL → WAL,
- *   compound `NL/FR` → `NL-FR`, `NL/EN/FR` → `NL-EN-FR`.
+ * LangSuffix: de taal-tokens zelf, ongewijzigd (NL → NL, EN → EN),
+ *   in de naam altijd tussen haakjes; compound `NL/FR` → `(NL-FR)`,
+ *   `NL/EN/FR` → `(NL-EN-FR)`, `SE/EN/NO` → `(SE-EN-NO)`.
  *
  * Per-taal naam-velden:
- *   - groep `model_name_{nl|fr}` (en `_en` als toekomstige uitbreiding)
- *   - accessoire `naam_kort_{nl|fr}`
+ *   - groep `model_name_{nl|fr|en|de}`
+ *   - accessoire `naam_kort_{nl|fr|en|de}`
  *
  * Falt netjes met een uitvoerbare CLI-suggestie als een veld nog leeg is.
  */
 final readonly class VariantNamingPolicy
 {
-    private const LANG_SUFFIX_OVERRIDES = [
-        'EN' => 'UK',
+    private const TEMPLATES = [
+        'nl' => ['prefix' => 'AED Pakket:', 'connector' => 'met'],
+        'fr' => ['prefix' => 'Pack DAE:', 'connector' => 'avec'],
+        'de' => ['prefix' => 'AED Paket:', 'connector' => 'mit'],
+        'en' => ['prefix' => 'AED Package:', 'connector' => 'with'],
     ];
 
     public function expectedName(Group $group, GroupBase $base, ?Accessoire $accessoire): string
     {
-        $firstToken = $this->firstLanguageToken($base->languageCode);
         $langSuffix = $this->langSuffix($base->languageCode);
-        $taalBucket = $firstToken === 'FR' ? 'fr' : 'nl';
+        $taalBucket = match ($this->firstLanguageToken($base->languageCode)) {
+            'NL' => 'nl',
+            'FR' => 'fr',
+            'DE' => 'de',
+            default => 'en',
+        };
+        ['prefix' => $prefix, 'connector' => $connector] = self::TEMPLATES[$taalBucket];
 
         $modelName = $group->modelNameForTaal($taalBucket);
         if ($modelName === null) {
@@ -55,9 +66,7 @@ final readonly class VariantNamingPolicy
             : $modelName;
 
         if ($accessoire === null) {
-            return $taalBucket === 'fr'
-                ? sprintf('Pack DAE: %s %s', $modelWithLabel, $langSuffix)
-                : sprintf('AED Pakket: %s %s', $modelWithLabel, $langSuffix);
+            return sprintf('%s %s (%s)', $prefix, $modelWithLabel, $langSuffix);
         }
 
         $accessoireNaam = $accessoire->naamKort($taalBucket);
@@ -71,22 +80,18 @@ final readonly class VariantNamingPolicy
             ));
         }
 
-        return $taalBucket === 'fr'
-            ? sprintf('Pack DAE: %s %s avec %s', $modelWithLabel, $langSuffix, $accessoireNaam)
-            : sprintf('AED Pakket: %s %s met %s', $modelWithLabel, $langSuffix, $accessoireNaam);
+        return sprintf('%s %s (%s) %s %s', $prefix, $modelWithLabel, $langSuffix, $connector, $accessoireNaam);
     }
 
     private function firstLanguageToken(string $languageCode): string
     {
-        $first = strtoupper(explode('/', trim($languageCode))[0]);
-
-        return $first;
+        return strtoupper(explode('/', trim($languageCode))[0]);
     }
 
     private function langSuffix(string $languageCode): string
     {
         $tokens = array_map(
-            fn (string $token): string => $this->mapToken(strtoupper(trim($token))),
+            static fn (string $token): string => strtoupper(trim($token)),
             explode('/', trim($languageCode)),
         );
         $tokens = array_values(array_filter($tokens, static fn (string $t): bool => $t !== ''));
@@ -95,10 +100,5 @@ final readonly class VariantNamingPolicy
         }
 
         return implode('-', $tokens);
-    }
-
-    private function mapToken(string $token): string
-    {
-        return self::LANG_SUFFIX_OVERRIDES[$token] ?? $token;
     }
 }

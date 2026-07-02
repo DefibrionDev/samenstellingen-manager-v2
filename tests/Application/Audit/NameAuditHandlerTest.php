@@ -34,7 +34,7 @@ final class NameAuditHandlerTest extends TestCase
         $bag['afas']->replaceSnapshot([
             new AfasSamenstelling(
                 '52112',
-                'AED Pakket: Reanibex 100 semi-automaat NL',
+                'AED Pakket: Reanibex 100 semi-automaat (NL)',
                 null,
                 ['50013'],
             ),
@@ -81,7 +81,7 @@ final class NameAuditHandlerTest extends TestCase
 
         self::assertCount(1, $drift);
         self::assertSame('52112', $drift[0]->afasItemcode);
-        self::assertSame('AED Pakket: Reanibex 100 semi-automaat NL', $drift[0]->expected);
+        self::assertSame('AED Pakket: Reanibex 100 semi-automaat (NL)', $drift[0]->expected);
         self::assertSame('AED Pakket: Reanibex 100 semi-automaat NL incl. safeset en stickerset', $drift[0]->actual);
         self::assertNull($drift[0]->accessoireItemcode);
     }
@@ -101,7 +101,7 @@ final class NameAuditHandlerTest extends TestCase
             new AfasSamenstelling(
                 '52112-60112',
                 // Drift: oude "incl. safeset en stickerset"-staart i.p.v. accessoire-label.
-                'AED Pakket: Reanibex 100 semi-automaat NL',
+                'AED Pakket: Reanibex 100 semi-automaat (NL)',
                 '52112',
                 ['50013', '60112'],
             ),
@@ -118,7 +118,7 @@ final class NameAuditHandlerTest extends TestCase
         self::assertCount(1, $drift);
         self::assertSame('60112', $drift[0]->accessoireItemcode);
         self::assertSame(
-            'AED Pakket: Reanibex 100 semi-automaat NL met witte binnenkast',
+            'AED Pakket: Reanibex 100 semi-automaat (NL) met witte binnenkast',
             $drift[0]->expected,
         );
     }
@@ -137,6 +137,31 @@ final class NameAuditHandlerTest extends TestCase
         foreach ($bag['variants']->findAllForGroup('52112') as $v) {
             if ($v->id !== null && $v->accessoireItemcode === null) {
                 $bag['variants']->markMatched($v->id, '52112');
+            }
+        }
+
+        $drift = ($this->handler($bag))(new AuditNames());
+
+        self::assertSame([], $drift);
+    }
+
+    #[Test]
+    public function skipsRowWhenModelNameForBucketMissingInsteadOfCrashing(): void
+    {
+        // EN-base valt op de Engelse template terug; de groep heeft alleen een
+        // NL-modelnaam. De rij kan niet vergeleken worden → overslaan, geen crash.
+        $bag = $this->bag();
+        $bag['groups']->save(new Group('Reanibex', '52120', 'Reanibex 100 semi-automaat'));
+        $base = $bag['bases']->saveForGroup('52120', new GroupBase(null, 'AED pakket EN', 'EN/GA', '52120'));
+        self::assertNotNull($base->id);
+        $bag['variants']->regenerateForGroup('52120');
+
+        $bag['afas']->replaceSnapshot([
+            new AfasSamenstelling('52120', 'AED Package: oude naam', null, ['50005']),
+        ]);
+        foreach ($bag['variants']->findAllForGroup('52120') as $v) {
+            if ($v->id !== null && $v->accessoireItemcode === null) {
+                $bag['variants']->markMatched($v->id, '52120');
             }
         }
 
