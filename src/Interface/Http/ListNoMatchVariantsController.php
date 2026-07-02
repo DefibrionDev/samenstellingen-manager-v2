@@ -17,9 +17,11 @@ final readonly class ListNoMatchVariantsController
 
     public function __invoke(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        $payload = [];
+        $counts = [];
+        $rows = [];
         foreach (($this->handler)(new ListNoMatchVariants()) as $row) {
-            $payload[] = [
+            $counts[$row->actie] = ($counts[$row->actie] ?? 0) + 1;
+            $rows[] = [
                 'groupName' => $row->groep,
                 'familyHead' => $row->familyHead,
                 'baseName' => $row->baseNaam,
@@ -32,9 +34,11 @@ final readonly class ListNoMatchVariantsController
                 'exacteBomMatchItemcode' => $row->exacteBomMatchItemcode,
                 'ontbrekendeItemcodes' => $row->ontbrekendeItemcodes,
                 'extraItemcodes' => $row->extraItemcodes,
+                'actie' => $row->actie,
             ];
         }
+        ksort($counts);
 
-        return Json::write($response, $payload);
+        return Json::write($response, ['counts' => $counts, 'rows' => $rows]);
     }
 }

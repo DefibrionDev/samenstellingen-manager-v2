@@ -4,6 +4,7 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { DataGrid, GridColDef, GridRowParams } from '@mui/x-data-grid';
 import { useNavigate } from 'react-router-dom';
 import { api, GroupSummary } from '../api';
+import { ACTIE_META } from './NoMatchVariants';
 
 const columns: GridColDef<GroupSummary>[] = [
   { field: 'name', headerName: 'Naam', flex: 2, minWidth: 240 },
@@ -26,19 +27,27 @@ const columns: GridColDef<GroupSummary>[] = [
   { field: 'baseCount', headerName: 'Bases', type: 'number', width: 100 },
   { field: 'baseItemCount', headerName: 'BOM-items', type: 'number', width: 120 },
   {
-    field: 'missingVariantCount',
-    headerName: 'Missend',
-    type: 'number',
-    width: 110,
+    field: 'noMatchCounts',
+    headerName: 'Mis (no-match)',
+    width: 170,
+    sortable: false,
     renderCell: (params) => {
-      const count = (params.value as number) ?? 0;
-      if (count === 0) {
+      const counts = (params.row.noMatchCounts ?? {}) as Record<string, number>;
+      const entries = Object.entries(counts);
+      if (entries.length === 0) {
         return <span style={{ color: 'rgba(0,0,0,0.4)' }}>0</span>;
       }
       return (
-        <Tooltip title={`${count} variant(en) ontbreken nog in AFAS — fix via \`variants:fix-missing --group=${params.row.familyHead} --apply\``}>
-          <Chip label={count} size="small" color="warning" />
-        </Tooltip>
+        <Stack direction="row" spacing={0.5}>
+          {entries.map(([actie, n]) => {
+            const meta = ACTIE_META[actie] ?? { label: actie, color: 'warning' as const };
+            return (
+              <Tooltip key={actie} title={`${n} × ${meta.label} — details op de No-match-pagina`}>
+                <Chip label={n} size="small" color={meta.color} />
+              </Tooltip>
+            );
+          })}
+        </Stack>
       );
     },
   },

@@ -10,6 +10,12 @@ use Defibrion\Samenstellingen\Domain\Group\GroupRepository;
 use Defibrion\Samenstellingen\Domain\Group\GroupVariant;
 use Defibrion\Samenstellingen\Domain\Group\GroupVariantRepository;
 
+/**
+ * INTERNE subset-berekening: alleen de no_match-varianten die `variants:fix-missing`
+ * daadwerkelijk kan aanmaken (base gematcht + voorgestelde itemcode bestaat nog niet).
+ * Voor de gebruikersgerichte audit — inclusief de rijen die hier weggefilterd worden
+ * en het waarom — zie {@see ListNoMatchVariantsHandler} (`audit:no-match`, kolom actie).
+ */
 final readonly class ListMissingVariantsHandler
 {
     public function __construct(

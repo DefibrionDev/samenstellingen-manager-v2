@@ -36,6 +36,7 @@ final class ListNoMatchVariantsHandlerTest extends TestCase
         self::assertSame('60110', $rows[0]->accessoireItemcode);
         self::assertSame(['50013', '60110'], $rows[0]->verwachteBom);
         self::assertSame('11111-60110', $rows[0]->verwachteItemcode);
+        self::assertSame('aanmaakbaar', $rows[0]->actie);
     }
 
     #[Test]
@@ -54,6 +55,7 @@ final class ListNoMatchVariantsHandlerTest extends TestCase
         self::assertSame('11111-60110', $rows[0]->bestaandeAfasItemcode);
         // Geen compositie met exact de verwachte BOM (50013+60110) → leeg.
         self::assertNull($rows[0]->exacteBomMatchItemcode);
+        self::assertSame('bestaat_al_afwijkende_bom', $rows[0]->actie);
     }
 
     #[Test]
@@ -113,6 +115,7 @@ final class ListNoMatchVariantsHandlerTest extends TestCase
 
         self::assertCount(1, $rows);
         self::assertSame('ALT-CODE', $rows[0]->exacteBomMatchItemcode);
+        self::assertSame('bom_bestaat_elders', $rows[0]->actie);
         // De verwachte itemcode 11111-60110 bestaat niet → bestaande blijft leeg.
         self::assertNull($rows[0]->bestaandeAfasItemcode);
     }
@@ -134,9 +137,25 @@ final class ListNoMatchVariantsHandlerTest extends TestCase
         self::assertSame([], $rows);
     }
 
+    #[Test]
+    public function classifiesVariantWithoutMatchedBaseAsBaseNietGematcht(): void
+    {
+        $bag = $this->wireGroupWithNoMatchAccessoireVariant(baseMatched: false);
+        $bag['afas']->replaceSnapshot([]);
+
+        $rows = ($bag['handler'])(new ListNoMatchVariants());
+
+        self::assertNotSame([], $rows);
+        foreach ($rows as $row) {
+            self::assertSame('', $row->verwachteItemcode);
+            self::assertSame('base_niet_gematcht', $row->actie);
+        }
+    }
+
     /**
      * Groep met 1 base (afas-sku 11111, base-item 50013) + 1 accessoire (60110).
-     * Base-only-variant is matched ('11111'), accessoire-variant is no_match.
+     * Base-only-variant is matched ('11111') tenzij $baseMatched=false; de
+     * accessoire-variant is altijd no_match.
      *
      * @return array{
      *     handler: ListNoMatchVariantsHandler,
@@ -144,7 +163,7 @@ final class ListNoMatchVariantsHandlerTest extends TestCase
      *     variants: InMemoryGroupVariantRepository
      * }
      */
-    private function wireGroupWithNoMatchAccessoireVariant(): array
+    private function wireGroupWithNoMatchAccessoireVariant(bool $baseMatched = true): array
     {
         $groups = new InMemoryGroupRepository();
         $bases = new InMemoryGroupBaseRepository($groups);
@@ -163,7 +182,7 @@ final class ListNoMatchVariantsHandlerTest extends TestCase
         $variants->regenerateForGroup('10013');
         foreach ($variants->findAllForGroup('10013') as $variant) {
             self::assertNotNull($variant->id);
-            if ($variant->accessoireItemcode === null) {
+            if ($variant->accessoireItemcode === null && $baseMatched) {
                 $variants->markMatched($variant->id, '11111');
             } else {
                 $variants->markNoMatch($variant->id);

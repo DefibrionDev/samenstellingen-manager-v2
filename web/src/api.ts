@@ -4,7 +4,8 @@ export interface GroupSummary {
   baseCount: number;
   baseItemCount: number;
   familyHeadIsBase: boolean;
-  missingVariantCount: number;
+  /** aantal no_match-varianten per actie (aanmaakbaar, bestaat_al_afwijkende_bom, …) */
+  noMatchCounts: Record<string, number>;
   parentMismatchCount?: number;
   modelNameNl: string | null;
   modelNameFr: string | null;
@@ -98,16 +99,6 @@ export interface NameDriftRow {
   actual: string;
 }
 
-export interface MissingVariantRow {
-  groupName: string;
-  baseName: string;
-  baseAfasSku: string;
-  accessoireItemcode: string;
-  accessoireLabel: string;
-  expectedBom: string[];
-  suggestedSku: string;
-}
-
 export interface NoMatchVariantRow {
   groupName: string;
   familyHead: string;
@@ -121,6 +112,12 @@ export interface NoMatchVariantRow {
   exacteBomMatchItemcode: string | null;
   ontbrekendeItemcodes: string[];
   extraItemcodes: string[];
+  actie: string;
+}
+
+export interface NoMatchVariantsPayload {
+  counts: Record<string, number>;
+  rows: NoMatchVariantRow[];
 }
 
 export interface OnlineNotAssignedRow {
@@ -152,8 +149,7 @@ export const api = {
     jsonGet<Accessoire[]>(`/api/groups/${encodeURIComponent(familyHead)}/accessoires`),
   listGroupVariants: (familyHead: string) =>
     jsonGet<GroupVariantRow[]>(`/api/groups/${encodeURIComponent(familyHead)}/variants`),
-  listMissingVariants: () => jsonGet<MissingVariantRow[]>('/api/missing-variants'),
-  listNoMatchVariants: () => jsonGet<NoMatchVariantRow[]>('/api/wc/no-match'),
+  listNoMatchVariants: () => jsonGet<NoMatchVariantsPayload>('/api/wc/no-match'),
   listOnlineNotAssigned: () => jsonGet<OnlineNotAssignedRow[]>('/api/wc/online-not-assigned'),
   listNameDrift: () => jsonGet<NameDriftRow[]>('/api/name-drift'),
   listSuspiciousBases: () => jsonGet<SuspiciousBaseRow[]>('/api/suspicious-bases'),

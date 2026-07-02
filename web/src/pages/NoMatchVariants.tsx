@@ -1,7 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
-import { Alert, Skeleton, Stack, Typography } from '@mui/material';
+import { Alert, Chip, Skeleton, Stack, Typography } from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import { api, NoMatchVariantRow } from '../api';
+
+/** Weergave + kleur per actie-categorie. */
+export const ACTIE_META: Record<string, { label: string; color: 'success' | 'warning' | 'info' | 'error' }> = {
+  aanmaakbaar: { label: 'Aanmaakbaar', color: 'success' },
+  bestaat_al_afwijkende_bom: { label: 'Bestaat al (BOM wijkt af)', color: 'warning' },
+  bom_bestaat_elders: { label: 'BOM bestaat elders', color: 'info' },
+  base_niet_gematcht: { label: 'Base niet gematcht', color: 'error' },
+};
 
 interface Row extends NoMatchVariantRow {
   id: number;
@@ -44,6 +52,15 @@ const columns: GridColDef<Row>[] = [
     sortable: false,
     renderCell: (params) => joinOrDash(params.row.extraItemcodes),
   },
+  {
+    field: 'actie',
+    headerName: 'Actie',
+    width: 200,
+    renderCell: (params) => {
+      const meta = ACTIE_META[params.row.actie] ?? { label: params.row.actie, color: 'warning' as const };
+      return <Chip size="small" color={meta.color} variant="outlined" label={meta.label} />;
+    },
+  },
 ];
 
 export function NoMatchVariants() {
@@ -56,7 +73,8 @@ export function NoMatchVariants() {
     return <Alert severity="error">Kon no-match-varianten niet laden: {(error as Error).message}</Alert>;
   }
 
-  const rows: Row[] = (data ?? []).map((row, index) => ({ ...row, id: index }));
+  const rows: Row[] = (data?.rows ?? []).map((row, index) => ({ ...row, id: index }));
+  const counts = data?.counts ?? {};
 
   return (
     <Stack spacing={2}>
@@ -68,8 +86,18 @@ export function NoMatchVariants() {
           Variant-rijen met status <code>no_match</code> — de matcher vond geen AFAS-compositie met de verwachte BOM.
           <strong> Bestaat in AFAS</strong> toont of de compositie er tóch is (alleen niet matchte);{' '}
           <strong>Mist</strong>/<strong>Teveel</strong> zijn de itemcodes die in die compositie ontbreken of teveel staan.
+          De kolom <strong>Actie</strong> zegt wat er moet gebeuren; alleen <em>aanmaakbaar</em> wordt door{' '}
+          <code>variants:fix-missing</code> aangemaakt. Export: <code>audit:no-match --csv=&lt;pad&gt;</code>.
           {rows.length > 0 && ` (${rows.length} rijen)`}
         </Typography>
+        {Object.keys(counts).length > 0 && (
+          <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+            {Object.entries(counts).map(([actie, n]) => {
+              const meta = ACTIE_META[actie] ?? { label: actie, color: 'warning' as const };
+              return <Chip key={actie} size="small" color={meta.color} label={`${n} × ${meta.label}`} />;
+            })}
+          </Stack>
+        )}
       </Stack>
       {isLoading ? (
         <Skeleton variant="rectangular" height={400} />

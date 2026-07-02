@@ -132,6 +132,13 @@ final readonly class ListNoMatchVariantsHandler
 
         $exacteBomMatchItemcode = $itemcodeByBomKey[implode(',', $expectedBom)] ?? null;
 
+        $actie = match (true) {
+            $verwachteItemcode === '' => NoMatchVariantRow::ACTIE_BASE_NIET_GEMATCHT,
+            $bestaandeAfasItemcode !== null => NoMatchVariantRow::ACTIE_BESTAAT_AL,
+            $exacteBomMatchItemcode !== null => NoMatchVariantRow::ACTIE_BOM_ELDERS,
+            default => NoMatchVariantRow::ACTIE_AANMAAKBAAR,
+        };
+
         return new NoMatchVariantRow(
             $groupName,
             $familyHead,
@@ -145,6 +152,7 @@ final readonly class ListNoMatchVariantsHandler
             $exacteBomMatchItemcode,
             $ontbrekendeItemcodes,
             $extraItemcodes,
+            $actie,
         );
     }
 

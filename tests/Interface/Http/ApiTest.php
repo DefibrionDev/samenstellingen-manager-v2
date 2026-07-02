@@ -53,6 +53,9 @@ final class ApiTest extends TestCase
         self::assertSame('52112', $response['body'][0]['familyHead']);
         self::assertSame(1, $response['body'][0]['baseCount']);
         self::assertSame(2, $response['body'][0]['baseItemCount']);
+        // Overzicht toont per groep de no-match-aantallen per actie (leeg = niets mis).
+        self::assertSame([], $response['body'][0]['noMatchCounts']);
+        self::assertArrayNotHasKey('missingVariantCount', $response['body'][0]);
     }
 
     #[Test]
@@ -310,49 +313,6 @@ final class ApiTest extends TestCase
     }
 
     #[Test]
-    public function listsMissingVariantsAcrossAllGroups(): void
-    {
-        $pdo = TestDatabase::pdo();
-        $groups = new SqliteGroupRepository($pdo);
-        $bases = new SqliteGroupBaseRepository($pdo);
-        $items = new SqliteGroupBaseItemRepository($pdo);
-        $accessoires = new SqliteAccessoireRepository($pdo);
-        $links = new SqliteGroupAccessoireRepository($pdo);
-        $variants = new SqliteGroupVariantRepository($pdo);
-
-        $groups->save(new Group('Reanibex', '52112'));
-        $base = $bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL', 'NL', '52112'));
-        self::assertNotNull($base->id);
-        $items->saveForBase($base->id, new GroupBaseItem('50013', 'AED NL'));
-        $accessoires->save(new Accessoire('60110', 'EHBO-Rugzak'));
-        $links->link('52112', '60110');
-        $variants->regenerateForGroup('52112');
-
-        // Markeer alleen de base-only-variant als matched zodat de variant met accessoire
-        // als 'no_match' overblijft in de missing-lijst.
-        $allVariants = $variants->findAllForGroup('52112');
-        foreach ($allVariants as $variant) {
-            if ($variant->id === null) {
-                continue;
-            }
-            if ($variant->accessoireItemcode === null) {
-                $variants->markMatched($variant->id, '52112');
-            } else {
-                $variants->markNoMatch($variant->id);
-            }
-        }
-
-        $response = $this->call('GET', '/api/missing-variants');
-
-        self::assertSame(200, $response['status']);
-        self::assertCount(1, $response['body']);
-        self::assertSame('Reanibex', $response['body'][0]['groupName']);
-        self::assertSame('AED pakket NL', $response['body'][0]['baseName']);
-        self::assertSame('60110', $response['body'][0]['accessoireItemcode']);
-        self::assertSame('52112-60110', $response['body'][0]['suggestedSku']);
-    }
-
-    #[Test]
     public function exposesNoMatchEndpointFlaggingExistingAfasComposition(): void
     {
         $pdo = TestDatabase::pdo();
@@ -388,15 +348,18 @@ final class ApiTest extends TestCase
         $response = $this->call('GET', '/api/wc/no-match');
 
         self::assertSame(200, $response['status']);
-        self::assertCount(1, $response['body']);
-        self::assertSame('Reanibex', $response['body'][0]['groupName']);
-        self::assertSame('60110', $response['body'][0]['accessoireItemcode']);
-        self::assertSame('52112-60110', $response['body'][0]['verwachteItemcode']);
-        self::assertSame('52112-60110', $response['body'][0]['bestaandeAfasItemcode']);
-        self::assertNull($response['body'][0]['exacteBomMatchItemcode']);
+        self::assertSame(['bestaat_al_afwijkende_bom' => 1], $response['body']['counts']);
+        $rows = $response['body']['rows'];
+        self::assertCount(1, $rows);
+        self::assertSame('Reanibex', $rows[0]['groupName']);
+        self::assertSame('60110', $rows[0]['accessoireItemcode']);
+        self::assertSame('52112-60110', $rows[0]['verwachteItemcode']);
+        self::assertSame('52112-60110', $rows[0]['bestaandeAfasItemcode']);
+        self::assertNull($rows[0]['exacteBomMatchItemcode']);
+        self::assertSame('bestaat_al_afwijkende_bom', $rows[0]['actie']);
         // Verwachte BOM = [50013, 60110]; bestaande compositie mist 60110 en heeft niets teveel.
-        self::assertSame(['60110'], $response['body'][0]['ontbrekendeItemcodes']);
-        self::assertSame([], $response['body'][0]['extraItemcodes']);
+        self::assertSame(['60110'], $rows[0]['ontbrekendeItemcodes']);
+        self::assertSame([], $rows[0]['extraItemcodes']);
     }
 
     #[Test]

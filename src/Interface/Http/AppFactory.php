@@ -6,7 +6,6 @@ namespace Defibrion\Samenstellingen\Interface\Http;
 
 use Defibrion\Samenstellingen\Application\Audit\BasePriceGapsHandler;
 use Defibrion\Samenstellingen\Application\Audit\DuplicateBomAuditHandler;
-use Defibrion\Samenstellingen\Application\Audit\ListMissingVariantsHandler;
 use Defibrion\Samenstellingen\Application\Audit\ListNoMatchVariantsHandler;
 use Defibrion\Samenstellingen\Application\Audit\NameAuditHandler;
 use Defibrion\Samenstellingen\Application\Audit\PriceAuditHandler;
@@ -37,7 +36,7 @@ final class AppFactory
             $container->groupRepository(),
             $container->baseRepository(),
             $container->baseItemRepository(),
-            new ListMissingVariantsHandler(
+            new ListNoMatchVariantsHandler(
                 $container->groupRepository(),
                 $container->variantRepository(),
                 $container->baseItemRepository(),
@@ -72,14 +71,6 @@ final class AppFactory
             $container->variantRepository(),
             $container->accessoireRepository(),
             new VariantNamingPolicy(),
-        );
-        $listMissing = new ListMissingVariantsController(
-            new ListMissingVariantsHandler(
-                $container->groupRepository(),
-                $container->variantRepository(),
-                $container->baseItemRepository(),
-                $container->afasSamenstellingenRepository(),
-            ),
         );
         $listNoMatch = new ListNoMatchVariantsController(
             new ListNoMatchVariantsHandler(
@@ -177,7 +168,6 @@ final class AppFactory
         $app->get('/api/groups/{familyHead}/variants', $listGroupVariants);
         $app->get('/api/accessoires', $listAccessoires);
         $app->get('/api/bom-blacklist', $listBlacklist);
-        $app->get('/api/missing-variants', $listMissing);
         $app->get('/api/name-drift', $listNameDrift);
         $app->get('/api/suspicious-bases', $listSuspiciousBases);
         $app->get('/api/articles/{itemcode}/prices', $listArticlePrices);

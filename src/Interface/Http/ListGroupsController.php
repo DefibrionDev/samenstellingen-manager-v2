@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Defibrion\Samenstellingen\Interface\Http;
 
-use Defibrion\Samenstellingen\Application\Audit\ListMissingVariants;
-use Defibrion\Samenstellingen\Application\Audit\ListMissingVariantsHandler;
+use Defibrion\Samenstellingen\Application\Audit\ListNoMatchVariants;
+use Defibrion\Samenstellingen\Application\Audit\ListNoMatchVariantsHandler;
 use Defibrion\Samenstellingen\Domain\Afas\AfasSamenstellingenRepository;
 use Defibrion\Samenstellingen\Domain\Group\GroupBaseItemRepository;
 use Defibrion\Samenstellingen\Domain\Group\GroupBaseRepository;
@@ -19,16 +19,17 @@ final readonly class ListGroupsController
         private GroupRepository $groups,
         private GroupBaseRepository $bases,
         private GroupBaseItemRepository $items,
-        private ListMissingVariantsHandler $missingVariants,
+        private ListNoMatchVariantsHandler $noMatchVariants,
         private AfasSamenstellingenRepository $afasSamenstellingen,
     ) {
     }
 
     public function __invoke(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        $missingByFamilyHead = [];
-        foreach (($this->missingVariants)(new ListMissingVariants()) as $row) {
-            $missingByFamilyHead[$row->familyHead] = ($missingByFamilyHead[$row->familyHead] ?? 0) + 1;
+        // Per groep: aantal no_match-varianten per actie ("wat er mis is" op het overzicht).
+        $noMatchByFamilyHead = [];
+        foreach (($this->noMatchVariants)(new ListNoMatchVariants()) as $row) {
+            $noMatchByFamilyHead[$row->familyHead][$row->actie] = ($noMatchByFamilyHead[$row->familyHead][$row->actie] ?? 0) + 1;
         }
 
         $payload = [];
@@ -70,7 +71,7 @@ final readonly class ListGroupsController
                 'baseCount' => count($bases),
                 'baseItemCount' => $itemCount,
                 'familyHeadIsBase' => $familyHeadIsBase,
-                'missingVariantCount' => $missingByFamilyHead[$group->familyHeadItemcode] ?? 0,
+                'noMatchCounts' => $noMatchByFamilyHead[$group->familyHeadItemcode] ?? [],
                 'parentMismatchCount' => $parentMismatchCount,
                 'modelNameNl' => $group->modelNameNl,
                 'modelNameFr' => $group->modelNameFr,

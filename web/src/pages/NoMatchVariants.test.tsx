@@ -20,7 +20,9 @@ beforeEach(() => {
       ok: true,
       status: 200,
       statusText: 'OK',
-      json: async () => [
+      json: async () => ({
+        counts: { bestaat_al_afwijkende_bom: 1 },
+        rows: [
         {
           groupName: 'Mindray C1A vol',
           familyHead: '21019-UK',
@@ -34,8 +36,10 @@ beforeEach(() => {
           exacteBomMatchItemcode: null,
           ontbrekendeItemcodes: ['81211'],
           extraItemcodes: [],
+          actie: 'bestaat_al_afwijkende_bom',
         },
       ],
+      }),
     })),
   );
 });
@@ -53,4 +57,6 @@ test('toont no-match varianten met bestaande compositie en ontbrekende itemcode'
   expect(screen.getByText('21012-FR-60110')).toBeInTheDocument();
   // 81211 ontbreekt in die compositie (mist-kolom).
   expect(screen.getByText('81211')).toBeInTheDocument();
+  // Actie-telling bovenaan + actie-chip in de rij.
+  expect(screen.getAllByText(/Bestaat al \(BOM wijkt af\)/).length).toBeGreaterThanOrEqual(2);
 });

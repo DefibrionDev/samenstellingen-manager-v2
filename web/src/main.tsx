@@ -9,7 +9,6 @@ import { AccessoiresList } from './pages/AccessoiresList';
 import { BlacklistList } from './pages/BlacklistList';
 import { GroupsList } from './pages/GroupsList';
 import { GroupDetail } from './pages/GroupDetail';
-import { MissingVariants } from './pages/MissingVariants';
 import { NoMatchVariants } from './pages/NoMatchVariants';
 import { OnlineNotAssigned } from './pages/OnlineNotAssigned';
 import { NameDrift } from './pages/NameDrift';
@@ -40,7 +39,6 @@ const router = createBrowserRouter([
       { path: 'groups/:familyHead/:tab', element: <GroupDetail /> },
       { path: 'accessoires', element: <AccessoiresList /> },
       { path: 'blacklist', element: <BlacklistList /> },
-      { path: 'missing', element: <MissingVariants /> },
       { path: 'no-match', element: <NoMatchVariants /> },
       { path: 'online-not-assigned', element: <OnlineNotAssigned /> },
       { path: 'name-drift', element: <NameDrift /> },
