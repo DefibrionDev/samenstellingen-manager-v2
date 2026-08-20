@@ -28,3 +28,6 @@ __pycache__/
 
 # One-off WooCommerce-migratie, bewust niet versioneren
 migration/reanibex-multilang-attributes.py
+
+# Work-folder voor ad-hoc analyses en uitdraaien (bewust niet versioneren)
+work/
