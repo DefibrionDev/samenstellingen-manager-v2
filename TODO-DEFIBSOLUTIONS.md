@@ -21,12 +21,14 @@ draaien tegen de lokale kopie, niet PHPUnit.
 
 ## Fase B — Target-laag in het script (stap 1.2)
 
-- [ ] `DEFIBS_TARGET=lokaal|cp01` in `defibsolutions-migratie.sh`: `wpr()`
+- [x] `DEFIBS_TARGET=lokaal|cp01` in `defibsolutions-migratie.sh`: `wpr()`
       kiest wpcli-container of ssh; de `scp`-upload in stap 4 wordt lokaal
       een volume-mount. Bestaande stappen ongewijzigd.
-- [ ] Verificatie: `./migration/defibsolutions-migratie.sh stap5` (dry-run)
-      draait lokaal zonder ssh én — ter controle — nog steeds via
-      `DEFIBS_TARGET=cp01` tegen de server.
+      ✓ 20 aug: + compose `--progress quiet` (statusregels vervuilden output)
+      en `php -d memory_limit=512M` (wpcli-container OOM'de bij volle WP-load).
+- [x] Verificatie: `./migration/defibsolutions-migratie.sh stap5` (dry-run)
+      draait lokaal zonder ssh. ✓ 20 aug. De cp01-tegencontrole is op verzoek
+      verplaatst naar Fase G: eerst alles lokaal goed, server als allerlaatste.
 
 ## Fase C — Bestaande stappen 1–5 lokaal draaien (stap 1.3)
 
@@ -66,6 +68,9 @@ draaien tegen de lokale kopie, niet PHPUnit.
 - [ ] Lokale kopie weggooien → verse pull → alle stappen achter elkaar.
       Af als de reeks zonder handmatig ingrijpen eindigt in een werkende shop.
       Dan is het script vrijgegeven voor `DEFIBS_TARGET=cp01`.
+- [ ] Allerlaatste: cp01-pad voor het eerst aanraken —
+      `DEFIBS_TARGET=cp01 ./migration/defibsolutions-migratie.sh stap5`
+      (read-only dry-run) en kijken wat er gebeurt. Pas daarna Fase H plannen.
 
 ## Fase H — Livegang (runbook fase 2, buiten kantooruren)
 

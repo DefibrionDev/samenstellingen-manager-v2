@@ -6,9 +6,16 @@
 #
 #   ./migration/defibsolutions-migratie.sh stap1
 #
+# Target-keuze (lokaal-eerst, zie MIGRATIE-DEFIBSOLUTIONS.md "Spelregels"):
+#   DEFIBS_TARGET=lokaal  (default) draait elke stap in de wpcli-container van
+#                         de lokale Docker-kopie (~/projects/wordpress-migrater,
+#                         .env-defibsolutions, site op poort 8897)
+#   DEFIBS_TARGET=cp01    draait exact dezelfde stap via ssh op de nieuwe server
+#
 # Serverconfig komt uit de project-.env (repo-root), net als de AFAS-credentials:
-#   DEFIBS_SERVER   ssh-host van de nieuwe server, bv. defibrion-defibsolutions@1.2.3.4
-#   DEFIBS_WP_ROOT  pad naar de WordPress-root op die server
+#   DEFIBS_SERVER        ssh-host van de nieuwe server (alleen nodig bij cp01)
+#   DEFIBS_WP_ROOT       pad naar de WordPress-root op die server (idem)
+#   DEFIBS_MIGRATER_DIR  pad naar wordpress-migrater (default ~/projects/wordpress-migrater)
 # Environment-variabelen met dezelfde naam gaan vóór de .env-waarden.
 #
 # Achtergrond/fase-overzicht: MIGRATIE-DEFIBSOLUTIONS.md · blauwdruk: MIGRATIE-uitgevoerd.md
@@ -25,21 +32,65 @@ if [[ -f "$REPO_ROOT/.env" ]]; then
     done < "$REPO_ROOT/.env"
 fi
 
+TARGET="${DEFIBS_TARGET:-lokaal}"
 SERVER="${DEFIBS_SERVER:-INVULLEN-user@nieuwe-server}"
 WP_ROOT="${DEFIBS_WP_ROOT:-INVULLEN-/pad/naar/wordpress}"
+MIGRATER_DIR="${DEFIBS_MIGRATER_DIR:-$HOME/projects/wordpress-migrater}"
 
+# De PHP op beide targets is nieuwer dan de oude plugins/het theme; de
+# "Deprecated:"-meldingen vervuilen elke stap-output en worden weggefilterd.
+_filter_ruis() { grep -vE '^(Deprecated|Notice):' || true; }
+
+_lokaal_compose() {
+    # --progress quiet: compose-statusregels ("Container ... Running") gaan
+    # anders door de 2>&1-merge heen en vervuilen gevangen stap-output.
+    docker compose --progress quiet --project-directory "$MIGRATER_DIR" \
+        --env-file "$MIGRATER_DIR/.env-defibsolutions" "$@"
+}
+
+doel_naam() {
+    [[ "$TARGET" == "lokaal" ]] && echo "lokale kopie (localhost:8897)" || echo "$SERVER"
+}
+
+# wp-cli op het gekozen target. Args gaan als één string door een shell
+# (sh -c / ssh), zodat quoting op beide targets identiek uitpakt.
+# wpr leest NIET van stdin (veilig in loops); wpr_stdin wél (voor eval-file -).
 wpr() {
-    # wp-cli op de nieuwe server, uitgevoerd vanuit de WP-root.
-    # De server-PHP is nieuwer dan de oude plugins/het theme; de "Deprecated:"-
-    # meldingen vervuilen elke stap-output en worden hier weggefilterd.
-    ssh "$SERVER" "cd '$WP_ROOT' && wp $*" 2>&1 | { grep -vE '^(Deprecated|Notice):' || true; }
+    wpr_stdin "$@" < /dev/null
+}
+
+wpr_stdin() {
+    if [[ "$TARGET" == "lokaal" ]]; then
+        # memory_limit: de 128M van de wpcli-container is te krap zodra WP
+        # volledig laadt (wp-mail-smtp's mail-catcher OOM't dan).
+        _lokaal_compose run --rm -T wpcli \
+            sh -c "php -d memory_limit=512M /usr/local/bin/wp $*" 2>&1 | _filter_ruis
+    else
+        ssh "$SERVER" "cd '$WP_ROOT' && wp $*" 2>&1 | _filter_ruis
+    fi
 }
 
 controleer_config() {
-    if [[ "$SERVER" == INVULLEN-* || "$WP_ROOT" == INVULLEN-* ]]; then
-        echo "FOUT: zet eerst DEFIBS_SERVER en DEFIBS_WP_ROOT (zie kop van dit script)." >&2
+    if [[ "$TARGET" == "lokaal" ]]; then
+        if [[ ! -f "$MIGRATER_DIR/.env-defibsolutions" ]]; then
+            echo "FOUT: $MIGRATER_DIR/.env-defibsolutions ontbreekt (zet evt. DEFIBS_MIGRATER_DIR)." >&2
+            exit 1
+        fi
+        if ! _lokaal_compose ps --status=running 2>/dev/null | grep -q 'defibsolutions-db'; then
+            echo "FOUT: lokale defibsolutions-stack draait niet. Start met:" >&2
+            echo "  cd $MIGRATER_DIR && docker compose --env-file .env-defibsolutions up -d" >&2
+            exit 1
+        fi
+    elif [[ "$TARGET" == "cp01" ]]; then
+        if [[ "$SERVER" == INVULLEN-* || "$WP_ROOT" == INVULLEN-* ]]; then
+            echo "FOUT: zet eerst DEFIBS_SERVER en DEFIBS_WP_ROOT (zie kop van dit script)." >&2
+            exit 1
+        fi
+    else
+        echo "FOUT: onbekend DEFIBS_TARGET '$TARGET' (lokaal of cp01)." >&2
         exit 1
     fi
+    echo "[target: $TARGET]"
 }
 
 # ---------------------------------------------------------------------------
@@ -52,7 +103,7 @@ stap1() {
     wpr plugin install disable-emails --activate
     echo "--- controle:"
     wpr plugin list --status=active | grep disable-emails
-    echo "OK — mail staat uit op $SERVER"
+    echo "OK — mail staat uit op $(doel_naam)"
 }
 
 # ---------------------------------------------------------------------------
@@ -63,13 +114,13 @@ stap1() {
 stap2() {
     controleer_config
     if ! wpr plugin is-installed jetpack; then
-        echo "jetpack is niet geïnstalleerd op $SERVER — niets te doen"
+        echo "jetpack is niet geïnstalleerd op $(doel_naam) — niets te doen"
         return 0
     fi
     wpr plugin deactivate jetpack
     echo "--- controle:"
     wpr plugin list | grep -i jetpack
-    echo "OK — jetpack staat uit op $SERVER"
+    echo "OK — jetpack staat uit op $(doel_naam)"
 }
 
 # ---------------------------------------------------------------------------
@@ -118,8 +169,7 @@ printf("--- %s: %d te zetten/gezet, %d stonden al goed, %d onbekende users\n",
 """)
 PY
 
-    ssh "$SERVER" "cd '$WP_ROOT' && wp eval-file -" < /tmp/afas-relatie-payload.php \
-        2>&1 | { grep -vE '^(Deprecated|Notice):' || true; }
+    wpr_stdin eval-file - < /tmp/afas-relatie-payload.php
     if [[ "$apply" != "apply" ]]; then
         echo "Dry-run — niets geschreven. Draai '$0 stap3 apply' om echt te schrijven."
     fi
@@ -139,9 +189,15 @@ stap4() {
     local zip
     zip=$(ls -1 "$REPO_ROOT"/work/lefcreative-afas-b2b-*.zip 2>/dev/null | sort | tail -1)
     [[ -n "$zip" ]] || { echo "FOUT: geen work/lefcreative-afas-b2b-*.zip gevonden" >&2; exit 1; }
-    echo "upload $(basename "$zip") ..."
-    scp -q "$zip" "$SERVER:/tmp/lefcreative-afas-b2b.zip"
-    wpr plugin install /tmp/lefcreative-afas-b2b.zip --force --activate
+    if [[ "$TARGET" == "lokaal" ]]; then
+        # geen scp nodig: work/ read-only in de container mounten
+        _lokaal_compose run --rm -T -v "$(dirname "$zip"):/defibs-work:ro" wpcli \
+            sh -c "php -d memory_limit=512M /usr/local/bin/wp plugin install '/defibs-work/$(basename "$zip")' --force --activate" 2>&1 | _filter_ruis
+    else
+        echo "upload $(basename "$zip") ..."
+        scp -q "$zip" "$SERVER:/tmp/lefcreative-afas-b2b.zip"
+        wpr plugin install /tmp/lefcreative-afas-b2b.zip --force --activate
+    fi
 
     local settings="$REPO_ROOT/work/afas-settings.json"
     if [[ -f "$settings" ]]; then
@@ -157,8 +213,7 @@ foreach ($settings as $naam => $waarde) { update_option($naam, $waarde); $n++; }
 printf("%d afas_*-opties geimporteerd\n", $n);
 """)
 PY
-        ssh "$SERVER" "cd '$WP_ROOT' && wp eval-file -" < /tmp/afas-settings-payload.php \
-            2>&1 | { grep -vE '^(Deprecated|Notice):' || true; }
+        wpr_stdin eval-file - < /tmp/afas-settings-payload.php
     else
         echo "LET OP: $settings ontbreekt — plugin actief maar zonder settings-import."
     fi
@@ -166,7 +221,7 @@ PY
     echo "--- controle:"
     wpr plugin list | grep -i lefcreative
     wpr option get afas_env_type
-    echo "OK — plugin actief + settings geimporteerd op $SERVER"
+    echo "OK — plugin actief + settings geimporteerd op $(doel_naam)"
 }
 
 # ---------------------------------------------------------------------------
@@ -212,12 +267,12 @@ stap5() {
     echo "--- controle:"
     wpr db query "\"SELECT COUNT(*) AS rest_keys FROM wp_woocommerce_api_keys\""
     wpr db query "\"SELECT COUNT(*) AS app_passwords FROM wp_usermeta WHERE meta_key='_application_passwords'\""
-    echo "OK — alle API-keys ingetrokken op $SERVER"
+    echo "OK — alle API-keys ingetrokken op $(doel_naam)"
 }
 
 # ---------------------------------------------------------------------------
 usage() {
-    echo "gebruik: $0 <stap>"
+    echo "gebruik: [DEFIBS_TARGET=lokaal|cp01] $0 <stap>   (default: lokaal)"
     echo "stappen:"
     echo "  stap1   Mail UIT: disable-emails installeren + activeren (nieuwe server)"
     echo "  stap2   Jetpack UIT: plugin deactiveren (nieuwe server)"
