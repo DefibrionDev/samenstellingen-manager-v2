@@ -59,15 +59,28 @@ wpr() {
     wpr_stdin "$@" < /dev/null
 }
 
+# De wpcli-image (Alpine) draait default als uid 82, maar de fpm-container
+# (Debian) beheert wp-content als uid 33 — schrijvende wp-commando's moeten
+# dus als 33 draaien. HOME=/tmp voor de wp-cli-cache (uid 33 heeft geen home).
+_LOKAAL_RUN_OPTS=(--rm -T --user 33:33 -e HOME=/tmp)
+
 wpr_stdin() {
     if [[ "$TARGET" == "lokaal" ]]; then
         # memory_limit: de 128M van de wpcli-container is te krap zodra WP
         # volledig laadt (wp-mail-smtp's mail-catcher OOM't dan).
-        _lokaal_compose run --rm -T wpcli \
+        _lokaal_compose run "${_LOKAAL_RUN_OPTS[@]}" wpcli \
             sh -c "php -d memory_limit=512M /usr/local/bin/wp $*" 2>&1 | _filter_ruis
     else
         ssh "$SERVER" "cd '$WP_ROOT' && wp $*" 2>&1 | _filter_ruis
     fi
+}
+
+_lokaal_prep() {
+    # Na een verse pull is wp-content/upgrade eigendom van de host-user (1000);
+    # uid 33 moet er plugins kunnen uitpakken. Idempotent, dus veilig per run.
+    _lokaal_compose run --rm -T --user 0 wpcli sh -c \
+        'mkdir -p /var/www/html/wp-content/upgrade && chown -R 33:33 /var/www/html/wp-content/upgrade' \
+        >/dev/null 2>&1 || true
 }
 
 controleer_config() {
@@ -81,6 +94,7 @@ controleer_config() {
             echo "  cd $MIGRATER_DIR && docker compose --env-file .env-defibsolutions up -d" >&2
             exit 1
         fi
+        _lokaal_prep
     elif [[ "$TARGET" == "cp01" ]]; then
         if [[ "$SERVER" == INVULLEN-* || "$WP_ROOT" == INVULLEN-* ]]; then
             echo "FOUT: zet eerst DEFIBS_SERVER en DEFIBS_WP_ROOT (zie kop van dit script)." >&2
@@ -191,7 +205,7 @@ stap4() {
     [[ -n "$zip" ]] || { echo "FOUT: geen work/lefcreative-afas-b2b-*.zip gevonden" >&2; exit 1; }
     if [[ "$TARGET" == "lokaal" ]]; then
         # geen scp nodig: work/ read-only in de container mounten
-        _lokaal_compose run --rm -T -v "$(dirname "$zip"):/defibs-work:ro" wpcli \
+        _lokaal_compose run "${_LOKAAL_RUN_OPTS[@]}" -v "$(dirname "$zip"):/defibs-work:ro" wpcli \
             sh -c "php -d memory_limit=512M /usr/local/bin/wp plugin install '/defibs-work/$(basename "$zip")' --force --activate" 2>&1 | _filter_ruis
     else
         echo "upload $(basename "$zip") ..."
@@ -245,7 +259,8 @@ stap5() {
     echo ""
     echo "--- Application passwords:"
     local userids
-    userids=$(wpr db query "\"SELECT user_id FROM wp_usermeta WHERE meta_key='_application_passwords'\"" --skip-column-names)
+    # 'a:0:{}' = lege rij die WP na verwijderen laat staan — geen wachtwoord
+    userids=$(wpr db query "\"SELECT user_id FROM wp_usermeta WHERE meta_key='_application_passwords' AND meta_value NOT IN ('', 'a:0:{}')\"" --skip-column-names)
     for uid in $userids; do
         echo "user $uid:"
         wpr user application-password list "$uid" --fields=uuid,name,created,last_used
@@ -266,7 +281,7 @@ stap5() {
 
     echo "--- controle:"
     wpr db query "\"SELECT COUNT(*) AS rest_keys FROM wp_woocommerce_api_keys\""
-    wpr db query "\"SELECT COUNT(*) AS app_passwords FROM wp_usermeta WHERE meta_key='_application_passwords'\""
+    wpr db query "\"SELECT COUNT(*) AS app_passwords FROM wp_usermeta WHERE meta_key='_application_passwords' AND meta_value NOT IN ('', 'a:0:{}')\""
     echo "OK — alle API-keys ingetrokken op $(doel_naam)"
 }
 

@@ -32,10 +32,17 @@ draaien tegen de lokale kopie, niet PHPUnit.
 
 ## Fase C — Bestaande stappen 1–5 lokaal draaien (stap 1.3)
 
-- [ ] stap1 (mail uit) + stap2 (Jetpack uit) lokaal groen
-- [ ] stap3 klantkoppeling: dry-run beoordelen → apply → steekproef usermeta
-- [ ] stap4 plugin 1.3.14 + 91 settings lokaal geïmporteerd, plugin actief
-- [ ] stap5 API-keys: dry-run beoordelen → apply → beide tellingen op 0
+- [x] stap1 (mail uit) + stap2 (Jetpack uit) lokaal groen
+      ✓ 20 aug. Fix onderweg: wpcli draait nu als uid 33 + self-healing
+      `upgrade/`-dir (`_lokaal_prep`), anders geen schrijfrechten na verse pull.
+- [x] stap3 klantkoppeling: dry-run beoordelen → apply → steekproef usermeta
+      ✓ 20 aug: 94 gezet, herdraai "94 stonden al goed", usermeta klopt.
+- [x] stap4 plugin 1.3.14 + 91 settings lokaal geïmporteerd, plugin actief
+      ✓ 20 aug. LET OP: `afas_env_type=production` — de lokale kopie praat
+      met écht AFAS zodra syncs/checkout draaien (relevant voor Fase F).
+- [x] stap5 API-keys: dry-run beoordelen → apply → beide tellingen op 0
+      ✓ 20 aug: 4 REST-keys (incl. Improvit read_write) + 3 app-passwords weg.
+      Controle-query aangescherpt: telt geen lege `a:0:{}`-restrijen meer mee.
 
 ## Fase D — Koppelbaarheids-audit (stap 1.4, meeste uitzoekwerk)
 
