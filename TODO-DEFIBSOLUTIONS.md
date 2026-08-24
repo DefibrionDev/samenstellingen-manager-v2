@@ -111,9 +111,19 @@ draaien tegen de lokale kopie, niet PHPUnit.
       8; Points-Pro-plugins niet). Bestanden gevendored in
       `migration/mu-plugins/`, ✓ lokaal geplaatst. NB: een verse pull haalt
       ze weer weg — stap7 hoort in elke herhaal-reeks.
-- [ ] stap10+: de gekozen audit-acties uit Fase D, elk als eigen
-      dry-run-first stap (aantal en inhoud volgt uit het rapport +
-      antwoorden Kevin)
+- [x] stap8: structuur-opruiming (akkoord Cas 24 aug) — gekoppelde simples
+      die variatie horen te zijn + dubbele variaties (WPML-suffix-SKU's) naar
+      de prullenbak met SKU/koppeling gestript; de sync bouwt de vervangers.
+      ✓ lokaal: 9 simples + 4 dubbele variaties getrasht.
+- [x] Alle voorstel-rijen actielijst akkoord (24 aug) + 2 case-mismatch-
+      voorkoppelingen (100087→10219, 99886→10788) + 4 familie-heads geflagd
+      in AFAS (10699, 11043, 11133, 21018-UK via fix-defibsolutions-vinkjes).
+      Resultaat na 3 sync-rondes: 122 → 19 → 9 → **0 warnings**;
+      "3 aangemaakt, 387 bijgewerkt"; types 339/8/166 → 325 simple /
+      12 variable / 179 variaties — kastvarianten terug als variaties onder
+      de nieuwe containers, met nette SKU's.
+- [ ] stap10+: resterende audit-acties (33 open rijen actielijst +
+      antwoorden Kevin over de 41 + 10189FR)
 
 **Plugin-versie (24 aug):** reseller-live draait `lefcreative-afas-b2b`
 **2.0.4**; onze analyse was op 1.3.14 maar de kernmechanica is ongewijzigd
@@ -151,8 +161,10 @@ B2BKing opruimen).
 - [x] AFAS-beheer: vrije velden `Sync_Defibsolutions_NL`/`Tonen_Defibsolutions_NL`
       bestaan al in `get_artikelen` (geverifieerd 20 aug, vers) en er zijn al
       386 artikelen aangevinkt — vrijwel exact de "op beide shops"-regel
-      (382/384). Handwerk in AFAS (beslist 20 aug): aanvinken 60123 + 60717 ·
-      uitvinken 10533 (geblokkeerd) + 10219-O · 10219 en 10788 blijven
-      geflagd en komen bij de eerste sync als nieuw product binnen (akkoord).
+      (382/384). Vlag-correcties uitgevoerd 24 aug via
+      `afas-connector-tools/bin/fix-defibsolutions-vinkjes.php` (dry-run →
+      apply → herdraai "staat al goed"): 60123 + 60717 aan, 10533
+      (geblokkeerd) + 10219-O uit. 10219 en 10788 blijven geflagd en komen
+      bij de eerste sync als nieuw product binnen (akkoord).
 - [ ] Mapping klant ↔ relatie afmaken: `GEEN MATCH`-gevallen + dubbelingen
       (bv. Ehabo 13804/31149), tabblad `mapping` van het prijsrapport
