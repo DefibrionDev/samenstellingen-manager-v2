@@ -88,7 +88,10 @@ actief is (`wp plugin list`).
 
 Read-only audit-script (zelfde patroon als de no-match-audit) dat per
 gepubliceerd shop-product en per te syncen AFAS-artikel één rij met een
-actie-kolom oplevert. Te vangen gevallen:
+actie-kolom oplevert. **Referentieregel:** staat een artikel op reseller of
+ARKY gepubliceerd, dan moet DefibSolutions dezelfde vorm krijgen
+(variable/variation/simple, zelfde parent) — de audit toetst daaraan via de
+snapshot (`tmp/samenstellingen.sqlite`). Te vangen gevallen:
 
 1. **SKU niet koppelbaar**: shop-SKU matcht geen `Artikelcode_BHV_Voordeelwinkel`
    in AFAS (64 bekende gevallen + 4 producten zonder SKU —
@@ -109,7 +112,8 @@ acties zelf worden script-stappen in stap 1.5.
 Nieuwe script-stappen, één voor één bouwen en lokaal draaien:
 
 1. B2BKing deactiveren (stap 6)
-2. Vertalingen + pricing-JS plaatsen conform ARKY-runbook (stap 7)
+2. ~~Vertalingen + pricing-JS~~ — vervalt: dat was bij ARKY een taal-fix
+   (Engelse shop); DefibSolutions is nl_NL, plugin is al Nederlands
 3. Checkout-pagina omzetten (stap 8)
 4. mu-plugins plaatsen, o.a. `wc-variation-threshold` (stap 9)
 5. Acties uit de koppelbaarheids-audit van stap 1.4 (stap 10+): BHV-veld in
@@ -136,6 +140,11 @@ werkende shop. Dan is het script klaar voor de server.
 ---
 
 ## Fase 2 — livegang (`DEFIBS_TARGET=cp01`, buiten kantooruren)
+
+**Vooraf regelen:** UniFi Threat Management blokkeerde op 24 aug een zware
+pull-sessie naar TransIP (THREAT_BLOCKED, IPS-modus). Vóór de livegang de
+bron- (TransIP) en doelserver (cp-01) uitzonderen in UniFi, anders kan de
+verse pull midden in het migratievenster stilvallen.
 
 Zelfde stappenreeks als fase 1, tegen de nieuwe server. Volgorde:
 

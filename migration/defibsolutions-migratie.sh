@@ -121,20 +121,26 @@ stap1() {
 }
 
 # ---------------------------------------------------------------------------
-# Stap 2 — Jetpack UIT.
+# Stap 2 — Overbodige plugins UIT: Jetpack + B2BKing.
 # Jetpack hoort niet mee te draaien tijdens/na de migratie (externe koppelingen,
-# mails, stats). Alleen deactiveren; verwijderen kan in de eindschoonmaak.
+# mails, stats). B2BKing wordt vervangen door lefcreative-afas-b2b; de
+# B2BKing-data blijft in de database staan als inerte fallback (zelfde aanpak
+# als de wholesale-plugins bij ARKY). Alleen deactiveren; verwijderen kan in
+# de eindschoonmaak.
 # ---------------------------------------------------------------------------
 stap2() {
     controleer_config
-    if ! wpr plugin is-installed jetpack; then
-        echo "jetpack is niet geïnstalleerd op $(doel_naam) — niets te doen"
-        return 0
-    fi
-    wpr plugin deactivate jetpack
+    local p
+    for p in jetpack b2bking-wholesale-for-woocommerce b2bking; do
+        if wpr plugin is-installed "$p" >/dev/null 2>&1; then
+            wpr plugin deactivate "$p"
+        else
+            echo "$p is niet geïnstalleerd op $(doel_naam) — overslaan"
+        fi
+    done
     echo "--- controle:"
-    wpr plugin list | grep -i jetpack
-    echo "OK — jetpack staat uit op $(doel_naam)"
+    wpr plugin list | { grep -iE 'jetpack|b2bking' || echo "(geen jetpack/b2bking gevonden)"; }
+    echo "OK — jetpack + b2bking staan uit op $(doel_naam)"
 }
 
 # ---------------------------------------------------------------------------
@@ -286,14 +292,143 @@ stap5() {
 }
 
 # ---------------------------------------------------------------------------
+# Stap 6 — Voorkoppeling: per WC-product (publish/private, incl. variaties) de
+# AFAS-itemcode in postmeta _afas_artikelnummer zetten. Zonder deze stap kan de
+# artikelen-sync bestaande producten niet vinden (hij matcht op deze meta, met
+# alleen SKU==itemcode als fallback) en maakt hij duplicaten aan.
+#
+# Doel-itemcode per product, in volgorde:
+#   1. akkoord-rij in work/voorkoppel-actielijst.csv (uitzonderingen én de
+#      kale-AED→samenstelling-omzettingen);
+#   2. SKU matcht precies één actief AFAS-artikel op Artikelcode_BHV_Voordeelwinkel;
+#   3. SKU is zelf een actieve AFAS-itemcode.
+# Geblokkeerde artikelen (soft-delete, B-prefix) doen nooit mee.
+# Bron-artikelen: work/cache/afas-artikelen.json (vers te halen met de audit).
+# Default dry-run; `stap6 apply` schrijft echt.
+# ---------------------------------------------------------------------------
+stap6() {
+    controleer_config
+    local apply="${1:-}"
+    local cache="$REPO_ROOT/work/cache/afas-artikelen.json"
+    local actielijst="$REPO_ROOT/work/voorkoppel-actielijst.csv"
+    [[ -f "$cache" ]] || { echo "FOUT: $cache ontbreekt (draai de koppelbaarheids-audit met --vers)" >&2; exit 1; }
+    [[ -f "$actielijst" ]] || { echo "FOUT: $actielijst ontbreekt" >&2; exit 1; }
+
+    mkdir -p "$REPO_ROOT/tmp"
+    local shopdump="$REPO_ROOT/tmp/defibs-shop-skus.tsv"
+    wpr db query "\"SELECT p.ID, p.post_type, COALESCE(sku.meta_value,''), COALESCE(an.meta_value,'') FROM wp_posts p LEFT JOIN wp_postmeta sku ON sku.post_id=p.ID AND sku.meta_key='_sku' LEFT JOIN wp_postmeta an ON an.post_id=p.ID AND an.meta_key='_afas_artikelnummer' WHERE p.post_type IN ('product','product_variation') AND p.post_status IN ('publish','private')\"" --skip-column-names > "$shopdump"
+
+    python3 - "$cache" "$actielijst" "$shopdump" "$apply" <<'PY' > /tmp/afas-voorkoppel-payload.php
+import csv, json, sys
+from collections import defaultdict
+
+cache, actielijst, shopdump, apply = sys.argv[1:5]
+d = json.load(open(cache))
+print(f"// AFAS-cache van {d.get('datum','?')}", file=sys.stderr)
+
+per_itemcode, per_bhv = {}, defaultdict(list)
+for r in d["data"]:
+    c = (r.get("Itemcode") or "").strip()
+    if not c or c in per_itemcode:
+        continue
+    per_itemcode[c] = r
+    if str(r.get("Geblokkeerd", "")).lower() in ("true", "1"):
+        continue
+    b = (r.get("Artikelcode_BHV_Voordeelwinkel") or "").strip()
+    if b:
+        per_bhv[b].append(c)
+
+akkoord = {}
+for r in csv.DictReader(open(actielijst, encoding="utf-8-sig"), delimiter=";"):
+    if r["status"].strip() == "akkoord" and r["itemcode"].strip():
+        akkoord[r["wc_id"].strip()] = r["itemcode"].strip()
+
+def actief(c):
+    r = per_itemcode.get(c)
+    return r is not None and str(r.get("Geblokkeerd", "")).lower() not in ("true", "1")
+
+paren = {}
+for line in open(shopdump, encoding="utf-8"):
+    delen = line.rstrip("\n").split("\t")
+    if len(delen) < 4 or not delen[0].isdigit():
+        continue
+    wc_id, _ptype, sku, huidig = delen[0], delen[1], delen[2].strip(), delen[3].strip()
+    doel = None
+    if wc_id in akkoord:
+        doel = akkoord[wc_id]
+    elif sku and len(per_bhv.get(sku, [])) == 1:
+        doel = per_bhv[sku][0]
+    elif sku and actief(sku):
+        doel = sku
+    if doel:
+        paren[wc_id] = doel
+
+print(f"// {len(paren)} voorkoppelingen bepaald ({len(akkoord)} uit actielijst)", file=sys.stderr)
+print("<?php")
+print(f"$apply = {'true' if apply == 'apply' else 'false'};")
+print(f"$map = json_decode('{json.dumps(paren)}', true);")
+print("""
+$gezet = $al = $anders = 0;
+foreach ($map as $pid => $code) {
+    $huidig = (string) get_post_meta((int) $pid, '_afas_artikelnummer', true);
+    if ($huidig === $code) { $al++; continue; }
+    if ($apply) { update_post_meta((int) $pid, '_afas_artikelnummer', $code); }
+    printf("%s  wc:%d: %s -> %s\\n", $apply ? 'GEZET' : 'ZOU ZETTEN',
+        (int) $pid, $huidig !== '' ? $huidig : '-', $code);
+    $huidig !== '' ? $anders++ : $gezet++;
+}
+printf("--- %s: %d nieuw, %d overschreven, %d stonden al goed\\n",
+    $apply ? 'APPLY' : 'DRY-RUN', $gezet, $anders, $al);
+""")
+PY
+
+    wpr_stdin eval-file - < /tmp/afas-voorkoppel-payload.php
+    if [[ "$apply" != "apply" ]]; then
+        echo "Dry-run — niets geschreven. Draai '$0 stap6 apply' om echt te schrijven."
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# Stap 7 — mu-plugins plaatsen uit migration/mu-plugins/ (keuze Cas 24 aug:
+# alle 8 — variation-threshold, variations-json-cache, checkout-ajax-fallback,
+# de drie mail/AFAS-presentatie-plugins en de twee winkelmanager-plugins;
+# Points-Pro-plugins van reseller bewust NIET). Idempotent: kopieert altijd
+# de repo-versie eroverheen. Let op: een verse pull (rsync --delete) haalt
+# ze weer weg — deze stap hoort dus in elke herhaal-reeks.
+# ---------------------------------------------------------------------------
+stap7() {
+    controleer_config
+    local bron="$REPO_ROOT/migration/mu-plugins"
+    [[ -d "$bron" ]] || { echo "FOUT: $bron ontbreekt" >&2; exit 1; }
+
+    if [[ "$TARGET" == "lokaal" ]]; then
+        local content_dir
+        content_dir=$(grep '^CONTENT_DIR=' "$MIGRATER_DIR/.env-defibsolutions" | cut -d= -f2)
+        local doel="$MIGRATER_DIR/${content_dir#./}/mu-plugins"
+        mkdir -p "$doel"
+        cp "$bron"/*.php "$doel/"
+        echo "--- controle:"
+        ls "$doel"
+    else
+        ssh "$SERVER" "mkdir -p '$WP_ROOT/wp-content/mu-plugins'"
+        scp -q "$bron"/*.php "$SERVER:$WP_ROOT/wp-content/mu-plugins/"
+        echo "--- controle:"
+        ssh "$SERVER" "ls '$WP_ROOT/wp-content/mu-plugins'"
+    fi
+    echo "OK — $(ls "$bron"/*.php | wc -l) mu-plugins geplaatst op $(doel_naam)"
+}
+
+# ---------------------------------------------------------------------------
 usage() {
     echo "gebruik: [DEFIBS_TARGET=lokaal|cp01] $0 <stap>   (default: lokaal)"
     echo "stappen:"
     echo "  stap1   Mail UIT: disable-emails installeren + activeren (nieuwe server)"
-    echo "  stap2   Jetpack UIT: plugin deactiveren (nieuwe server)"
+    echo "  stap2   Overbodige plugins UIT: Jetpack + B2BKing deactiveren"
     echo "  stap3   Klanten koppelen aan AFAS-relaties uit work/klant-relatie-mapping.csv (dry-run; 'stap3 apply' schrijft)"
     echo "  stap4   lefcreative-afas-b2b installeren + activeren + afas-settings importeren (work/)"
     echo "  stap5   API-keys intrekken: WooCommerce REST-keys + application passwords (dry-run; 'stap5 apply' verwijdert)"
+    echo "  stap6   Voorkoppeling: _afas_artikelnummer per product zetten via BHV-match + actielijst (dry-run; 'stap6 apply' schrijft)"
+    echo "  stap7   mu-plugins plaatsen uit migration/mu-plugins/ (8 stuks, idempotent)"
     exit 1
 }
 
@@ -303,5 +438,7 @@ case "${1:-}" in
     stap3) stap3 "${2:-}" ;;
     stap4) stap4 ;;
     stap5) stap5 "${2:-}" ;;
+    stap6) stap6 "${2:-}" ;;
+    stap7) stap7 ;;
     *) usage ;;
 esac

@@ -46,22 +46,81 @@ draaien tegen de lokale kopie, niet PHPUnit.
 
 ## Fase D — Koppelbaarheids-audit (stap 1.4, meeste uitzoekwerk)
 
-- [ ] Audit-script (read-only, `work/`): per shop-product en per te syncen
-      AFAS-artikel één rij met actie-kolom. Vangt: SKU niet koppelbaar op
-      `Artikelcode_BHV_Voordeelwinkel` · structuurverschil simple↔variabel ·
-      eenzijdige producten (alleen-shop / alleen-AFAS) · botsende SKU's.
+- [x] Audit-script (read-only, `work/audit-koppelbaarheid-defibsolutions.py`):
+      per shop-product één rij met actie-kolom, plus familie-analyse.
+      ✓ 20 aug: 549 WC-posts → 447 ok · 63 niet koppelbaar · 1 meerduidig ·
+      38 structuurverschillen · 26 familie-issues · 0 dubbele SKU's.
+      Rapport: `work/koppelbaarheid-defibsolutions/…xlsx`.
+      Plugin-analyse leverde ook op: (a) koppeling loopt via postmeta
+      `_afas_artikelnummer` → bestaande producten moeten vóór de eerste sync
+      voorgekoppeld worden, anders duplicaten; (b) kinderen zonder mee-
+      gevlagde parent worden door de sync geskipt → parents verplicht flaggen;
+      (c) `afas_sku_source_field` moet van `artikelnummer` naar
+      `Artikelcode_BHV_Voordeelwinkel` (optie B), anders overschrijft de sync
+      alle BHV-SKU's met itemcodes.
+      Referentieregel toegevoegd (20 aug): vorm moet gelijk zijn aan
+      reseller/ARKY. Resultaat: 9 afwijkingen, allemaal Prestan → zelfde
+      -VAR-herstructurering als ARKY nodig (WC-only parents, geen AFAS-flags);
+      23 omzettingen zijn conform referentie en dus akkoord-per-definitie.
 - [ ] Rapport draaien en samen doorlopen: per probleemgeval een actie kiezen
       (BHV-veld vullen / SKU corrigeren / omzetten / opruimen / negeren).
       Af als geen rij meer zonder gekozen actie.
+      Stand 20 aug in `work/voorkoppel-actielijst.csv`: 10 akkoord (kale
+      AED's → samenstellingen + parents → familie-heads), 24 voorstel
+      (o.a. 14 uit aed-sku-actielijst, kastvarianten, Offer/Credit lokaal),
+      41 open. Geblokkeerd-regel (B-prefix = soft-delete) toegevoegd aan de
+      audit: 8 producten hingen aan geblokkeerde artikelen, waarvan 4
+      Defibtech-Lifeline-kastvarianten zonder actieve vervanger
+      (assortiment gestopt?) — beslissing nodig.
 
 ## Fase E — Fase-2-handelingen + audit-acties als script-stappen (stap 1.5)
 
-- [ ] stap6: B2BKing deactiveren (+ controle dat prijzen via plugin komen)
-- [ ] stap7: vertalingen + pricing-JS plaatsen (conform ARKY-runbook)
-- [ ] stap8: checkout-pagina omzetten
-- [ ] stap9: mu-plugins plaatsen (o.a. `wc-variation-threshold`)
+- [x] `work/afas-settings.json` bijwerken + stap4 herdraaien. ✓ 24 aug, met
+      drie wijzigingen: `afas_sku_source_field` → `Artikelcode_BHV_Voordeelwinkel`;
+      `afas_custom_fields_artikelen` (BHV-veld → extra_data, local_key
+      `bhv_code`) — zat niet in de dump en zonder dit veld valt de SKU-bron
+      terug op artikelnummer; `afas_mapping_artikelen` →
+      `{"artikelcode_parent": "Itemcode_Parent"}` — de mapping-defaults kennen
+      ons veld `Itemcode_Parent` niet, zonder dit geen families.
+- [x] nieuwe stap: voorkoppeling (`stap6`) — per WC-product (publish/private,
+      incl. variaties) `_afas_artikelnummer` zetten via actielijst-akkoord →
+      BHV-match → itemcode-match; geblokkeerde artikelen uitgesloten.
+      ✓ 24 aug lokaal: dry-run 456 → apply 456 → herdraai "456 stonden al
+      goed" (idempotent). Akkoord-omzettingen (kale AED's → samenstellingen,
+      parents → familie-heads) steekproefsgewijs gecontroleerd.
+- [x] Prestan-herstructurering: UIT DE KRITIEKE LIJN (24 aug). Prestan staat
+      nergens publish behalve op ARKY (DefibSolutions: alleen drafts;
+      reseller: private/draft) — niets dat kapot kan bij de migratie. Wordt
+      pas relevant als Prestan op DefibSolutions live moet; dan conform
+      ARKY-model (-VAR-containers, `migration/arky-prestan-*.py`), aanvullend
+      op de AFAS-flags.
+- [x] B2BKing deactiveren: op verzoek (24 aug) samengevoegd met stap2
+      (Jetpack uit → "overbodige plugins uit"). ✓ lokaal gedraaid: jetpack +
+      b2bking + b2bking-wholesale inactive. Controle dat prijzen via de
+      plugin komen volgt in Fase F (sync-proefdraai).
+- [x] stap7 vervalt: vertalingen + pricing-JS waren bij ARKY een taal-fix
+      (Engelse shop, plugin-frontend deels NL). DefibSolutions is nl_NL
+      (geverifieerd 24 aug) — plugin-teksten en staffel-tabel zijn al
+      Nederlands, niets te doen.
+- [x] stap8 vervalt: DefibSolutions-checkout is al de klassieke
+      `[woocommerce_checkout]`-shortcode (in een Divi-wrapper), identiek aan
+      reseller (geverifieerd 24 aug op beide verse kopieën). Plugin-hooks
+      (adres-selector, custom fields) draaien binnen die shortcode.
+      Visuele verificatie → Fase F checkout-doorloop.
+- [x] mu-plugins plaatsen = `stap7` (keuze Cas 24 aug: categorie 1+2+3, alle
+      8; Points-Pro-plugins niet). Bestanden gevendored in
+      `migration/mu-plugins/`, ✓ lokaal geplaatst. NB: een verse pull haalt
+      ze weer weg — stap7 hoort in elke herhaal-reeks.
 - [ ] stap10+: de gekozen audit-acties uit Fase D, elk als eigen
-      dry-run-first stap (aantal en inhoud volgt uit het rapport)
+      dry-run-first stap (aantal en inhoud volgt uit het rapport +
+      antwoorden Kevin)
+
+**Plugin-versie (24 aug):** reseller-live draait `lefcreative-afas-b2b`
+**2.0.4**; onze analyse was op 1.3.14 maar de kernmechanica is ongewijzigd
+(zelfde `_afas_artikelnummer`-meta, sku-bron, custom-fields/mapping-opties,
+parent-guards). 2.0.4 uit de verse reseller-pull gezipt naar
+`work/lefcreative-afas-b2b-2.0.4.zip`; stap4 pakt automatisch de nieuwste zip.
+Na de verse defibsolutions-pull (wipe) stap 1–6 opnieuw draaien met 2.0.4.
 
 ## Fase F — Proefdraaien op de lokale kopie (stap 1.6)
 
@@ -89,8 +148,11 @@ B2BKing opruimen).
 
 ## Parallel (geen fase — lange doorlooptijd, kan nu al)
 
-- [ ] AFAS-beheer: vrije velden `Sync_DefibSolutions`/`Tonen_DefibSolutions`
-      aanvragen (artikel + verkooprelatie, in `get_artikelen` +
-      `Get_Verkooprelaties`) en vlaggen op de 340 producten
+- [x] AFAS-beheer: vrije velden `Sync_Defibsolutions_NL`/`Tonen_Defibsolutions_NL`
+      bestaan al in `get_artikelen` (geverifieerd 20 aug, vers) en er zijn al
+      386 artikelen aangevinkt — vrijwel exact de "op beide shops"-regel
+      (382/384). Handwerk in AFAS (beslist 20 aug): aanvinken 60123 + 60717 ·
+      uitvinken 10533 (geblokkeerd) + 10219-O · 10219 en 10788 blijven
+      geflagd en komen bij de eerste sync als nieuw product binnen (akkoord).
 - [ ] Mapping klant ↔ relatie afmaken: `GEEN MATCH`-gevallen + dubbelingen
       (bv. Ehabo 13804/31149), tabblad `mapping` van het prijsrapport
