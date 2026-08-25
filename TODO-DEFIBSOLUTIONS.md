@@ -158,6 +158,17 @@ Na de verse defibsolutions-pull (wipe) stap 1–6 opnieuw draaien met 2.0.4.
       klantafspraak-prijs, verzendkosten)
 - [ ] Prijsrapport herdraaien (`--vers`): 0 onverklaarde verschillen
 
+**Drager-aanpak (25 aug, na regressie-melding Cas):** trash-en-vervang brak
+menu's/content van hoofdproducten. Fix: per familie is één bestaand product de
+"drager" die aan de familie-head wordt voorgekoppeld — de plugin bouwt hem
+in-place om tot variable container (zelfde ID/slug/content/menu's); alleen
+niet-dragers worden variaties (stap8 logt hun slugs). 9 dragers gekozen o.b.v.
+menu's/basisvariant, akkoord Cas. Herbouw van verse pull t/m werkende shop
+liep zonder handwerk: 293 simple / 20 variable, dragers behielden hun pagina,
+run 2 automatisch overgeslagen (stap11-optimalisatie). Settings-bron is nu een
+volledige export van Cas' definitieve wp-admin-configuratie (148 opties incl.
+mapping + custom fields); stap4 forceert lokaal altijd orders-push uit.
+
 ## Fase G — Reproduceerbaarheids-check (stap 1.7)
 
 - [ ] Lokale kopie weggooien → verse pull → alle stappen achter elkaar.

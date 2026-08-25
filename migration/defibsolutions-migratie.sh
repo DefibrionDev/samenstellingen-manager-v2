@@ -67,9 +67,9 @@ _LOKAAL_RUN_OPTS=(--rm -T --user 33:33 -e HOME=/tmp)
 wpr_stdin() {
     if [[ "$TARGET" == "lokaal" ]]; then
         # memory_limit: de 128M van de wpcli-container is te krap zodra WP
-        # volledig laadt (wp-mail-smtp's mail-catcher OOM't dan).
+        # volledig laadt; de syncs (stap11) hebben ruim geheugen nodig.
         _lokaal_compose run "${_LOKAAL_RUN_OPTS[@]}" wpcli \
-            sh -c "php -d memory_limit=512M /usr/local/bin/wp $*" 2>&1 | _filter_ruis
+            sh -c "php -d memory_limit=1024M -d max_execution_time=0 /usr/local/bin/wp $*" 2>&1 | _filter_ruis
     else
         ssh "$SERVER" "cd '$WP_ROOT' && wp $*" 2>&1 | _filter_ruis
     fi
@@ -241,6 +241,12 @@ PY
         echo "LET OP: $settings ontbreekt — plugin actief maar zonder settings-import."
     fi
 
+    if [[ "$TARGET" == "lokaal" ]]; then
+        # Veiligheidsgordel: op de lokale kopie mag order-push naar AFAS
+        # nooit aan staan, ook niet als de settings-bron hem (voor live) aanzet.
+        wpr option update afas_sync_orders_enabled 0 >/dev/null
+        echo "(lokaal: afas_sync_orders_enabled geforceerd op 0)"
+    fi
     echo "--- controle:"
     wpr plugin list | grep -i lefcreative
     wpr option get afas_env_type
@@ -438,6 +444,13 @@ stap8() {
 <?php
 $apply = APPLY_PLACEHOLDER;
 global $wpdb;
+// Volgorde-guard: zonder gevulde artikelen-tabel (stap11/artikelen-sync
+// eerst!) ziet deze stap niets en doet hij stilletjes te weinig.
+$n_tabel = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}lef_afas_artikelen");
+if ($n_tabel === 0) {
+    echo "FOUT: wp_lef_afas_artikelen is leeg — draai eerst de artikelen-sync (stap11).\n";
+    exit(1);
+}
 $rows = $wpdb->get_results("
     SELECT p.ID, p.post_title, an.meta_value AS artikelnummer,
            COALESCE(sku.meta_value, '') AS sku,
@@ -464,9 +477,12 @@ foreach ($rows as $r) {
     // hoort volgens de sync-tabel een variatie te zijn); anders overslaan
     if ($variatieId === 0 && $r['artikelcode_parent'] === '') { continue; }
     $soort = $variatieId ? "DUPLICAAT (variatie #$variatieId bestaat al)" : 'CONVERSIE (sync maakt variatie)';
-    printf("%s  #%d sku=%s art=%s parent=%s — %s [%s]\n",
+    // slug meeloggen: getrashte pagina's kunnen in menu's/links hangen —
+    // de CSV-regel hieronder is de bron voor redirect-/menu-herstel
+    printf("%s  #%d sku=%s art=%s parent=%s slug=%s — %s [%s]\n",
         $apply ? 'PRULLENBAK' : 'ZOU TRASHEN', (int) $r['ID'], $r['sku'] ?: '-',
-        $r['artikelnummer'], $r['artikelcode_parent'], $r['post_title'], $soort);
+        $r['artikelnummer'], $r['artikelcode_parent'],
+        get_post_field('post_name', (int) $r['ID']), $r['post_title'], $soort);
     if ($apply) {
         delete_post_meta((int) $r['ID'], '_afas_artikelnummer');
         if ($r['sku'] !== '') { update_post_meta((int) $r['ID'], '_sku', ''); }
@@ -602,6 +618,19 @@ foreach ($lijst as [$pid, $code, $titel]) {
 }
 printf("--- %s: %d geschrapt, %d stonden al in de prullenbak/bestaan niet\\n",
     $apply ? 'APPLY' : 'DRY-RUN', $weg, $al);
+
+// Concepten (besluit Cas 25 aug): alle draft-producten naar de prullenbak.
+// Bewust ZONDER SKU/meta-strip — drafts (o.a. Prestan) blijven zo herstelbaar;
+// de sync negeert prullenbak-posts vanzelf.
+$drafts = get_posts(['post_type' => ['product', 'product_variation'],
+    'post_status' => 'draft', 'fields' => 'ids', 'numberposts' => -1,
+    'suppress_filters' => true]);
+foreach ($drafts as $did) {
+    printf("%s  concept #%d — %s\\n", $apply ? 'PRULLENBAK' : 'ZOU TRASHEN',
+        (int) $did, get_the_title($did));
+    if ($apply) { wp_trash_post((int) $did); }
+}
+printf("--- %s: %d concepten\\n", $apply ? 'APPLY' : 'DRY-RUN', count($drafts));
 """)
 PY
 
@@ -609,6 +638,87 @@ PY
     if [[ "$apply" != "apply" ]]; then
         echo "Dry-run — niets geschrapt. Draai '$0 stap10 apply' om uit te voeren."
     fi
+}
+
+# ---------------------------------------------------------------------------
+# Stap 11 — Syncs draaien: plugin-migraties, artikelen (AFAS → tabel),
+# prijslijsten + prijzen, en 2× de WooCommerce-sync (run 2 is het vangnet
+# voor variaties wier container pas in run 1 ontstond). Print per fase
+# voortgang en eindigt met de warning-telling.
+# Volledige herbouw-volgorde: stap1..7, 9, 10 → stap11 → stap8 apply → stap11.
+# ---------------------------------------------------------------------------
+stap11() {
+    controleer_config
+    local zonder_prijzen="${1:-}"   # 'zonder-prijzen' slaat de prijsimport over (herhaal-runs)
+    cat > /tmp/afas-stap11-payload.php <<'PHP'
+<?php
+$zonderPrijzen = PRIJZEN_PLACEHOLDER;
+$t0 = microtime(true);
+$fase = function (string $m) use ($t0) {
+    printf("[%5.1fs] %s\n", microtime(true) - $t0, $m);
+    flush(); // live voortgang in logs/terminal i.p.v. alles aan het einde
+    if (function_exists('wp_cache_flush_runtime')) { wp_cache_flush_runtime(); }
+};
+global $wpdb;
+$tabel = $wpdb->prefix . 'lef_afas_artikelen';
+
+$fase('plugin-migraties');
+\Lefcreative\PluginBase\Core\Hooks::adminInit();
+
+$fase('artikelen-sync (AFAS -> tabel)');
+do_action('afas_sync_artikelen', true);
+printf("         tabel: %d artikelen\n", (int) $wpdb->get_var("SELECT COUNT(*) FROM `$tabel`"));
+
+if ($zonderPrijzen) {
+    $fase('prijslijsten + prijzen + verkooprelaties OVERGESLAGEN (zonder-prijzen)');
+} else {
+    $fase('prijslijsten + prijzen');
+    do_action('afas_sync_prijslijsten', true);
+    do_action('afas_sync_prijzen', true);
+    printf("         prijzen: %d regels\n",
+        (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}lef_afas_prijzen"));
+    // verkooprelaties: nodig voor prijslijst-/kortingsgroep-resolutie per klant
+    $fase('verkooprelaties + kortingen + landen + adressen');
+    do_action('afas_sync_verkooprelaties', true);
+    do_action('afas_sync_kortingen', true);
+    do_action('afas_sync_landen', true);
+    do_action('afas_sync_addresses', true);
+    printf("         relaties: %d, kortingen: %d\n",
+        (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}lef_afas_verkooprelaties"),
+        (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}lef_afas_kortingen"));
+}
+
+$wpdb->query("DELETE FROM {$wpdb->prefix}lef_logs WHERE channel = 'woocommerce'");
+$warnings = function () use ($wpdb): int {
+    return (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}lef_logs
+        WHERE channel = 'woocommerce' AND level = 'warning'");
+};
+// term-hertellingen uitstellen: anders hertelt elke productsave alle
+// categorie-/attribuuttellers (honderden keren); nu één keer aan het eind
+wp_defer_term_counting(true);
+$fase('wc-sync run 1 (alle productsaves, paar minuten)');
+do_action('afas_sync_woocommerce', true, true);
+if ($warnings() > 0) {
+    $fase(sprintf('wc-sync run 2 (vangnet: %d warnings na run 1)', $warnings()));
+    do_action('afas_sync_woocommerce', true, true);
+} else {
+    $fase('run 2 overgeslagen: run 1 was schoon');
+}
+wp_defer_term_counting(false);
+
+$fase('klaar — logsamenvatting:');
+foreach ($wpdb->get_results("SELECT level, COUNT(*) n FROM {$wpdb->prefix}lef_logs
+    WHERE channel = 'woocommerce' GROUP BY level", ARRAY_A) as $r) {
+    printf("         %s: %d\n", $r['level'], (int) $r['n']);
+}
+PHP
+    if [[ "$zonder_prijzen" == "zonder-prijzen" ]]; then
+        sed -i 's/PRIJZEN_PLACEHOLDER/true/' /tmp/afas-stap11-payload.php
+    else
+        sed -i 's/PRIJZEN_PLACEHOLDER/false/' /tmp/afas-stap11-payload.php
+    fi
+    wpr_stdin eval-file - < /tmp/afas-stap11-payload.php
+    echo "OK — syncs gedraaid op $(doel_naam)"
 }
 
 # ---------------------------------------------------------------------------
@@ -625,6 +735,9 @@ usage() {
     echo "  stap8   Structuur-opruiming: gekoppelde simples die variatie horen te zijn -> prullenbak (dry-run; 'stap8 apply')"
     echo "  stap9   Swatches-instelling conform reseller (custom attributen als dropdown)"
     echo "  stap10  Assortiment-schrappingen uit work/schraplijst-defibsolutions.csv (dry-run; 'stap10 apply')"
+    echo "  stap11  Syncs: migraties + artikelen + prijzen + wc-sync (run 2 alleen bij warnings; 'stap11 zonder-prijzen' slaat prijsimport over)"
+    echo ""
+    echo "volledige herbouw: stap1..7, 9, 10 apply -> stap11 -> stap8 apply -> stap11"
     exit 1
 }
 
@@ -639,5 +752,6 @@ case "${1:-}" in
     stap8) stap8 "${2:-}" ;;
     stap9) stap9 ;;
     stap10) stap10 "${2:-}" ;;
+    stap11) stap11 ;;
     *) usage ;;
 esac
