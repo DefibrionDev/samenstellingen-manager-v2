@@ -147,7 +147,13 @@ Na de verse defibsolutions-pull (wipe) stap 1–6 opnieuw draaien met 2.0.4.
 
 ## Fase F — Proefdraaien op de lokale kopie (stap 1.6)
 
-- [ ] Product- en prijs-sync draaien; sync-resultaat steekproefsgewijs checken
+- [x] Product- en prijs-sync draaien; sync-resultaat steekproefsgewijs checken
+      ✓ 25 aug: prijzen-sync 13.681 debiteurprijzen; flag-gap gedicht (46
+      doelsamenstellingen + heads, gevonden via 105672/52111-case — les: de
+      voorkoppel-dóelen moeten geflagd, niet de oude shop-match); stap8
+      trashte 19 kale-AED-simples; eindstand 464 artikelen in beheer,
+      0 warnings, 293 simple / 20 variable — Reanibex e.a. nu als variaties
+      onder hun containers, conform reseller.
 - [ ] Gemapte testklant: inloggen + checkout doorlopen (adres-selector,
       klantafspraak-prijs, verzendkosten)
 - [ ] Prijsrapport herdraaien (`--vers`): 0 onverklaarde verschillen
