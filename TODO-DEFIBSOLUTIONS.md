@@ -122,8 +122,21 @@ draaien tegen de lokale kopie, niet PHPUnit.
       "3 aangemaakt, 387 bijgewerkt"; types 339/8/166 → 325 simple /
       12 variable / 179 variaties — kastvarianten terug als variaties onder
       de nieuwe containers, met nette SKU's.
-- [ ] stap10+: resterende audit-acties (33 open rijen actielijst +
-      antwoorden Kevin over de 41 + 10189FR)
+- [x] stap10: assortiment-schrappingen (besluit Kevin 25 aug; blijvers van de
+      nul-omzetters zijn 10562 + 30211). `work/schraplijst-defibsolutions.csv`
+      → 12 producten getrasht (11 nul-omzet + 10189FR). ✓ lokaal apply.
+- [x] flag-run 28 blijvers: 26 mét omzet + 10562 + 30211 →
+      Sync/Tonen_Defibsolutions_NL aan via fix-defibsolutions-vinkjes
+      (dry-run → apply, 28 ok / 0 fail, 25 aug).
+- [ ] GEPARKEERD (25 aug, voor later): 10148F + 10149F samenstellingen
+      aanmaken via de samenstellingen-manager, daarna flaggen — óók reseller
+      NL. Tot die tijd blijven de twee kale G5's ongekoppeld in de shop staan.
+- [ ] Kevins einddoel (mail 25 aug): beide shops uiteindelijk exact hetzelfde
+      assortiment. De 28 ook op reseller = "lijst voor later"; de 721
+      alleen-reseller-artikelen staan in
+      `work/koppelbaarheid-defibsolutions/assortiment-verschillen-voor-kevin.xlsx`
+      (gedeeld met Kevin) — verdere assortiment-gelijktrekking is een
+      eigen traject ná deze migratie.
 
 **Plugin-versie (24 aug):** reseller-live draait `lefcreative-afas-b2b`
 **2.0.4**; onze analyse was op 1.3.14 maar de kernmechanica is ongewijzigd

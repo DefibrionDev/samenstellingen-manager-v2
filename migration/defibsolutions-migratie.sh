@@ -76,10 +76,13 @@ wpr_stdin() {
 }
 
 _lokaal_prep() {
-    # Na een verse pull is wp-content/upgrade eigendom van de host-user (1000);
-    # uid 33 moet er plugins kunnen uitpakken. Idempotent, dus veilig per run.
+    # Na een verse pull zijn schrijfmappen eigendom van de host-user (1000);
+    # uid 33 (php-fpm) moet erin kunnen schrijven: upgrade/ (plugin-installs),
+    # et-cache/ (Divi Dynamic CSS — zonder deze map geen thema-styling!) en
+    # uploads/wc-logs. Idempotent, dus veilig per run.
     _lokaal_compose run --rm -T --user 0 wpcli sh -c \
-        'mkdir -p /var/www/html/wp-content/upgrade && chown -R 33:33 /var/www/html/wp-content/upgrade' \
+        'cd /var/www/html/wp-content && mkdir -p upgrade et-cache uploads/wc-logs \
+         && chown -R 33:33 upgrade et-cache uploads/wc-logs' \
         >/dev/null 2>&1 || true
 }
 
@@ -523,6 +526,92 @@ PHP
 }
 
 # ---------------------------------------------------------------------------
+# Stap 9 — Swatches-instelling conform reseller. Met default_to_button/-image
+# bouwt woo-variation-swatches élk custom attribuut (zoals "Naam" op de
+# plugin-variaties) om tot ronde knopjes waar de lange samenstellingsnamen
+# overheen elkaar vallen. Reseller toont daar een dropdown; dit spiegelt dat.
+# Bestaande pa_-attributen (met eigen type radio/select) blijven ongemoeid.
+# ---------------------------------------------------------------------------
+stap9() {
+    controleer_config
+    wpr_stdin eval-file - <<'PHP'
+<?php
+$opt = get_option('woo_variation_swatches', []);
+if (!is_array($opt)) { $opt = []; }
+$voor = json_encode(['button' => $opt['default_to_button'] ?? null, 'image' => $opt['default_to_image'] ?? null]);
+$opt['default_to_button'] = 'no';
+$opt['default_to_image']  = 'no';
+update_option('woo_variation_swatches', $opt);
+delete_transient('woo_variation_swatches_cache');
+printf("woo_variation_swatches: default_to_button/image -> no (was %s)\n", $voor);
+PHP
+    if [[ "$TARGET" == "lokaal" ]]; then
+        # Divi's Dynamic/Critical CSS weigert lokaal te renderen: de resource-
+        # administratie uit de live-dump wijst naar live-paden, waardoor de
+        # thema-CSS ontbreekt en de site kaal oogt. Statische fallback aan.
+        # Alleen lokaal — op de server kloppen de paden en mag het aan blijven.
+        wpr_stdin eval-file - <<'PHP'
+<?php
+$o = get_option('et_divi');
+if (is_array($o)) {
+    $o['divi_dynamic_css'] = 'off';
+    $o['divi_critical_css'] = 'off';
+    update_option('et_divi', $o);
+}
+wp_cache_flush();
+echo "Divi dynamic/critical CSS uit (lokale workaround)\n";
+PHP
+    fi
+    echo "OK — weergave-instellingen gezet op $(doel_naam)"
+}
+
+# ---------------------------------------------------------------------------
+# Stap 10 — Assortiment-schrappingen (besluit Kevin, mail 25 aug): de producten
+# uit work/schraplijst-defibsolutions.csv gaan naar de prullenbak (11 zonder
+# omzet in 12 mnd + 10189FR die NL niet verkoopt). SKU en koppeling worden
+# gestript zodat niets ooit nog matcht. Default dry-run; `stap10 apply` voert uit.
+# ---------------------------------------------------------------------------
+stap10() {
+    controleer_config
+    local apply="${1:-}"
+    local lijst="$REPO_ROOT/work/schraplijst-defibsolutions.csv"
+    [[ -f "$lijst" ]] || { echo "FOUT: $lijst ontbreekt" >&2; exit 1; }
+
+    python3 - "$lijst" "$apply" <<'PY' > /tmp/afas-schrap-payload.php
+import csv, json, sys
+lijst, apply = sys.argv[1], sys.argv[2] == "apply"
+rijen = [(r["wc_id"].strip(), r["itemcode"].strip(), r["titel"].strip())
+         for r in csv.DictReader(open(lijst, encoding="utf-8-sig"), delimiter=";")
+         if r["wc_id"].strip().isdigit()]
+print(f"// {len(rijen)} schrappingen uit {lijst}", file=sys.stderr)
+print("<?php")
+print(f"$apply = {'true' if apply else 'false'};")
+print(f"$lijst = json_decode('{json.dumps(rijen)}', true);")
+print("""
+$weg = $al = 0;
+foreach ($lijst as [$pid, $code, $titel]) {
+    $post = get_post((int) $pid);
+    if (!$post || $post->post_status === 'trash') { $al++; continue; }
+    printf("%s  #%d [%s] %s\\n", $apply ? 'PRULLENBAK' : 'ZOU TRASHEN', (int) $pid, $code, $titel);
+    if ($apply) {
+        delete_post_meta((int) $pid, '_afas_artikelnummer');
+        update_post_meta((int) $pid, '_sku', '');
+        wp_trash_post((int) $pid);
+    }
+    $weg++;
+}
+printf("--- %s: %d geschrapt, %d stonden al in de prullenbak/bestaan niet\\n",
+    $apply ? 'APPLY' : 'DRY-RUN', $weg, $al);
+""")
+PY
+
+    wpr_stdin eval-file - < /tmp/afas-schrap-payload.php
+    if [[ "$apply" != "apply" ]]; then
+        echo "Dry-run — niets geschrapt. Draai '$0 stap10 apply' om uit te voeren."
+    fi
+}
+
+# ---------------------------------------------------------------------------
 usage() {
     echo "gebruik: [DEFIBS_TARGET=lokaal|cp01] $0 <stap>   (default: lokaal)"
     echo "stappen:"
@@ -534,6 +623,8 @@ usage() {
     echo "  stap6   Voorkoppeling: _afas_artikelnummer per product zetten via BHV-match + actielijst (dry-run; 'stap6 apply' schrijft)"
     echo "  stap7   mu-plugins plaatsen uit migration/mu-plugins/ (idempotent)"
     echo "  stap8   Structuur-opruiming: gekoppelde simples die variatie horen te zijn -> prullenbak (dry-run; 'stap8 apply')"
+    echo "  stap9   Swatches-instelling conform reseller (custom attributen als dropdown)"
+    echo "  stap10  Assortiment-schrappingen uit work/schraplijst-defibsolutions.csv (dry-run; 'stap10 apply')"
     exit 1
 }
 
@@ -546,5 +637,7 @@ case "${1:-}" in
     stap6) stap6 "${2:-}" ;;
     stap7) stap7 ;;
     stap8) stap8 "${2:-}" ;;
+    stap9) stap9 ;;
+    stap10) stap10 "${2:-}" ;;
     *) usage ;;
 esac
