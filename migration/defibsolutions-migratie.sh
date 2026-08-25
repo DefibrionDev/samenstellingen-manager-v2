@@ -39,7 +39,9 @@ MIGRATER_DIR="${DEFIBS_MIGRATER_DIR:-$HOME/projects/wordpress-migrater}"
 
 # De PHP op beide targets is nieuwer dan de oude plugins/het theme; de
 # "Deprecated:"-meldingen vervuilen elke stap-output en worden weggefilterd.
-_filter_ruis() { grep -vE '^(Deprecated|Notice):' || true; }
+# --line-buffered: zonder dit houdt grep de output vast tot het eind en zie je
+# de fase-voortgang van stap11 pas als alles klaar is.
+_filter_ruis() { grep --line-buffered -vE '^(Deprecated|Notice):' || true; }
 
 _lokaal_compose() {
     # --progress quiet: compose-statusregels ("Container ... Running") gaan
@@ -649,10 +651,16 @@ PY
 # ---------------------------------------------------------------------------
 stap11() {
     controleer_config
-    local zonder_prijzen="${1:-}"   # 'zonder-prijzen' slaat de prijsimport over (herhaal-runs)
+    # opties (combineerbaar):
+    #   zonder-prijzen  slaat de prijs-/relatie-import over (herhaal-runs)
+    #   delta           wc-sync zonder force: alleen gewijzigde artikelen
+    #                   (seconden i.p.v. ~10 min; gebruik na kleine correcties)
+    local opties="${*:-}"
+    local zonder_prijzen=""; [[ "$opties" == *zonder-prijzen* ]] && zonder_prijzen="zonder-prijzen"
     cat > /tmp/afas-stap11-payload.php <<'PHP'
 <?php
 $zonderPrijzen = PRIJZEN_PLACEHOLDER;
+$force = FORCE_PLACEHOLDER;   // false = delta-sync (alleen gewijzigde rijen)
 $t0 = microtime(true);
 $fase = function (string $m) use ($t0) {
     printf("[%5.1fs] %s\n", microtime(true) - $t0, $m);
@@ -696,11 +704,12 @@ $warnings = function () use ($wpdb): int {
 // term-hertellingen uitstellen: anders hertelt elke productsave alle
 // categorie-/attribuuttellers (honderden keren); nu één keer aan het eind
 wp_defer_term_counting(true);
-$fase('wc-sync run 1 (alle productsaves, paar minuten)');
-do_action('afas_sync_woocommerce', true, true);
+$fase($force ? 'wc-sync run 1 (force: alle productsaves, paar minuten)'
+             : 'wc-sync run 1 (delta: alleen gewijzigde artikelen)');
+do_action('afas_sync_woocommerce', $force, true);
 if ($warnings() > 0) {
     $fase(sprintf('wc-sync run 2 (vangnet: %d warnings na run 1)', $warnings()));
-    do_action('afas_sync_woocommerce', true, true);
+    do_action('afas_sync_woocommerce', $force, true);
 } else {
     $fase('run 2 overgeslagen: run 1 was schoon');
 }
@@ -717,8 +726,244 @@ PHP
     else
         sed -i 's/PRIJZEN_PLACEHOLDER/false/' /tmp/afas-stap11-payload.php
     fi
+    if [[ "$opties" == *delta* ]]; then
+        sed -i 's/FORCE_PLACEHOLDER/false/' /tmp/afas-stap11-payload.php
+    else
+        sed -i 's/FORCE_PLACEHOLDER/true/' /tmp/afas-stap11-payload.php
+    fi
     wpr_stdin eval-file - < /tmp/afas-stap11-payload.php
     echo "OK — syncs gedraaid op $(doel_naam)"
+}
+
+# ---------------------------------------------------------------------------
+# Stap 12 — Variatie-assen op de AED-containers, conform reseller.
+# De plugin kent alleen het platte attribuut "Naam"; reseller toont drie
+# globale attributen: pa_taal, pa_connectiviteit, pa_opties. Die worden hier
+# afgeleid uit de tool-data (samenstellingen-manager-snapshot):
+#   taal           <- group_bases.language_code  ("NL/EN/FR" -> "Nederlands · Engels · Frans")
+#   connectiviteit <- group_bases.variant_label  (leeg -> "Geen", WiFi -> "Wi-Fi", ...)
+#   opties         <- accessoire van de variant   (geen accessoire -> "Defibrillator")
+# Een as wordt variatie-attribuut bij >1 waarde, anders een vast attribuut.
+# Het "Naam"-attribuut wordt verwijderd (besluit Cas 25 aug).
+# Default dry-run; `stap12 apply` schrijft. Draai na stap11.
+# ---------------------------------------------------------------------------
+stap12() {
+    controleer_config
+    local apply="${1:-}"
+    local snapshot="$REPO_ROOT/tmp/samenstellingen.sqlite"
+    [[ -f "$snapshot" ]] || { echo "FOUT: $snapshot ontbreekt (tool-snapshot nodig)" >&2; exit 1; }
+
+    # shop-dump: variable containers + hun variaties met artikelnummer
+    local dump="$REPO_ROOT/tmp/defibs-varianten-dump.tsv"
+    wpr db query "\"SELECT par.ID, COALESCE(pan.meta_value,''), v.ID, COALESCE(van.meta_value,'')
+        FROM wp_posts par
+        JOIN wp_term_relationships tr ON tr.object_id = par.ID
+        JOIN wp_term_taxonomy tt ON tt.term_taxonomy_id = tr.term_taxonomy_id AND tt.taxonomy = 'product_type'
+        JOIN wp_terms t ON t.term_id = tt.term_id AND t.name = 'variable'
+        LEFT JOIN wp_postmeta pan ON pan.post_id = par.ID AND pan.meta_key = '_afas_artikelnummer'
+        JOIN wp_posts v ON v.post_parent = par.ID AND v.post_type = 'product_variation'
+             AND v.post_status IN ('publish','private')
+        LEFT JOIN wp_postmeta van ON van.post_id = v.ID AND van.meta_key = '_afas_artikelnummer'
+        WHERE par.post_status IN ('publish','private')\"" --skip-column-names > "$dump"
+
+    python3 - "$snapshot" "$dump" "$apply" <<'PY' > /tmp/afas-assen-payload.php
+import json, sqlite3, sys
+snapshot, dump, apply = sys.argv[1], sys.argv[2], sys.argv[3] == "apply"
+
+TALEN = {"NL": "Nederlands", "EN": "Engels", "FR": "Frans", "DE": "Duits", "ES": "Spaans",
+         "IT": "Italiaans", "DK": "Deens", "NO": "Noors", "SE": "Zweeds", "FI": "Finnish",
+         "PL": "Pools", "CZ": "Tsjechisch", "SK": "Slowaaks", "SL": "Sloveens",
+         "HU": "Hongaars", "HR": "Kroatisch", "EL": "Grieks", "GA": "Iers",
+         "PT": "Portugees", "LV": "Lets", "LT": "Litouws", "RO": "Roemeens",
+         "TR": "Turks", "CH": "Zwitserse Editie"}
+CONNECT = {"": "Geen", "USB": "USB", "WiFi": "Wi-Fi", "SIGFOX": "Sigfox", "4G": "4G",
+           "GPS+WiFi+SIGFOX": "GPS+Wi-Fi+SIGFOX"}
+# accessoire-itemcode -> reseller-term (naamdrift op reseller zelf bij 60212/60213:
+# tool-naam is hier canoniek)
+OPTIES = {"60110": "EHBO Rugzak", "60112": "ARKY Binnenkast Wit",
+          "60122": "ARKY Binnenkast Groen", "60212": "ARKY Buitenkast Onverwarmd",
+          "60213": "ARKY Buitenkast Verwarmd", "60222": "ARKY CORE Classic",
+          "60223": "ARKY CORE Plus", "91116": "Defibtech draagtas",
+          "10432": "Mindray Draagtas"}
+
+con = sqlite3.connect(snapshot)
+# itemcode -> (language_code, variant_label, accessoire_itemcode|None)
+info = {}
+for code, taal, label in con.execute(
+        "SELECT afas_itemcode, COALESCE(language_code,''), COALESCE(variant_label,'')"
+        " FROM group_bases WHERE afas_itemcode IS NOT NULL AND afas_itemcode <> ''"):
+    info[code] = (taal, label, None)
+for code, taal, label, acc in con.execute(
+        "SELECT v.afas_samenstelling_itemcode, COALESCE(b.language_code,''),"
+        "       COALESCE(b.variant_label,''), a.itemcode"
+        "  FROM group_variants v"
+        "  JOIN group_bases b ON b.id = v.base_id"
+        "  LEFT JOIN accessoires a ON a.id = v.accessoire_id"
+        " WHERE v.afas_samenstelling_itemcode IS NOT NULL AND v.afas_samenstelling_itemcode <> ''"):
+    info[code] = (taal, label, acc)
+con.close()
+
+def taal_naam(code):
+    delen = [TALEN.get(d.strip().upper(), d.strip()) for d in code.split("/") if d.strip()]
+    return " · ".join(delen) if delen else ""
+
+containers, onbekend = {}, []
+for regel in open(dump, encoding="utf-8"):
+    d = regel.rstrip("\n").split("\t")
+    if len(d) < 4 or not d[0].isdigit():
+        continue
+    par_id, par_code, var_id, var_code = d[0], d[1].strip(), d[2], d[3].strip()
+    rij = info.get(var_code)
+    if rij is None:
+        onbekend.append((var_id, var_code))
+        continue
+    taal, label, acc = rij
+    containers.setdefault(par_id, {"code": par_code, "varianten": {}})
+    containers[par_id]["varianten"][var_id] = {
+        "Taal": taal_naam(taal),
+        "Connectiviteit": CONNECT.get(label, label or "Geen"),
+        "Opties": OPTIES.get(acc, "Defibrillator") if acc else "Defibrillator",
+    }
+
+print(f"// {len(containers)} containers, {sum(len(c['varianten']) for c in containers.values())} variaties"
+      f", {len(onbekend)} zonder tool-data", file=sys.stderr)
+print("<?php")
+print(f"$apply = {'true' if apply else 'false'};")
+print(f"$containers = json_decode('{json.dumps(containers, ensure_ascii=False)}', true);")
+print(r"""
+global $wpdb;
+$AS_TAX = ['Taal' => 'pa_taal', 'Connectiviteit' => 'pa_connectiviteit', 'Opties' => 'pa_opties'];
+$gemaakt = $gezet = $overgeslagen = 0;
+
+// Slug conform reseller: "Nederlands · Engels · Frans" -> nederlands-engels-frans
+// (sanitize_title maakt van de middenstip anders %c2%b7).
+$slugVan = function (string $naam): string {
+    return sanitize_title(str_replace(['·', '+'], [' ', ' '], $naam));
+};
+
+foreach ($AS_TAX as $label => $tax) {
+    if (taxonomy_exists($tax)) { continue; }
+    if (!$apply) { echo "ZOU AANMAKEN attribuut: $label ($tax)\n"; continue; }
+    $id = wc_create_attribute(['name' => $label, 'slug' => str_replace('pa_', '', $tax),
+        'type' => 'select', 'order_by' => 'menu_order', 'has_archives' => false]);
+    if (is_wp_error($id)) { echo "FOUT attribuut $label: " . $id->get_error_message() . "\n"; continue; }
+    register_taxonomy($tax, 'product', ['hierarchical' => false, 'show_ui' => false, 'query_var' => true]);
+    echo "attribuut aangemaakt: $label ($tax)\n";
+}
+
+foreach ($containers as $parId => $data) {
+    $parent = wc_get_product((int) $parId);
+    if (!$parent || !$parent->is_type('variable')) { $overgeslagen++; continue; }
+
+    // waarden per as verzamelen
+    $waarden = [];
+    foreach ($data['varianten'] as $vid => $assen) {
+        foreach ($assen as $label => $waarde) {
+            if ($waarde !== '') { $waarden[$label][$waarde] = true; }
+        }
+    }
+    if (empty($waarden)) { $overgeslagen++; continue; }
+
+    // Bestaande attributen behouden (pa_merk, pa_display, ... blijven staan als
+    // informatie/filter). Alleen het platte "Naam" verdwijnt; andere attributen
+    // die nu variatie-as zijn worden vast, anders zijn variaties incompleet.
+    $attributes = [];
+    foreach ($parent->get_attributes() as $sleutel => $bestaand) {
+        if (strcasecmp($bestaand->get_name(), 'Naam') === 0) { continue; }
+        if (isset($AS_TAX[$bestaand->get_name()]) || in_array($bestaand->get_name(), $AS_TAX, true)) { continue; }
+        if ($bestaand->get_variation()) { $bestaand->set_variation(false); }
+        $attributes[$sleutel] = $bestaand;
+    }
+    $positie = count($attributes);
+    foreach ($AS_TAX as $label => $tax) {
+        if (empty($waarden[$label])) { continue; }
+        $namen = array_keys($waarden[$label]);
+        $termIds = [];
+        foreach ($namen as $naam) {
+            $term = get_term_by('name', $naam, $tax) ?: get_term_by('slug', $slugVan($naam), $tax);
+            if ($term && $term->slug !== $slugVan($naam) && $apply) {
+                // slug herstellen (eerdere runs maakten %c2%b7-slugs)
+                wp_update_term($term->term_id, $tax, ['slug' => $slugVan($naam)]);
+                $term = get_term($term->term_id, $tax);
+            }
+            if (!$term) {
+                if (!$apply) { continue; }  // dry-run schrijft nooit
+                $res = wp_insert_term($naam, $tax, ['slug' => $slugVan($naam)]);
+                if (is_wp_error($res)) { echo "FOUT term '$naam' in $tax: " . $res->get_error_message() . "\n"; continue; }
+                $term = get_term($res['term_id'], $tax);
+                $gemaakt++;
+            }
+            $termIds[] = (int) $term->term_id;
+        }
+        if (!$termIds) { continue; }
+        $attr = new WC_Product_Attribute();
+        $attr->set_id(wc_attribute_taxonomy_id_by_name($tax));
+        $attr->set_name($tax);
+        $attr->set_options($termIds);
+        $attr->set_position($positie++);
+        $attr->set_visible(true);
+        // as met >1 waarde = variatie-as; met 1 waarde = vast attribuut
+        $attr->set_variation(count($termIds) > 1);
+        $attributes[$tax] = $attr;
+        if ($apply) { wp_set_object_terms((int) $parId, $termIds, $tax); }
+    }
+
+    $assenTekst = [];
+    foreach ($AS_TAX as $tax) {
+        if (!isset($attributes[$tax])) { continue; }
+        $assenTekst[] = str_replace('pa_', '', $tax) . '=' . count($attributes[$tax]->get_options())
+            . ($attributes[$tax]->get_variation() ? '' : ' (vast)');
+    }
+    $behouden = array_diff(array_keys($attributes), array_values($AS_TAX));
+    printf("%s  container #%d [%s]: %s | behouden: %s\n", $apply ? 'GEZET' : 'ZOU ZETTEN',
+        (int) $parId, $data['code'] ?: '-', implode(', ', $assenTekst),
+        implode(', ', $behouden) ?: 'geen');
+
+    if (!$apply) { continue; }
+
+    $parent->set_attributes($attributes);   // "Naam" verdwijnt hiermee
+    $parent->save();
+
+    foreach ($data['varianten'] as $vid => $assen) {
+        $variatie = wc_get_product((int) $vid);
+        if (!$variatie) { continue; }
+        // bestaande variatie-waarden van andere assen laten vallen (die assen
+        // zijn nu vast), onze drie assen zetten waar ze variatie zijn
+        $nieuw = [];
+        foreach ($AS_TAX as $label => $tax) {
+            if (!isset($attributes[$tax]) || !$attributes[$tax]->get_variation()) { continue; }
+            $naam = $assen[$label] ?? '';
+            if ($naam === '') { continue; }
+            $term = get_term_by('name', $naam, $tax);
+            if ($term) { $nieuw[$tax] = $term->slug; }
+        }
+        $variatie->set_attributes($nieuw);
+        // Zodra een container "locked" is (eigen assen i.p.v. "Naam") laat de
+        // plugin nieuwe variaties bewust als private binnenkomen, wachtend op
+        // handmatige toewijzing. Wij kennen de assen wél, dus publiceren we ze
+        // alsnog — mits AFAS het artikel actief noemt.
+        if ($variatie->get_status() === 'private' && $nieuw) {
+            $actief = $wpdb->get_var($wpdb->prepare(
+                "SELECT lef_is_active FROM {$wpdb->prefix}lef_afas_artikelen
+                  WHERE artikelnummer = %s", (string) get_post_meta((int) $vid, '_afas_artikelnummer', true)));
+            if ($actief === null || (int) $actief === 1) {
+                $variatie->set_status('publish');
+                printf("         variatie #%d gepubliceerd (was private, assen bekend)\n", (int) $vid);
+            }
+        }
+        $variatie->save();
+        $gezet++;
+    }
+}
+printf("--- %s: %d containers, %d variaties bijgewerkt, %d termen aangemaakt, %d overgeslagen\n",
+    $apply ? 'APPLY' : 'DRY-RUN', count($containers), $gezet, $gemaakt, $overgeslagen);
+""")
+PY
+
+    wpr_stdin eval-file - < /tmp/afas-assen-payload.php
+    if [[ "$apply" != "apply" ]]; then
+        echo "Dry-run — niets gewijzigd. Draai '$0 stap12 apply' om te schrijven."
+    fi
 }
 
 # ---------------------------------------------------------------------------
@@ -735,7 +980,8 @@ usage() {
     echo "  stap8   Structuur-opruiming: gekoppelde simples die variatie horen te zijn -> prullenbak (dry-run; 'stap8 apply')"
     echo "  stap9   Swatches-instelling conform reseller (custom attributen als dropdown)"
     echo "  stap10  Assortiment-schrappingen uit work/schraplijst-defibsolutions.csv (dry-run; 'stap10 apply')"
-    echo "  stap11  Syncs: migraties + artikelen + prijzen + wc-sync (run 2 alleen bij warnings; 'stap11 zonder-prijzen' slaat prijsimport over)"
+    echo "  stap12  Variatie-assen (pa_taal/pa_connectiviteit/pa_opties) op AED-containers, Naam eruit (dry-run; 'stap12 apply')"
+    echo "  stap11  Syncs (opties: 'zonder-prijzen', 'delta' = alleen gewijzigde artikelen, seconden i.p.v. minuten)"
     echo ""
     echo "volledige herbouw: stap1..7, 9, 10 apply -> stap11 -> stap8 apply -> stap11"
     exit 1
@@ -752,6 +998,7 @@ case "${1:-}" in
     stap8) stap8 "${2:-}" ;;
     stap9) stap9 ;;
     stap10) stap10 "${2:-}" ;;
-    stap11) stap11 ;;
+    stap11) stap11 "${2:-}" ;;
+    stap12) stap12 "${2:-}" ;;
     *) usage ;;
 esac
