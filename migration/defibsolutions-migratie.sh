@@ -1053,7 +1053,11 @@ usage() {
     echo "  stap12  Variatie-assen (pa_taal/pa_connectiviteit/pa_opties) op AED-containers, Naam eruit (dry-run; 'stap12 apply')"
     echo "  stap11  Syncs (opties: 'zonder-prijzen', 'delta' = alleen gewijzigde artikelen, seconden i.p.v. minuten)"
     echo ""
-    echo "volledige herbouw: stap1..7, 9, 10 apply -> stap11 -> stap8 apply -> stap11"
+    echo "volledige herbouw (na verse pull), in deze volgorde:"
+    echo "  stap1, stap2, stap3 apply, stap4, stap5 apply, stap6 apply, stap7,"
+    echo "  stap9, stap10 apply, stap11, stap8 apply, stap11 'zonder-prijzen delta',"
+    echo "  stap12 apply      <- stap12 ALTIJD als laatste (assen + defaults +"
+    echo "                       publiceert variaties die als private binnenkwamen)"
     exit 1
 }
 

@@ -186,9 +186,15 @@ container komen door het locked-mechanisme als *private* binnen):
 
 ## Fase G — Reproduceerbaarheids-check (stap 1.7)
 
-- [ ] Lokale kopie weggooien → verse pull → alle stappen achter elkaar.
-      Af als de reeks zonder handmatig ingrijpen eindigt in een werkende shop.
-      Dan is het script vrijgegeven voor `DEFIBS_TARGET=cp01`.
+- [x] Lokale kopie weggooien → verse pull → alle stappen achter elkaar.
+      ✓ 26 aug, in 33 minuten en ZONDER handmatig ingrijpen (runner:
+      `tmp/faseG-runner.sh`, log `tmp/faseG-1146.log`):
+      pull 4,5 min · inrichting stap1-7/9/10 80 sec · syncs 26 min
+      (waarvan 21 min prijzen/adressen-import, wc-sync 169 sec) ·
+      stap8 ruimde 5 dubbele variaties op · delta-sync 0 sec · stap12 45 sec.
+      Eindmeting: 284 simple / 27 variable / 855 variaties · **0 warnings** ·
+      1 container zonder default (Zoll Trainer, geen samenstelling) · site up.
+      Script is hiermee vrijgegeven voor `DEFIBS_TARGET=cp01`.
 - [ ] Allerlaatste: cp01-pad voor het eerst aanraken —
       `DEFIBS_TARGET=cp01 ./migration/defibsolutions-migratie.sh stap5`
       (read-only dry-run) en kijken wat er gebeurt. Pas daarna Fase H plannen.
