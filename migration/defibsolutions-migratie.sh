@@ -848,6 +848,23 @@ $slugVan = function (string $naam): string {
     return sanitize_title(str_replace(['·', '+'], [' ', ' '], $naam));
 };
 
+// Canonieke optie-volgorde (reseller heeft geen expliciete volgorde: daar
+// staat Defibrillator 10e door aanmaakvolgorde). Hier wél gecureerd, zodat de
+// dropdown logisch loopt: kaal toestel eerst, dan accessoires oplopend.
+$VOLGORDE = [
+    'pa_taal' => ['Nederlands'],
+    'pa_connectiviteit' => ['Geen', 'USB', 'Wi-Fi', '4G', 'Sigfox', 'GPS+Wi-Fi+SIGFOX'],
+    'pa_opties' => ['Defibrillator', 'EHBO Rugzak', 'ARKY Binnenkast Wit',
+        'ARKY Binnenkast Groen', 'ARKY Binnenkast Groen ILCOR',
+        'ARKY Buitenkast Onverwarmd', 'ARKY Buitenkast Verwarmd',
+        'ARKY Buitenkast Verwarmd Groen', 'ARKY Buitenkast Groen',
+        'ARKY CORE Classic', 'ARKY CORE Plus', 'Defibtech draagtas',
+        'Mindray Draagtas', 'Plexiglas Wandbeugel'],
+];
+// Default-keuze per as, conform reseller: het kale NL-toestel zonder opties.
+$DEFAULT_VOORKEUR = ['pa_taal' => 'Nederlands', 'pa_connectiviteit' => 'Geen',
+    'pa_opties' => 'Defibrillator'];
+
 foreach ($AS_TAX as $label => $tax) {
     if (taxonomy_exists($tax)) { continue; }
     if (!$apply) { echo "ZOU AANMAKEN attribuut: $label ($tax)\n"; continue; }
@@ -856,6 +873,13 @@ foreach ($AS_TAX as $label => $tax) {
     if (is_wp_error($id)) { echo "FOUT attribuut $label: " . $id->get_error_message() . "\n"; continue; }
     register_taxonomy($tax, 'product', ['hierarchical' => false, 'show_ui' => false, 'query_var' => true]);
     echo "attribuut aangemaakt: $label ($tax)\n";
+}
+
+// pa_taal toont op reseller knoppen i.p.v. een radiolijst
+if ($apply) {
+    $wpdb->update($wpdb->prefix . 'woocommerce_attribute_taxonomies',
+        ['attribute_type' => 'button'], ['attribute_name' => 'taal']);
+    delete_transient('wc_attribute_taxonomies');
 }
 
 foreach ($containers as $parId => $data) {
@@ -903,6 +927,18 @@ foreach ($containers as $parId => $data) {
             $termIds[] = (int) $term->term_id;
         }
         if (!$termIds) { continue; }
+        // volgorde-meta: WooCommerce sorteert menu_order-attributen hierop
+        if ($apply) {
+            foreach ($termIds as $tid) {
+                $naam = get_term($tid, $tax)->name ?? '';
+                $pos = array_search($naam, $VOLGORDE[$tax] ?? [], true);
+                if ($pos === false) {
+                    // niet in de lijst: achteraan, alfabetisch stabiel
+                    $pos = 100 + (ord(substr($naam, 0, 1)) - 65);
+                }
+                update_term_meta($tid, 'order_' . $tax, (int) $pos);
+            }
+        }
         $attr = new WC_Product_Attribute();
         $attr->set_id(wc_attribute_taxonomy_id_by_name($tax));
         $attr->set_name($tax);
@@ -929,6 +965,33 @@ foreach ($containers as $parId => $data) {
     if (!$apply) { continue; }
 
     $parent->set_attributes($attributes);   // "Naam" verdwijnt hiermee
+
+    // Default-variatie kiezen (conform reseller: kaal NL-toestel). Per as de
+    // voorkeurswaarde, anders de eerste die de voorkeur bevat (bv.
+    // "Nederlands · Engels · Frans" als los "Nederlands" niet bestaat).
+    $defaults = [];
+    foreach ($AS_TAX as $label => $tax) {
+        if (!isset($attributes[$tax]) || !$attributes[$tax]->get_variation()) { continue; }
+        $voorkeur = $DEFAULT_VOORKEUR[$tax] ?? '';
+        $namen = array_keys($waarden[$label]);
+        sort($namen);
+        $keuze = null;
+        foreach ($namen as $n) { if ($n === $voorkeur) { $keuze = $n; break; } }
+        if ($keuze === null) {
+            foreach ($namen as $n) { if ($voorkeur !== '' && str_contains($n, $voorkeur)) { $keuze = $n; break; } }
+        }
+        if ($keuze === null) { $keuze = $namen[0] ?? null; }
+        if ($keuze !== null) {
+            $term = get_term_by('name', $keuze, $tax);
+            if ($term) { $defaults[$tax] = $term->slug; }
+        }
+    }
+    if ($defaults) {
+        $parent->set_default_attributes($defaults);
+        printf("         default: %s\n", implode(', ', array_map(
+            fn($k, $v) => str_replace('pa_', '', $k) . '=' . $v,
+            array_keys($defaults), $defaults)));
+    }
     $parent->save();
 
     foreach ($data['varianten'] as $vid => $assen) {
