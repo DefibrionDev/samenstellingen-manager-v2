@@ -154,8 +154,20 @@ Na de verse defibsolutions-pull (wipe) stap 1–6 opnieuw draaien met 2.0.4.
       trashte 19 kale-AED-simples; eindstand 464 artikelen in beheer,
       0 warnings, 293 simple / 20 variable — Reanibex e.a. nu als variaties
       onder hun containers, conform reseller.
-- [ ] Gemapte testklant: inloggen + checkout doorlopen (adres-selector,
+- [x] Gemapte testklant: inloggen + checkout doorlopen (adres-selector,
       klantafspraak-prijs, verzendkosten)
+      ✓ 26 aug: runtime-prijscheck 4/4 pass als AEDcompany (FRx-klantprijzen
+      1000/1025/1350, staffel 60213 = 311,48); testwachtwoord nu vast in
+      stap4 (lokaal). Checkout gerestyled naar reseller-layout in eigen
+      huisstijl-groen #7CC68D (mu-plugin defibs-checkout-restyle, stap7):
+      bredere row, coupon + punten naar rechterkolom, factuuradres als
+      kop + kaderblok, leeg factuurgegevens-blok auto-verborgen, paarse
+      betaal-driehoek weg; checkout-velden conform reseller in stap9
+      (bedrijfsnaam hidden, telefoon/adres2 optional). Points-performance-
+      fix van reseller overgenomen. Laatste assortiment-besluiten Kevin
+      verwerkt: 10224 gekoppeld (zijn correctie op 93093), 30140 + 70202
+      alsnog geschrapt — 28 ongekoppelde producten: 12 gekoppeld,
+      16 geschrapt, 0 open. wp-staging (pro+free) uit in stap2.
 - [ ] Prijsrapport herdraaien (`--vers`): 0 onverklaarde verschillen
 
 **Drager-aanpak (25 aug, na regressie-melding Cas):** trash-en-vervang brak

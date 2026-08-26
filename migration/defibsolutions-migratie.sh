@@ -126,7 +126,7 @@ stap1() {
 }
 
 # ---------------------------------------------------------------------------
-# Stap 2 — Overbodige plugins UIT: Jetpack + B2BKing + Mailchimp.
+# Stap 2 — Overbodige plugins UIT: Jetpack + B2BKing + Mailchimp + WP Staging.
 # Jetpack hoort niet mee te draaien tijdens/na de migratie (externe koppelingen,
 # mails, stats). B2BKing wordt vervangen door lefcreative-afas-b2b; de
 # B2BKing-data blijft in de database staan als inerte fallback (zelfde aanpak
@@ -141,7 +141,10 @@ stap2() {
     # artikelen-sync tot stilstand komt — en de kopie zou naar het echte
     # Mailchimp-account pushen. Uit tijdens de migratie; na de livegang
     # bewust weer aanzetten als marketing hem nodig heeft.
-    for p in jetpack b2bking-wholesale-for-woocommerce b2bking mailchimp-for-woocommerce; do
+    # wp-staging-pro: staging/backup-tool van de oude hosting; nutteloos op de
+    # kopie en op cp-01 (Hetzner/CloudPanel doet backups) en zo'n geheugenvreter
+    # dat wp-cli zonder verhoogde memory_limit al bij het booten OOM't.
+    for p in jetpack b2bking-wholesale-for-woocommerce b2bking mailchimp-for-woocommerce wp-staging-pro wp-staging; do
         if wpr plugin is-installed "$p" >/dev/null 2>&1; then
             wpr plugin deactivate "$p"
         else
@@ -149,10 +152,10 @@ stap2() {
         fi
     done
     echo "--- controle:"
-    wpr plugin list | { grep -iE 'jetpack|b2bking|mailchimp' || echo "(niets gevonden)"; }
+    wpr plugin list | { grep -iE 'jetpack|b2bking|mailchimp|wp-staging' || echo "(niets gevonden)"; }
     # opgelopen job-wachtrij legen: die maakt elke latere save traag
     wpr db query "\"DELETE FROM wp_mailchimp_jobs\"" >/dev/null 2>&1 || true
-    echo "OK — jetpack + b2bking + mailchimp staan uit op $(doel_naam)"
+    echo "OK — jetpack + b2bking + mailchimp + wp-staging staan uit op $(doel_naam)"
 }
 
 # ---------------------------------------------------------------------------
@@ -255,6 +258,13 @@ PY
         # nooit aan staan, ook niet als de settings-bron hem (voor live) aanzet.
         wpr option update afas_sync_orders_enabled 0 >/dev/null
         echo "(lokaal: afas_sync_orders_enabled geforceerd op 0)"
+        # Testklant voor checkout-tests: user 187 (AEDcompany, relatie 31148).
+        # Het wachtwoord komt niet mee uit de live-dump, dus na elke verse
+        # pull opnieuw zetten. Alleen lokaal — nooit live-wachtwoorden muteren.
+        if wpr user get 187 --field=ID >/dev/null 2>&1; then
+            wpr user update 187 --user_pass=defibs-test-2026 >/dev/null
+            echo "(lokaal: testklant AEDcompany/187 wachtwoord gezet: defibs-test-2026)"
+        fi
     fi
     echo "--- controle:"
     wpr plugin list | grep -i lefcreative
@@ -587,6 +597,14 @@ wp_cache_flush();
 echo "Divi dynamic/critical CSS uit (lokale workaround)\n";
 PHP
     fi
+    # Checkout-veldinstellingen conform reseller (WooCommerce-customizer):
+    # bedrijfsnaam verbergen, telefoon en adresregel 2 optioneel. Zonder deze
+    # opties is telefoon verplicht (WC-default) en stond bedrijfsnaam op
+    # required — B2B-klanten liepen daarop vast.
+    wpr option update woocommerce_checkout_company_field hidden >/dev/null
+    wpr option update woocommerce_checkout_phone_field optional >/dev/null
+    wpr option update woocommerce_checkout_address_2_field optional >/dev/null
+    echo "checkout-velden: bedrijfsnaam hidden, telefoon/adres2 optional (conform reseller)"
     echo "OK — weergave-instellingen gezet op $(doel_naam)"
 }
 
