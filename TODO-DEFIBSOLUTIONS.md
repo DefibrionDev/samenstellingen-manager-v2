@@ -169,6 +169,21 @@ run 2 automatisch overgeslagen (stap11-optimalisatie). Settings-bron is nu een
 volledige export van Cas' definitieve wp-admin-configuratie (148 opties incl.
 mapping + custom fields); stap4 forceert lokaal altijd orders-push uit.
 
+**Publicatie-state hoort in de tool (25 aug):** DefibSolutions NL is als derde
+website geregistreerd (`website:add`, id=3, met de twee vrije-veld-UUID's) en
+kreeg alle 106 base-publicaties van Reseller NL. Daarmee is de tool de bron
+voor "wat staat op welke shop" en zet `publications:sync` de AFAS-vlaggen op
+bases én accessoire-varianten (additief, zet nooit iets uit). Het ad-hoc
+`fix-defibsolutions-vinkjes.php` blijft alleen voor losse niet-managed
+artikelen (accessoires, trainers). Effect: 855 itemcodes geflagd, waarvan 641
+nieuw voor de shop — DefibSolutions krijgt reseller's volledige AED-breedte
+inclusief taalvarianten (wens Cas + Kevin: beide shops identiek).
+
+**Volgorde die daarbij hoort** (nieuwe variaties onder een al omgebouwde
+container komen door het locked-mechanisme als *private* binnen):
+`publications:sync --apply` → `stap11` → `stap8 apply` → `stap11 delta` →
+**`stap12 apply` als laatste** (zet assen én publiceert die private variaties).
+
 ## Fase G — Reproduceerbaarheids-check (stap 1.7)
 
 - [ ] Lokale kopie weggooien → verse pull → alle stappen achter elkaar.

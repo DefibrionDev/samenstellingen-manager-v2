@@ -126,7 +126,7 @@ stap1() {
 }
 
 # ---------------------------------------------------------------------------
-# Stap 2 — Overbodige plugins UIT: Jetpack + B2BKing.
+# Stap 2 — Overbodige plugins UIT: Jetpack + B2BKing + Mailchimp.
 # Jetpack hoort niet mee te draaien tijdens/na de migratie (externe koppelingen,
 # mails, stats). B2BKing wordt vervangen door lefcreative-afas-b2b; de
 # B2BKing-data blijft in de database staan als inerte fallback (zelfde aanpak
@@ -136,7 +136,12 @@ stap1() {
 stap2() {
     controleer_config
     local p
-    for p in jetpack b2bking-wholesale-for-woocommerce b2bking; do
+    # mailchimp-for-woocommerce: zet bij ELKE productsave jobs in
+    # wp_mailchimp_jobs (lokaal opgelopen tot 245k rijen) waardoor de
+    # artikelen-sync tot stilstand komt — en de kopie zou naar het echte
+    # Mailchimp-account pushen. Uit tijdens de migratie; na de livegang
+    # bewust weer aanzetten als marketing hem nodig heeft.
+    for p in jetpack b2bking-wholesale-for-woocommerce b2bking mailchimp-for-woocommerce; do
         if wpr plugin is-installed "$p" >/dev/null 2>&1; then
             wpr plugin deactivate "$p"
         else
@@ -144,8 +149,10 @@ stap2() {
         fi
     done
     echo "--- controle:"
-    wpr plugin list | { grep -iE 'jetpack|b2bking' || echo "(geen jetpack/b2bking gevonden)"; }
-    echo "OK — jetpack + b2bking staan uit op $(doel_naam)"
+    wpr plugin list | { grep -iE 'jetpack|b2bking|mailchimp' || echo "(niets gevonden)"; }
+    # opgelopen job-wachtrij legen: die maakt elke latere save traag
+    wpr db query "\"DELETE FROM wp_mailchimp_jobs\"" >/dev/null 2>&1 || true
+    echo "OK — jetpack + b2bking + mailchimp staan uit op $(doel_naam)"
 }
 
 # ---------------------------------------------------------------------------
@@ -971,7 +978,7 @@ usage() {
     echo "gebruik: [DEFIBS_TARGET=lokaal|cp01] $0 <stap>   (default: lokaal)"
     echo "stappen:"
     echo "  stap1   Mail UIT: disable-emails installeren + activeren (nieuwe server)"
-    echo "  stap2   Overbodige plugins UIT: Jetpack + B2BKing deactiveren"
+    echo "  stap2   Overbodige plugins UIT: Jetpack + B2BKing + Mailchimp (incl. job-wachtrij legen)"
     echo "  stap3   Klanten koppelen aan AFAS-relaties uit work/klant-relatie-mapping.csv (dry-run; 'stap3 apply' schrijft)"
     echo "  stap4   lefcreative-afas-b2b installeren + activeren + afas-settings importeren (work/)"
     echo "  stap5   API-keys intrekken: WooCommerce REST-keys + application passwords (dry-run; 'stap5 apply' verwijdert)"
