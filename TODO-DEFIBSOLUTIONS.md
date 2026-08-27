@@ -221,8 +221,17 @@ B2BKing opruimen).
 
 ## Later — verzameld 26 aug (niet vergeten)
 
-- [ ] Klanten zonder AFAS-koppeling langslopen (users zonder `afas_relatie_id`:
-      koppelen, opschonen of bewust lokaal laten)
+- [x] Klanten zonder AFAS-koppeling langslopen (users zonder `afas_relatie_id`)
+      ✓ 27 aug: lijst in work/klanten-zonder-afas-id.csv — 8 interne accounts
+      verwijderd via stap14 (reassign naar info@defibsolutions.nl), 85
+      slapende 0-order-klanten bewust ongekoppeld, 6 admins legitiem.
+      Restpunt: 3 klanten mét orders zonder koppeling (Boomgaard, VDP
+      Medical, PSD Opleidingen) — koppel-voorstel volgt.
+- [ ] Kevins 87-lijst verwerkt (27 aug): 71 aan op DefibSolutions, 17 uit op
+      reseller (16 van Kevin + Zoll Trainer CZ, ook uit op DefibSolutions —
+      product netjes private). 70 nieuwe producten via stap13 aangekleed
+      vanaf reseller; alleen Rotaid Outdoor transformer (95.3010) zonder
+      afbeelding want reseller heeft er ook geen. Restpunt hier: foto.
 - [ ] Nieuwe producten opmaken (via de sync binnengekomen producten missen
       Divi-opmaak/afbeeldingen/teksten)
 - [ ] Product-AED-layout frontend: attributen-picker mooier maken, zoals op

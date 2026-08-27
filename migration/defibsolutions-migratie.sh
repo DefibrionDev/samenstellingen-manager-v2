@@ -1292,6 +1292,54 @@ PY
 }
 
 # ---------------------------------------------------------------------------
+# Stap 14 — Oude/interne accounts verwijderen (besluit Cas 27 aug). Content
+# (orders, posts, media) wordt via --reassign overgedragen aan het hoofd-
+# account (info@defibsolutions.nl), zodat er niets cascade-verdwijnt.
+# O.a. het administrator-account van plugin-leverancier WPSwings gaat eruit.
+# Idempotent: al-verwijderde accounts worden gemeld en overgeslagen.
+# Default dry-run; `stap14 apply` verwijdert echt.
+# ---------------------------------------------------------------------------
+stap14() {
+    controleer_config
+    local apply="${1:-}"
+    local doel_email="info@defibsolutions.nl"
+    local weg=(
+        "support@wpswings.com"
+        "roelsethijs@gmail.com"
+        "lola@defibsolutions.nl"
+        "nordics@defibsolutions.eu"
+        "katja@defibsolutions.nl"
+        "ines@defibsolutions.nl"
+        "rutger@improvit.nl"
+        "info@bhvvoordeelwinkel.nl"
+    )
+    local doel_id
+    doel_id=$(wpr user get "$doel_email" --field=ID 2>/dev/null | tr -d '[:space:]')
+    [[ "$doel_id" =~ ^[0-9]+$ ]] || { echo "FOUT: doelaccount $doel_email niet gevonden" >&2; exit 1; }
+    echo "reassign-doel: $doel_email (user $doel_id)"
+
+    local email uid login
+    for email in "${weg[@]}"; do
+        uid=$(wpr user get "$email" --field=ID 2>/dev/null | tr -d '[:space:]')
+        if [[ ! "$uid" =~ ^[0-9]+$ ]]; then
+            echo "SKIP   $email — bestaat niet (al verwijderd?)"
+            continue
+        fi
+        login=$(wpr user get "$uid" --field=user_login 2>/dev/null | tr -d '[:space:]')
+        if [[ "$apply" != "apply" ]]; then
+            echo "ZOU VERWIJDEREN  $email (user $uid, login $login) -> content naar $doel_id"
+        else
+            wpr user delete "$uid" --reassign="$doel_id" --yes
+            echo "VERWIJDERD  $email (user $uid, login $login) -> content naar $doel_id"
+        fi
+    done
+    if [[ "$apply" != "apply" ]]; then
+        echo "Dry-run — niets verwijderd. Draai '$0 stap14 apply' om uit te voeren."
+    else
+        echo "OK — accounts opgeruimd op $(doel_naam)"
+    fi
+}
+# ---------------------------------------------------------------------------
 usage() {
     echo "gebruik: [DEFIBS_TARGET=lokaal|cp01] $0 <stap>   (default: lokaal)"
     echo "stappen:"
@@ -1307,6 +1355,7 @@ usage() {
     echo "  stap10  Assortiment-schrappingen uit work/schraplijst-defibsolutions.csv (dry-run; 'stap10 apply')"
     echo "  stap12  Variatie-assen (pa_taal/pa_connectiviteit/pa_opties) op AED-containers, Naam eruit (dry-run; 'stap12 apply')"
     echo "  stap13  Opmaak-overname van reseller voor kale producten (dry-run; apply)"
+    echo "  stap14  Oude/interne accounts verwijderen met reassign (dry-run; apply)"
     echo "  stap11  Syncs (opties: 'zonder-prijzen', 'delta' = alleen gewijzigde artikelen, seconden i.p.v. minuten)"
     echo ""
     echo "volledige herbouw (na verse pull), in deze volgorde:"
@@ -1331,5 +1380,6 @@ case "${1:-}" in
     stap11) stap11 "${2:-}" ;;
     stap12) stap12 "${2:-}" ;;
     stap13) stap13 "${2:-}" ;;
+    stap14) stap14 "${2:-}" ;;
     *) usage ;;
 esac
