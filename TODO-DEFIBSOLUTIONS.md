@@ -208,6 +208,9 @@ container komen door het locked-mechanisme als *private* binnen):
       Eindmeting: 284 simple / 27 variable / 855 variaties · **0 warnings** ·
       1 container zonder default (Zoll Trainer, geen samenstelling) · site up.
       Script is hiermee vrijgegeven voor `DEFIBS_TARGET=cp01`.
+- [ ] (wacht op wordpress-migrater: de kale verhuizing van de site naar cp-01
+      doet dat project — besluit Cas 27 aug; site-user-SSH voor het script
+      regelen we op dat moment)
 - [ ] Allerlaatste: cp01-pad voor het eerst aanraken —
       `DEFIBS_TARGET=cp01 ./migration/defibsolutions-migratie.sh stap5`
       (read-only dry-run) en kijken wat er gebeurt. Pas daarna Fase H plannen.
