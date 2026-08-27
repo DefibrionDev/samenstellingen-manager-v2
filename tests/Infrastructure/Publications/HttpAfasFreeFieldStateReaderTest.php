@@ -20,6 +20,8 @@ final class HttpAfasFreeFieldStateReaderTest extends TestCase
     private const RESELLER_TONEN = 'UD77EC755E2F1404EB184A956685A7C0C';
     private const ARKY_SYNC = 'U50A21258B95F4493986990B0141049C8';
     private const ARKY_TONEN = 'U620F63CE511E4308923C155399EE8EAE';
+    private const DEFIBS_SYNC = 'U53F2EB036B8C4787A71980AF48A0AD0C';
+    private const DEFIBS_TONEN = 'UBC0C50717BE74A15842A03C09003717D';
 
     #[Test]
     public function mapsResellerAndArkyFreeFieldColumnsToUuids(): void
@@ -52,5 +54,27 @@ final class HttpAfasFreeFieldStateReaderTest extends TestCase
                 self::ARKY_TONEN => false,
             ],
         ], $state);
+    }
+
+    #[Test]
+    public function mapsDefibsolutionsFreeFieldColumnsToUuids(): void
+    {
+        // Regressie 26 aug: website 3 (DefibSolutions NL) was via website:add
+        // geregistreerd maar ontbrak in COLUMN_TO_UUID, waardoor publications:sync
+        // elke run honderden al-correcte vlaggen opnieuw PUT'te.
+        $mock = new MockHandler([
+            new Response(200, [], (string) json_encode(['rows' => [
+                ['Itemcode' => '11148F', 'Sync_Defibsolutions_NL' => '1', 'Tonen_Defibsolutions_NL' => '1'],
+                ['Itemcode' => '11149F', 'Sync_Defibsolutions_NL' => '0', 'Tonen_Defibsolutions_NL' => ''],
+            ]])),
+        ]);
+        $reader = new HttpAfasFreeFieldStateReader(
+            new AfasHttpClient(new Client(['handler' => HandlerStack::create($mock)]), 'https://example.test', 'token'),
+        );
+
+        self::assertEquals([
+            '11148F' => [self::DEFIBS_SYNC => true, self::DEFIBS_TONEN => true],
+            '11149F' => [self::DEFIBS_SYNC => false, self::DEFIBS_TONEN => false],
+        ], $reader->readAll());
     }
 }

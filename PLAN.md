@@ -319,3 +319,47 @@ pagina `BasePriceGaps.tsx`, nav-link "Base-prijs-gaten" onder Audits.
   audit signaleert alleen.
 - Accessoire-varianten (kast e.d.) — die dekt `audit:prices`.
 - Wijzigingen aan `audit:prices` / `price-drift` zelf.
+
+## 14. G5 CPR-sensor-as (10148F/10149F) — besluit Cas 26 aug 2026
+
+**Aanleiding.** Kevin (mail 25 aug): 10148F/10149F behouden en er samenstellingen
+van maken, daarna ook op reseller NL. Cas koos voor de as-aanpak (26 aug):
+CPR-sensor als variant-as binnen de bestaande G5-groepen, zelfde mechaniek als
+WiFi/3G bij de CR2 (`variant_label` op de base).
+
+**Feiten.** Kale AED's (F-suffix = CPR-sensor-uitvoering, níet consistent):
+10148 = halfautomaat mét sensor, 10148F = zonder; 10149 = volautomaat zonder,
+10149F = mét. Tool nu: groep 31 (Halfautomaat, base 11148 NL/EN) en groep 7
+(Volautomaat, base 11149 NL/EN), beide zonder variant_label.
+
+**Aanpak.**
+1. F-suffix-lezing en itemcodes: zelf besloten (Cas 26 aug, geen Kevin-vraag).
+   De AFAS-namen bevestigen de lezing letterlijk ("met/zonder CPR sensor").
+   Itemcodes volgen de pakket-conventie 10xxx -> 11xxx: **11148F** en
+   **11149F** (beide vrij in AFAS, incl. -F-varianten gecheckt).
+2. Nieuwe samenstellings-artikelen in AFAS. Uitgezocht (26 aug): het tool
+   maakt alleen várianten aan (variants:fix-missing, FbComposition); bases
+   worden gematcht, nooit aangemaakt. Besluit Cas: zelf aanmaken via een
+   one-off in afas-connector-tools (dry-run + --apply) met exact de bewezen
+   payload-shape van FbCompositionVariantPayloadBuilder (PoC 39.0): BOM =
+   F-AED + 70112 + 81111, Grp/CsGc/categorisatie gekopieerd van de zusterbase,
+   parent = family-head (11148 resp. 11149), StPrice 0, geen publicatie-vlaggen
+   (publicatie volgt via de tool). Daarna snapshot verversen en registreren
+   via `group:add-base-from-afas` (naam + BOM komen automatisch mee).
+   Let op: de labels op de bestáánde bases (stap 4) wijzigen ook hun canonical
+   namen in AFAS en op reseller ("... met CPR-sensor (NL-EN)") zodra
+   names:fix-drift draait — gewenst effect van de as, maar zichtbaar.
+3. Tool-registratie per groep: `group:add-base` + `group:add-base-item`
+   (AED = 10148F resp. 10149F, overige items zoals de zustersbase).
+4. `base:set-variant-label`: nieuwe bases "Zonder CPR-sensor" (groep 31) en
+   "Met CPR-sensor" (groep 7); bestaande bases 11148/11149 krijgen het
+   omgekeerde label expliciet. Naam-templates plakken het label al tussen
+   model en taal-suffix — geen templatewijziging.
+5. Varianten genereren + prijzen-sync; daarna `base:publish` op reseller NL
+   én DefibSolutions NL + `publications:sync`.
+6. Migratiescript stap12: vierde variatie-as `pa_cpr-feedback` (waarden
+   "Met"/"Zonder") afgeleid uit variant_label wanneer het label geen
+   connectiviteitswaarde is; default "Met CPR-sensor" waar de bestaande base
+   die uitvoering is; volgorde: taal, CPR-feedback, opties.
+
+**Buiten scope.** Prestan; overige alleen-reseller-artikelen (aparte handoff).

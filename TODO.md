@@ -225,3 +225,48 @@ Aanleiding: handmatig opgespoorde gaten (`tmp/bases-zonder-prijslijstprijs.csv`)
 ### Sub-slice BP-3 — Live verificatie
 - [x] CLI + HTTP-endpoint tegen de echte snapshot: **74 rijen, 003=10 / 026=32 / 029=32** (027 whitelisted maar 0 gaten) — exact gelijk aan `tmp/bases-zonder-prijslijstprijs.csv`.
 - [x] UI-pagina `/base-price-gaps` geopend (Vite 5173 + docker-backend 8181): rendert de 74 ontbrekende bases per whitelist-prijslijst, nav-link onder Prijzen.
+
+## Slice G5F — CPR-sensor-as voor 10148F/10149F (PLAN.md §14)
+
+Aanleiding: besluit Kevin (25 aug) + Cas (26 aug): de kale AED's 10148F/10149F
+krijgen samenstellingen als CPR-sensor-uitvoering bínnen de bestaande G5-groepen
+(variant_label-mechaniek, zoals WiFi/3G bij CR2), daarna publicatie op reseller
+NL én DefibSolutions NL.
+
+### Sub-slice G5F-0 — Voorwerk (blokkeert de rest)
+- [x] F-suffix-lezing + itemcodes zelf besloten (Cas 26 aug): AFAS-namen
+      bevestigen de lezing letterlijk; itemcodes 11148F/11149F (conventie
+      10xxx->11xxx, beide vrij).
+- [x] Pakketten 11148F/11149F aanmaakt in AFAS via one-off (create-g5f-basepakketten.php,
+      apply-akkoord Cas 26 aug); snapshot ververst.
+- [x] Uitzoeken hoe de twee nieuwe base-pakketten in AFAS ontstaan: bestaand
+      tool-mechanisme (à la `variants:fix-missing`) of handmatig door Kevin.
+      ✓ 26 aug: tool maakt alleen varianten aan; bases nooit. Besluit: Kevin
+      maakt de pakketten handmatig aan, registratie daarna via
+      `group:add-base-from-afas` (naam + BOM uit snapshot). In PLAN.md §14.
+
+### Sub-slice G5F-1 — Tool-registratie
+- [x] Groep 31 (Halfautomaat): base 11148F geregistreerd via `group:add-base-from-afas`
+      (naam + BOM automatisch uit snapshot: 10148F + 70112 + 81111).
+- [x] Groep 7 (Volautomaat): idem — base 11149F (10149F + 70112 + 81111).
+- [x] `base:set-variant-label` op alle vier de bases gezet (met/zonder CPR-sensor,
+      kruiselings conform F-suffix); canonical namen bevatten het label.
+- [x] 14 varianten aangemaakt (`variants:fix-missing --apply`), zusterprijzen
+      geschreven (8 base- + 56 variant-rijen, lijsten 003/026/027/030);
+      `audit:no-match` en `audit:prices` schoon. Bugfix meegenomen:
+      DefibSolutions-kolommen ontbraken in COLUMN_TO_UUID van de
+      free-field-state-reader (TDD, regressietest toegevoegd).
+
+### Sub-slice G5F-2 — Publicatie + shops
+- [x] Beide bases gepubliceerd op Reseller NL + DefibSolutions NL;
+      `publications:sync --apply`: 16 vlag-sets, 0 gefaald, 1549 al correct.
+- [x] Migratiescript stap12: vierde as `pa_cpr-feedback` ("Met"/"Zonder") uit
+      variant_label wanneer het geen connectiviteitswaarde is; default per
+      container = de uitvoering van de bestaande (niet-F) base.
+- [x] Verificatie op de lokale kopie: beide G5-containers tonen CPR-feedback
+      (Met/Zonder) + Opties, taal/connectiviteit vast; defaults Halfautomaat=met,
+      Volautomaat=zonder; 32 variaties publish; sync 0 warnings; make check groen.
+- [ ] GEPARKEERD (Cas 26 aug: eerst defibsolutions): reseller-kant — de 16
+      nieuwe artikelen komen daar via de live plugin-sync als private
+      variaties binnen (locked containers); CPR-as + publiceren + defaults
+      moet daar nog, eerst testen op de lokale reseller-kopie.

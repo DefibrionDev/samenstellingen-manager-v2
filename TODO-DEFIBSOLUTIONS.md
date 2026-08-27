@@ -219,6 +219,17 @@ B2BKing opruimen).
 
 ---
 
+## Later — verzameld 26 aug (niet vergeten)
+
+- [ ] Klanten zonder AFAS-koppeling langslopen (users zonder `afas_relatie_id`:
+      koppelen, opschonen of bewust lokaal laten)
+- [ ] Nieuwe producten opmaken (via de sync binnengekomen producten missen
+      Divi-opmaak/afbeeldingen/teksten)
+- [ ] Product-AED-layout frontend: attributen-picker mooier maken, zoals op
+      reseller
+- [ ] Checken welke producten nu nog niet met AFAS gekoppeld zijn (restcheck
+      na alle koppel-/schrap-rondes)
+
 ## Parallel (geen fase — lange doorlooptijd, kan nu al)
 
 - [x] AFAS-beheer: vrije velden `Sync_Defibsolutions_NL`/`Tonen_Defibsolutions_NL`

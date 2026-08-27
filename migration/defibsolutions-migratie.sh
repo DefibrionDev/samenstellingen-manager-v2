@@ -803,6 +803,9 @@ TALEN = {"NL": "Nederlands", "EN": "Engels", "FR": "Frans", "DE": "Duits", "ES":
          "TR": "Turks", "CH": "Zwitserse Editie"}
 CONNECT = {"": "Geen", "USB": "USB", "WiFi": "Wi-Fi", "SIGFOX": "Sigfox", "4G": "4G",
            "GPS+WiFi+SIGFOX": "GPS+Wi-Fi+SIGFOX"}
+# variant_label kan ook een CPR-sensor-uitvoering zijn (G5, slice G5F): dan is
+# het geen connectiviteit maar een eigen as. Container-default = de niet-F-base.
+CPR = {"met CPR-sensor": "Met", "zonder CPR-sensor": "Zonder"}
 # accessoire-itemcode -> reseller-term (naamdrift op reseller zelf bij 60212/60213:
 # tool-naam is hier canoniek)
 OPTIES = {"60110": "EHBO Rugzak", "60112": "ARKY Binnenkast Wit",
@@ -817,15 +820,15 @@ info = {}
 for code, taal, label in con.execute(
         "SELECT afas_itemcode, COALESCE(language_code,''), COALESCE(variant_label,'')"
         " FROM group_bases WHERE afas_itemcode IS NOT NULL AND afas_itemcode <> ''"):
-    info[code] = (taal, label, None)
-for code, taal, label, acc in con.execute(
+    info[code] = (taal, label, None, code)
+for code, taal, label, acc, basecode in con.execute(
         "SELECT v.afas_samenstelling_itemcode, COALESCE(b.language_code,''),"
-        "       COALESCE(b.variant_label,''), a.itemcode"
+        "       COALESCE(b.variant_label,''), a.itemcode, COALESCE(b.afas_itemcode,'')"
         "  FROM group_variants v"
         "  JOIN group_bases b ON b.id = v.base_id"
         "  LEFT JOIN accessoires a ON a.id = v.accessoire_id"
         " WHERE v.afas_samenstelling_itemcode IS NOT NULL AND v.afas_samenstelling_itemcode <> ''"):
-    info[code] = (taal, label, acc)
+    info[code] = (taal, label, acc, basecode)
 con.close()
 
 def taal_naam(code):
@@ -842,13 +845,18 @@ for regel in open(dump, encoding="utf-8"):
     if rij is None:
         onbekend.append((var_id, var_code))
         continue
-    taal, label, acc = rij
+    taal, label, acc, basecode = rij
+    cpr = CPR.get(label, "")
     containers.setdefault(par_id, {"code": par_code, "varianten": {}})
     containers[par_id]["varianten"][var_id] = {
         "Taal": taal_naam(taal),
-        "Connectiviteit": CONNECT.get(label, label or "Geen"),
+        "Connectiviteit": "Geen" if cpr else CONNECT.get(label, label or "Geen"),
+        "CPR-feedback": cpr,
         "Opties": OPTIES.get(acc, "Defibrillator") if acc else "Defibrillator",
     }
+    # default-uitvoering: de al bestaande (niet-F) base van deze container
+    if cpr and not basecode.endswith("F"):
+        containers[par_id]["cpr_default"] = cpr
 
 print(f"// {len(containers)} containers, {sum(len(c['varianten']) for c in containers.values())} variaties"
       f", {len(onbekend)} zonder tool-data", file=sys.stderr)
@@ -857,7 +865,8 @@ print(f"$apply = {'true' if apply else 'false'};")
 print(f"$containers = json_decode('{json.dumps(containers, ensure_ascii=False)}', true);")
 print(r"""
 global $wpdb;
-$AS_TAX = ['Taal' => 'pa_taal', 'Connectiviteit' => 'pa_connectiviteit', 'Opties' => 'pa_opties'];
+$AS_TAX = ['Taal' => 'pa_taal', 'Connectiviteit' => 'pa_connectiviteit',
+    'CPR-feedback' => 'pa_cpr-feedback', 'Opties' => 'pa_opties'];
 $gemaakt = $gezet = $overgeslagen = 0;
 
 // Slug conform reseller: "Nederlands · Engels · Frans" -> nederlands-engels-frans
@@ -872,6 +881,7 @@ $slugVan = function (string $naam): string {
 $VOLGORDE = [
     'pa_taal' => ['Nederlands'],
     'pa_connectiviteit' => ['Geen', 'USB', 'Wi-Fi', '4G', 'Sigfox', 'GPS+Wi-Fi+SIGFOX'],
+    'pa_cpr-feedback' => ['Met', 'Zonder'],
     'pa_opties' => ['Defibrillator', 'EHBO Rugzak', 'ARKY Binnenkast Wit',
         'ARKY Binnenkast Groen', 'ARKY Binnenkast Groen ILCOR',
         'ARKY Buitenkast Onverwarmd', 'ARKY Buitenkast Verwarmd',
@@ -990,7 +1000,11 @@ foreach ($containers as $parId => $data) {
     $defaults = [];
     foreach ($AS_TAX as $label => $tax) {
         if (!isset($attributes[$tax]) || !$attributes[$tax]->get_variation()) { continue; }
-        $voorkeur = $DEFAULT_VOORKEUR[$tax] ?? '';
+        // CPR-as: default per container = de uitvoering van de al bestaande
+        // (niet-F) base; overige assen hebben een globale voorkeur.
+        $voorkeur = $tax === 'pa_cpr-feedback'
+            ? ($data['cpr_default'] ?? 'Met')
+            : ($DEFAULT_VOORKEUR[$tax] ?? '');
         $namen = array_keys($waarden[$label]);
         sort($namen);
         $keuze = null;
@@ -1055,6 +1069,229 @@ PY
 }
 
 # ---------------------------------------------------------------------------
+# Stap 13 — Opmaak-overname van reseller voor kale producten (besluit Cas
+# 26 aug). Selectie: publish-producten mét AFAS-koppeling maar zónder
+# hoofdafbeelding (de door de sync nieuw aangemaakte "-wpbase"-producten).
+# Bron: de lokale reseller-kopie (DB + uploads). Per product wordt van de
+# reseller-tegenhanger (product met zelfde _afas_artikelnummer) overgenomen:
+# titel, slug, beschrijving, korte beschrijving, categorieën (incl.
+# hiërarchie), tags, hoofdafbeelding + galerij (bestanden + alt-teksten).
+# Titels/slugs alleen hier — de wc-sync heeft update-naam uit staan, dus de
+# plugin draait dit nooit terug. Default dry-run; `stap13 apply` voert uit.
+# ---------------------------------------------------------------------------
+stap13() {
+    controleer_config
+    local apply="${1:-}"
+    local reseller_content="$MIGRATER_DIR/temp-reseller.defibrion.nl/wordpress/wp-content"
+    [[ -d "$reseller_content/uploads" ]] || { echo "FOUT: reseller-kopie ontbreekt ($reseller_content)" >&2; exit 1; }
+    local staging="$REPO_ROOT/tmp/opmaak-reseller"
+    rm -rf "$staging"; mkdir -p "$staging/afbeeldingen"
+
+    # 1. doelproducten van het target (werkt ook op cp01 via wpr)
+    wpr db query "\"SELECT p.ID, an.meta_value, p.post_title
+        FROM wp_posts p
+        JOIN wp_postmeta an ON an.post_id=p.ID AND an.meta_key='_afas_artikelnummer' AND an.meta_value<>''
+        WHERE p.post_type='product' AND p.post_status='publish'
+          AND NOT EXISTS (SELECT 1 FROM wp_postmeta t WHERE t.post_id=p.ID
+              AND t.meta_key='_thumbnail_id' AND t.meta_value<>'')\"" \
+        --skip-column-names > "$staging/doelen.tsv"
+
+    # 2. bron-data uit de reseller-kopie verzamelen (host-side; python praat
+    #    rechtstreeks met de reseller-DB-container)
+    python3 - "$staging" "$reseller_content" <<'PY' || exit 1
+import json, os, shutil, subprocess, sys
+staging, content = sys.argv[1], sys.argv[2]
+
+def rq(sql):
+    r = subprocess.run(["docker", "exec", "reseller-db-1", "mariadb", "-uwordpress",
+                        "-pwordpress", "wordpress", "-B", "-N", "-e", sql],
+                       capture_output=True, text=True)
+    if r.returncode != 0:
+        sys.exit(f"FOUT reseller-DB: {r.stderr.strip()[:200]}")
+    # split alleen op \n: batch-mode escapet \n/\t in waarden, maar \r niet —
+    # splitlines() zou een kolom met \r\n-content als extra rijen zien
+    return [regel.split("\t") for regel in r.stdout.split("\n") if regel]
+
+doelen = []
+for regel in open(f"{staging}/doelen.tsv", encoding="utf-8"):
+    d = regel.rstrip("\n").split("\t")
+    if len(d) >= 2 and d[0].isdigit():
+        doelen.append({"wc_id": int(d[0]), "art": d[1].strip(), "titel_nu": d[2] if len(d) > 2 else ""})
+if not doelen:
+    print("Geen kale producten gevonden — niets te doen.")
+    json.dump([], open(f"{staging}/plan.json", "w")); sys.exit(0)
+
+def esc(s): return s.replace("\\", "\\\\").replace("'", "\\'")
+
+plan = []
+for doel in doelen:
+    art = doel["art"]
+    # tekstvelden als HEX: de mariadb-client escapet newlines in -B-output
+    # niet betrouwbaar, en post_content bevat die volop
+    rows = rq(f"""SELECT p.ID, HEX(p.post_title), p.post_name, HEX(p.post_content), HEX(p.post_excerpt)
+        FROM wp_postmeta an JOIN wp_posts p ON p.ID=an.post_id
+        WHERE an.meta_key='_afas_artikelnummer' AND an.meta_value='{esc(art)}'
+          AND p.post_type='product' AND p.post_status IN ('publish','private') LIMIT 1""")
+    if not rows or len(rows[0]) < 5:
+        plan.append({**doel, "status": "geen-reseller-match"}); continue
+    onthex = lambda h: bytes.fromhex(h).decode("utf-8", "replace") if h and h != "NULL" else ""
+    rid, slug = rows[0][0], rows[0][2]
+    titel, inhoud, excerpt = onthex(rows[0][1]), onthex(rows[0][3]), onthex(rows[0][4])
+
+    # categorieën met hiërarchie (pad van root naar blad) + tags
+    cats = rq(f"""SELECT t.term_id, t.name, t.slug, tt.parent FROM wp_term_relationships tr
+        JOIN wp_term_taxonomy tt ON tt.term_taxonomy_id=tr.term_taxonomy_id AND tt.taxonomy='product_cat'
+        JOIN wp_terms t ON t.term_id=tt.term_id WHERE tr.object_id={rid}""")
+    boom = {}
+    for tid, naam, tslug, parent in rq("""SELECT t.term_id, t.name, t.slug, tt.parent
+        FROM wp_term_taxonomy tt JOIN wp_terms t ON t.term_id=tt.term_id WHERE tt.taxonomy='product_cat'"""):
+        boom[tid] = (naam, tslug, parent)
+    def pad(tid):
+        keten = []
+        while tid in boom and tid != "0":
+            naam, tslug, parent = boom[tid]
+            keten.insert(0, {"naam": naam, "slug": tslug})
+            tid = parent
+        return keten
+    cat_paden = [pad(c[0]) for c in cats]
+    tags = [r[0] for r in rq(f"""SELECT t.name FROM wp_term_relationships tr
+        JOIN wp_term_taxonomy tt ON tt.term_taxonomy_id=tr.term_taxonomy_id AND tt.taxonomy='product_tag'
+        JOIN wp_terms t ON t.term_id=tt.term_id WHERE tr.object_id={rid}""")]
+
+    # afbeeldingen: thumbnail + galerij, met bestandslocatie en alt-tekst
+    def attachment(aid):
+        r = rq(f"""SELECT pm.meta_value,
+                HEX(COALESCE((SELECT meta_value FROM wp_postmeta WHERE post_id={aid}
+                          AND meta_key='_wp_attachment_image_alt'), ''))
+            FROM wp_postmeta pm WHERE pm.post_id={aid} AND pm.meta_key='_wp_attached_file'""")
+        if not r or not r[0][0]:
+            return (None, "")
+        alt = bytes.fromhex(r[0][1]).decode("utf-8", "replace") if len(r[0]) > 1 and r[0][1] not in ("", "NULL") else ""
+        return (r[0][0], alt)
+    afb = []
+    thumb = rq(f"SELECT meta_value FROM wp_postmeta WHERE post_id={rid} AND meta_key='_thumbnail_id'")
+    galerij = rq(f"SELECT meta_value FROM wp_postmeta WHERE post_id={rid} AND meta_key='_product_image_gallery'")
+    ids = ([thumb[0][0]] if thumb and thumb[0][0] else []) + \
+          ([x for x in galerij[0][0].split(',') if x.strip()] if galerij and galerij[0][0] else [])
+    for i, aid in enumerate(ids):
+        pad_rel, alt = attachment(aid)
+        if not pad_rel: continue
+        bron = os.path.join(content, "uploads", pad_rel)
+        if not os.path.isfile(bron): continue
+        naam = f"{doel['wc_id']}-{i}-{os.path.basename(pad_rel)}"
+        shutil.copy2(bron, os.path.join(staging, "afbeeldingen", naam))
+        afb.append({"bestand": naam, "alt": alt, "hoofd": i == 0})
+
+    plan.append({**doel, "status": "ok", "titel": titel, "slug": slug,
+                 "inhoud": inhoud, "excerpt": excerpt, "categorien": cat_paden,
+                 "tags": tags, "afbeeldingen": afb})
+
+json.dump(plan, open(f"{staging}/plan.json", "w"), ensure_ascii=False)
+for p in plan:
+    if p["status"] != "ok":
+        print(f"SKIP  #{p['wc_id']} [{p['art']}] — {p['status']}")
+    else:
+        print(f"PLAN  #{p['wc_id']} [{p['art']}] '{p['titel_nu'][:38]}'")
+        print(f"      titel -> '{p['titel'][:55]}'  slug -> {p['slug']}")
+        print(f"      tekst {len(p['inhoud'])} tekens, excerpt {len(p['excerpt'])}, "
+              f"categorieen {len(p['categorien'])}, tags {len(p['tags'])}, afbeeldingen {len(p['afbeeldingen'])}")
+PY
+
+    if [[ "$apply" != "apply" ]]; then
+        echo "Dry-run — niets gewijzigd. Draai '$0 stap13 apply' om over te nemen."
+        return
+    fi
+    [[ -s "$staging/plan.json" ]] || { echo "geen plan"; return; }
+
+    # 3. tekst/slug/titel/categorieën/tags schrijven via één PHP-payload
+    python3 - "$staging" <<'PY' > /tmp/afas-opmaak-payload.php
+import json, sys
+plan = [p for p in json.load(open(f"{sys.argv[1]}/plan.json")) if p.get("status") == "ok"]
+veilig = json.dumps(plan, ensure_ascii=False).replace("\\", "\\\\").replace("'", "\\'")
+print("<?php")
+print(f"$plan = json_decode('{veilig}', true);")
+print(r"""
+foreach ($plan as $p) {
+    $id = (int) $p['wc_id'];
+    wp_update_post(['ID' => $id, 'post_title' => $p['titel'], 'post_name' => $p['slug'],
+        'post_content' => $p['inhoud'], 'post_excerpt' => $p['excerpt']]);
+    // categorie-paden: per niveau opzoeken (slug, dan naam) of aanmaken
+    $catIds = [];
+    foreach ($p['categorien'] as $keten) {
+        $parent = 0;
+        foreach ($keten as $niveau) {
+            $term = get_term_by('slug', $niveau['slug'], 'product_cat')
+                 ?: get_term_by('name', $niveau['naam'], 'product_cat');
+            if (!$term) {
+                $res = wp_insert_term($niveau['naam'], 'product_cat',
+                    ['slug' => $niveau['slug'], 'parent' => $parent]);
+                if (is_wp_error($res)) { break; }
+                $term = get_term($res['term_id'], 'product_cat');
+            }
+            $parent = (int) $term->term_id;
+        }
+        if ($parent) { $catIds[] = $parent; }
+    }
+    if ($catIds) { wp_set_object_terms($id, array_unique($catIds), 'product_cat'); }
+    if (!empty($p['tags'])) { wp_set_object_terms($id, $p['tags'], 'product_tag'); }
+    printf("OPGEMAAKT #%d [%s] -> '%s' (%d cats, %d tags)\n",
+        $id, $p['art'], $p['titel'], count($catIds), count($p['tags']));
+}
+""")
+PY
+    wpr_stdin eval-file - < /tmp/afas-opmaak-payload.php
+
+    # 4. afbeeldingen: wp media import per bestand (maakt attachment + metadata),
+    #    eerste = hoofdafbeelding, rest = galerij; alt-tekst erna.
+    python3 - "$staging" <<'PY' > "$staging/afbeeldingen.tsv"
+import json, sys
+for p in json.load(open(f"{sys.argv[1]}/plan.json")):
+    if p.get("status") != "ok": continue
+    for a in p["afbeeldingen"]:
+        print(f"{p['wc_id']}\t{a['bestand']}\t{1 if a['hoofd'] else 0}\t{a['alt']}")
+PY
+    if [[ "$TARGET" == "lokaal" ]]; then
+        local mnt=(-v "$staging/afbeeldingen:/defibs-opmaak:ro")
+        local pfx=/defibs-opmaak
+        # uploads-jaarmap is na een verse pull host-eigendom; uid 33 (php-fpm)
+        # moet er attachments in kunnen schrijven (zelfde klasse als _lokaal_prep)
+        _lokaal_compose run --rm -T --user 0 wpcli sh -c             "cd /var/www/html/wp-content/uploads && mkdir -p $(date +%Y) && chown -R 33:33 $(date +%Y)"             >/dev/null 2>&1 || true
+    else
+        ssh "$SERVER" "mkdir -p /tmp/defibs-opmaak"
+        scp -q "$staging/afbeeldingen/"* "$SERVER:/tmp/defibs-opmaak/" 2>/dev/null || true
+        local mnt=() pfx=/tmp/defibs-opmaak
+    fi
+    local vorige="" galerij_ids=""
+    while IFS=$'\t' read -r wc_id bestand hoofd alt; do
+        [[ -n "$wc_id" ]] || continue
+        if [[ "$wc_id" != "$vorige" && -n "$vorige" && -n "$galerij_ids" ]]; then
+            wpr post meta update "$vorige" _product_image_gallery "${galerij_ids#,}" >/dev/null
+            galerij_ids=""
+        fi
+        vorige="$wc_id"
+        local uit aid
+        if [[ "$TARGET" == "lokaal" ]]; then
+            uit=$(_lokaal_compose run "${_LOKAAL_RUN_OPTS[@]}" "${mnt[@]}" wpcli sh -c \
+                "php -d memory_limit=1024M /usr/local/bin/wp media import '$pfx/$bestand' --post_id=$wc_id $( [[ $hoofd == 1 ]] && echo --featured_image || true ) --porcelain" </dev/null 2>/dev/null | tail -1 || true)
+        else
+            uit=$(ssh "$SERVER" "cd '$WP_ROOT' && wp media import '$pfx/$bestand' --post_id=$wc_id $( [[ $hoofd == 1 ]] && echo --featured_image || true ) --porcelain" </dev/null 2>/dev/null | tail -1 || true)
+        fi
+        aid=$(echo "$uit" | grep -oE '[0-9]+$' || true)
+        if [[ -n "$aid" ]]; then
+            [[ -n "$alt" ]] && wpr post meta update "$aid" _wp_attachment_image_alt "\"$alt\"" >/dev/null
+            [[ "$hoofd" != 1 ]] && galerij_ids="$galerij_ids,$aid"
+            echo "AFBEELDING #$wc_id <- $bestand (attachment $aid$( [[ $hoofd == 1 ]] && echo ', hoofdafbeelding' ))"
+        else
+            echo "FOUT afbeelding $bestand voor #$wc_id"
+        fi
+    done < "$staging/afbeeldingen.tsv"
+    if [[ -n "$vorige" && -n "$galerij_ids" ]]; then
+        wpr post meta update "$vorige" _product_image_gallery "${galerij_ids#,}" >/dev/null
+    fi
+    echo "OK — opmaak overgenomen op $(doel_naam)"
+}
+
+# ---------------------------------------------------------------------------
 usage() {
     echo "gebruik: [DEFIBS_TARGET=lokaal|cp01] $0 <stap>   (default: lokaal)"
     echo "stappen:"
@@ -1069,6 +1306,7 @@ usage() {
     echo "  stap9   Swatches-instelling conform reseller (custom attributen als dropdown)"
     echo "  stap10  Assortiment-schrappingen uit work/schraplijst-defibsolutions.csv (dry-run; 'stap10 apply')"
     echo "  stap12  Variatie-assen (pa_taal/pa_connectiviteit/pa_opties) op AED-containers, Naam eruit (dry-run; 'stap12 apply')"
+    echo "  stap13  Opmaak-overname van reseller voor kale producten (dry-run; apply)"
     echo "  stap11  Syncs (opties: 'zonder-prijzen', 'delta' = alleen gewijzigde artikelen, seconden i.p.v. minuten)"
     echo ""
     echo "volledige herbouw (na verse pull), in deze volgorde:"
@@ -1092,5 +1330,6 @@ case "${1:-}" in
     stap10) stap10 "${2:-}" ;;
     stap11) stap11 "${2:-}" ;;
     stap12) stap12 "${2:-}" ;;
+    stap13) stap13 "${2:-}" ;;
     *) usage ;;
 esac
