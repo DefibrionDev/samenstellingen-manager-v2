@@ -258,6 +258,15 @@ PY
     # zet Cas hem bewust handmatig aan, samen met de order-vrije-velden).
     wpr option update afas_sync_orders_enabled 0 >/dev/null
     echo "(afas_sync_orders_enabled geforceerd op 0 — bij livegang handmatig aan)"
+    # Plugin-cron temmen: de sync-jobs draaien elk uur en raceten op cp-01
+    # dwars door het migratievenster heen (bewezen 27 aug: cron-delta maakte
+    # een geschrapt artikel opnieuw aan). Intervallen op een week; bij de
+    # livegang zet Cas ze handmatig terug (zelfde slotlijstje als orders aan).
+    local i
+    for i in artikelen prijslijsten verkooprelaties kortingen prijzen woocommerce addresses; do
+        wpr option update "afas_sync_${i}_interval" 604800 >/dev/null
+    done
+    echo "(sync-cron-intervallen op 1 week — bij livegang handmatig terugzetten)"
     if [[ "$TARGET" == "lokaal" ]]; then
         # Testklant voor checkout-tests: user 187 (AEDcompany, relatie 31148).
         # Het wachtwoord komt niet mee uit de live-dump, dus na elke verse
@@ -641,6 +650,26 @@ print("""
 $weg = $al = 0;
 foreach ($lijst as [$pid, $code, $titel]) {
     $post = get_post((int) $pid);
+    // wc_id's van sync-aangemaakte posts verschillen per omgeving (lokaal vs
+    // cp-01 vs live): zoek als vangnet ook op artikelcode, zodat dezelfde
+    // CSV overal werkt en een cron-race-artefact (bv. 30140 op cp-01) ook
+    // zonder het juiste id wordt opgeruimd.
+    if ((!$post || $post->post_status === 'trash') && $code !== '') {
+        global $wpdb;
+        // Nooit via het vangnet schrappen wat nog in AFAS-beheer is: een
+        // artikel in wp_lef_afas_artikelen is (weer) legitiem — een oude
+        // schraplijst-rij mag dat niet alsnog omleggen (les: 70202/602505
+        // sneuvelden op cp-01 door achterhaalde rijen).
+        $inBeheer = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}lef_afas_artikelen WHERE artikelnummer = %s", $code));
+        if ($inBeheer === 0) {
+            $anders = $wpdb->get_col($wpdb->prepare(
+                "SELECT pm.post_id FROM {$wpdb->postmeta} pm JOIN {$wpdb->posts} p ON p.ID = pm.post_id
+                 WHERE pm.meta_key = '_afas_artikelnummer' AND pm.meta_value = %s
+                   AND p.post_type IN ('product','product_variation') AND p.post_status <> 'trash'", $code));
+            if ($anders) { $post = get_post((int) $anders[0]); $pid = (int) $anders[0]; }
+        }
+    }
     if (!$post || $post->post_status === 'trash') { $al++; continue; }
     printf("%s  #%d [%s] %s\\n", $apply ? 'PRULLENBAK' : 'ZOU TRASHEN', (int) $pid, $code, $titel);
     if ($apply) {
