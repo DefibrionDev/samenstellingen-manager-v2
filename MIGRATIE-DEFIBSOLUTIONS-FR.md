@@ -89,12 +89,22 @@ Stap5-`apply` weigert bewust tot het Shopctrl-beslispunt beslist is.
 
 ### Stap 1.3 — [ ] Basisstappen 1–5 porten en lokaal draaien (~half dagdeel)
 
-Mail uit · overbodige plugins uit (woocommerce-b2b i.p.v. B2BKing; lot van
-points/rewards volgt uit het beslispunt; wp-staging altijd uit) · klant-
-koppeling (dry-run → apply; bron per beslispunt) · plugin + FR-settings-set
-(`work/afas-settings-fr.json` — nog te maken: NL-dump als basis, shop-
-specifieke opties nalopen) · API-keys inventariseren (intrekken pas ná het
-Shopctrl-besluit).
+Stand 27 aug: **stap 1, 2, 4 groen; 3 en 5 geblokkeerd op beslispunten.**
+
+- [x] Stap 1 — mail uit (disable-emails actief)
+- [x] Stap 2 — plugins uit: woocommerce-b2b, wp-staging(-pro), mainwp-child
+      (remote-beheerkanaal, extra t.o.v. NL); ruimt ook de achterblijvende
+      wp-staging-optimizer-mu-plugin op. Points/rewards-plugins bewust nog
+      actief (open beslispunt).
+- [ ] Stap 3 — klantkoppeling: geport, faalt netjes tot
+      `work/klant-relatie-mapping-fr.csv` bestaat (bron-beslispunt).
+- [x] Stap 4 — lefcreative-afas-b2b **2.0.4** (actuele zip van 24 aug; het
+      NL-runbook noemt nog 1.3.14) + `work/afas-settings-fr.json` (147
+      opties, FR-afleiding van de NL-dump: Sync_/Tonen_Defibsolutions_FR,
+      delta-cursors leeg, scheduling + orders geforceerd 0).
+      `afas_sku_source_field` staat nog op de NL-waarde — SKU-beslispunt.
+- [x] Stap 5 — inventaris draait (4 REST-keys, 2 app-passwords); `apply`
+      weigert bewust tot het Shopctrl-besluit.
 
 **Klaar als:** stappen 1–5 zonder fout doorlopen, plugin actief.
 

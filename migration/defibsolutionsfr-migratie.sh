@@ -116,6 +116,170 @@ controleer_config() {
 }
 
 # ---------------------------------------------------------------------------
+# Stap 1 — Mail UIT.
+# Voorkomt dat klanten welkomst-/account-/order-mails krijgen tijdens het
+# inrichten en syncen. Weer aanzetten is de allerlaatste stap van de migratie.
+# (De lokale kopie heeft ook al de mu-plugin zz-disable-emails-local; deze
+# stap is de gordel die óók op cp-01 werkt.)
+# ---------------------------------------------------------------------------
+stap1() {
+    controleer_config
+    wpr plugin install disable-emails --activate
+    echo "--- controle:"
+    wpr plugin list --status=active | grep disable-emails
+    echo "OK — mail staat uit op $(doel_naam)"
+}
+
+# ---------------------------------------------------------------------------
+# Stap 2 — Overbodige plugins UIT: woocommerce-b2b + wp-staging + mainwp-child.
+# woocommerce-b2b wordt vervangen door lefcreative-afas-b2b; de data blijft in
+# de database staan als inerte fallback (zelfde aanpak als B2BKing bij NL).
+# wp-staging(-pro): staging/backup-tool van de oude hosting; nutteloos op de
+# kopie en op cp-01, en zo'n geheugenvreter dat wp-cli zonder verhoogde
+# memory_limit al bij het booten OOM't (les van NL).
+# mainwp-child: remote-beheerkanaal (MainWP-dashboard kan plugins/updates
+# pushen) — uit op kopieën zodat niets van buitenaf de shop muteert; bij de
+# livegang bewust weer aanzetten als beheer hem nodig heeft.
+# jetpack/mailchimp staan in de lus voor sjabloon-pariteit met NL; op FR zijn
+# ze niet geïnstalleerd en meldt de stap dat netjes.
+# NIET in de lijst (open beslispunt): points-and-rewards-for-woocommerce en
+# ultimate-woocommerce-points-and-rewards — zie MIGRATIE-DEFIBSOLUTIONS-FR.md.
+# ---------------------------------------------------------------------------
+stap2() {
+    controleer_config
+    local p
+    for p in woocommerce-b2b wp-staging-pro wp-staging mainwp-child jetpack mailchimp-for-woocommerce; do
+        if wpr plugin is-installed "$p" >/dev/null 2>&1; then
+            wpr plugin deactivate "$p"
+        else
+            echo "$p is niet geïnstalleerd op $(doel_naam) — overslaan"
+        fi
+    done
+    # wp-staging probeert bij deactivatie zijn mu-plugin te unlinken maar mist
+    # daarvoor de rechten (mu-plugins/ is host-eigendom na een verse pull) —
+    # zonder opruiming blijft wp-staging-optimizer.php als must-use laden.
+    if [[ "$TARGET" == "lokaal" ]]; then
+        _lokaal_compose run --rm -T --user 0 wpcli sh -c \
+            'rm -f /var/www/html/wp-content/mu-plugins/wp-staging-optimizer.php' >/dev/null 2>&1 || true
+    else
+        ssh "$SERVER" "rm -f '$WP_ROOT/wp-content/mu-plugins/wp-staging-optimizer.php'"
+    fi
+    echo "--- controle:"
+    wpr plugin list | { grep -iE 'woocommerce-b2b|wp-staging|mainwp|jetpack|mailchimp' || echo "(niets gevonden)"; }
+    echo "OK — woocommerce-b2b + wp-staging + mainwp-child staan uit op $(doel_naam)"
+}
+
+# ---------------------------------------------------------------------------
+# Stap 3 — Klanten koppelen aan AFAS-verkooprelaties (usermeta afas_relatie_id,
+# het veld waar lefcreative-afas-b2b op draait).
+# Bron: work/klant-relatie-mapping-fr.csv (wc_user_id;afas_relatie_id) — nog
+# op te bouwen zodra het bron-beslispunt (orderhistorie vs handmatig, 88
+# klanten) beslist is. Users zonder mapping-rij blijven bewust ongekoppeld.
+# Default dry-run (toont ook het e-mailadres van de user ter verificatie);
+# `stap3 apply` schrijft echt.
+# ---------------------------------------------------------------------------
+stap3() {
+    controleer_config
+    local mapping="$REPO_ROOT/work/klant-relatie-mapping-fr.csv"
+    local apply="${1:-}"
+    [[ -f "$mapping" ]] || { echo "FOUT: $mapping ontbreekt (bron-beslispunt nog open, zie runbook)" >&2; exit 1; }
+
+    python3 - "$mapping" "$apply" <<'PY' > /tmp/afasfr-relatie-payload.php
+import csv, json, sys
+mapping, apply = sys.argv[1], sys.argv[2] == "apply"
+paren = {}
+with open(mapping, encoding="utf-8-sig") as f:
+    for r in csv.DictReader(f, delimiter=";"):
+        uid, rel = r["wc_user_id"].strip(), r["afas_relatie_id"].strip()
+        if uid.isdigit() and rel:
+            paren[uid] = rel
+print(f"// {len(paren)} koppelingen uit {mapping}", file=sys.stderr)
+print("<?php")
+print(f"$apply = {'true' if apply else 'false'};")
+print(f"$map = json_decode('{json.dumps(paren)}', true);")
+print("""
+$gezet = $al = $onbekend = 0;
+foreach ($map as $uid => $relatie) {
+    $user = get_user_by('id', (int) $uid);
+    if (!$user) { echo "ONBEKENDE USER  wc:$uid (relatie $relatie)\n"; $onbekend++; continue; }
+    $huidig = (string) get_user_meta($user->ID, 'afas_relatie_id', true);
+    if ($huidig === (string) $relatie) { $al++; continue; }
+    if ($apply) { update_user_meta($user->ID, 'afas_relatie_id', (string) $relatie); }
+    printf("%s  wc:%d %s: %s -> %s\n", $apply ? 'GEZET' : 'ZOU ZETTEN',
+        $user->ID, $user->user_email, $huidig !== '' ? $huidig : '-', $relatie);
+    $gezet++;
+}
+printf("--- %s: %d te zetten/gezet, %d stonden al goed, %d onbekende users\n",
+    $apply ? 'APPLY' : 'DRY-RUN', $gezet, $al, $onbekend);
+""")
+PY
+
+    wpr_stdin eval-file - < /tmp/afasfr-relatie-payload.php
+    if [[ "$apply" != "apply" ]]; then
+        echo "Dry-run — niets geschreven. Draai '$0 stap3 apply' om echt te schrijven."
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# Stap 4 — lefcreative-afas-b2b plugin installeren + activeren + AFAS-settings.
+# Bronnen (beide in work/, gitignored):
+#   - work/lefcreative-afas-b2b-<versie>.zip  (identieke 1.3.14 van NL/ARKY)
+#   - work/afas-settings-fr.json              (FR-afleiding van de NL-dump,
+#     27 aug 2026: Sync_/Tonen_Defibsolutions_FR als filtervelden, delta-
+#     cursors leeg, scheduling uit tot livegang; afas_sku_source_field staat
+#     nog op de NL-waarde — open SKU-beslispunt)
+# --force + update_option maken her-runnen idempotent: de stap zet de shop
+# altijd terug naar exact deze plugin-versie + settings-set.
+# ---------------------------------------------------------------------------
+stap4() {
+    controleer_config
+    local zip
+    zip=$(ls -1 "$REPO_ROOT"/work/lefcreative-afas-b2b-*.zip 2>/dev/null | sort | tail -1)
+    [[ -n "$zip" ]] || { echo "FOUT: geen work/lefcreative-afas-b2b-*.zip gevonden" >&2; exit 1; }
+    if [[ "$TARGET" == "lokaal" ]]; then
+        # geen scp nodig: work/ read-only in de container mounten
+        _lokaal_compose run "${_LOKAAL_RUN_OPTS[@]}" -v "$(dirname "$zip"):/defibs-work:ro" wpcli \
+            sh -c "php -d memory_limit=512M /usr/local/bin/wp plugin install '/defibs-work/$(basename "$zip")' --force --activate" 2>&1 | _filter_ruis
+    else
+        echo "upload $(basename "$zip") ..."
+        scp -q "$zip" "$SERVER:/tmp/lefcreative-afas-b2b.zip"
+        wpr plugin install /tmp/lefcreative-afas-b2b.zip --force --activate
+    fi
+
+    local settings="$REPO_ROOT/work/afas-settings-fr.json"
+    if [[ -f "$settings" ]]; then
+        python3 - "$settings" <<'PY' > /tmp/afasfr-settings-payload.php
+import json, sys
+d = json.load(open(sys.argv[1]))
+veilig = json.dumps(d).replace("\\", "\\\\").replace("'", "\\'")
+print("<?php")
+print(f"$settings = json_decode('{veilig}', true);")
+print("""
+$n = 0;
+foreach ($settings as $naam => $waarde) { update_option($naam, $waarde); $n++; }
+printf("%d afas_*-opties geimporteerd\n", $n);
+""")
+PY
+        wpr_stdin eval-file - < /tmp/afasfr-settings-payload.php
+    else
+        echo "LET OP: $settings ontbreekt — plugin actief maar zonder settings-import."
+    fi
+
+    # Veiligheidsgordels: order-push naar AFAS én de interne scheduler staan
+    # overal geforceerd uit — lokaal altijd, en op cp-01 zolang we niet live
+    # zijn (bij de livegang zet Cas ze bewust handmatig aan).
+    wpr option update afas_sync_orders_enabled 0 >/dev/null
+    wpr option update afas_scheduling_enabled 0 >/dev/null
+    echo "(afas_sync_orders_enabled + afas_scheduling_enabled geforceerd op 0 — bij livegang handmatig aan)"
+    # Testklant voor checkout-tests volgt in stap 1.6 (runbook) zodra een
+    # geschikte FR-klant gekozen is — nooit live-wachtwoorden muteren.
+    echo "--- controle:"
+    wpr plugin list | grep -i lefcreative
+    wpr option get afas_env_type
+    echo "OK — plugin actief + settings geimporteerd op $(doel_naam)"
+}
+
+# ---------------------------------------------------------------------------
 # Stap 5 — Alle API-keys van de shop inventariseren/intrekken.
 # defibsolutions.fr heeft vier read_write REST-keys: Shopctrl, 2× Improvit en
 # Dashboard. Na de migratie mag niets van buitenaf meer muteren — de nieuwe
@@ -156,6 +320,10 @@ hulp() {
     cat <<EOF
 Gebruik: $0 <stap> [apply|opties]   (DEFIBSFR_TARGET=lokaal|cp01, default lokaal)
 
+  stap1            Mail uit (disable-emails)
+  stap2            Overbodige plugins uit (woocommerce-b2b, wp-staging, mainwp-child)
+  stap3   [apply]  Klanten koppelen aan AFAS-relaties (mapping-CSV nog te maken)
+  stap4            lefcreative-afas-b2b installeren + FR-settings + gordels
   stap5   [apply]  API-keys inventariseren (apply geblokkeerd: Shopctrl-beslispunt)
 
 Zie MIGRATIE-DEFIBSOLUTIONS-FR.md voor het fase-overzicht.
@@ -163,6 +331,10 @@ EOF
 }
 
 case "${1:-}" in
+    stap1) stap1 ;;
+    stap2) stap2 ;;
+    stap3) stap3 "${2:-}" ;;
+    stap4) stap4 ;;
     stap5) stap5 "${2:-}" ;;
     *) hulp; [[ -n "${1:-}" ]] && exit 1 || exit 0 ;;
 esac
