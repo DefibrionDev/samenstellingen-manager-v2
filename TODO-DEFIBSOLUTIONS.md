@@ -15,9 +15,8 @@ draaien tegen de lokale kopie, niet PHPUnit.
       Af als `http://localhost:8897` de shop met verse data toont.
       ✓ 20 aug: pull ok, site up (login-redirect = B2BKing gasten-block),
       nieuwste order 20 aug 14:41.
-- [ ] Runbook + migratiescript in git: `MIGRATIE-DEFIBSOLUTIONS.md`,
-      `migration/defibsolutions-migratie.sh` en de `.gitignore`-wijziging
-      committen (eerste commit van deze cyclus).
+- [x] Runbook + migratiescript in git ✓ (staat allang op de remote; vinkje
+      was administratieve drift).
 
 ## Fase B — Target-laag in het script (stap 1.2)
 
@@ -62,9 +61,9 @@ draaien tegen de lokale kopie, niet PHPUnit.
       reseller/ARKY. Resultaat: 9 afwijkingen, allemaal Prestan → zelfde
       -VAR-herstructurering als ARKY nodig (WC-only parents, geen AFAS-flags);
       23 omzettingen zijn conform referentie en dus akkoord-per-definitie.
-- [ ] Rapport draaien en samen doorlopen: per probleemgeval een actie kiezen
-      (BHV-veld vullen / SKU corrigeren / omzetten / opruimen / negeren).
-      Af als geen rij meer zonder gekozen actie.
+- [x] Rapport draaien en samen doorlopen ✓ afgerond via de koppel-/schrap-
+      rondes van 25-27 aug: 28-lijst volledig besloten, restcheck 27 aug
+      vond geen rijen zonder actie meer.
       Stand 20 aug in `work/voorkoppel-actielijst.csv`: 10 akkoord (kale
       AED's → samenstellingen + parents → familie-heads), 24 voorstel
       (o.a. 14 uit aed-sku-actielijst, kastvarianten, Offer/Credit lokaal),
@@ -128,7 +127,9 @@ draaien tegen de lokale kopie, niet PHPUnit.
 - [x] flag-run 28 blijvers: 26 mét omzet + 10562 + 30211 →
       Sync/Tonen_Defibsolutions_NL aan via fix-defibsolutions-vinkjes
       (dry-run → apply, 28 ok / 0 fail, 25 aug).
-- [ ] GEPARKEERD (25 aug, voor later): 10148F + 10149F samenstellingen
+- [x] 10148F + 10149F samenstellingen ✓ 26-27 aug: slice G5F — pakketten
+      11148F/11149F + 14 varianten + prijzen in AFAS, CPR-feedback-as in
+      de shop; alleen de reseller-kant staat nog geparkeerd (TODO.md).
       aanmaken via de samenstellingen-manager, daarna flaggen — óók reseller
       NL. Tot die tijd blijven de twee kale G5's ongekoppeld in de shop staan.
 - [ ] Kevins einddoel (mail 25 aug): beide shops uiteindelijk exact hetzelfde
@@ -227,7 +228,7 @@ B2BKing opruimen).
       slapende 0-order-klanten bewust ongekoppeld, 6 admins legitiem.
       Restpunt: 3 klanten mét orders zonder koppeling (Boomgaard, VDP
       Medical, PSD Opleidingen) — koppel-voorstel volgt.
-- [ ] Kevins 87-lijst verwerkt (27 aug): 71 aan op DefibSolutions, 17 uit op
+- [x] Kevins 87-lijst verwerkt (27 aug): 71 aan op DefibSolutions, 17 uit op
       reseller (16 van Kevin + Zoll Trainer CZ, ook uit op DefibSolutions —
       product netjes private). 70 nieuwe producten via stap13 aangekleed
       vanaf reseller; alleen Rotaid Outdoor transformer (95.3010) zonder
