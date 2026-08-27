@@ -234,10 +234,14 @@ B2BKing opruimen).
       afbeelding want reseller heeft er ook geen. Restpunt hier: foto.
 - [ ] Nieuwe producten opmaken (via de sync binnengekomen producten missen
       Divi-opmaak/afbeeldingen/teksten)
-- [ ] Product-AED-layout frontend: attributen-picker mooier maken, zoals op
-      reseller
-- [ ] Checken welke producten nu nog niet met AFAS gekoppeld zijn (restcheck
-      na alle koppel-/schrap-rondes)
+- [x] Product-AED-layout frontend: attributen-picker zoals reseller
+      ✓ 27 aug: swatches-config exact reseller-conform in stap9 (knoppen,
+      squared), mu-plugin defibs-product-restyle; bijvangst: stap12
+      default-kiezer-fix (Mindray Frans-eerst) + 6 container-titels zonder
+      taal-/CPR-aanduiding via titel-map in stap12.
+- [x] Restcheck ongekoppelde producten ✓ 27 aug: alleen Offer/Credit (bewust
+      lokaal) + 3 dode pagina's geschrapt; stap10-lookup-bug gepatcht en
+      68 oude SKU-claims opgeruimd.
 
 ## Parallel (geen fase — lange doorlooptijd, kan nu al)
 
