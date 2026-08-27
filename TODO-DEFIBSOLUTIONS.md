@@ -208,10 +208,12 @@ container komen door het locked-mechanisme als *private* binnen):
       Eindmeting: 284 simple / 27 variable / 855 variaties · **0 warnings** ·
       1 container zonder default (Zoll Trainer, geen samenstelling) · site up.
       Script is hiermee vrijgegeven voor `DEFIBS_TARGET=cp01`.
-- [ ] (wacht op wordpress-migrater: de kale verhuizing van de site naar cp-01
-      doet dat project — besluit Cas 27 aug; site-user-SSH voor het script
-      regelen we op dat moment)
-- [ ] Allerlaatste: cp01-pad voor het eerst aanraken —
+- [x] Kale verhuizing naar cp-01 ✓ 27 aug via wordpress-migrater (staging-URL
+      defibsolutionsnl.defibrion.dev, achter Cloudflare Access); site-user-SSH
+      werkt (home-permissies 770→750 waren de blokkade).
+- [x] cp01-pad voor het eerst aangeraakt ✓ 27 aug: DEFIBS_TARGET=cp01 stap5
+      read-only dry-run foutloos (4 REST-keys + 3 app-passwords geïnventariseerd,
+      incl. de in te trekken Improvit read_write-key). Vervolg —
       `DEFIBS_TARGET=cp01 ./migration/defibsolutions-migratie.sh stap5`
       (read-only dry-run) en kijken wat er gebeurt. Pas daarna Fase H plannen.
 
