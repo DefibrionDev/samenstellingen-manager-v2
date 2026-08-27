@@ -1318,7 +1318,35 @@ stap14() {
     [[ "$doel_id" =~ ^[0-9]+$ ]] || { echo "FOUT: doelaccount $doel_email niet gevonden" >&2; exit 1; }
     echo "reassign-doel: $doel_email (user $doel_id)"
 
+    # Degraderen i.p.v. verwijderen: klant-accounts die onterecht (ook)
+    # administrator zijn — beheerrechten eraf, klant + AFAS-koppeling blijven.
+    # biuro@premiosafe.pl (user "martijn"): hergebruikt oud-medewerker-account,
+    # admin-rol bleef hangen (besluit Cas 27 aug).
+    local degradeer=(
+        "biuro@premiosafe.pl"
+    )
     local email uid login
+    for email in "${degradeer[@]}"; do
+        uid=$(wpr user get "$email" --field=ID 2>/dev/null | tr -d '[:space:]')
+        if [[ ! "$uid" =~ ^[0-9]+$ ]]; then
+            echo "SKIP   $email — bestaat niet"
+            continue
+        fi
+        local rollen
+        rollen=$(wpr user get "$uid" --field=roles 2>/dev/null | tr -d '[:space:]')
+        if [[ "$rollen" != *administrator* ]]; then
+            echo "OK     $email (user $uid) is al geen beheerder ($rollen)"
+            continue
+        fi
+        if [[ "$apply" != "apply" ]]; then
+            echo "ZOU DEGRADEREN   $email (user $uid, nu: $rollen) -> customer + afas_klant"
+        else
+            wpr user set-role "$uid" customer >/dev/null
+            wpr user add-role "$uid" afas_klant >/dev/null
+            echo "GEDEGRADEERD  $email (user $uid) -> customer + afas_klant"
+        fi
+    done
+
     for email in "${weg[@]}"; do
         uid=$(wpr user get "$email" --field=ID 2>/dev/null | tr -d '[:space:]')
         if [[ ! "$uid" =~ ^[0-9]+$ ]]; then
