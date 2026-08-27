@@ -253,11 +253,12 @@ PY
         echo "LET OP: $settings ontbreekt — plugin actief maar zonder settings-import."
     fi
 
+    # Veiligheidsgordel: order-push naar AFAS staat overal geforceerd uit —
+    # lokaal altijd, en op cp-01 zolang we niet live zijn (bij de livegang
+    # zet Cas hem bewust handmatig aan, samen met de order-vrije-velden).
+    wpr option update afas_sync_orders_enabled 0 >/dev/null
+    echo "(afas_sync_orders_enabled geforceerd op 0 — bij livegang handmatig aan)"
     if [[ "$TARGET" == "lokaal" ]]; then
-        # Veiligheidsgordel: op de lokale kopie mag order-push naar AFAS
-        # nooit aan staan, ook niet als de settings-bron hem (voor live) aanzet.
-        wpr option update afas_sync_orders_enabled 0 >/dev/null
-        echo "(lokaal: afas_sync_orders_enabled geforceerd op 0)"
         # Testklant voor checkout-tests: user 187 (AEDcompany, relatie 31148).
         # Het wachtwoord komt niet mee uit de live-dump, dus na elke verse
         # pull opnieuw zetten. Alleen lokaal — nooit live-wachtwoorden muteren.
