@@ -571,14 +571,20 @@ stap9() {
     controleer_config
     wpr_stdin eval-file - <<'PHP'
 <?php
-$opt = get_option('woo_variation_swatches', []);
-if (!is_array($opt)) { $opt = []; }
-$voor = json_encode(['button' => $opt['default_to_button'] ?? null, 'image' => $opt['default_to_image'] ?? null]);
-$opt['default_to_button'] = 'no';
-$opt['default_to_image']  = 'no';
-update_option('woo_variation_swatches', $opt);
+// Exact de reseller-configuratie (daar staan shape/default-keys niet gezet,
+// dus gelden de plugin-defaults: alle select-assen als vierkante knoppen).
+// Eerdere fix zette default_to_button=no ("rondjes weg") maar dat schakelde
+// de knop-weergave uit; de rondjes kwamen van shape_style=rounded.
+$reseller_conform = [
+    'clear_on_reselect' => 'no',
+    'hide_out_of_stock_variation' => 'yes',
+    'clickable_out_of_stock_variation' => 'no',
+    'attribute_behavior' => 'blur-no-cross',
+    'attribute_image_size' => 'variation_swatches_image_size',
+];
+update_option('woo_variation_swatches', $reseller_conform);
 delete_transient('woo_variation_swatches_cache');
-printf("woo_variation_swatches: default_to_button/image -> no (was %s)\n", $voor);
+echo "woo_variation_swatches: exact reseller-conform gezet (knoppen aan, squared)\n";
 PHP
     if [[ "$TARGET" == "lokaal" ]]; then
         # Divi's Dynamic/Critical CSS weigert lokaal te renderen: de resource-
@@ -639,7 +645,19 @@ foreach ($lijst as [$pid, $code, $titel]) {
     if ($apply) {
         delete_post_meta((int) $pid, '_afas_artikelnummer');
         update_post_meta((int) $pid, '_sku', '');
+        // ook de lookup-tabel: daar draait WC's unieke-SKU-check op; een kale
+        // meta-update ververst die niet en een achterblijvende rij blokkeert
+        // toekomstige syncs (les van de 11151-botsing)
+        global $wpdb;
+        $wpdb->update($wpdb->prefix . 'wc_product_meta_lookup', ['sku' => ''], ['product_id' => (int) $pid]);
         wp_trash_post((int) $pid);
+        // WC trasht variaties van een parent mee, maar dan zonder strip:
+        // kinderen expliciet ontdoen van sku + koppeling
+        foreach (get_children(['post_parent' => (int) $pid, 'post_type' => 'product_variation', 'fields' => 'ids']) as $kind) {
+            delete_post_meta((int) $kind, '_afas_artikelnummer');
+            update_post_meta((int) $kind, '_sku', '');
+            $wpdb->update($wpdb->prefix . 'wc_product_meta_lookup', ['sku' => ''], ['product_id' => (int) $kind]);
+        }
     }
     $weg++;
 }
@@ -892,6 +910,17 @@ $VOLGORDE = [
 // Default-keuze per as, conform reseller: het kale NL-toestel zonder opties.
 $DEFAULT_VOORKEUR = ['pa_taal' => 'Nederlands', 'pa_connectiviteit' => 'Geen',
     'pa_opties' => 'Defibrillator'];
+// Container-titels zonder taal-/CPR-aanduiding (akkoord Cas 27 aug): taal en
+// CPR-uitvoering zijn keuze-assen en horen niet in de titel. Map op de
+// artikelcode van de container; slugs blijven ongemoeid (geen kapotte links).
+$TITELS = [
+    '11043'    => 'Defibtech View AED',
+    '11149'    => 'Cardiac Science Powerheart G5 volautomaat',
+    '11148'    => 'Cardiac Science Powerheart G5 halfautomaat',
+    '21018-UK' => 'Mindray C1A V2 Semi Automaat',
+    '21019-UK' => 'Mindray Beneheart C1A V2 Volautomaat',
+    '11139'    => 'Defibtech Lifeline View AED Volautomaat',
+];
 
 foreach ($AS_TAX as $label => $tax) {
     if (taxonomy_exists($tax)) { continue; }
@@ -992,6 +1021,13 @@ foreach ($containers as $parId => $data) {
 
     if (!$apply) { continue; }
 
+    // titel-normalisatie (alleen containers uit de $TITELS-map)
+    $gewensteTitel = $TITELS[$data['code']] ?? null;
+    if ($gewensteTitel !== null && $parent->get_name() !== $gewensteTitel) {
+        wp_update_post(['ID' => (int) $parId, 'post_title' => $gewensteTitel]);
+        printf("         titel: '%s'\n", $gewensteTitel);
+    }
+
     $parent->set_attributes($attributes);   // "Naam" verdwijnt hiermee
 
     // Default-variatie kiezen (conform reseller: kaal NL-toestel). Per as de
@@ -1009,8 +1045,14 @@ foreach ($containers as $parId => $data) {
         sort($namen);
         $keuze = null;
         foreach ($namen as $n) { if ($n === $voorkeur) { $keuze = $n; break; } }
-        if ($keuze === null) {
-            foreach ($namen as $n) { if ($voorkeur !== '' && str_contains($n, $voorkeur)) { $keuze = $n; break; } }
+        if ($keuze === null && $voorkeur !== '') {
+            // eerst namen die met de voorkeur BEGINNEN ("Nederlands · Engels ·
+            // Frans"), pas daarna namen die hem alleen bevatten — anders wint
+            // alfabetisch bv. "Frans · Engels · Nederlands"
+            foreach ($namen as $n) { if (str_starts_with($n, $voorkeur)) { $keuze = $n; break; } }
+            if ($keuze === null) {
+                foreach ($namen as $n) { if (str_contains($n, $voorkeur)) { $keuze = $n; break; } }
+            }
         }
         if ($keuze === null) { $keuze = $namen[0] ?? null; }
         if ($keuze !== null) {
