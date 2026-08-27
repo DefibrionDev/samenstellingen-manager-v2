@@ -56,9 +56,13 @@ versturen + Shopctrl-beslispunt.**
 
 - [ ] **Shopctrl**: wat doet die koppeling voor FR (orders? voorraad?), en mag
       de key weg bij de keys-intrekstap of moet hij blijven/vervangen worden?
-- [ ] **SKU-strategie FR**: zijn de shop-SKU's AFAS-itemcodes, BHV-codes of
-      eigen codes? (NL had BHV-codes via `Artikelcode_BHV_Voordeelwinkel`.)
-      → uitzoeken in fase 1-audit; beslissing zoals NL-optie A/B.
+- [ ] **SKU-strategie FR** — data ligt er (scan 27 aug, AFAS-cache 09:18):
+      van de 403 producten matchen **289 uniek op BHV-code**, 30 zijn zelf
+      een actieve itemcode, **83 matchen nergens op**, 1 zonder SKU, 0
+      dubbelen. **Voorstel: zelfde als NL-optie B** — BHV-codes houden,
+      plugin matcht op `Artikelcode_BHV_Voordeelwinkel` (staat al zo in
+      `afas-settings-fr.json`); de 83+1 worden de FR-actielijst in stap 1.4.
+      → wacht op akkoord Cas.
 - [ ] **Klant↔relatie-mapping**: bron voor de 88 klanten — orderhistorie zoals
       NL, of handmatig (klein genoeg)?
 - [ ] **Points/rewards-plugins**: uit tijdens migratie (zoals B2BKing-aanpak)
