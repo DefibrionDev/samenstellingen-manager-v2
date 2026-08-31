@@ -476,6 +476,43 @@ stap7() {
     echo "OK — ${#_FR_MU_PLUGINS[@]} mu-plugins geplaatst op $(doel_naam)"
 }
 
+# ---------------------------------------------------------------------------
+# Stap 8 — Franse vertaling van de plugin plaatsen. De plugin is NL-talig;
+# fr_FR.po/.mo staan in migration/afas-translations/ (39 strings, machinaal
+# vertaald 31 aug — review door native welkom). Doel: wp-content/languages/
+# plugins/ (WP-conventie; overleeft plugin-updates, i.t.t. de plugin-map).
+# Idempotent: kopieert altijd de repo-versie eroverheen.
+# ---------------------------------------------------------------------------
+stap8() {
+    controleer_config
+    local mo="$REPO_ROOT/migration/afas-translations/lefcreative-afas-b2b-fr_FR.mo"
+    [[ -f "$mo" ]] || { echo "FOUT: $mo ontbreekt (msgfmt op de .po draaien)" >&2; exit 1; }
+
+    if [[ "$TARGET" == "lokaal" ]]; then
+        local content_dir
+        content_dir=$(grep '^CONTENT_DIR=' "$MIGRATER_DIR/.env-defibsolutionsfr" | cut -d= -f2)
+        local doel="$MIGRATER_DIR/${content_dir#./}/languages/plugins"
+        mkdir -p "$doel"
+        cp "$mo" "$doel/"
+    else
+        ssh "$SERVER" "mkdir -p '$WP_ROOT/wp-content/languages/plugins'"
+        scp -q "$mo" "$SERVER:$WP_ROOT/wp-content/languages/plugins/"
+    fi
+    echo "--- controle (vertaling geladen?):"
+    wpr_stdin eval-file - <<'PHP'
+<?php
+// forceer verse laad van het tekstdomein en toets twee strings
+unload_textdomain('lefcreative-afas-b2b');
+load_plugin_textdomain('lefcreative-afas-b2b', false, 'lefcreative-afas-b2b/languages');
+load_textdomain('lefcreative-afas-b2b', WP_CONTENT_DIR . '/languages/plugins/lefcreative-afas-b2b-' . get_locale() . '.mo');
+printf("locale=%s\n", get_locale());
+foreach (['Adresboek', 'Afleveradres', 'Opslaan'] as $s) {
+    printf("  %-14s -> %s\n", $s, __($s, 'lefcreative-afas-b2b'));
+}
+PHP
+    echo "OK — Franse vertaling geplaatst op $(doel_naam)"
+}
+
 hulp() {
     cat <<EOF
 Gebruik: $0 <stap> [apply|opties]   (DEFIBSFR_TARGET=lokaal|cp01, default lokaal)
@@ -487,6 +524,7 @@ Gebruik: $0 <stap> [apply|opties]   (DEFIBSFR_TARGET=lokaal|cp01, default lokaal
   stap5   [apply]  Alle API-keys intrekken (besluit 31 aug: incl. Shopctrl)
   stap6   [apply]  Voorkoppeling _afas_artikelnummer (incl. omzet-lijst)
   stap7            mu-plugins plaatsen
+  stap8            Franse plugin-vertaling plaatsen (fr_FR.mo)
 
 Zie MIGRATIE-DEFIBSOLUTIONS-FR.md voor het fase-overzicht.
 EOF
@@ -500,5 +538,6 @@ case "${1:-}" in
     stap5) stap5 "${2:-}" ;;
     stap6) stap6 "${2:-}" ;;
     stap7) stap7 ;;
+    stap8) stap8 ;;
     *) hulp; [[ -n "${1:-}" ]] && exit 1 || exit 0 ;;
 esac

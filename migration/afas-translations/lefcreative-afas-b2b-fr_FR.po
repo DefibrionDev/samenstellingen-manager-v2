@@ -1,0 +1,125 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: lefcreative-afas-b2b\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: fr_FR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+msgid "+ Nieuw adres"
+msgstr "+ Nouvelle adresse"
+
+msgid "- Selecteer een afleveradres -"
+msgstr "- Sélectionnez une adresse de livraison -"
+
+msgid "Adres"
+msgstr "Adresse"
+
+msgid "Adres aangemaakt."
+msgstr "Adresse créée."
+
+msgid "Adres bewerken"
+msgstr "Modifier l'adresse"
+
+msgid "Adres bijgewerkt."
+msgstr "Adresse mise à jour."
+
+msgid "Adres niet gevonden."
+msgstr "Adresse introuvable."
+
+msgid "Adresboek"
+msgstr "Carnet d'adresses"
+
+msgid "Adressen ophalen"
+msgstr "Récupérer les adresses"
+
+msgid "Afleveradres"
+msgstr "Adresse de livraison"
+
+msgid "Annuleren"
+msgstr "Annuler"
+
+msgid "Automatisch op voltooid gezet na succesvolle AFAS push."
+msgstr "Automatiquement marqué comme terminé après un envoi AFAS réussi."
+
+msgid "Bewerken"
+msgstr "Modifier"
+
+msgid "Bezig..."
+msgstr "En cours..."
+
+msgid "Er ging iets mis."
+msgstr "Une erreur s'est produite."
+
+msgid "Het veld %s is verplicht."
+msgstr "Le champ %s est obligatoire."
+
+msgid "Huidige mapping vervangen door de standaard AFAS-enum? Niet-opgeslagen wijzigingen gaan verloren."
+msgstr "Remplacer le mapping actuel par l'énumération AFAS par défaut ? Les modifications non enregistrées seront perdues."
+
+msgid "Huisnummer"
+msgstr "Numéro"
+
+msgid "Klaar."
+msgstr "Terminé."
+
+msgid "Laad standaard waardes"
+msgstr "Charger les valeurs par défaut"
+
+msgid "Land"
+msgstr "Pays"
+
+msgid "Mislukt."
+msgstr "Échec."
+
+msgid "Nieuw adres"
+msgstr "Nouvelle adresse"
+
+msgid "Omschrijving"
+msgstr "Description"
+
+msgid "Opslaan"
+msgstr "Enregistrer"
+
+msgid "Plaats"
+msgstr "Ville"
+
+msgid "Postbusadres"
+msgstr "Boîte postale"
+
+msgid "Postcode"
+msgstr "Code postal"
+
+msgid "Straat"
+msgstr "Rue"
+
+msgid "Toevoegen"
+msgstr "Ajouter"
+
+msgid "Toevoeging"
+msgstr "Complément"
+
+msgid "U heeft geen gekoppeld AFAS account."
+msgstr "Vous n'avez pas de compte AFAS associé."
+
+msgid "U heeft nog geen adressen."
+msgstr "Vous n'avez pas encore d'adresses."
+
+msgid "Verbindingsfout."
+msgstr "Erreur de connexion."
+
+msgid "Verbindingsfout. Probeer het opnieuw."
+msgstr "Erreur de connexion. Veuillez réessayer."
+
+msgid "Wij konden het adres niet opslaan. Probeer het later opnieuw."
+msgstr "Nous n'avons pas pu enregistrer l'adresse. Veuillez réessayer plus tard."
+
+msgid "Wij konden het adres niet opslaan: %s"
+msgstr "Nous n'avons pas pu enregistrer l'adresse : %s"
+
+msgid "bijv. Magazijn, Filiaal Rotterdam"
+msgstr "p. ex. Entrepôt, Agence de Lyon"
+
+msgid "verplicht"
+msgstr "obligatoire"

@@ -71,8 +71,8 @@ eigen scriptkopie `migration/defibsolutionsfr-migratie.sh` (besluit 27 aug).
 - [ ] **Prijzen FR**: welke AFAS-prijslijst(en) bedienen Franse klanten;
       apart prijsvergelijkingsrapport (zoals `audit-prijzen-defibsolutions.py`
       voor NL) nodig?
-- [ ] **Franse vertaling plugin**: .po/.mo maken (Loco Translate draait al op
-      de shop) — wie levert de vertaalstrings, of machinaal + review?
+- [x] **Franse vertaling plugin**: machinaal vertaald + geplaatst (stap 8,
+      31 aug); native review vóór livegang is de enige restactie.
 
 ---
 
@@ -166,7 +166,10 @@ Stand 31 aug:
 - [ ] AFAS-vlaggen `Sync/Tonen_Defibsolutions_FR` zetten: bases via
       `base:publish` (website 6) + `publications:sync`; kale artikelen via
       het fix-vinkjes-patroon (connector-tools). Dry-run eerst, akkoord Cas.
-- [ ] Franse plugin-vertaling (.po/.mo, ARKY-patroon).
+- [x] Stap 8 — Franse plugin-vertaling: 39 strings machinaal vertaald
+      (`migration/afas-translations/lefcreative-afas-b2b-fr_FR.po/.mo`),
+      geplaatst in `wp-content/languages/plugins/`, laadt geverifieerd.
+      Review door native speaker welkom vóór livegang.
 - [ ] Structuur-opruiming + schrappingen (wacht op Randy/actielijst) ·
       syncs (stap11-equivalent) · variatie-assen · checkout-pagina ·
       weergave-instellingen (Woodmart i.p.v. Divi-stap).
