@@ -572,6 +572,42 @@ PHP
     echo "OK — syncs gedraaid op $(doel_naam)"
 }
 
+# ---------------------------------------------------------------------------
+# Stap 10 — Afgekeurde klant-accounts verwijderen (besluit Cas 31 aug 2026):
+#   wc:18  edwin@roelse.net    (Edwin Roelse — stond ambigu in de mapping)
+#   wc:197 saliha@defibrion.nl (intern account)
+# Beide geverifieerd: 0 orders, geen rol. Verwijderen wist ook hun usermeta
+# (incl. evt. afas_relatie_id). Idempotent: al-verwijderde users worden
+# overgeslagen. Default dry-run; `stap10 apply` verwijdert echt.
+# ---------------------------------------------------------------------------
+stap10() {
+    controleer_config
+    local apply="${1:-}"
+    local uid
+    for uid in 18 197; do
+        if ! wpr user get "$uid" --field=user_email 2>/dev/null | grep -q '@'; then
+            echo "wc:$uid bestaat niet (meer) op $(doel_naam) — overslaan"
+            continue
+        fi
+        local email orders
+        email=$(wpr user get "$uid" --field=user_email | tr -d '[:space:]')
+        orders=$(wpr eval "\"echo count(wc_get_orders(['customer_id' => $uid, 'limit' => -1, 'return' => 'ids']));\"" | tr -d '[:space:]')
+        if [[ "$orders" != "0" ]]; then
+            echo "LET OP: wc:$uid ($email) heeft $orders orders — NIET verwijderd; eerst besluiten wat daarmee moet." >&2
+            continue
+        fi
+        if [[ "$apply" == "apply" ]]; then
+            wpr user delete "$uid" --yes
+            echo "VERWIJDERD  wc:$uid $email (0 orders)"
+        else
+            echo "ZOU VERWIJDEREN  wc:$uid $email (0 orders)"
+        fi
+    done
+    if [[ "$apply" != "apply" ]]; then
+        echo "Dry-run — niets verwijderd. Draai '$0 stap10 apply' om echt te verwijderen."
+    fi
+}
+
 usage() {
     cat <<EOF
 Gebruik: $0 <stap> [apply|opties]
@@ -591,15 +627,16 @@ Stappen:
   stap9 [zonder-prijzen] [delta]
                 Syncs draaien (vereist Sync_Revendeurs_FR-vlaggen in AFAS;
                 vlaggen zetten: afas-connector-tools/bin/apply-revendeurs-vlaggen.php)
+  stap10 [apply] Afgekeurde klant-accounts (wc:18, wc:197) verwijderen
 
 Volgende stappen (nog te bouwen, zie MIGRATIE-REVENDEURS.md):
-  parent-containers opruimen (stap10) · variatie-assen · checkout-test
+  parent-containers opruimen (stap11) · variatie-assen · checkout-test
 EOF
     exit 1
 }
 
 [[ $# -ge 1 ]] || usage
 case "$1" in
-    stap1|stap2|stap3|stap4|stap5|stap6|stap7|stap8|stap9) "$@" ;;
+    stap1|stap2|stap3|stap4|stap5|stap6|stap7|stap8|stap9|stap10) "$@" ;;
     *) usage ;;
 esac

@@ -14,7 +14,9 @@ Checkout bleek al shortcode-conform. Audits + curatie-lijst gegenereerd.
 
 **Wachtend op Randy (via Cas, uitgezet 27 aug):**
 - [ ] Curatie-CSV invullen (`work/randy-curatie-revendeurs-fr.csv`, 195 bases)
-- [ ] 17 klantmapping-reviewgevallen (`work/revendeurs-klantmapping-review.csv`)
+- [ ] 15 klantmapping-reviewgevallen (`work/revendeurs-klantmapping-review.csv`)
+      — wc:18 (Edwin Roelse) en wc:197 (intern) mogen weg, besluit Cas 31 aug:
+      stap10 verwijdert ze (lokaal gedaan; op cp-01 in de livegang-reeks)
 - [ ] 20 GEBLOKKEERD + 8 GEEN-MATCH uit de audit (verwachting: rolt
       grotendeels vanzelf uit de curatie-lijst)
 
