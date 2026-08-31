@@ -1148,7 +1148,10 @@ PY
 <?php
 $apply = ('apply' === ($args[0] ?? ''));
 $LOSSE_TAAL = [
-    '10698' => ['titel' => 'Zoll AED Plus Trainer', 'varianten' => [
+    // opmaak_van: het oude eigen (door stap8 getrashte) product — live-ID,
+    // stabiel over pulls. Content/afbeelding/slug worden daarvan overgenomen
+    // zolang de nieuwe container nog geen hoofdafbeelding heeft.
+    '10698' => ['titel' => 'Zoll AED Plus Trainer', 'opmaak_van' => 99946, 'varianten' => [
         '10691' => 'Nederlands', '10698' => 'Engels',
     ]],
 ];
@@ -1194,6 +1197,31 @@ foreach ($LOSSE_TAAL as $headCode => $cfg) {
         wp_update_post(['ID' => $vid, 'post_title' => $cfg['titel'] . ' - ' . $taalNaam]);
     }
     echo "  gezet: pa_taal-as, titel '{$cfg['titel']}', default Nederlands, Naam-as weg\n";
+    // Opmaak van de oude eigen tegenhanger (staat in de prullenbak, media
+    // hangt daar nog aan als losse attachments — hergebruik per ID).
+    if (!empty($cfg['opmaak_van']) && !get_post_meta($parId, '_thumbnail_id', true)) {
+        $bron = get_post((int) $cfg['opmaak_van']);
+        if (!$bron || $bron->post_type !== 'product') {
+            echo "  opmaak-bron #{$cfg['opmaak_van']} niet bruikbaar (weg of omgebouwd) - overgeslagen\n";
+        } else {
+            wp_update_post(['ID' => $parId,
+                'post_content' => $bron->post_content,
+                'post_excerpt' => $bron->post_excerpt,
+            ]);
+            foreach (['_thumbnail_id', '_product_image_gallery'] as $mk) {
+                $mv = get_post_meta($bron->ID, $mk, true);
+                if ($mv !== '') { update_post_meta($parId, $mk, $mv); }
+            }
+            $slug = preg_replace('/__trashed(-\d+)?$/', '', $bron->post_name);
+            if ($slug !== '' && get_post_field('post_name', $parId) !== $slug) {
+                wp_update_post(['ID' => $parId, 'post_name' => $slug]);
+            }
+            printf("  opmaak overgenomen van #%d (tekst %d tekens, thumb %s, slug '%s')\n",
+                $bron->ID, strlen($bron->post_content),
+                get_post_meta($bron->ID, '_thumbnail_id', true) ?: '-',
+                get_post_field('post_name', $parId));
+        }
+    }
 }
 PHP
     if [[ "$apply" != "apply" ]]; then
