@@ -326,15 +326,167 @@ stap5() {
     echo "OK — alle API-keys ingetrokken op $(doel_naam)"
 }
 
+# ---------------------------------------------------------------------------
+# Stap 6 — Voorkoppeling: per WC-product (publish/private, incl. variaties) de
+# AFAS-itemcode in postmeta _afas_artikelnummer zetten. Zonder deze stap kan de
+# artikelen-sync bestaande producten niet vinden (hij matcht op deze meta, met
+# alleen SKU==itemcode als fallback) en maakt hij duplicaten aan. De plugin
+# self-healt bovendien de SKU naar deze meta bij de eerste frontend-lees —
+# deze stap moet dus vóór frontend-verkeer draaien.
+#
+# Doel-itemcode per product, in volgorde:
+#   1. OMZETTEN-rij in work/defibsolutionsfr-omzet-aed.csv (besluit Cas 31 aug:
+#      kale AED's worden samenstellingen; doel_base = samenstellings-itemcode);
+#   2. SKU matcht precies één actief AFAS-artikel op Artikelcode_BHV_Voordeelwinkel;
+#   3. SKU is zelf een actieve AFAS-itemcode.
+# Geblokkeerde artikelen (soft-delete, B-prefix) doen nooit mee. De 10
+# Randy-twijfelgevallen hebben geen OMZETTEN-status en blijven onaangeroerd.
+# Bron-artikelen: work/cache/afas-artikelen-defibsolutionsfr.json (--vers via
+# de koppelbaarheids-audit). Default dry-run; `stap6 apply` schrijft echt.
+# ---------------------------------------------------------------------------
+stap6() {
+    controleer_config
+    local apply="${1:-}"
+    local cache="$REPO_ROOT/work/cache/afas-artikelen-defibsolutionsfr.json"
+    local omzet="$REPO_ROOT/work/defibsolutionsfr-omzet-aed.csv"
+    [[ -f "$cache" ]] || { echo "FOUT: $cache ontbreekt (draai de koppelbaarheids-audit met --vers)" >&2; exit 1; }
+    [[ -f "$omzet" ]] || { echo "FOUT: $omzet ontbreekt" >&2; exit 1; }
+
+    mkdir -p "$REPO_ROOT/tmp"
+    local shopdump="$REPO_ROOT/tmp/defibsfr-shop-skus.tsv"
+    wpr db query "\"SELECT p.ID, p.post_type, COALESCE(sku.meta_value,''), COALESCE(an.meta_value,'') FROM wp_posts p LEFT JOIN wp_postmeta sku ON sku.post_id=p.ID AND sku.meta_key='_sku' LEFT JOIN wp_postmeta an ON an.post_id=p.ID AND an.meta_key='_afas_artikelnummer' WHERE p.post_type IN ('product','product_variation') AND p.post_status IN ('publish','private')\"" --skip-column-names > "$shopdump"
+
+    python3 - "$cache" "$omzet" "$shopdump" "$apply" <<'PY' > /tmp/afasfr-voorkoppel-payload.php
+import csv, json, sys
+from collections import defaultdict
+
+cache, omzet, shopdump, apply = sys.argv[1:5]
+d = json.load(open(cache))
+
+per_itemcode, per_bhv = {}, defaultdict(list)
+for r in d:
+    c = (r.get("Itemcode") or "").strip()
+    if not c or c in per_itemcode:
+        continue
+    per_itemcode[c] = r
+    if r.get("Geblokkeerd") is True:
+        continue
+    b = (r.get("Artikelcode_BHV_Voordeelwinkel") or "").strip()
+    if b:
+        per_bhv[b].append(c)
+
+def actief(c):
+    r = per_itemcode.get(c)
+    return r is not None and r.get("Geblokkeerd") is not True
+
+akkoord = {}
+for r in csv.DictReader(open(omzet, encoding="utf-8-sig"), delimiter=";"):
+    if r["status"].strip() == "OMZETTEN" and r["doel_base"].strip():
+        doel = r["doel_base"].strip()
+        if not actief(doel):
+            print(f"// LET OP: doel_base {doel} (wc:{r['wc_id']}) niet actief in AFAS — overgeslagen", file=sys.stderr)
+            continue
+        akkoord[r["wc_id"].strip()] = doel
+
+paren = {}
+for line in open(shopdump, encoding="utf-8"):
+    delen = line.rstrip("\n").split("\t")
+    if len(delen) < 4 or not delen[0].isdigit():
+        continue
+    wc_id, _ptype, sku, huidig = delen[0], delen[1], delen[2].strip(), delen[3].strip()
+    doel = None
+    if wc_id in akkoord:
+        doel = akkoord[wc_id]
+    elif sku and len(per_bhv.get(sku, [])) == 1:
+        doel = per_bhv[sku][0]
+    elif sku and actief(sku):
+        doel = sku
+    if doel:
+        paren[wc_id] = doel
+
+print(f"// {len(paren)} voorkoppelingen bepaald ({len(akkoord)} uit omzet-lijst)", file=sys.stderr)
+print("<?php")
+print(f"$apply = {'true' if apply == 'apply' else 'false'};")
+print(f"$map = json_decode('{json.dumps(paren)}', true);")
+print("""
+$gezet = $al = $anders = 0;
+foreach ($map as $pid => $code) {
+    $huidig = (string) get_post_meta((int) $pid, '_afas_artikelnummer', true);
+    if ($huidig === $code) { $al++; continue; }
+    if ($apply) { update_post_meta((int) $pid, '_afas_artikelnummer', $code); }
+    printf("%s  wc:%d: %s -> %s\\n", $apply ? 'GEZET' : 'ZOU ZETTEN',
+        (int) $pid, $huidig !== '' ? $huidig : '-', $code);
+    $huidig !== '' ? $anders++ : $gezet++;
+}
+printf("--- %s: %d nieuw, %d overschreven, %d stonden al goed\\n",
+    $apply ? 'APPLY' : 'DRY-RUN', $gezet, $anders, $al);
+""")
+PY
+
+    wpr_stdin eval-file - < /tmp/afasfr-voorkoppel-payload.php
+    if [[ "$apply" != "apply" ]]; then
+        echo "Dry-run — niets geschreven. Draai '$0 stap6 apply' om echt te schrijven."
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# Stap 7 — mu-plugins plaatsen uit migration/mu-plugins/. EXPLICIETE FR-lijst
+# (de oorspronkelijke 8 van het NL-besluit, 24 aug) — migration/mu-plugins/
+# bevat inmiddels ook NL-specifieke restyles (defibs-*-restyle: Divi/NL-
+# huisstijl) en de reseller-Points-Pro-fix; die horen NIET op de Woodmart-FR-
+# shop en worden actief opgeruimd als ze er staan. Idempotent. Let op: een
+# verse pull (rsync --delete) haalt alles weer weg — deze stap hoort in elke
+# herhaal-reeks.
+# ---------------------------------------------------------------------------
+_FR_MU_PLUGINS=(
+    wc-variation-threshold.php variations-json-cache.php
+    checkout-ajax-fallback.php afas-tracktrace-style.php
+    order-email-afas-debiteur.php order-email-unit-prices.php
+    afas-preview-winkelmanager.php shop-manager-login-as-klant.php
+)
+_FR_MU_VERBODEN=(defibs-checkout-restyle.php defibs-product-restyle.php
+    points-pro-variable-price-fix.php wcpt-cli-cache-fix.php)
+
+stap7() {
+    controleer_config
+    local bron="$REPO_ROOT/migration/mu-plugins" p
+    [[ -d "$bron" ]] || { echo "FOUT: $bron ontbreekt" >&2; exit 1; }
+    for p in "${_FR_MU_PLUGINS[@]}"; do
+        [[ -f "$bron/$p" ]] || { echo "FOUT: $bron/$p ontbreekt" >&2; exit 1; }
+    done
+
+    if [[ "$TARGET" == "lokaal" ]]; then
+        local content_dir
+        content_dir=$(grep '^CONTENT_DIR=' "$MIGRATER_DIR/.env-defibsolutionsfr" | cut -d= -f2)
+        local doel="$MIGRATER_DIR/${content_dir#./}/mu-plugins"
+        mkdir -p "$doel"
+        for p in "${_FR_MU_PLUGINS[@]}"; do cp "$bron/$p" "$doel/"; done
+        for p in "${_FR_MU_VERBODEN[@]}"; do rm -f "$doel/$p"; done
+        echo "--- controle:"
+        ls "$doel"
+    else
+        ssh "$SERVER" "mkdir -p '$WP_ROOT/wp-content/mu-plugins'"
+        for p in "${_FR_MU_PLUGINS[@]}"; do
+            scp -q "$bron/$p" "$SERVER:$WP_ROOT/wp-content/mu-plugins/"
+        done
+        ssh "$SERVER" "cd '$WP_ROOT/wp-content/mu-plugins' && rm -f ${_FR_MU_VERBODEN[*]}"
+        echo "--- controle:"
+        ssh "$SERVER" "ls '$WP_ROOT/wp-content/mu-plugins'"
+    fi
+    echo "OK — ${#_FR_MU_PLUGINS[@]} mu-plugins geplaatst op $(doel_naam)"
+}
+
 hulp() {
     cat <<EOF
 Gebruik: $0 <stap> [apply|opties]   (DEFIBSFR_TARGET=lokaal|cp01, default lokaal)
 
   stap1            Mail uit (disable-emails)
   stap2            Overbodige plugins uit (woocommerce-b2b, wp-staging, mainwp-child)
-  stap3   [apply]  Klanten koppelen aan AFAS-relaties (mapping-CSV nog te maken)
+  stap3   [apply]  Klanten koppelen aan AFAS-relaties (orderhistorie + e-mail-fallback)
   stap4            lefcreative-afas-b2b installeren + FR-settings + gordels
-  stap5   [apply]  API-keys inventariseren (apply geblokkeerd: Shopctrl-beslispunt)
+  stap5   [apply]  Alle API-keys intrekken (besluit 31 aug: incl. Shopctrl)
+  stap6   [apply]  Voorkoppeling _afas_artikelnummer (incl. omzet-lijst)
+  stap7            mu-plugins plaatsen
 
 Zie MIGRATIE-DEFIBSOLUTIONS-FR.md voor het fase-overzicht.
 EOF
@@ -346,5 +498,7 @@ case "${1:-}" in
     stap3) stap3 "${2:-}" ;;
     stap4) stap4 ;;
     stap5) stap5 "${2:-}" ;;
+    stap6) stap6 "${2:-}" ;;
+    stap7) stap7 ;;
     *) hulp; [[ -n "${1:-}" ]] && exit 1 || exit 0 ;;
 esac

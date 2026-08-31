@@ -155,12 +155,21 @@ Reanibex) bestaan al in de tool. De audit beantwoordt ook het SKU-beslispunt.
 
 ### Stap 1.5 — [ ] Audit-acties + inrichtingsstappen als scriptstappen (1–2 dagen)
 
-Analoog NL-stappen 6–14, geport waar van toepassing: voorkoppeling
-`_afas_artikelnummer` · mu-plugins (welke van de 8 voor Woodmart relevant
-zijn nalopen) · structuur-opruiming · schrappingen (lijst uit audit, akkoord
-Kevin/Cas) · syncs · variatie-assen · **nieuw: Franse vertaling** (.po/.mo
-plaatsen, patroon van de ARKY-taalstap). Geen Divi-stap; wel checken of
-Woodmart lokaal iets vergelijkbaars nodig heeft.
+Stand 31 aug:
+
+- [x] Stap 6 — voorkoppeling `_afas_artikelnummer`: 321 producten gezet
+      (319 eenduidig + omzet-lijst-doelen; idempotent geverifieerd). De 10
+      Randy-twijfelgevallen bewust onaangeroerd.
+- [x] Stap 7 — mu-plugins: expliciete FR-lijst van de oorspronkelijke 8;
+      de NL-specifieke `defibs-*-restyle` (Divi/NL-huisstijl), Points-Pro-
+      fix en wcpt-cli-cache-fix worden actief geweerd/opgeruimd.
+- [ ] AFAS-vlaggen `Sync/Tonen_Defibsolutions_FR` zetten: bases via
+      `base:publish` (website 6) + `publications:sync`; kale artikelen via
+      het fix-vinkjes-patroon (connector-tools). Dry-run eerst, akkoord Cas.
+- [ ] Franse plugin-vertaling (.po/.mo, ARKY-patroon).
+- [ ] Structuur-opruiming + schrappingen (wacht op Randy/actielijst) ·
+      syncs (stap11-equivalent) · variatie-assen · checkout-pagina ·
+      weergave-instellingen (Woodmart i.p.v. Divi-stap).
 
 **Klaar als:** elke handeling een genummerde stap is die lokaal groen draait.
 
