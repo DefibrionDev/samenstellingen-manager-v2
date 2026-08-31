@@ -42,8 +42,15 @@ Checkout bleek al shortcode-conform. Audits + curatie-lijst gegenereerd.
       `--apply` (na akkoord Cas)
 - [x] Fase 0 tool-kant: website-rij #4 + `COLUMN_TO_UUID` (31 aug, TDD,
       `make check` groen)
-- [ ] AFAS-family-fixes: head-tag 11661 (ZOLL AED 3), heads Mindray C2a
-      (20013-FR/20014-FR), C1A-tags rechttrekken
+- [x] AFAS-family-fixes uitgezocht (31 aug): **géén AFAS-mutaties nodig** —
+      AFAS/tool zijn overal consistent. De drie CHECKs waren shop-fouten:
+      C1A-containers mengen semi/vol-variaties (sync + stap10 lossen op);
+      ZOLL 11661 en Mindray C2a 20013-FR/20014-FR zijn kale AED-artikelen
+      (Type_item Artikel) die als pakket-variatie misbruikt zijn — de echte
+      pakketfamilies (11656 zit al in de semi-container; 21013-FR/21014-FR)
+      bestaan compleet. Audit kent nu oordeel KALE-AED-VARIATIE (3×, regel:
+      variatie → artikel dat geen Samenstelling is); die drie zijn uit
+      voorkoppeling (stap6: 787) en vlag-voorstel (790) gehaald.
 - [ ] stap9 volledig draaien (mét prijzen) + resultaat controleren
 - [ ] Opruimstap 17 oude `*_parent`-containers ná geslaagde sync (stap10)
 - [ ] Checkout-test met testklant (user 26)

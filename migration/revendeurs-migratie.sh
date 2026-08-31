@@ -360,7 +360,10 @@ audit, apply = sys.argv[1], sys.argv[2] == "apply"
 paren = {}
 with open(audit, encoding="utf-8-sig") as f:
     for r in csv.DictReader(f, delimiter=";"):
-        if r["afas_itemcode"] and r["status"] != "draft" and r["type"] != "variable":
+        # KALE-AED-VARIATIE: zwerf-variatie aan een kaal artikel (11661,
+        # 20013-FR, 20014-FR) — niet voorkoppelen, stap10 ruimt op.
+        if (r["afas_itemcode"] and r["status"] != "draft"
+                and r["type"] != "variable" and r["oordeel"] != "KALE-AED-VARIATIE"):
             paren[r["wc_id"]] = r["afas_itemcode"]
 print(f"// {len(paren)} voorkoppelingen uit {audit}", file=sys.stderr)
 print("<?php")
