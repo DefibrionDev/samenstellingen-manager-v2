@@ -132,8 +132,11 @@ verse AFAS-pull; output `work/defibsolutionsfr-koppelbaarheid.csv` +
   óók samenstellingen verkopen (zoals NL — omhangen via voorkoppel-
   actielijst) of (b) FR blijft kale AED's verkopen (dan alleen kale codes
   vlaggen). Advies: (a), consistent met NL/reseller en de tool.
-- Nog te doen: actielijst voor 79 GEEN-MATCH + 8 GEBLOKKEERD + 1 GEEN-SKU
-  (voorstel per rij, zoals NL's aed-sku-actielijst).
+- Actielijst staat klaar: `work/defibsolutionsfr-sku-actielijst.csv`
+  (88 rijen; 74 met naam-gebaseerd voorstel + score, 14 zonder kandidaat;
+  generator `work/maak-sku-actielijst-defibsolutionsfr.py`). Barcode/
+  Itemcode_2/B-strip leverden 0 automatische matches (getest 31 aug).
+  Status-kolom in te vullen door Cas/Kevin: akkoord / schrappen / anders.
 
 Zelfde opzet als NL-stap 1.4: per published product en per te syncen
 AFAS-artikel één rij met actie-kolom. **Referentieregel:** staat een artikel
