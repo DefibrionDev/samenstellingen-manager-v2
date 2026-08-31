@@ -280,12 +280,12 @@ PY
 }
 
 # ---------------------------------------------------------------------------
-# Stap 5 — Alle API-keys van de shop inventariseren/intrekken.
-# defibsolutions.fr heeft vier read_write REST-keys: Shopctrl, 2× Improvit en
-# Dashboard. Na de migratie mag niets van buitenaf meer muteren — de nieuwe
-# plugin praat zelf uitgaand met AFAS. LET OP: het lot van de Shopctrl-key is
-# een open beslispunt (MIGRATIE-DEFIBSOLUTIONS-FR.md) — tot Cas beslist blijft
-# deze stap dry-run-only en weigert hij apply.
+# Stap 5 — Alle API-keys van de shop intrekken.
+# defibsolutions.fr had vier read_write REST-keys: Shopctrl, 2× Improvit en
+# Dashboard — besluit Cas 27 aug: álles mag weg, ook Shopctrl. Na de migratie
+# mag niets van buitenaf meer muteren — de nieuwe plugin praat zelf uitgaand
+# met AFAS en heeft geen inkomende REST-key nodig. Wie later weer toegang
+# nodig heeft maakt bewust een nieuwe key aan.
 # Default dry-run (toont wat er staat); `stap5 apply` verwijdert echt.
 # Tabelprefix is wp_ (geverifieerd via `wp db prefix`).
 # ---------------------------------------------------------------------------
@@ -308,12 +308,21 @@ stap5() {
 
     if [[ "$apply" != "apply" ]]; then
         echo ""
-        echo "Dry-run — niets ingetrokken. Apply is geblokkeerd tot het Shopctrl-beslispunt beslist is."
+        echo "Dry-run — niets ingetrokken. Draai '$0 stap5 apply' om alle keys hierboven te verwijderen."
         return 0
     fi
 
-    echo "FOUT: apply geblokkeerd — beslispunt Shopctrl staat nog open (zie MIGRATIE-DEFIBSOLUTIONS-FR.md)." >&2
-    exit 1
+    echo ""
+    echo "--- intrekken:"
+    wpr db query "\"DELETE FROM wp_woocommerce_api_keys\""
+    for uid in $userids; do
+        wpr user application-password delete "$uid" --all
+    done
+
+    echo "--- controle:"
+    wpr db query "\"SELECT COUNT(*) AS rest_keys FROM wp_woocommerce_api_keys\""
+    wpr db query "\"SELECT COUNT(*) AS app_passwords FROM wp_usermeta WHERE meta_key='_application_passwords' AND meta_value NOT IN ('', 'a:0:{}')\""
+    echo "OK — alle API-keys ingetrokken op $(doel_naam)"
 }
 
 hulp() {

@@ -54,8 +54,8 @@ versturen + Shopctrl-beslispunt.**
 
 ## Beslispunten — beantwoorden vóór fase 1 kan afronden
 
-- [ ] **Shopctrl**: wat doet die koppeling voor FR (orders? voorraad?), en mag
-      de key weg bij de keys-intrekstap of moet hij blijven/vervangen worden?
+- [x] **Shopctrl: mag weg** (besluit Cas 31 aug). Stap 5 trekt alle keys in;
+      lokaal met `apply` gedraaid: 0 REST-keys, 0 app-passwords over.
 - [ ] **SKU-strategie FR** — data ligt er (scan 27 aug, AFAS-cache 09:18):
       van de 403 producten matchen **289 uniek op BHV-code**, 30 zijn zelf
       een actieve itemcode, **83 matchen nergens op**, 1 zonder SKU, 0
@@ -107,8 +107,8 @@ Stand 27 aug: **stap 1, 2, 4 groen; 3 en 5 geblokkeerd op beslispunten.**
       opties, FR-afleiding van de NL-dump: Sync_/Tonen_Defibsolutions_FR,
       delta-cursors leeg, scheduling + orders geforceerd 0).
       `afas_sku_source_field` staat nog op de NL-waarde — SKU-beslispunt.
-- [x] Stap 5 — inventaris draait (4 REST-keys, 2 app-passwords); `apply`
-      weigert bewust tot het Shopctrl-besluit.
+- [x] Stap 5 — alle API-keys ingetrokken (31 aug, incl. Shopctrl na besluit
+      Cas): 0 REST-keys, 0 app-passwords over.
 
 **Klaar als:** stappen 1–5 zonder fout doorlopen, plugin actief.
 
