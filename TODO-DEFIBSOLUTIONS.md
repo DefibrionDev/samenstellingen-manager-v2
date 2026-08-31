@@ -217,6 +217,90 @@ container komen door het locked-mechanisme als *private* binnen):
       `DEFIBS_TARGET=cp01 ./migration/defibsolutions-migratie.sh stap5`
       (read-only dry-run) en kijken wat er gebeurt. Pas daarna Fase H plannen.
 
+## Fase H-vooraf — Kevins staging-feedback (mail 30 aug, "Testen eerste versie")
+
+Bron: kevin@defibsolutions.nl 30 aug; Roelof (31 aug) pakt de
+prijsgerelateerde punten op (K6/K11) en beantwoordde K12 deels
+(11148F/11149F zijn gekoppeld). Eén voor één langslopen met Cas.
+
+- [x] K1 Homepage: uitgelichte producten wijken af ✓ 31 aug: module verwijst
+      naar niet-bestaande categorie 315 (op live óók) → Divi-fallback toont
+      nieuwste producten; op staging zijn dat de 70 sync-imports. Besluit
+      Cas: gedrag is identiek aan live, eventueel aanpassen ná migratie.
+      Antwoord in work/antwoorden-kevin-staging-feedback.md.
+- [x] K2+K3+K4 Homepage-afwijkingen ✓ 31 aug (visuele check Cas akkoord):
+      Divi's feature-cache
+      (postmeta `_et_builder_module_features_cache`) keyt op md5 van
+      shortcode-attrs incl. URL's; na de URL-rewrite miste élke lookup en
+      behandelt Divi elke design-feature als "uit" (padding/box-shadow/
+      radius/knopkleur/borders/hover weg → ingeklapte kaarten, vierkante
+      hoeken, rode fallback-knoppen, "missende" merken-/services-foto's).
+      Cache herstelt zichzelf nooit (callbacks draaien niet meer → 15ms-
+      drempel nooit gehaald). Fix: nieuwe stap15 (cache-purge + et-cache
+      leeg), apply gedraaid op cp-01 én lokaal; render-verificatie: blok
+      33.380 bytes met kleur/radius/padding conform live, op PHP 8.5.
+      PHP-versie was NIET de oorzaak (8.3-test gaf zelfde truncatie).
+      LET OP livegang: hoofdsite (aparte install `www/`) blijft bestaan —
+      DNS-cutover moet alleen /shop naar cp-01 routeren (nog uitwerken).
+- [x] K5 "Defibrillator" als eerste optie ✓ 31 aug (check Cas akkoord):
+      stap12 schreef volgorde naar legacy-termmeta `order_pa_<as>`, Woo >=3.6
+      leest `order` — key gefixt in stap12, apply herdraaid op cp-01 + lokaal.
+      Geverifieerd op alle 26 variabele producten: Defibrillator overal eerst
+      (en Nederlands/Geen/Met eerst op de andere assen).
+- [ ] K6 AED Plus prijzen kloppen niet: shop toont €979 basisprijslijst;
+      losse semi-auto hoort €1599, met EHBO-rugzak €1004 — BIJ ROELOF;
+      wacht op artikelnummer van Kevin.
+- [x] K7 Defibtech semi-auto kale NL ✓ 31 aug (check Cas: prijs + in mand):
+      er misten géén pakketten in AFAS. Twee lagen: (a) de kale-NL-variatie
+      kwam ná de generale-stap12 als private binnen (locked container) —
+      stap12-herdraai publiceerde hem; (b) Kevin/Cas testten met een
+      admin-account zónder afas_relatie_id — de plugin filtert dan alle
+      runtime-geprijsde variaties weg en alleen de paar met vaste Woo-prijs
+      blijven over ("alleen met kast"). Zelfde gedrag als reseller (363/864
+      variaties daar zonder vaste prijs, werkt al maanden). Cas heeft zijn
+      account inmiddels zelf gekoppeld. Prijsloze variaties zijn dus
+      model-conform; ongekoppelde accounts zien bewust een uitgedund beeld.
+- [x] K8 filterblok ✓ 31 aug (check Cas: "werkt") — eerst verwijderd
+      (Kevins voorstel), door Cas teruggedraaid: filters moeten wérken
+      zoals live. Echte oorzaak
+      gevonden: BeRocket cachet template-style-paden ABSOLUUT in optie
+      `BeRocket_AAPF_getall_Template_Styles`; na de verhuizing wezen die
+      naar het TransIP-pad → file_exists faalt → elke filter bailt met
+      "Template not selected" → lege filterbalk. Fix in stap15:
+      `do_action('bapf_include_all_tempate_styles')` regenereert de paden;
+      apply gedraaid op cp-01 + lokaal, render nu gelijk aan live (Merk/
+      Garantie/Accessoires voor/Soort pop gevuld). Wacht op check Cas.
+      NB: rollback van de eerdere verwijdering is teruggeplaatst in de
+      template; verwijder-code uit stap16 gehaald.
+- [x] K9+K10 ✓ 31 aug (check Cas: "klopt werkt") via nieuwe stap16 (apply
+      op cp-01 + lokaal): categorieën Reanibex 100 (Wifi)/(Sigfox) en
+      AED Bundels + 3 kast-subcategorieën verwijderd incl. 4 menu-items
+      (bevatten alleen variaties → toonden leeg). stap16 zit in runner +
+      livegang-volgorde.
+- [ ] K11 HS1-prijs: shop toont €825 i.p.v. €775 (ook op reseller) —
+      BIJ ROELOF (AFAS heeft overal 775; Roelof vraagt Randy/Kevin wat
+      leidend is).
+- [ ] K12 G5-prijzen lopen uiteen; welke producten zijn gelinkt — Roelof
+      bevestigde 11148F/11149F gekoppeld (onze nieuwe basispakketten
+      1540/1780); check of daarmee alles verklaard is.
+
+- [x] Trainer-warnings ("parent not found" 10691/10698) ✓ 31 aug: head 10699
+      (CZ, geschrapt) verhangen naar 10698 (EN, conventie "head = Engelse
+      base") via afas-connector-tools/bin/verhang-trainer-head.php (3 AFAS-
+      mutaties). Delta-sync + stap12 op beide kopieën: trainer staat als
+      nette taal-container ("Zoll AED Plus Trainer", NL/EN, default NL),
+      0 warnings. stap12 uitgebreid met losse-taalcontainers-blok + titel.
+      Lokaal artefact 108359 (claim op 10698) eenmalig gestript — livegang
+      is veilig: stap8 stript vóór trashen.
+- [x] Beheerders zien uitgedund assortiment (K7-nasleep) ✓ 31 aug: nieuwe
+      stap17 — alle administrator-accounts krijgen afas_relatie_id 35801 +
+      afas_sync_paused=1 (bestaande koppelingen ongemoeid), besluit Cas.
+      Apply op cp-01 + lokaal; zit in runner + usage.
+- [x] G5F-prijsaanvulling → NAAR ROELOF (besluit Cas 31 aug): 11148F/11149F
+      missen prijslijst 029 (1540/1780) en basisprijs ***** (zusters: 2049);
+      klanten op lijst 029 zien de CPR-keuze anders niet. Staat in het
+      antwoorden-document onder punt 12; geen actie meer aan onze kant.
+
 ## Fase H — Livegang (runbook fase 2, buiten kantooruren)
 
 Pas plannen na Fase G; aparte go/no-go met Cas. Checklist staat in het

@@ -950,6 +950,7 @@ $TITELS = [
     '21018-UK' => 'Mindray C1A V2 Semi Automaat',
     '21019-UK' => 'Mindray Beneheart C1A V2 Volautomaat',
     '11139'    => 'Defibtech Lifeline View AED Volautomaat',
+    '10698'    => 'Zoll AED Plus Trainer',
 ];
 
 foreach ($AS_TAX as $label => $tax) {
@@ -1014,7 +1015,10 @@ foreach ($containers as $parId => $data) {
             $termIds[] = (int) $term->term_id;
         }
         if (!$termIds) { continue; }
-        // volgorde-meta: WooCommerce sorteert menu_order-attributen hierop
+        // volgorde-meta: WooCommerce >= 3.6 sorteert menu_order-attributen op
+        // termmeta 'order' (wc_terms_clauses), NIET meer op het oude
+        // 'order_<taxonomie>' — die legacy-key werd hier eerst geschreven en
+        // stil genegeerd (Kevins K5: kasten vóór "Defibrillator").
         if ($apply) {
             foreach ($termIds as $tid) {
                 $naam = get_term($tid, $tax)->name ?? '';
@@ -1023,7 +1027,7 @@ foreach ($containers as $parId => $data) {
                     // niet in de lijst: achteraan, alfabetisch stabiel
                     $pos = 100 + (ord(substr($naam, 0, 1)) - 65);
                 }
-                update_term_meta($tid, 'order_' . $tax, (int) $pos);
+                update_term_meta($tid, 'order', (int) $pos);
             }
         }
         $attr = new WC_Product_Attribute();
@@ -1135,6 +1139,63 @@ printf("--- %s: %d containers, %d variaties bijgewerkt, %d termen aangemaakt, %d
 PY
 
     wpr_stdin eval-file - < /tmp/afas-assen-payload.php
+    # Losse taalcontainers buiten de samenstellingen-scope (plugin-gemaakte
+    # taal-families zonder samenstelling). Zelfde behandeling als de AED-
+    # containers: Naam-as eruit, pa_taal-as erin, titel zonder taal-suffix,
+    # default Nederlands. Nu alleen de Zoll AED Plus Trainer (head 10698,
+    # verhangen 31 aug — zie afas-connector-tools/bin/verhang-trainer-head.php).
+    wpr_stdin eval-file - "$apply" <<'PHP'
+<?php
+$apply = ('apply' === ($args[0] ?? ''));
+$LOSSE_TAAL = [
+    '10698' => ['titel' => 'Zoll AED Plus Trainer', 'varianten' => [
+        '10691' => 'Nederlands', '10698' => 'Engels',
+    ]],
+];
+foreach ($LOSSE_TAAL as $headCode => $cfg) {
+    $ids = get_posts(['post_type' => 'product', 'post_status' => 'publish', 'numberposts' => 1,
+        'fields' => 'ids', 'meta_key' => '_afas_artikelnummer', 'meta_value' => $headCode]);
+    if (!$ids) { echo "losse taalcontainer $headCode: niet gevonden, overslaan\n"; continue; }
+    $parId = (int) $ids[0];
+    $parent = wc_get_product($parId);
+    $termIds = [];
+    $variaties = [];
+    foreach ($cfg['varianten'] as $code => $taalNaam) {
+        $term = get_term_by('name', $taalNaam, 'pa_taal');
+        if (!$term) { echo "  taalterm '$taalNaam' ontbreekt, overslaan\n"; continue 2; }
+        $termIds[$code] = (int) $term->term_id;
+        $v = get_posts(['post_type' => 'product_variation', 'post_status' => ['publish', 'private'],
+            'numberposts' => 1, 'fields' => 'ids', 'post_parent' => $parId,
+            'meta_key' => '_afas_artikelnummer', 'meta_value' => $code]);
+        if ($v) { $variaties[$code] = (int) $v[0]; }
+    }
+    printf("losse taalcontainer #%d [%s]: %d taalvariaties%s\n", $parId, $headCode,
+        count($variaties), $apply ? '' : ' (dry-run)');
+    if (!$apply) { continue; }
+    // parent: pa_taal als variatie-as, Naam-as weg, titel + default
+    $attr = new WC_Product_Attribute();
+    $attr->set_id(wc_attribute_taxonomy_id_by_name('pa_taal'));
+    $attr->set_name('pa_taal');
+    $attr->set_options(array_values($termIds));
+    $attr->set_position(0);
+    $attr->set_visible(true);
+    $attr->set_variation(true);
+    $parent->set_attributes(['pa_taal' => $attr]);
+    $parent->set_default_attributes(['pa_taal' => 'nederlands']);
+    if ($parent->get_name() !== $cfg['titel']) { $parent->set_name($cfg['titel']); }
+    $parent->save();
+    wp_set_object_terms($parId, array_values($termIds), 'pa_taal');
+    foreach ($cfg['varianten'] as $code => $taalNaam) {
+        if (!isset($variaties[$code])) { continue; }
+        $vid = $variaties[$code];
+        $slug = get_term($termIds[$code], 'pa_taal')->slug;
+        update_post_meta($vid, 'attribute_pa_taal', $slug);
+        delete_post_meta($vid, 'attribute_naam');
+        wp_update_post(['ID' => $vid, 'post_title' => $cfg['titel'] . ' - ' . $taalNaam]);
+    }
+    echo "  gezet: pa_taal-as, titel '{$cfg['titel']}', default Nederlands, Naam-as weg\n";
+}
+PHP
     if [[ "$apply" != "apply" ]]; then
         echo "Dry-run — niets gewijzigd. Draai '$0 stap12 apply' om te schrijven."
     fi
@@ -1440,6 +1501,165 @@ stap14() {
     fi
 }
 # ---------------------------------------------------------------------------
+# stap15 — Divi-caches resetten na de URL-herschrijving van de verhuizing.
+# Divi's feature-cache (postmeta _et_builder_module_features_cache) keyt op
+# md5 van de shortcode-attributen — inclusief URL's. Na de domein-rewrite
+# missen álle lookups in de mee-gemigreerde cache, en een miss in een geladen
+# cache betekent voor Divi "feature stond vorige keer uit"
+# (class-et-builder-post-feature-base.php::get): padding, box-shadow, borders,
+# border-radius, knop- en hover-CSS verdwijnen uit elke pagina met URL-houdende
+# module-attrs (homepage-kaarten, merken-/servicesbalk — Kevins K2/K3/K4).
+# De cache herstelt zichzelf nooit: de callbacks draaien niet meer, dus de
+# 15ms-drempel voor her-save wordt nooit gehaald. Fix: cache-postmeta purgen
+# + et-cache leeg; de eerste render bouwt alles correct opnieuw op (geldt op
+# elke PHP-versie). Idempotent.
+stap15() {
+    controleer_config
+    local apply="${1:-}"
+    wpr_stdin eval-file - "$apply" <<'PHP'
+<?php
+$apply = ('apply' === ($args[0] ?? ''));
+$keys = [
+    '_et_builder_module_features_cache',
+    '_et_dynamic_cached_shortcodes',
+    '_et_dynamic_cached_attributes',
+];
+global $wpdb;
+foreach ($keys as $k) {
+    $n = (int) $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$wpdb->postmeta} WHERE meta_key = %s", $k
+    ));
+    if ($apply && $n > 0) { delete_post_meta_by_key($k); }
+    printf("%s: %d rijen%s\n", $k, $n, ($apply && $n > 0) ? ' -> gepurged' : '');
+}
+// et-cache leegmaken zodat ook de gegenereerde CSS-bestanden vers zijn.
+$dir = WP_CONTENT_DIR . '/et-cache';
+$verwijderd = 0;
+if (is_dir($dir)) {
+    $it = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS),
+        RecursiveIteratorIterator::CHILD_FIRST
+    );
+    foreach ($it as $pad) {
+        if (!$apply) { $verwijderd++; continue; }
+        $ok = $pad->isDir() ? @rmdir($pad->getPathname()) : @unlink($pad->getPathname());
+        if ($ok) { $verwijderd++; }
+    }
+}
+printf("et-cache: %d items%s\n", $verwijderd, $apply ? ' verwijderd' : '');
+// BeRocket AAPF cachet template-style-paden ABSOLUUT in een optie
+// (BeRocket_AAPF_getall_Template_Styles). Na de verhuizing wijzen die naar
+// het oude TransIP-pad -> file_exists faalt -> elke filter bailt met
+// "Template not selected" en de filterbalk blijft leeg (Kevins K8).
+// De plugin heeft een eigen regeneratie-action die met lokale paden
+// herschrijft.
+$styles = (array) get_option('BeRocket_AAPF_getall_Template_Styles');
+$eerste = reset($styles);
+$oudPad = is_array($eerste) && !str_starts_with($eerste['file'] ?? '', WP_PLUGIN_DIR);
+if ($apply && $oudPad) {
+    do_action('bapf_include_all_tempate_styles');
+    $styles = (array) get_option('BeRocket_AAPF_getall_Template_Styles');
+    $eerste = reset($styles);
+}
+printf("berocket template-styles: %s\n", $oudPad
+    ? ($apply ? 'pad-cache geregenereerd -> ' . ($eerste['file'] ?? '?') : 'VEROUDERD PAD: ' . ($eerste['file'] ?? '?'))
+    : 'paden al lokaal');
+if (!$apply) { echo "Dry-run - niets gewijzigd.\n"; }
+PHP
+    if [[ "$apply" != "apply" ]]; then
+        echo "Dry-run — draai '$0 stap15 apply' om te purgen."
+    else
+        echo "OK — Divi-caches gereset op $(doel_naam); eerste render bouwt ze opnieuw op"
+    fi
+}
+# ---------------------------------------------------------------------------
+# stap16 — Kevins staging-opruiming (mail 30 aug, punten K9/K10):
+#   K9  productcategorieën "Reanibex 100 (Wifi)"/"(Sigfox)" verwijderen —
+#       bevatten alleen variaties (tonen leeg); is nu een keuze-as op de
+#       Reanibex-productpagina.
+#   K10 "AED Bundels" + kast-subcategorieën verwijderen — idem, bundels
+#       zitten als opties op de productpagina's.
+#   Bijbehorende menu-items gaan mee. K8 (filterblok) zat hier eerst óók in
+#   maar is teruggedraaid: Cas wil de filters wérkend (zoals live), niet weg.
+#   Idempotent.
+stap16() {
+    controleer_config
+    local apply="${1:-}"
+    wpr_stdin eval-file - "$apply" <<'PHP'
+<?php
+$apply = ('apply' === ($args[0] ?? ''));
+
+// K9 + K10: categorieën op exacte naam + bijbehorende menu-items.
+$namen = [
+    'AED Bundels', 'AED Bundel met witte binnenkast',
+    'AED Bundel met groene binnenkast', 'AED Bundel met arky buitenkast',
+    'Reanibex 100 (Wifi)', 'Reanibex 100 (Sigfox)',
+];
+global $wpdb;
+foreach ($namen as $naam) {
+    $term = get_term_by('name', $naam, 'product_cat');
+    if (!$term) { printf("cat '%s': al weg\n", $naam); continue; }
+    $menuItems = $wpdb->get_col($wpdb->prepare(
+        "SELECT p.ID FROM {$wpdb->posts} p
+         JOIN {$wpdb->postmeta} o ON o.post_id = p.ID AND o.meta_key = '_menu_item_object' AND o.meta_value = 'product_cat'
+         JOIN {$wpdb->postmeta} i ON i.post_id = p.ID AND i.meta_key = '_menu_item_object_id' AND i.meta_value = %s
+         WHERE p.post_type = 'nav_menu_item'", (string) $term->term_id
+    ));
+    if ($apply) {
+        foreach ($menuItems as $mid) { wp_delete_post((int) $mid, true); }
+        wp_delete_term($term->term_id, 'product_cat');
+    }
+    printf("cat '%s' (term %d, %d menu-item%s)%s\n", $naam, $term->term_id,
+        count($menuItems), count($menuItems) === 1 ? '' : 's',
+        $apply ? ' -> verwijderd' : ' -> te verwijderen');
+}
+if (!$apply) { echo "Dry-run - niets gewijzigd.\n"; }
+PHP
+    if [[ "$apply" != "apply" ]]; then
+        echo "Dry-run — draai '$0 stap16 apply' om uit te voeren."
+    else
+        echo "OK — staging-opruiming K9/K10 uitgevoerd op $(doel_naam)"
+    fi
+}
+# ---------------------------------------------------------------------------
+# stap17 — Beheerders als klant laten meekijken (besluit Cas 31 aug).
+# Zonder afas_relatie_id filtert de plugin alle runtime-geprijsde variaties
+# weg en zien admins een uitgedund assortiment (Kevins K7-verwarring).
+# Daarom krijgt elk administrator-account de relatie van een bestaande
+# klant (35801) + afas_sync_paused=1 zodat de AFAS-sync hun accountgegevens
+# nooit overschrijft — zelfde inrichting als het account van Cas.
+# Bestaande koppelingen blijven ongemoeid. Idempotent.
+stap17() {
+    controleer_config
+    local apply="${1:-}"
+    wpr_stdin eval-file - "$apply" <<'PHP'
+<?php
+$apply = ('apply' === ($args[0] ?? ''));
+$relatie = '35801';
+foreach (get_users(['role' => 'administrator']) as $u) {
+    $huidig = (string) get_user_meta($u->ID, 'afas_relatie_id', true);
+    $paused = (string) get_user_meta($u->ID, 'afas_sync_paused', true);
+    $acties = [];
+    if ($huidig === '') { $acties[] = "relatie -> $relatie"; }
+    if ($paused !== '1') { $acties[] = 'sync_paused -> 1'; }
+    if (!$acties) {
+        printf("%-20s staat al goed (relatie %s)\n", $u->user_login, $huidig);
+        continue;
+    }
+    if ($apply) {
+        if ($huidig === '') { update_user_meta($u->ID, 'afas_relatie_id', $relatie); }
+        if ($paused !== '1') { update_user_meta($u->ID, 'afas_sync_paused', '1'); }
+    }
+    printf("%-20s %s%s\n", $u->user_login, implode(', ', $acties), $apply ? '' : ' (dry-run)');
+}
+PHP
+    if [[ "$apply" != "apply" ]]; then
+        echo "Dry-run — draai '$0 stap17 apply' om te schrijven."
+    else
+        echo "OK — beheerders gekoppeld op $(doel_naam)"
+    fi
+}
+# ---------------------------------------------------------------------------
 usage() {
     echo "gebruik: [DEFIBS_TARGET=lokaal|cp01] $0 <stap>   (default: lokaal)"
     echo "stappen:"
@@ -1457,10 +1677,14 @@ usage() {
     echo "  stap13  Opmaak-overname van reseller voor kale producten (dry-run; apply)"
     echo "  stap14  Oude/interne accounts verwijderen met reassign (dry-run; apply)"
     echo "  stap11  Syncs (opties: 'zonder-prijzen', 'delta' = alleen gewijzigde artikelen, seconden i.p.v. minuten)"
+    echo "  stap15  Divi-caches resetten na URL-rewrite (dry-run; 'stap15 apply')"
+    echo "  stap16  Kevins staging-opruiming K9/K10: lege categorieën + menu-items weg (dry-run; 'stap16 apply')"
+    echo "  stap17  Beheerders koppelen aan klantrelatie 35801 + sync-pauze (dry-run; 'stap17 apply')"
     echo ""
     echo "volledige herbouw (na verse pull), in deze volgorde:"
     echo "  stap1, stap2, stap3 apply, stap4, stap5 apply, stap6 apply, stap7,"
-    echo "  stap9, stap10 apply, stap11, stap8 apply, stap11 'zonder-prijzen delta',"
+    echo "  stap15 apply, stap9, stap10 apply, stap11, stap8 apply,"
+    echo "  stap11 'zonder-prijzen delta',"
     echo "  stap12 apply      <- stap12 ALTIJD als laatste (assen + defaults +"
     echo "                       publiceert variaties die als private binnenkwamen)"
     exit 1
@@ -1481,5 +1705,8 @@ case "${1:-}" in
     stap12) stap12 "${2:-}" ;;
     stap13) stap13 "${2:-}" ;;
     stap14) stap14 "${2:-}" ;;
+    stap15) stap15 "${2:-}" ;;
+    stap16) stap16 "${2:-}" ;;
+    stap17) stap17 "${2:-}" ;;
     *) usage ;;
 esac
