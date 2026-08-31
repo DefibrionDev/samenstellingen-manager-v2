@@ -22,6 +22,8 @@ final class HttpAfasFreeFieldStateReaderTest extends TestCase
     private const ARKY_TONEN = 'U620F63CE511E4308923C155399EE8EAE';
     private const DEFIBS_SYNC = 'U53F2EB036B8C4787A71980AF48A0AD0C';
     private const DEFIBS_TONEN = 'UBC0C50717BE74A15842A03C09003717D';
+    private const REVENDEURS_SYNC = 'UBC3EEC609E9F46F89979374EBC300451';
+    private const REVENDEURS_TONEN = 'U846C067CF358432E992BD5A8CE6F7141';
 
     #[Test]
     public function mapsResellerAndArkyFreeFieldColumnsToUuids(): void
@@ -75,6 +77,29 @@ final class HttpAfasFreeFieldStateReaderTest extends TestCase
         self::assertEquals([
             '11148F' => [self::DEFIBS_SYNC => true, self::DEFIBS_TONEN => true],
             '11149F' => [self::DEFIBS_SYNC => false, self::DEFIBS_TONEN => false],
+        ], $reader->readAll());
+    }
+
+    #[Test]
+    public function mapsRevendeursFreeFieldColumnsToUuids(): void
+    {
+        // Website 4 (Revendeurs FR, revendeurs.defibrion.fr) — kolommen sinds
+        // 27 aug 2026 in Get_Artikelen. Zelfde valkuil als de DefibSolutions-
+        // regressie hierboven: zonder deze mapping herschrijft publications:sync
+        // elke run alle al-correcte Revendeurs-vlaggen.
+        $mock = new MockHandler([
+            new Response(200, [], (string) json_encode(['rows' => [
+                ['Itemcode' => '52120', 'Sync_Revendeurs_FR' => '1', 'Tonen_Revendeurs_FR' => '0'],
+                ['Itemcode' => '11142-FR', 'Sync_Revendeurs_FR' => '', 'Tonen_Revendeurs_FR' => '1'],
+            ]])),
+        ]);
+        $reader = new HttpAfasFreeFieldStateReader(
+            new AfasHttpClient(new Client(['handler' => HandlerStack::create($mock)]), 'https://example.test', 'token'),
+        );
+
+        self::assertEquals([
+            '52120' => [self::REVENDEURS_SYNC => true, self::REVENDEURS_TONEN => false],
+            '11142-FR' => [self::REVENDEURS_SYNC => false, self::REVENDEURS_TONEN => true],
         ], $reader->readAll());
     }
 }

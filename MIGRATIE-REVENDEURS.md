@@ -40,8 +40,8 @@ Checkout bleek al shortcode-conform. Audits + curatie-lijst gegenereerd.
 - [ ] Randy's mapping-besluiten als akkoord-rijen in de generator + stap3-delta
 - [ ] Randy's curatie → gefilterde vlaggen-CSV → apply-revendeurs-vlaggen
       `--apply` (na akkoord Cas)
-- [ ] Fase 0 tool-kant: website-rij #4 + `COLUMN_TO_UUID` (afstemmen met de
-      andere sessie)
+- [x] Fase 0 tool-kant: website-rij #4 + `COLUMN_TO_UUID` (31 aug, TDD,
+      `make check` groen)
 - [ ] AFAS-family-fixes: head-tag 11661 (ZOLL AED 3), heads Mindray C2a
       (20013-FR/20014-FR), C1A-tags rechttrekken
 - [ ] stap9 volledig draaien (mét prijzen) + resultaat controleren
@@ -121,17 +121,15 @@ order-push aan + administratie zijn dáár bewuste acties (besluiten staan vast)
       3. App-token: reseller-token wordt hergebruikt.
       4. Welcome-mails: geen risico — alle klanten bestaan al als user.
 
-## Fase 0 — tool-kant (samenstellingen-manager; AFGESTEMD met de andere sessie)
+## Fase 0 — tool-kant (samenstellingen-manager)
 
-Pas uitvoeren na akkoord én afstemming — dit raakt de tool waar de
-DefibSolutions-sessie in werkt:
-
-1. [ ] Website-rij #4 + UUID-paar in de `websites`-tabel (via bestaand
-       CLI-commando, geen hand-SQL).
-2. [ ] `COLUMN_TO_UUID` uitbreiden in
-       `src/Infrastructure/Publications/HttpAfasFreeFieldStateReader.php`
-       (de vergeten-mapping-les: kostte vorige keer een dag debug).
-3. [ ] Publicatie-vlaggen zetten volgens B3 (dry-run → `--apply`).
+1. [x] Website-rij #4 toegevoegd (31 aug, `website:add "Revendeurs FR"` met
+       de artikel-UUID's uit B1).
+2. [x] `COLUMN_TO_UUID` uitgebreid in
+       `src/Infrastructure/Publications/HttpAfasFreeFieldStateReader.php`,
+       TDD (regressietest naast de DefibSolutions-les); `make check` groen.
+3. [ ] Publicatie-vlaggen zetten volgens B3 (dry-run → `--apply`) — wacht op
+       Randy's curatie; gaat via `apply-revendeurs-vlaggen.php`.
 
 ## Fase 1 — lokale migratie (poort 8894, `REVEND_TARGET=lokaal`)
 
