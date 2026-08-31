@@ -83,9 +83,14 @@ Checkout bleek al shortcode-conform. Audits + curatie-lijst gegenereerd.
 - [ ] **Adressen-sync**: `Get_Addresses` time-out na 300s (2×; 27.910 rijen
       binnen). Stap9 vangt hem nu af (waarschuwing, reeks loopt door) maar
       vóór livegang oplossen: filter/paginering of plugin-fix bij LEF.
-- [ ] Container-namen zijn Engels (plugin noemt naar EN-head) + variatie-
-      assen conform reseller — stap12-analoog bouwen (tool-templates
-      `model_name_fr` als bron).
+- [x] stap12 gebouwd + toegepast (31 aug): Franse containertitels + slugs
+      uit `groups.model_name_fr`, variatie-assen pa_langue/pa_connectivite/
+      pa_capteur-rcp/pa_options met Franse termen uit de tool
+      (`accessoires.naam_kort_fr`, taalcodes → Frans), defaults
+      Français/Aucune/Défibrillateur, "Naam"-attribuut weg. 15 containers,
+      505 variaties, idempotent. Let op vóór livegang: oude live-URL's →
+      nieuwe slugs redirecten (SEO), en het bestaande attribuutlabel
+      "options" (kleine letter, was al op de shop) evt. hernoemen.
 - [ ] Checkout-test met testklant (user 26)
 - [ ] Reproduceerbaarheids-check: kopie weg → verse pull → alle stappen in
       één reeks zonder handwerk — dán pas is cp01 aan de beurt
