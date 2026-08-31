@@ -14,9 +14,15 @@ Checkout bleek al shortcode-conform. Audits + curatie-lijst gegenereerd.
 
 **Wachtend op Randy (via Cas, uitgezet 27 aug):**
 - [ ] Curatie-CSV invullen (`work/randy-curatie-revendeurs-fr.csv`, 195 bases)
-- [ ] 15 klantmapping-reviewgevallen (`work/revendeurs-klantmapping-review.csv`)
-      — wc:18 (Edwin Roelse) en wc:197 (intern) mogen weg, besluit Cas 31 aug:
-      stap10 verwijdert ze (lokaal gedaan; op cp-01 in de livegang-reeks)
+- [ ] Klantmapping: Randy's relatie-keuzes ontvangen (31 aug,
+      `work/Klanten match AFAS revendeurs - feedback Randy.csv`, 15 rijen).
+      **Nog open:** Randy checkt `work/randy-email-verschillen.csv` — bij 9
+      van zijn keuzes wijkt de shop-e-mail af van de AFAS-e-mail (wordt na
+      migratie het AFAS-adres). Na zijn "akkoord" verwerk ik de 15 als
+      akkoord-rijen + stap3-delta. Al gebeurd: wc:18/197 verwijderd (stap10),
+      HEXAMED (wc:157→13068) matchte met verse AFAS-data automatisch en is
+      lokaal gezet; generator leest rollen nu uit capabilities-meta (stap8
+      deregistreert wholesale-rollen — wp-cli toonde lege rollen).
 - [ ] 20 GEBLOKKEERD + 8 GEEN-MATCH uit de audit (verwachting: rolt
       grotendeels vanzelf uit de curatie-lijst)
 
