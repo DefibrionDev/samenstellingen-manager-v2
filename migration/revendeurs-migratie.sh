@@ -528,10 +528,20 @@ if ($zonderPrijzen) {
     do_action('afas_sync_verkooprelaties', true);
     do_action('afas_sync_kortingen', true);
     do_action('afas_sync_landen', true);
-    do_action('afas_sync_addresses', true);
-    printf("         relaties: %d, kortingen: %d\n",
+    // Get_Addresses is de zwaarste connector (geen filter -> alle adressen)
+    // en time-out'te op 31 aug na 300s. Niet fataal voor producten/prijzen:
+    // bij falen waarschuwen en doorgaan; de delta-cursor laat een latere run
+    // (of de nightly) het restant ophalen.
+    try {
+        do_action('afas_sync_addresses', true);
+    } catch (\Throwable $e) {
+        printf("         WAARSCHUWING adressen-sync mislukt: %s\n", $e->getMessage());
+        printf("         -> later opnieuw draaien (delta), producten/prijzen gaan door\n");
+    }
+    printf("         relaties: %d, kortingen: %d, adressen: %d\n",
         (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}lef_afas_verkooprelaties"),
-        (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}lef_afas_kortingen"));
+        (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}lef_afas_kortingen"),
+        (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}lef_afas_addresses"));
 }
 
 $wpdb->query("DELETE FROM {$wpdb->prefix}lef_logs WHERE channel = 'woocommerce'");
@@ -608,6 +618,66 @@ stap10() {
     fi
 }
 
+# ---------------------------------------------------------------------------
+# Stap 11 — Oude handgemaakte variabele containers (+ hun variaties) opruimen.
+# De plugin-sync bouwt eigen containers per family-head (SKU <head>-wpbase)
+# maar weigert zolang oude posts het head-artikelnummer of de head-SKU dragen
+# ("Aanmaken variabel product overgeslagen ... beoordeel handmatig", 830
+# warnings op 31 aug). Herkenning (fresh-pull-proof, spaart plugin-containers):
+# variabel product zónder _afas_artikelnummer-meta en zónder -wpbase-SKU.
+# SKU + meta worden gestript vóór de prullenbak zodat niets ooit nog matcht
+# (defibsolutions-stap8-patroon). Draai hierna stap9 'zonder-prijzen delta'.
+# Default dry-run; `stap11 apply` voert uit.
+# ---------------------------------------------------------------------------
+stap11() {
+    controleer_config
+    local apply="${1:-}"
+    mkdir -p "$REPO_ROOT/tmp"
+    local payload="$REPO_ROOT/tmp/revendeurs-stap11-payload.php"
+    cat > "$payload" <<'PHP'
+<?php
+$apply = APPLY_PLACEHOLDER;
+global $wpdb;
+$q = new WP_Query(["post_type" => "product", "post_status" => ["publish","private","draft"],
+                   "posts_per_page" => -1, "fields" => "ids",
+                   "tax_query" => [["taxonomy" => "product_type", "field" => "slug", "terms" => "variable"]]]);
+$totVar = 0; $containers = 0;
+foreach ($q->posts as $pid) {
+    $meta = (string) get_post_meta($pid, '_afas_artikelnummer', true);
+    $sku  = (string) get_post_meta($pid, '_sku', true);
+    if ($meta !== '' || str_ends_with($sku, '-wpbase')) {
+        continue; // plugin-gebouwde of al voorgekoppelde container: afblijven
+    }
+    $kinderen = $wpdb->get_col($wpdb->prepare(
+        "SELECT ID FROM {$wpdb->posts} WHERE post_parent = %d AND post_type = 'product_variation'", $pid));
+    printf("%s container wc:%d '%s' (sku='%s', %d variaties)\n",
+        $apply ? 'OPGERUIMD' : 'ZOU OPRUIMEN', $pid, get_the_title($pid), $sku, count($kinderen));
+    $containers++; $totVar += count($kinderen);
+    if (!$apply) { continue; }
+    foreach ($kinderen as $vid) {
+        update_post_meta($vid, '_sku', '');
+        delete_post_meta($vid, '_afas_artikelnummer');
+        wp_trash_post((int) $vid);
+    }
+    update_post_meta($pid, '_sku', '');
+    wp_trash_post($pid);
+}
+if (function_exists('wc_delete_product_transients')) { wc_delete_product_transients(); }
+printf("--- %s: %d containers, %d variaties\n", $apply ? 'APPLY' : 'DRY-RUN', $containers, $totVar);
+PHP
+    if [[ "$apply" == "apply" ]]; then
+        sed -i 's/APPLY_PLACEHOLDER/true/' "$payload"
+    else
+        sed -i 's/APPLY_PLACEHOLDER/false/' "$payload"
+    fi
+    wpr_stdin eval-file - < "$payload"
+    if [[ "$apply" != "apply" ]]; then
+        echo "Dry-run — niets opgeruimd. Draai '$0 stap11 apply' om uit te voeren."
+    else
+        echo "Draai nu: $0 stap9 zonder-prijzen delta  (containers laten herbouwen)"
+    fi
+}
+
 usage() {
     cat <<EOF
 Gebruik: $0 <stap> [apply|opties]
@@ -628,15 +698,17 @@ Stappen:
                 Syncs draaien (vereist Sync_Revendeurs_FR-vlaggen in AFAS;
                 vlaggen zetten: afas-connector-tools/bin/apply-revendeurs-vlaggen.php)
   stap10 [apply] Afgekeurde klant-accounts (wc:18, wc:197) verwijderen
+  stap11 [apply] Oude handgemaakte containers + variaties opruimen
+                (daarna: stap9 zonder-prijzen delta)
 
 Volgende stappen (nog te bouwen, zie MIGRATIE-REVENDEURS.md):
-  parent-containers opruimen (stap11) · variatie-assen · checkout-test
+  variatie-assen · checkout-test · reproduceerbaarheids-check
 EOF
     exit 1
 }
 
 [[ $# -ge 1 ]] || usage
 case "$1" in
-    stap1|stap2|stap3|stap4|stap5|stap6|stap7|stap8|stap9|stap10) "$@" ;;
+    stap1|stap2|stap3|stap4|stap5|stap6|stap7|stap8|stap9|stap10|stap11) "$@" ;;
     *) usage ;;
 esac

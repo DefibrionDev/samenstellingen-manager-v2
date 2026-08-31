@@ -45,9 +45,16 @@ Checkout bleek al shortcode-conform. Audits + curatie-lijst gegenereerd.
       nl/en-gedrag ongewijzigd.
 
 **Daarna, in volgorde (Claude):**
-- [ ] Randy's mapping-besluiten als akkoord-rijen in de generator + stap3-delta
-- [ ] Randy's curatie → gefilterde vlaggen-CSV → apply-revendeurs-vlaggen
-      `--apply` (na akkoord Cas)
+- [x] Randy's mapping-besluiten verwerkt (31 aug): akkoord-laag in de
+      generator; 6 e-mail-matchende keuzes toegepast (mapping 182), 9 wachten
+      als REVIEW-EMAIL-BEVESTIGING op `akkoord=ja` in
+      `work/randy-email-verschillen.csv`.
+- [x] Vlaggen gezet in AFAS (31 aug, besluit Cas: "alles wat op revendeurs
+      stond was goed", curatie-aanvulling volgt): 794 artikelen
+      Sync+Tonen_Revendeurs_FR=true via `apply-revendeurs-vlaggen.php --apply`
+      (input: `work/revendeurs-vlaggen-input.csv` = vlag-voorstel 790 + 4
+      C2a-pakketvervangers 21013-FR/21014-FR+heads; 1 curl-timeout bleek
+      server-side tóch verwerkt — herdraai: 0 te zetten).
 - [x] Fase 0 tool-kant: website-rij #4 + `COLUMN_TO_UUID` (31 aug, TDD,
       `make check` groen)
 - [x] AFAS-family-fixes uitgezocht (31 aug): **géén AFAS-mutaties nodig** —
@@ -59,8 +66,26 @@ Checkout bleek al shortcode-conform. Audits + curatie-lijst gegenereerd.
       bestaan compleet. Audit kent nu oordeel KALE-AED-VARIATIE (3×, regel:
       variatie → artikel dat geen Samenstelling is); die drie zijn uit
       voorkoppeling (stap6: 787) en vlag-voorstel (790) gehaald.
-- [ ] stap9 volledig draaien (mét prijzen) + resultaat controleren
-- [ ] Opruimstap 17 oude `*_parent`-containers ná geslaagde sync (stap10)
+- [x] Relatie-vlaggen gezet (31 aug): eerste volle sync gaf "relaties: 0" —
+      de verkooprelatie-kant van B1 was nog niet gevlagd. Nieuw script
+      `afas-connector-tools/bin/apply-revendeurs-relatie-vlaggen.php`
+      (patroon defibsolutions-relaties, Org/Per-routing): 182/182 ok.
+- [x] stap9 volledig gedraaid (31 aug): 794 artikelen · 71.683 prijsregels ·
+      182 relaties · 39 kortingen · wc-sync 0 warnings. Volgorde die werkte:
+      stap9 (force, 830 container-blokkade-warnings) → stap11 apply →
+      stap9 zonder-prijzen force (delta bouwt níet — geweigerde containers
+      tellen niet als "gewijzigd") → stap9 vol (relaties erbij).
+- [x] stap11 gebouwd + toegepast: 17 handgemaakte containers + 518 variaties
+      opgeruimd (SKU/meta gestript → prullenbak); herkenning fresh-pull-proof
+      (variabel product zonder meta en zonder `-wpbase`-SKU). Plugin bouwde
+      15 nieuwe containers, 505 variaties publish; frontend toont prijzen
+      (Reanibex: 88 variaties onder één container, reseller-conform).
+- [ ] **Adressen-sync**: `Get_Addresses` time-out na 300s (2×; 27.910 rijen
+      binnen). Stap9 vangt hem nu af (waarschuwing, reeks loopt door) maar
+      vóór livegang oplossen: filter/paginering of plugin-fix bij LEF.
+- [ ] Container-namen zijn Engels (plugin noemt naar EN-head) + variatie-
+      assen conform reseller — stap12-analoog bouwen (tool-templates
+      `model_name_fr` als bron).
 - [ ] Checkout-test met testklant (user 26)
 - [ ] Reproduceerbaarheids-check: kopie weg → verse pull → alle stappen in
       één reeks zonder handwerk — dán pas is cp01 aan de beurt
