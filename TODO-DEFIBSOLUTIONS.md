@@ -307,6 +307,12 @@ Pas plannen na Fase G; aparte go/no-go met Cas. Checklist staat in het
 runbook (backup → alle stappen → controles → mail aan → week monitoren →
 B2BKing opruimen).
 
+- [ ] NÁ livegang (herinnering voor Cas, besluit 31 aug): Cloudflare
+      oppakken — de definitieve shop-URL wordt **shop.defibsolutions.nl**
+      (subdomein; hoofdsite blijft op het domein-root). Pas relevant als
+      alles op de bouwlocatie akkoord is; bewust nog nergens in code of
+      configs verwerkt.
+
 ---
 
 ## Later — verzameld 26 aug (niet vergeten)
