@@ -174,26 +174,17 @@ doet het **wordpress-migrater**-project (patroon:
 
 ## Parallel regelen — NU starten (lange doorlooptijd AFAS-beheer)
 
-- [ ] **Aanvraag vrije velden versturen** (Cas). Kant-en-klare tekst:
-
-  > Voor de koppeling van defibsolutions.fr hebben we twee nieuwe vrije
-  > velden nodig, exact naar het voorbeeld van Sync_Defibsolutions_NL /
-  > Tonen_Defibsolutions_NL:
-  >
-  > 1. **Sync_Defibsolutions_FR** (ja/nee) — op **artikel** én op
-  >    **verkooprelatie**
-  > 2. **Tonen_Defibsolutions_FR** (ja/nee) — op **artikel** én op
-  >    **verkooprelatie**
-  >
-  > Beide velden graag opnemen in de GetConnectors **Get_Artikelen** en
-  > **Get_Verkooprelaties**. Mogen we daarna de veld-UUID's ontvangen?
-  > (Die hebben we nodig voor de UpdateConnector-writes.)
-
-- [ ] **Zodra de UUIDs binnen zijn** (één todo, twee kanten — de tweede
-      vergeten kostte bij NL een dag debug):
-      1. `website:add` met het Sync/Tonen-paar;
-      2. `COLUMN_TO_UUID` uitbreiden in
-         `src/Infrastructure/Publications/HttpAfasFreeFieldStateReader.php`.
+- [x] **Vrije velden aangemaakt** (AFAS-beheer, 31 aug) — op artikel én
+      verkooprelatie, opgenomen in beide GetConnectors. UUID's (via
+      metainfo geverifieerd):
+      - artikel (FbComposition): Sync `U5F08630D77AB483DA576C513B14FE7C6`,
+        Tonen `UFB9CAA381B1A4AA280EB05E6E26DF2A6`
+      - verkooprelatie (KnSalesRelationOrg): Sync
+        `U475C47EC6EE8461299BA37053337DC4D`, Tonen
+        `U1F55265FE06747FA9D05E4ECCF0161A7` (nodig bij het relatie-flaggen)
+- [x] **Tool bijgewerkt** (31 aug): `website:add` gedaan (website 6,
+      "DefibSolutions FR") én `COLUMN_TO_UUID` uitgebreid met test
+      (de tweede kant vergeten kostte bij NL een dag debug).
 - [ ] **Klant↔relatie-mapping FR opbouwen** (na het bron-beslispunt).
 
 ---
