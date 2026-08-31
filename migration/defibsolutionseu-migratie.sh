@@ -126,16 +126,124 @@ stap0() {
     wpr option get blogname
 }
 
+# ---------------------------------------------------------------------------
+# Stap 1 — Mail UIT.
+# Voorkomt dat klanten welkomst-/account-/order-mails krijgen tijdens het
+# inrichten en syncen. Weer aanzetten is de allerlaatste stap van de migratie.
+# ---------------------------------------------------------------------------
+stap1() {
+    controleer_config
+    wpr plugin install disable-emails --activate
+    echo "--- controle:"
+    wpr plugin list --status=active | grep disable-emails
+    echo "OK — mail staat uit op $(doel_naam)"
+}
+
+# ---------------------------------------------------------------------------
+# Stap 2 — Overbodige plugins UIT (EU-lijst, anders dan NL):
+#   b2bking(+wholesale)  wordt vervangen door lefcreative-afas-b2b; data blijft
+#                        in de database staan als inerte fallback
+#   wp-staging(-pro)     staging/backup van de oude hosting; nutteloos op de
+#                        kopie/cp-01 en zo'n geheugenvreter dat wp-cli zonder
+#                        verhoogde memory_limit al bij het booten OOM't
+#   wp-rocket            page-cache met live-paden; op de kopie alleen maar
+#                        stale-cache-verwarring — na livegang bewust opnieuw
+#                        beoordelen
+#   mainwp-child         remote beheer vanaf het oude MainWP-dashboard; dat
+#                        mag de nieuwe omgeving niet kunnen muteren
+# Geen jetpack/mailchimp op deze shop (wél guard, voor het geval een verse
+# pull ze terugbrengt). Points & rewards (2 plugins) blijven bewust AAN tot
+# beslispunt B3 (MIGRATIE-DEFIBSOLUTIONS-EU.md) is beslist.
+# Alleen deactiveren; verwijderen kan in de eindschoonmaak.
+# ---------------------------------------------------------------------------
+stap2() {
+    controleer_config
+    local p
+    for p in b2bking-wholesale-for-woocommerce b2bking wp-staging-pro wp-staging wp-rocket mainwp-child jetpack mailchimp-for-woocommerce; do
+        if wpr plugin is-installed "$p" >/dev/null 2>&1; then
+            wpr plugin deactivate "$p"
+        else
+            echo "$p is niet geïnstalleerd op $(doel_naam) — overslaan"
+        fi
+    done
+    # wp-staging laat bij deactivatie zijn mu-plugin (wp-staging-optimizer.php)
+    # achter als unlink faalt — lokaal is dat bestand van de host-user en mag
+    # uid 33 het niet weg-unlinken. Als root opruimen; op cp01 is de site-user
+    # eigenaar en volstaat een gewone rm.
+    if [[ "$TARGET" == "lokaal" ]]; then
+        _lokaal_compose run --rm -T --user 0 wpcli \
+            rm -f /var/www/html/wp-content/mu-plugins/wp-staging-optimizer.php 2>/dev/null || true
+    else
+        ssh "$SERVER" "rm -f '$WP_ROOT/wp-content/mu-plugins/wp-staging-optimizer.php'"
+    fi
+    echo "--- controle:"
+    wpr plugin list | { grep -iE 'b2bking|wp-staging|wp-rocket|mainwp|jetpack|mailchimp' || echo "(niets gevonden)"; }
+    echo "OK — b2bking + wp-staging + wp-rocket + mainwp-child staan uit op $(doel_naam)"
+}
+
+# ---------------------------------------------------------------------------
+# Stap 5 — Alle API-keys van de shop intrekken.
+# Na de migratie mag niets van buitenaf meer muteren — de nieuwe plugin praat
+# zelf uitgaand met AFAS en heeft geen inkomende REST-key nodig. Alles gaat
+# weg; wie later weer toegang nodig heeft maakt bewust een nieuwe key aan.
+# Default dry-run (toont wat er staat); `stap5 apply` verwijdert echt.
+# Tabelprefix is wp_ (geverifieerd via wp_posts/wp_postmeta-queries).
+# Nummering volgt het NL-script (stap 3/4 = klantkoppeling/plugin-install,
+# wachten op EU-mapping-CSV en EU-afas-settings).
+# ---------------------------------------------------------------------------
+stap5() {
+    controleer_config
+    local apply="${1:-}"
+
+    echo "--- WooCommerce REST API-keys:"
+    wpr db query "\"SELECT key_id, user_id, description, permissions, truncated_key, last_access FROM wp_woocommerce_api_keys\""
+
+    echo ""
+    echo "--- Application passwords:"
+    local userids
+    # 'a:0:{}' = lege rij die WP na verwijderen laat staan — geen wachtwoord
+    userids=$(wpr db query "\"SELECT user_id FROM wp_usermeta WHERE meta_key='_application_passwords' AND meta_value NOT IN ('', 'a:0:{}')\"" --skip-column-names)
+    for uid in $userids; do
+        echo "user $uid:"
+        wpr user application-password list "$uid" --fields=uuid,name,created,last_used
+    done
+
+    if [[ "$apply" != "apply" ]]; then
+        echo ""
+        echo "Dry-run — niets ingetrokken. Draai '$0 stap5 apply' om alle keys hierboven te verwijderen."
+        return 0
+    fi
+
+    echo ""
+    echo "--- intrekken:"
+    wpr db query "\"DELETE FROM wp_woocommerce_api_keys\""
+    for uid in $userids; do
+        wpr user application-password delete "$uid" --all
+    done
+
+    echo "--- controle:"
+    wpr db query "\"SELECT COUNT(*) AS rest_keys FROM wp_woocommerce_api_keys\""
+    wpr db query "\"SELECT COUNT(*) AS app_passwords FROM wp_usermeta WHERE meta_key='_application_passwords' AND meta_value NOT IN ('', 'a:0:{}')\""
+    echo "OK — alle API-keys ingetrokken op $(doel_naam)"
+}
+
 usage() {
     echo "gebruik: $0 <stap>" >&2
     echo ""
     echo "  stap0   Rooktest: config-check + wp-versie op het target (read-only)"
+    echo "  stap1   Mail UIT: disable-emails installeren + activeren"
+    echo "  stap2   Overbodige plugins UIT: b2bking + wp-staging + wp-rocket + mainwp-child"
+    echo "  stap5   API-keys intrekken: WooCommerce REST-keys + application passwords (dry-run; 'stap5 apply' verwijdert)"
     echo ""
-    echo "Volgende stappen komen per fase uit MIGRATIE-DEFIBSOLUTIONS-EU.md."
+    echo "Stap 3 (klantkoppeling) en 4 (plugin + settings) volgen zodra de"
+    echo "EU-mapping-CSV en EU-afas-settings er zijn — zie MIGRATIE-DEFIBSOLUTIONS-EU.md."
     exit 1
 }
 
 case "${1:-}" in
     stap0) stap0 ;;
+    stap1) stap1 ;;
+    stap2) stap2 ;;
+    stap5) stap5 "${2:-}" ;;
     *) usage ;;
 esac

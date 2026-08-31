@@ -56,11 +56,12 @@ als bij .fr, geen shop-parameter in het NL-script).
       versturen; oplevering blokkeert alleen de sync-stappen, niet fase 0/1.
       Open detail: FR kreeg ook een "Webshop klant"-veld op verkooprelatie —
       meteen mee-aanvragen?
-- [ ] **B2 — SKU-/matchveld-strategie.** De mix uit de verkenning betekent:
-      óf alles omhangen naar itemcodes, óf een apart AFAS-matchveld (à la
-      `Artikelcode_BHV_Voordeelwinkel` bij NL), óf een gemengde
-      opruimactie. Voorstel: beslissen ná de koppelbaarheids-audit
-      (fase 1, stap-1.4-equivalent) — die levert de precieze aantallen.
+- [ ] **B2 — SKU-/matchveld-strategie.** Audit-uitkomst (27 aug): de
+      "fabrikantcodes" resolven vrijwel allemaal via
+      `Artikelcode_BHV_Voordeelwinkel` — zelfde regime als NL/FR
+      (itemcode eerst, dan BHV-veld, geblokkeerd telt nooit).
+      **Voorstel: geen aparte strategie nodig**, plugin-matchveld = BHV
+      zoals NL; alleen de audit-acties (zie 1.3) blijven over. Akkoord?
 - [ ] **B3 — Points & rewards.** Er draaien er twéé
       (points-and-rewards-for-woocommerce + ultimate-woocommerce-points-
       and-rewards). Meenemen naar de nieuwe opzet of uitzetten?
@@ -87,17 +88,38 @@ als bij .fr, geen shop-parameter in het NL-script).
 
 Spiegel van NL-fase 1; per stap eerst dry-run, EU-verschillen expliciet:
 
-1. [ ] **1.1 Verse pull** (`config-defibsolutionseu.ini` → check of die al
-       bestaat in wordpress-migrater) + `_lokaal_prep`.
-2. [ ] **1.2 Stappen mail-uit t/m API-keys** overnemen (NL stap 1–5), met
-       EU-pluginlijst: wp-staging(-pro), wp-rocket, mainwp-child erbij in
-       de uit-lijst; B2BKing + b2bking-wholesale deactiveren.
-       Let op: EU heeft eigen `afas-settings.json`-dump + plugin-zip nodig
-       in `work/` (NL-settings bevatten NL-token/URL — niet hergebruiken).
-3. [ ] **1.3 Koppelbaarheids-audit** (stap-1.4-equivalent van NL):
-       read-only, per product + per AFAS-artikel één rij met actie-kolom;
-       referentieregel: vorm gelijk aan reseller/ARKY via de snapshot.
-       Output beslist B2.
+1. [x] **1.1 Verse pull** — overgeslagen: de kopie is 27 aug gepulld
+       (laatste order 09:28 GMT), `config-defibsolutionseu.ini` bestaat al.
+       Bron blijkt **Satserver/DirectAdmin** (FTP + directe MySQL, geen
+       shell) — relevant voor fase 2. Live draait achter
+       `jonradio-private-site` (migrater zet die lokaal uit).
+       Reproduceerbaarheids-check (1.6) pullt sowieso opnieuw.
+2. [ ] **1.2 Stappen mail-uit t/m API-keys** (NL stap 1–5, EU-lijst):
+       - [x] stap1 mail uit (disable-emails actief)
+       - [x] stap2 plugins uit: b2bking(+wholesale), wp-staging(-pro),
+             wp-rocket, mainwp-child + opruiming wp-staging-mu-plugin;
+             idempotent herdraaid. Points & rewards bewust nog aan (B3).
+       - [x] stap5 dry-run groen (2 REST-keys, 1 app-password)
+       - [ ] `stap5 apply` — **actie Cas** (classifier blokkeert key-deletie
+             vanuit de Claude-sessie): `./migration/defibsolutionseu-migratie.sh stap5 apply`
+       - [ ] stap3 klantkoppeling — wacht op EU-mapping-CSV (B4)
+       - [ ] stap4 plugin + settings — wacht op EU-`afas-settings`-dump
+             (NL-settings bevatten NL-token/URL — niet hergebruiken)
+3. [ ] **1.3 Koppelbaarheids-audit** — script + rapport klaar (27 aug),
+       acties nog te kiezen:
+       - [x] `work/audit-koppelbaarheid-defibsolutionseu.py` (bewerking van
+             de revendeurs-audit; cache gedeeld met de verse pull van 27 aug)
+       - [x] Rapport: `work/defibsolutionseu-koppelbaarheid.csv`, 1595 rijen
+             (incl. variaties): **1329 OK · 126 GEBLOKKEERD (121 variaties,
+             SKU's wijzen naar B-artikelen) · 67 GEEN-MATCH (simples:
+             trainers/simulators) · 40 VORM-VERSCHILT (vooral Prestan
+             simple↔variation, 25 draft) · 13 draft · 9 GEEN-SKU (o.a.
+             "Offer"/"Credit"-hulpproducten)**. Vlag-voorstel:
+             `work/defibsolutionseu-vlag-voorstel.csv`, 1350 itemcodes
+             (incl. 6 family-heads).
+       - [ ] Per probleemcategorie een actie kiezen (Cas/Kevin) —
+             GEBLOKKEERD-mapping, GEEN-MATCH-assortiment, Prestan-structuur,
+             GEEN-SKU-opschoning. Acties worden stappen in 1.4.
 4. [ ] **1.4 Audit-acties + fase-2-handelingen als stappen** (checkout-
        pagina, mu-plugins incl. wc-variation-threshold, Divi-kaal,
        structuur-omzettingen, schrappingen — naar analogie NL stap 6–14,
