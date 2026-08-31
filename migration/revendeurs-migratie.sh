@@ -529,14 +529,21 @@ if ($zonderPrijzen) {
     do_action('afas_sync_kortingen', true);
     do_action('afas_sync_landen', true);
     // Get_Addresses is de zwaarste connector (geen filter -> alle adressen)
-    // en time-out'te op 31 aug na 300s. Niet fataal voor producten/prijzen:
-    // bij falen waarschuwen en doorgaan; de delta-cursor laat een latere run
-    // (of de nightly) het restant ophalen.
-    try {
-        do_action('afas_sync_addresses', true);
-    } catch (\Throwable $e) {
-        printf("         WAARSCHUWING adressen-sync mislukt: %s\n", $e->getMessage());
-        printf("         -> later opnieuw draaien (delta), producten/prijzen gaan door\n");
+    // en time-out't af en toe na 300s (AFAS-kant, bevestigd door Cas: "gewoon
+    // nog een keer runnen"). Tot 3 pogingen; de delta-cursor maakt elke
+    // poging korter. Blijft het falen: waarschuwen en doorgaan — niet fataal
+    // voor producten/prijzen.
+    for ($poging = 1; $poging <= 3; $poging++) {
+        try {
+            do_action('afas_sync_addresses', true);
+            break;
+        } catch (\Throwable $e) {
+            printf("         adressen-sync poging %d mislukt: %s\n", $poging,
+                substr($e->getMessage(), 0, 120));
+            if ($poging === 3) {
+                printf("         -> opgegeven na 3 pogingen; later opnieuw (delta), producten/prijzen gaan door\n");
+            }
+        }
     }
     printf("         relaties: %d, kortingen: %d, adressen: %d\n",
         (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}lef_afas_verkooprelaties"),
@@ -977,6 +984,29 @@ PY
     fi
 }
 
+# ---------------------------------------------------------------------------
+# reeks — de volledige bewezen volgorde in één run (reproduceerbaarheids-
+# check en straks de cp01-livegang). Vereist een verse of bestaande kopie;
+# de verse pull zelf gaat via wordpress-migrater:
+#   ./migrate.sh -c revendeurs --pull --local-refresh
+# Volgorde (31 aug): basisstappen → stap9 vol (container-blokkade-warnings
+# verwacht) → stap11 opruimen → stap9 herbouw (force!) → stap12 assen.
+# ---------------------------------------------------------------------------
+reeks() {
+    local t0=$SECONDS
+    local s
+    for s in "stap1" "stap2" "stap3 apply" "stap4" "stap5 apply" "stap6 apply" \
+             "stap7" "stap8" "stap10 apply" "stap9" "stap11 apply" \
+             "stap9 zonder-prijzen" "stap12 apply"; do
+        echo ""
+        echo "===== reeks: $s [$(( (SECONDS - t0) / 60 ))m] ====="
+        # shellcheck disable=SC2086
+        $s
+    done
+    echo ""
+    echo "===== reeks compleet in $(( (SECONDS - t0) / 60 ))m ====="
+}
+
 usage() {
     cat <<EOF
 Gebruik: $0 <stap> [apply|opties]
@@ -1002,14 +1032,13 @@ Stappen:
   stap12 [apply] Franse containernamen (tool: model_name_fr) + variatie-assen
                 (pa_langue/pa_connectivite/pa_capteur-rcp/pa_options)
 
-Volgende stappen (nog te bouwen, zie MIGRATIE-REVENDEURS.md):
-  checkout-test · reproduceerbaarheids-check
+  reeks         Alle stappen in de bewezen volgorde (repro-check / livegang)
 EOF
     exit 1
 }
 
 [[ $# -ge 1 ]] || usage
 case "$1" in
-    stap1|stap2|stap3|stap4|stap5|stap6|stap7|stap8|stap9|stap10|stap11|stap12) "$@" ;;
+    stap1|stap2|stap3|stap4|stap5|stap6|stap7|stap8|stap9|stap10|stap11|stap12|reeks) "$@" ;;
     *) usage ;;
 esac

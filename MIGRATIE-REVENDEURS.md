@@ -92,8 +92,15 @@ Checkout bleek al shortcode-conform. Audits + curatie-lijst gegenereerd.
       nieuwe slugs redirecten (SEO), en het bestaande attribuutlabel
       "options" (kleine letter, was al op de shop) evt. hernoemen.
 - [ ] Checkout-test met testklant (user 26)
-- [ ] Reproduceerbaarheids-check: kopie weg → verse pull → alle stappen in
-      één reeks zonder handwerk — dán pas is cp01 aan de beurt
+- [x] **Reproduceerbaarheids-check geslaagd (31 aug):** verse pull
+      (`./migrate.sh -c revendeurs --pull --local-refresh`) → nieuw
+      `reeks`-commando (stap 1→8, 10 → stap9 vol → stap11 → stap9 herbouw →
+      stap12) → identieke eindstand in 27 min zonder handwerk: 794 artikelen,
+      182 relaties, 15 containers, 505 variaties, Franse titels, prijzen.
+      `reeks` = straks letterlijk de cp01-volgorde (zonder pull; cp-01 ís de
+      bron). Adressen-sync: 3 pogingen per run (retry ingebouwd), time-out
+      blijft af en toe optreden aan AFAS-kant — delta maakt elke run
+      progressie; vóór livegang volledig laten doorlopen.
 
 **Livegang (fase 2, buiten kantooruren):** zie onderaan; Bron Order-code +
 order-push aan + administratie zijn dáár bewuste acties (besluiten staan vast).
