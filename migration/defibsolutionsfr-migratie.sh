@@ -513,6 +513,44 @@ PHP
     echo "OK — Franse vertaling geplaatst op $(doel_naam)"
 }
 
+# ---------------------------------------------------------------------------
+# Stap 9 — BeRocket-filterbalk repareren na pull/URL-rewrite. De plugin
+# woocommerce-ajax-filters (BeRocket AAPF) cachet ABSOLUTE template-style-
+# paden in optie BeRocket_AAPF_getall_Template_Styles; na een verhuizing
+# wijzen die naar het oude serverpad -> file_exists faalt -> elke filter
+# bailt met "Template not selected" en de balk rendert leeg (bapf_mt_none).
+# Les uit de NL-migratie (work/handoff-berocket-filter-pad-cache.md; NL
+# stap15). Het Divi-deel van die stap vervalt: FR draait Woodmart.
+# Idempotent; hoort in elke herhaal-reeks na een verse pull.
+# Default dry-run (toont het huidige pad); `stap9 apply` regenereert.
+# ---------------------------------------------------------------------------
+stap9() {
+    controleer_config
+    local apply="${1:-}"
+    wpr_stdin eval-file - "$apply" <<'PHP'
+<?php
+$apply = ('apply' === ($args[0] ?? ''));
+// let op: de typo 'tempate' in de action-naam is van de plugin zelf
+$styles = (array) get_option('BeRocket_AAPF_getall_Template_Styles');
+$eerste = reset($styles);
+$oudPad = is_array($eerste) && !str_starts_with($eerste['file'] ?? '', WP_PLUGIN_DIR);
+if ($apply && $oudPad) {
+    do_action('bapf_include_all_tempate_styles');
+    $styles = (array) get_option('BeRocket_AAPF_getall_Template_Styles');
+    $eerste = reset($styles);
+}
+printf("berocket template-styles: %s\n", $oudPad
+    ? ($apply ? 'pad-cache geregenereerd -> ' . ($eerste['file'] ?? '?') : 'VEROUDERD PAD: ' . ($eerste['file'] ?? '?'))
+    : 'paden al lokaal: ' . ($eerste['file'] ?? '(leeg)'));
+if (!$apply) { echo "Dry-run - niets gewijzigd.\n"; }
+PHP
+    if [[ "$apply" != "apply" ]]; then
+        echo "Dry-run — draai '$0 stap9 apply' om te regenereren."
+    else
+        echo "OK — BeRocket-pad-cache vers op $(doel_naam)"
+    fi
+}
+
 hulp() {
     cat <<EOF
 Gebruik: $0 <stap> [apply|opties]   (DEFIBSFR_TARGET=lokaal|cp01, default lokaal)
@@ -525,6 +563,7 @@ Gebruik: $0 <stap> [apply|opties]   (DEFIBSFR_TARGET=lokaal|cp01, default lokaal
   stap6   [apply]  Voorkoppeling _afas_artikelnummer (incl. omzet-lijst)
   stap7            mu-plugins plaatsen
   stap8            Franse plugin-vertaling plaatsen (fr_FR.mo)
+  stap9   [apply]  BeRocket-filterbalk: pad-cache regenereren na pull
 
 Zie MIGRATIE-DEFIBSOLUTIONS-FR.md voor het fase-overzicht.
 EOF
@@ -539,5 +578,6 @@ case "${1:-}" in
     stap6) stap6 "${2:-}" ;;
     stap7) stap7 ;;
     stap8) stap8 ;;
+    stap9) stap9 "${2:-}" ;;
     *) hulp; [[ -n "${1:-}" ]] && exit 1 || exit 0 ;;
 esac

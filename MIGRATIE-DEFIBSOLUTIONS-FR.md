@@ -175,6 +175,11 @@ Stand 31 aug:
       (`migration/afas-translations/lefcreative-afas-b2b-fr_FR.po/.mo`),
       geplaatst in `wp-content/languages/plugins/`, laadt geverifieerd.
       Review door native speaker welkom vóór livegang.
+- [x] Stap 9 — BeRocket-pad-cache geregenereerd (handoff-les NL 31 aug;
+      wees naar het oude hostpad). Zichtbare schade was er niet: de FR-shop
+      rendert de filterbalk nergens (live én kopie 0 bapf-elementen;
+      BeRocket dient hier alleen WPBakery-grids). Divi-feature-cache-
+      handoff n.v.t.: FR draait Woodmart.
 - [ ] Structuur-opruiming + schrappingen (wacht op Randy/actielijst) ·
       syncs (stap11-equivalent) · variatie-assen · checkout-pagina ·
       weergave-instellingen (Woodmart i.p.v. Divi-stap).
