@@ -172,15 +172,16 @@ stap2() {
 # ---------------------------------------------------------------------------
 # Stap 3 — Klanten koppelen aan AFAS-verkooprelaties (usermeta afas_relatie_id,
 # het veld waar lefcreative-afas-b2b op draait).
-# Bron: work/klant-relatie-mapping-fr.csv (wc_user_id;afas_relatie_id) — nog
-# op te bouwen zodra het bron-beslispunt (orderhistorie vs handmatig, 88
-# klanten) beslist is. Users zonder mapping-rij blijven bewust ongekoppeld.
+# Bron: work/defibsolutionsfr-klant-relatie-mapping.csv (wc_user_id;
+# afas_relatie_id), gegenereerd door work/mine-order-koppeling-defibsolutionsfr.py
+# (orderhistorie met e-mailbewijs + e-mail-fallback, besluit Cas 31 aug).
+# Users zonder mapping-rij blijven bewust ongekoppeld (review-CSV ernaast).
 # Default dry-run (toont ook het e-mailadres van de user ter verificatie);
 # `stap3 apply` schrijft echt.
 # ---------------------------------------------------------------------------
 stap3() {
     controleer_config
-    local mapping="$REPO_ROOT/work/klant-relatie-mapping-fr.csv"
+    local mapping="$REPO_ROOT/work/defibsolutionsfr-klant-relatie-mapping.csv"
     local apply="${1:-}"
     [[ -f "$mapping" ]] || { echo "FOUT: $mapping ontbreekt (bron-beslispunt nog open, zie runbook)" >&2; exit 1; }
 

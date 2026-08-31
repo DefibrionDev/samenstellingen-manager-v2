@@ -19,12 +19,11 @@ eigen scriptkopie `migration/defibsolutionsfr-migratie.sh` (besluit 27 aug).
 
 ## Waar staan we
 
-- [x] Fase 0 — runbook akkoord (Cas, 27 aug); vrije-veld-aanvraag ligt bij Cas
-- [ ] **Fase 1 — lokale migratie ← WE ZIJN HIER** (1.1 + 1.2 klaar)
+- [x] Fase 0 — runbook akkoord (Cas, 27 aug); vrije velden live (31 aug)
+- [ ] **Fase 1 — lokale migratie ← WE ZIJN HIER** (1.1 t/m 1.3 klaar)
 - [ ] Fase 2 — livegang op cp-01
 
-**Volgende actie: stap 1.3 (basisstappen porten); Cas: AFAS-aanvraag
-versturen + Shopctrl-beslispunt.**
+**Volgende actie: stap 1.4 (koppelbaarheids-audit, ~1 dag).**
 
 ## Spelregels (identiek aan NL)
 
@@ -56,15 +55,17 @@ versturen + Shopctrl-beslispunt.**
 
 - [x] **Shopctrl: mag weg** (besluit Cas 31 aug). Stap 5 trekt alle keys in;
       lokaal met `apply` gedraaid: 0 REST-keys, 0 app-passwords over.
-- [ ] **SKU-strategie FR** — data ligt er (scan 27 aug, AFAS-cache 09:18):
-      van de 403 producten matchen **289 uniek op BHV-code**, 30 zijn zelf
-      een actieve itemcode, **83 matchen nergens op**, 1 zonder SKU, 0
-      dubbelen. **Voorstel: zelfde als NL-optie B** — BHV-codes houden,
-      plugin matcht op `Artikelcode_BHV_Voordeelwinkel` (staat al zo in
-      `afas-settings-fr.json`); de 83+1 worden de FR-actielijst in stap 1.4.
-      → wacht op akkoord Cas.
-- [ ] **Klant↔relatie-mapping**: bron voor de 88 klanten — orderhistorie zoals
-      NL, of handmatig (klein genoeg)?
+- [x] **SKU-strategie FR: optie B — SKU's laten zoals ze zijn** (akkoord
+      Cas 31 aug). Plugin matcht op `Artikelcode_BHV_Voordeelwinkel`
+      (staat al zo in `afas-settings-fr.json`). Data: 289/403 uniek BHV,
+      30 itemcode, 83 no-match + 1 zonder SKU → FR-actielijst in stap 1.4.
+- [x] **Klant↔relatie-mapping: orderhistorie + e-mail-fallback** (besluit
+      Cas 31 aug). Gedaan via `work/mine-order-koppeling-defibsolutionsfr.py`:
+      56/88 gekoppeld (35 orderhistorie e-mail-geverifieerd, 21 unieke
+      e-mail-match) en met stap 3 lokaal gezet. Restant in
+      `work/defibsolutionsfr-klantmapping-review.csv`: 15 EMAIL-AMBIGU
+      (dubbele AFAS-relaties — saneren zoals Ehabo bij NL), 16 GEEN-MATCH,
+      1 ONGEVERIFIEERD, 1 intern account.
 - [ ] **Points/rewards-plugins**: uit tijdens migratie (zoals B2BKing-aanpak)
       of blijven ze actief? Reseller draait ze ook — cross-check gewenst.
 - [ ] **Prijzen FR**: welke AFAS-prijslijst(en) bedienen Franse klanten;
@@ -91,17 +92,18 @@ loopt via FTPS + directe MySQL (`config-defibsolutionsfr.ini`, host
 draait lokaal dry-run; cp01- en onbekend-target-guards falen netjes.
 Stap5-`apply` weigert bewust tot het Shopctrl-beslispunt beslist is.
 
-### Stap 1.3 — [ ] Basisstappen 1–5 porten en lokaal draaien (~half dagdeel)
+### Stap 1.3 — [x] Basisstappen 1–5 porten en lokaal draaien
 
-Stand 27 aug: **stap 1, 2, 4 groen; 3 en 5 geblokkeerd op beslispunten.**
+Klaar 31 aug: **alle vijf stappen lokaal groen.**
 
 - [x] Stap 1 — mail uit (disable-emails actief)
 - [x] Stap 2 — plugins uit: woocommerce-b2b, wp-staging(-pro), mainwp-child
       (remote-beheerkanaal, extra t.o.v. NL); ruimt ook de achterblijvende
       wp-staging-optimizer-mu-plugin op. Points/rewards-plugins bewust nog
       actief (open beslispunt).
-- [ ] Stap 3 — klantkoppeling: geport, faalt netjes tot
-      `work/klant-relatie-mapping-fr.csv` bestaat (bron-beslispunt).
+- [x] Stap 3 — klantkoppeling gezet (31 aug): 56 users gekoppeld via
+      `work/defibsolutionsfr-klant-relatie-mapping.csv`; idempotent
+      geverifieerd (herrun: 56 stonden al goed).
 - [x] Stap 4 — lefcreative-afas-b2b **2.0.4** (actuele zip van 24 aug; het
       NL-runbook noemt nog 1.3.14) + `work/afas-settings-fr.json` (147
       opties, FR-afleiding van de NL-dump: Sync_/Tonen_Defibsolutions_FR,
