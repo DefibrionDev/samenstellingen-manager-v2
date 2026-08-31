@@ -116,6 +116,25 @@ Klaar 31 aug: **alle vijf stappen lokaal groen.**
 
 ### Stap 1.4 — [ ] Koppelbaarheids-audit (~1 dag — het meeste uitzoekwerk)
 
+Stand 31 aug — audit gedraaid (`work/audit-koppelbaarheid-defibsolutionsfr.py`,
+verse AFAS-pull; output `work/defibsolutionsfr-koppelbaarheid.csv` +
+`work/defibsolutionsfr-vlag-voorstel.csv`, 318 itemcodes):
+
+- **OK 319 · GEEN-MATCH 79 · VORM-VERSCHILT 12 · GEBLOKKEERD 8 · GEEN-SKU 1**
+- Alle 12 vorm-conflicten zijn Prestan-**drafts** (bekend WC-only-VAR-patroon);
+  het gepubliceerde assortiment heeft géén vorm-conflicten.
+- 1 wees-variatie (wc:6285, Peli 1450) onder een niet-variable parent.
+- **NIEUW BESLISPUNT (Cas):** FR verkoopt alleen kale AED-artikelen; voor
+  14 AED-modellen bestaat al een FR-talige samenstelling in de tool
+  (Heartsine 350P/360P, Defibtech Lifeline, Philips HS1, Zoll Plus+3
+  semi/auto, Mindray C1a/C2a semi/auto, Reanibex 100 semi/auto). Bij NL
+  was kale-AED→samenstelling de kern van de omzetting. Kiezen: (a) FR gaat
+  óók samenstellingen verkopen (zoals NL — omhangen via voorkoppel-
+  actielijst) of (b) FR blijft kale AED's verkopen (dan alleen kale codes
+  vlaggen). Advies: (a), consistent met NL/reseller en de tool.
+- Nog te doen: actielijst voor 79 GEEN-MATCH + 8 GEBLOKKEERD + 1 GEEN-SKU
+  (voorstel per rij, zoals NL's aed-sku-actielijst).
+
 Zelfde opzet als NL-stap 1.4: per published product en per te syncen
 AFAS-artikel één rij met actie-kolom. **Referentieregel:** staat een artikel
 op reseller/ARKY/DefibSolutions-NL gepubliceerd, dan krijgt FR dezelfde vorm
