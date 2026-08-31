@@ -49,26 +49,39 @@ als bij .fr, geen shop-parameter in het NL-script).
 
 ## Beslispunten — open, voor Cas
 
-- [ ] **B1 — AFAS vrije velden aanvragen.** Tekst ligt klaar in
-      `work/afas-aanvraag-defibsolutions-eu.md`: `Sync_Defibsolutions_EU` /
-      `Tonen_Defibsolutions_EU` op artikel én verkooprelatie, opgenomen in
-      `Get_Artikelen` / `Get_Verkooprelaties`, UUID's terug. Vandaag
-      versturen; oplevering blokkeert alleen de sync-stappen, niet fase 0/1.
-      Open detail: FR kreeg ook een "Webshop klant"-veld op verkooprelatie —
-      meteen mee-aanvragen?
+- [x] **B1 — AFAS vrije velden: aangemaakt én in beide GetConnectors**
+      (Cas 31 aug; geverifieerd via metainfo). Veld-UUID's uit de
+      UpdateConnector-metainfo:
+
+      | Veld | Entiteit | UUID |
+      |---|---|---|
+      | Sync Defibsolutions EU | artikel (FbItemArticle) | `UB5C2D2F9C5074DC8A58313AAC05CDB57` |
+      | Tonen Defibsolutions EU | artikel (FbItemArticle) | `U06EEE4646B0F433EBCBC74D27D5F73C4` |
+      | Sync Defibsolutions EU | verkooprelatie (KnSalesRelationOrg) | `UDAAB6826209A40A4A0E1A6D320108CD1` |
+      | Tonen Defibsolutions EU | verkooprelatie (KnSalesRelationOrg) | `U183237250C6A45769621C1E546B03C8A` |
+
+      Verwerkt in de tool (27 aug): `website:add "DefibSolutions EU"`
+      (website #5) én `COLUMN_TO_UUID` uitgebreid in
+      `HttpAfasFreeFieldStateReader` — mét regressietest, `make check` groen.
+      Geen "Webshop klant"-veld aangemaakt; pas aanvragen als de plugin-kant
+      erom vraagt.
 - [ ] **B2 — SKU-/matchveld-strategie.** Audit-uitkomst (27 aug): de
       "fabrikantcodes" resolven vrijwel allemaal via
       `Artikelcode_BHV_Voordeelwinkel` — zelfde regime als NL/FR
       (itemcode eerst, dan BHV-veld, geblokkeerd telt nooit).
       **Voorstel: geen aparte strategie nodig**, plugin-matchveld = BHV
       zoals NL; alleen de audit-acties (zie 1.3) blijven over. Akkoord?
-- [ ] **B3 — Points & rewards.** Er draaien er twéé
-      (points-and-rewards-for-woocommerce + ultimate-woocommerce-points-
-      and-rewards). Meenemen naar de nieuwe opzet of uitzetten?
-      Interactie met AFAS-klantprijzen is onduidelijk.
-- [ ] **B4 — Klant-relatie-mapping EU.** Zelfde orderhistorie-methode als
-      NL (`work/klant-relatie-mapping.csv`)? Dan een EU-variant genereren
-      (±130 users, kleiner karwei dan NL).
+- [x] **B3 — Points & rewards: BEHOUDEN** (besluit Cas 27 aug). Beide
+      plugins blijven actief en gaan mee naar de nieuwe opzet; interactie
+      met AFAS-klantprijzen controleren in de checkout-test (1.5).
+- [x] **B4 — Klant-relatie-mapping EU: JA, orderhistorie-methode** (besluit
+      Cas 27 aug). Uitgevoerd met e-mailverificatie erbovenop, want de kale
+      WC-nummers in het AFAS-Nummer-veld komen uit meerdere shops (botsingen
+      aangetoond). Generator: `work/mine-order-koppeling-defibsolutionseu.py`.
+      Resultaat: 38 klanten met orders → 26 geverifieerd gekoppeld (stap3
+      apply gedraaid), 5 ONGEVERIFIEERD in
+      `work/defibsolutionseu-klantmapping-review.csv` (handmatig na te
+      lopen), 7 zonder AFAS-orderbewijs (blijven bewust ongekoppeld).
 - [ ] **B5 — cp-01-sitenaam + dev-domein.** Voorstel conform NL-patroon:
       site-user `defibsolutionseu`, serveert `defibsolutionseu.defibrion.dev`
       tot livegang. Site aanmaken loopt via wordpress-migrater (zoals
@@ -102,7 +115,8 @@ Spiegel van NL-fase 1; per stap eerst dry-run, EU-verschillen expliciet:
        - [x] stap5 dry-run groen (2 REST-keys, 1 app-password)
        - [ ] `stap5 apply` — **actie Cas** (classifier blokkeert key-deletie
              vanuit de Claude-sessie): `./migration/defibsolutionseu-migratie.sh stap5 apply`
-       - [ ] stap3 klantkoppeling — wacht op EU-mapping-CSV (B4)
+       - [x] stap3 klantkoppeling: 26 geverifieerde koppelingen gezet
+             (apply + idempotentie-check groen); 5 review-gevallen open (B4)
        - [ ] stap4 plugin + settings — wacht op EU-`afas-settings`-dump
              (NL-settings bevatten NL-token/URL — niet hergebruiken)
 3. [ ] **1.3 Koppelbaarheids-audit** — script + rapport klaar (27 aug),

@@ -27,6 +27,10 @@ final readonly class HttpAfasFreeFieldStateReader implements AfasFreeFieldStateR
         'Tonen_Defibsolutions_NL' => 'UBC0C50717BE74A15842A03C09003717D',
         'Sync_Revendeurs_FR' => 'UBC3EEC609E9F46F89979374EBC300451',
         'Tonen_Revendeurs_FR' => 'U846C067CF358432E992BD5A8CE6F7141',
+        'Sync_Defibsolutions_EU' => 'UB5C2D2F9C5074DC8A58313AAC05CDB57',
+        'Tonen_Defibsolutions_EU' => 'U06EEE4646B0F433EBCBC74D27D5F73C4',
+        'Sync_Defibsolutions_FR' => 'U5F08630D77AB483DA576C513B14FE7C6',
+        'Tonen_Defibsolutions_FR' => 'UFB9CAA381B1A4AA280EB05E6E26DF2A6',
     ];
 
     public function __construct(private AfasHttpClient $client)

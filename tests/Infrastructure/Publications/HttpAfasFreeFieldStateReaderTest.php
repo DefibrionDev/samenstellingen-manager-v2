@@ -24,6 +24,10 @@ final class HttpAfasFreeFieldStateReaderTest extends TestCase
     private const DEFIBS_TONEN = 'UBC0C50717BE74A15842A03C09003717D';
     private const REVENDEURS_SYNC = 'UBC3EEC609E9F46F89979374EBC300451';
     private const REVENDEURS_TONEN = 'U846C067CF358432E992BD5A8CE6F7141';
+    private const DEFIBS_EU_SYNC = 'UB5C2D2F9C5074DC8A58313AAC05CDB57';
+    private const DEFIBS_EU_TONEN = 'U06EEE4646B0F433EBCBC74D27D5F73C4';
+    private const DEFIBS_FR_SYNC = 'U5F08630D77AB483DA576C513B14FE7C6';
+    private const DEFIBS_FR_TONEN = 'UFB9CAA381B1A4AA280EB05E6E26DF2A6';
 
     #[Test]
     public function mapsResellerAndArkyFreeFieldColumnsToUuids(): void
@@ -100,6 +104,52 @@ final class HttpAfasFreeFieldStateReaderTest extends TestCase
         self::assertEquals([
             '52120' => [self::REVENDEURS_SYNC => true, self::REVENDEURS_TONEN => false],
             '11142-FR' => [self::REVENDEURS_SYNC => false, self::REVENDEURS_TONEN => true],
+        ], $reader->readAll());
+    }
+
+    #[Test]
+    public function mapsDefibsolutionsEuFreeFieldColumnsToUuids(): void
+    {
+        // Website 5 (DefibSolutions EU, defibsolutions.eu) — kolommen sinds
+        // 27 aug 2026 in Get_Artikelen. Zelfde valkuil als de DefibSolutions-
+        // regressie hierboven: zonder deze mapping herschrijft publications:sync
+        // elke run alle al-correcte EU-vlaggen.
+        $mock = new MockHandler([
+            new Response(200, [], (string) json_encode(['rows' => [
+                ['Itemcode' => '52120', 'Sync_Defibsolutions_EU' => '1', 'Tonen_Defibsolutions_EU' => '0'],
+                ['Itemcode' => '11133-60112', 'Sync_Defibsolutions_EU' => '', 'Tonen_Defibsolutions_EU' => '1'],
+            ]])),
+        ]);
+        $reader = new HttpAfasFreeFieldStateReader(
+            new AfasHttpClient(new Client(['handler' => HandlerStack::create($mock)]), 'https://example.test', 'token'),
+        );
+
+        self::assertEquals([
+            '52120' => [self::DEFIBS_EU_SYNC => true, self::DEFIBS_EU_TONEN => false],
+            '11133-60112' => [self::DEFIBS_EU_SYNC => false, self::DEFIBS_EU_TONEN => true],
+        ], $reader->readAll());
+    }
+
+    #[Test]
+    public function mapsDefibsolutionsFrFreeFieldColumnsToUuids(): void
+    {
+        // Website 6 (DefibSolutions FR, defibsolutions.fr) — kolommen sinds
+        // 31 aug 2026 in Get_Artikelen. Zelfde valkuil als de DefibSolutions-
+        // regressie hierboven: zonder deze mapping herschrijft publications:sync
+        // elke run alle al-correcte FR-vlaggen.
+        $mock = new MockHandler([
+            new Response(200, [], (string) json_encode(['rows' => [
+                ['Itemcode' => '52120', 'Sync_Defibsolutions_FR' => '1', 'Tonen_Defibsolutions_FR' => '0'],
+                ['Itemcode' => '11142-FR', 'Sync_Defibsolutions_FR' => '', 'Tonen_Defibsolutions_FR' => '1'],
+            ]])),
+        ]);
+        $reader = new HttpAfasFreeFieldStateReader(
+            new AfasHttpClient(new Client(['handler' => HandlerStack::create($mock)]), 'https://example.test', 'token'),
+        );
+
+        self::assertEquals([
+            '52120' => [self::DEFIBS_FR_SYNC => true, self::DEFIBS_FR_TONEN => false],
+            '11142-FR' => [self::DEFIBS_FR_SYNC => false, self::DEFIBS_FR_TONEN => true],
         ], $reader->readAll());
     }
 }

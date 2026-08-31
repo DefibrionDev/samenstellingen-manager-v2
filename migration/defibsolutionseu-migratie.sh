@@ -182,6 +182,60 @@ stap2() {
 }
 
 # ---------------------------------------------------------------------------
+# Stap 3 — Klanten koppelen aan AFAS-verkooprelaties (usermeta afas_relatie_id,
+# het veld waar lefcreative-afas-b2b op draait).
+# Bron: work/defibsolutionseu-klant-relatie-mapping.csv (wc_user_id;afas_relatie_id)
+# — orderhistorie-methode zoals NL, mét e-mailverificatie omdat de kale
+# WC-nummers in AFAS uit meerdere shops komen (zie
+# work/mine-order-koppeling-defibsolutionseu.py). Alleen geverifieerde,
+# eenduidige koppelingen staan in de CSV; users zonder orderbewijs blijven
+# bewust ongekoppeld.
+# Default dry-run (toont ook het e-mailadres van de user ter verificatie);
+# `stap3 apply` schrijft echt.
+# ---------------------------------------------------------------------------
+stap3() {
+    controleer_config
+    local mapping="$REPO_ROOT/work/defibsolutionseu-klant-relatie-mapping.csv"
+    local apply="${1:-}"
+    [[ -f "$mapping" ]] || { echo "FOUT: $mapping ontbreekt (draai work/mine-order-koppeling-defibsolutionseu.py)" >&2; exit 1; }
+
+    python3 - "$mapping" "$apply" <<'PY' > /tmp/afas-relatie-payload-eu.php
+import csv, json, sys
+mapping, apply = sys.argv[1], sys.argv[2] == "apply"
+paren = {}
+with open(mapping, encoding="utf-8-sig") as f:
+    for r in csv.DictReader(f, delimiter=";"):
+        uid, rel = r["wc_user_id"].strip(), r["afas_relatie_id"].strip()
+        if uid.isdigit() and rel:
+            paren[uid] = rel
+print(f"// {len(paren)} koppelingen uit {mapping}", file=sys.stderr)
+print("<?php")
+print(f"$apply = {'true' if apply else 'false'};")
+print(f"$map = json_decode('{json.dumps(paren)}', true);")
+print("""
+$gezet = $al = $onbekend = 0;
+foreach ($map as $uid => $relatie) {
+    $user = get_user_by('id', (int) $uid);
+    if (!$user) { echo "ONBEKENDE USER  wc:$uid (relatie $relatie)\n"; $onbekend++; continue; }
+    $huidig = (string) get_user_meta($user->ID, 'afas_relatie_id', true);
+    if ($huidig === (string) $relatie) { $al++; continue; }
+    if ($apply) { update_user_meta($user->ID, 'afas_relatie_id', (string) $relatie); }
+    printf("%s  wc:%d %s: %s -> %s\n", $apply ? 'GEZET' : 'ZOU ZETTEN',
+        $user->ID, $user->user_email, $huidig !== '' ? $huidig : '-', $relatie);
+    $gezet++;
+}
+printf("--- %s: %d te zetten/gezet, %d stonden al goed, %d onbekende users\n",
+    $apply ? 'APPLY' : 'DRY-RUN', $gezet, $al, $onbekend);
+""")
+PY
+
+    wpr_stdin eval-file - < /tmp/afas-relatie-payload-eu.php
+    if [[ "$apply" != "apply" ]]; then
+        echo "Dry-run — niets geschreven. Draai '$0 stap3 apply' om echt te schrijven."
+    fi
+}
+
+# ---------------------------------------------------------------------------
 # Stap 5 — Alle API-keys van de shop intrekken.
 # Na de migratie mag niets van buitenaf meer muteren — de nieuwe plugin praat
 # zelf uitgaand met AFAS en heeft geen inkomende REST-key nodig. Alles gaat
@@ -233,10 +287,11 @@ usage() {
     echo "  stap0   Rooktest: config-check + wp-versie op het target (read-only)"
     echo "  stap1   Mail UIT: disable-emails installeren + activeren"
     echo "  stap2   Overbodige plugins UIT: b2bking + wp-staging + wp-rocket + mainwp-child"
+    echo "  stap3   Klanten koppelen aan AFAS-relaties uit work/defibsolutionseu-klant-relatie-mapping.csv (dry-run; 'stap3 apply' schrijft)"
     echo "  stap5   API-keys intrekken: WooCommerce REST-keys + application passwords (dry-run; 'stap5 apply' verwijdert)"
     echo ""
-    echo "Stap 3 (klantkoppeling) en 4 (plugin + settings) volgen zodra de"
-    echo "EU-mapping-CSV en EU-afas-settings er zijn — zie MIGRATIE-DEFIBSOLUTIONS-EU.md."
+    echo "Stap 4 (plugin + settings) volgt zodra de EU-afas-settings er zijn —"
+    echo "zie MIGRATIE-DEFIBSOLUTIONS-EU.md."
     exit 1
 }
 
@@ -244,6 +299,7 @@ case "${1:-}" in
     stap0) stap0 ;;
     stap1) stap1 ;;
     stap2) stap2 ;;
+    stap3) stap3 "${2:-}" ;;
     stap5) stap5 "${2:-}" ;;
     *) usage ;;
 esac
