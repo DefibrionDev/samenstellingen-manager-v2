@@ -6,27 +6,37 @@
  *              URL's, logische blokvolgorde, WooCommerce-stijl besteltabel
  *              zonder regelbedragen, badge "Archief" i.p.v. "Extern",
  *              hertaalde AFAS-statussen en een "Recente bestellingen"-widget
- *              op het dashboard. Meertalig: nl-shops tonen Nederlands, alle
- *              andere sitetalen krijgen Engels als basis (incl. gettext-
+ *              op het dashboard. Meertalig: nl-shops tonen Nederlands,
+ *              fr-shops Frans (revendeurs.defibrion.fr), alle andere
+ *              sitetalen krijgen Engels als basis (incl. gettext-
  *              vertalingen voor de NL-bronstrings van de plugin; bestaande
  *              .mo-vertalingen van de shop blijven leidend) - GTranslate
  *              e.d. vertalen daar client-side op door. Eén versie voor
- *              reseller én arky. Presentatie-only: de plugin wordt niet
- *              aangepast, dus updates van Lefcreative blijven veilig; bij
- *              onbekende markup valt alles terug op de originele weergave.
- * Version: 2.2
+ *              reseller, arky én revendeurs. Presentatie-only: de plugin
+ *              wordt niet aangepast, dus updates van Lefcreative blijven
+ *              veilig; bij onbekende markup valt alles terug op de
+ *              originele weergave.
+ * Version: 2.3
  */
 
 defined('ABSPATH') || exit;
 
 /**
- * 'nl' op Nederlandstalige shops, anders 'en'. De frontend rendert in de
- * sitetaal; verdere talen (de/fr/es op arky) doet GTranslate client-side
- * op basis van de Engelse output.
+ * 'nl' op Nederlandstalige shops, 'fr' op Franstalige (revendeurs), anders
+ * 'en'. De frontend rendert in de sitetaal; verdere talen (de/es op arky)
+ * doet GTranslate client-side op basis van de Engelse output. Een fr-string
+ * die (nog) niet vertaald is valt terug op Engels.
  */
 function defib_afas_tt_lang(): string
 {
-    return str_starts_with(determine_locale(), 'nl') ? 'nl' : 'en';
+    $locale = determine_locale();
+    if (str_starts_with($locale, 'nl')) {
+        return 'nl';
+    }
+    if (str_starts_with($locale, 'fr')) {
+        return 'fr';
+    }
+    return 'en';
 }
 
 /** Eigen teksten van deze mu-plugin (sleutel = Nederlands). */
@@ -54,6 +64,29 @@ function defib_afas_tt_t(string $tekst): string
         'Datum'                      => 'Date',
         'Status'                     => 'Status',
     ];
+
+    static $fr = [
+        'Volg zending'               => 'Suivre l\'expédition',
+        'Pakbon'                     => 'Bon de livraison',
+        'Ordernummer:'               => 'Numéro de commande :',
+        'Bekijken'                   => 'Voir',
+        'Archief'                    => 'Archives',
+        'Eerdere bestelling uit onze administratie' => 'Commande antérieure issue de nos dossiers',
+        'Webshop bestelnummer'       => 'Numéro de commande web',
+        'Bestelgegevens'             => 'Détails de la commande',
+        'Product'                    => 'Produit',
+        'Totaal:'                    => 'Total :',
+        'Totaal'                     => 'Total',
+        'Recente bestellingen'       => 'Commandes récentes',
+        'Alle bestellingen bekijken' => 'Voir toutes les commandes',
+        'Bestelling'                 => 'Commande',
+        'Datum'                      => 'Date',
+        'Status'                     => 'Statut',
+    ];
+
+    if (defib_afas_tt_lang() === 'fr') {
+        return $fr[$tekst] ?? $en[$tekst] ?? $tekst;
+    }
 
     return $en[$tekst] ?? $tekst;
 }
@@ -107,6 +140,39 @@ add_filter('gettext_lefcreative-afas-b2b', static function ($translation, $text)
         'Vorige'                     => 'Previous',
         'Webshop bestelnummer'       => 'Webshop order number',
     ];
+
+    static $fr = [
+        'Aantal'                     => 'Quantité',
+        'Afgehandeld'                => 'Terminée',
+        'Bekijk'                     => 'Voir',
+        'Bestelgegevens'             => 'Détails de la commande',
+        'Bestelling'                 => 'Commande',
+        'Bestelling %1$s is geplaatst op %2$s en heeft de status "%3$s".' => 'La commande %1$s a été passée le %2$s et a le statut « %3$s ».',
+        'Bestelling %s'              => 'Commande %s',
+        'Bestelling niet gevonden.'  => 'Commande introuvable.',
+        'Datum'                      => 'Date',
+        'Deels geleverd'             => 'Partiellement livrée',
+        'Er zijn nog geen bestellingen.' => 'Aucune commande pour le moment.',
+        'Extern'                     => 'Externe',
+        'Extern ordernummer:'        => 'Numéro de commande externe :',
+        'Geen regels beschikbaar voor deze bestelling.' => 'Aucune ligne disponible pour cette commande.',
+        'Geleverd'                   => 'Livrée',
+        'Geplaatst buiten de webshop' => 'Passée en dehors de la boutique en ligne',
+        'In behandeling'             => 'En cours de traitement',
+        'In voorbereiding'           => 'En préparation',
+        'Referentie:'                => 'Référence :',
+        'Terug naar bestellingen'    => 'Retour aux commandes',
+        'Totaal'                     => 'Total',
+        'Verwerkingsstatus:'         => 'Statut de traitement :',
+        'Verzonden'                  => 'Expédiée',
+        'Volgende'                   => 'Suivant',
+        'Vorige'                     => 'Précédent',
+        'Webshop bestelnummer'       => 'Numéro de commande web',
+    ];
+
+    if (defib_afas_tt_lang() === 'fr') {
+        return $fr[$text] ?? $en[$text] ?? $translation;
+    }
 
     return $en[$text] ?? $translation;
 }, 10, 2);
@@ -373,6 +439,13 @@ function defib_afas_tt_status_label(string $raw): string
             'In behandeling'        => 'Processing',
             ''                      => 'Unknown',
             '-'                     => 'Unknown',
+        ],
+        'fr' => [
+            'Verwerkt'              => 'Expédiée',
+            'Gedeeltelijk verwerkt' => 'Livraison partielle',
+            'In behandeling'        => 'En cours de traitement',
+            ''                      => 'Inconnu',
+            '-'                     => 'Inconnu',
         ],
     ];
 

@@ -26,7 +26,9 @@ add_action('woocommerce_email_order_meta', static function ($order, $sent_to_adm
     }
 
     // E-mails renderen in de taal van de klant/bestelling.
-    $label = str_starts_with(determine_locale(), 'nl') ? 'Klantnummer' : 'Customer number';
+    $locale = determine_locale();
+    $label = str_starts_with($locale, 'nl') ? 'Klantnummer'
+        : (str_starts_with($locale, 'fr') ? 'Numéro de client' : 'Customer number');
     $tekst = sprintf('(%s: %s)', $label, $relatieId);
 
     if ($plain_text) {
