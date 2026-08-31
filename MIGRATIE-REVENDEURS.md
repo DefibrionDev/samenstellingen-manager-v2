@@ -91,7 +91,15 @@ Checkout bleek al shortcode-conform. Audits + curatie-lijst gegenereerd.
       505 variaties, idempotent. Let op vóór livegang: oude live-URL's →
       nieuwe slugs redirecten (SEO), en het bestaande attribuutlabel
       "options" (kleine letter, was al op de shop) evt. hernoemen.
-- [ ] Checkout-test met testklant (user 26)
+- [x] stap13 BeRocket-pad-cache (31 aug, les uit de .nl-migratie — zie
+      `work/handoff-berocket-filter-pad-cache.md`): gecachte template-paden
+      wezen zelfs nog naar de Plesk-server van vóór cp-01; stap ververst ze
+      (idempotent, in `reeks` na elke pull, werkt straks ook op cp-01 —
+      dáár is de cache vermoedelijk óók stuk). Filterbalk is als gast
+      nergens zichtbaar (B2B/private) → visuele check hoort bij de
+      ingelogde checkout-test.
+- [ ] Checkout-test met testklant (user 26), incl. BeRocket-filterbalk
+      ingelogd vergelijken met live
 - [x] **Reproduceerbaarheids-check geslaagd (31 aug):** verse pull
       (`./migrate.sh -c revendeurs --pull --local-refresh`) → nieuw
       `reeks`-commando (stap 1→8, 10 → stap9 vol → stap11 → stap9 herbouw →

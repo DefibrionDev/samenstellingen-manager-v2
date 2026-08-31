@@ -985,6 +985,32 @@ PY
 }
 
 # ---------------------------------------------------------------------------
+# Stap 13 — BeRocket-filterbalk repareren (pad-cache).
+# woocommerce-ajax-filters (BeRocket AAPF) cachet absolute bestandspaden in
+# optie BeRocket_AAPF_getall_Template_Styles; na een verhuizing/pull wijzen
+# die naar het oude serverpad en rendert elke filterwidget leeg
+# (bapf_mt_none). Les uit de .nl-migratie, zie
+# work/handoff-berocket-filter-pad-cache.md. Op revendeurs wijzen de paden
+# zelfs nog naar de Plesk-server van vóór cp-01. De actie hieronder laat de
+# plugin de optie herschrijven met paden van het huidige target; idempotent,
+# hoort na elke pull. (De typo 'tempate' is van de plugin zelf.)
+# ---------------------------------------------------------------------------
+stap13() {
+    controleer_config
+    if ! wpr plugin is-active woocommerce-ajax-filters >/dev/null 2>&1; then
+        echo "woocommerce-ajax-filters is niet actief op $(doel_naam) — overslaan"
+        return 0
+    fi
+    wpr eval "\"do_action('bapf_include_all_tempate_styles');\"" >/dev/null
+    echo "--- controle (paden moeten in de webroot van dit target liggen):"
+    wpr eval "\"\\\$o = get_option('BeRocket_AAPF_getall_Template_Styles');
+\\\$f = [];
+if (is_array(\\\$o)) { array_walk_recursive(\\\$o, function(\\\$v, \\\$k) use (&\\\$f) { if (\\\$k === 'file') \\\$f[] = \\\$v; }); }
+echo \\\$f ? implode(PHP_EOL, array_slice(array_unique(\\\$f), 0, 3)) . PHP_EOL : 'LEEG' . PHP_EOL;\""
+    echo "OK — BeRocket-template-paden ververst op $(doel_naam)"
+}
+
+# ---------------------------------------------------------------------------
 # reeks — de volledige bewezen volgorde in één run (reproduceerbaarheids-
 # check en straks de cp01-livegang). Vereist een verse of bestaande kopie;
 # de verse pull zelf gaat via wordpress-migrater:
@@ -996,7 +1022,7 @@ reeks() {
     local t0=$SECONDS
     local s
     for s in "stap1" "stap2" "stap3 apply" "stap4" "stap5 apply" "stap6 apply" \
-             "stap7" "stap8" "stap10 apply" "stap9" "stap11 apply" \
+             "stap7" "stap8" "stap13" "stap10 apply" "stap9" "stap11 apply" \
              "stap9 zonder-prijzen" "stap12 apply"; do
         echo ""
         echo "===== reeks: $s [$(( (SECONDS - t0) / 60 ))m] ====="
@@ -1032,6 +1058,7 @@ Stappen:
   stap12 [apply] Franse containernamen (tool: model_name_fr) + variatie-assen
                 (pa_langue/pa_connectivite/pa_capteur-rcp/pa_options)
 
+  stap13        BeRocket-filterbalk: pad-cache verversen (na elke pull)
   reeks         Alle stappen in de bewezen volgorde (repro-check / livegang)
 EOF
     exit 1
@@ -1039,6 +1066,6 @@ EOF
 
 [[ $# -ge 1 ]] || usage
 case "$1" in
-    stap1|stap2|stap3|stap4|stap5|stap6|stap7|stap8|stap9|stap10|stap11|stap12|reeks) "$@" ;;
+    stap1|stap2|stap3|stap4|stap5|stap6|stap7|stap8|stap9|stap10|stap11|stap12|stap13|reeks) "$@" ;;
     *) usage ;;
 esac
