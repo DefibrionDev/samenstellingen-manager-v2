@@ -124,14 +124,16 @@ verse AFAS-pull; output `work/defibsolutionsfr-koppelbaarheid.csv` +
 - Alle 12 vorm-conflicten zijn Prestan-**drafts** (bekend WC-only-VAR-patroon);
   het gepubliceerde assortiment heeft géén vorm-conflicten.
 - 1 wees-variatie (wc:6285, Peli 1450) onder een niet-variable parent.
-- **NIEUW BESLISPUNT (Cas):** FR verkoopt alleen kale AED-artikelen; voor
-  14 AED-modellen bestaat al een FR-talige samenstelling in de tool
-  (Heartsine 350P/360P, Defibtech Lifeline, Philips HS1, Zoll Plus+3
-  semi/auto, Mindray C1a/C2a semi/auto, Reanibex 100 semi/auto). Bij NL
-  was kale-AED→samenstelling de kern van de omzetting. Kiezen: (a) FR gaat
-  óók samenstellingen verkopen (zoals NL — omhangen via voorkoppel-
-  actielijst) of (b) FR blijft kale AED's verkopen (dan alleen kale codes
-  vlaggen). Advies: (a), consistent met NL/reseller en de tool.
+- **BESLIST (Cas, 31 aug): FR verkoopt nooit kale AED's** — elk toestel
+  wordt een samenstelling met variaties (zoals Reseller NL/DefibSolutions
+  NL: simple → variable met alles eronder), of wordt geschrapt.
+  Omzet-lijst: `work/defibsolutionsfr-omzet-aed.csv` (generator
+  `work/maak-omzet-aed-defibsolutionsfr.py`): **14 OMZETTEN** (doel-base
+  zeker via BOM), **10 KANDIDAAT** (naam-voorstel, mens bevestigt — o.a.
+  CR2-USB heeft alleen een WiFi-FR-base, View-semi/Lifeline-vol-FR
+  ontbreken, Zoll Pro en FR3 hebben geen eigen groep), **2
+  SAMENSTELLING-ONTBREEKT** (Powerheart G5 semi/auto: geen FR-taalvariant
+  in de tool — base aanmaken + AFAS-generatie vóór omhangen kan).
 - Actielijst staat klaar: `work/defibsolutionsfr-sku-actielijst.csv`
   (88 rijen; 74 met naam-gebaseerd voorstel + score, 14 zonder kandidaat;
   generator `work/maak-sku-actielijst-defibsolutionsfr.py`). Barcode/
