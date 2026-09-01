@@ -199,6 +199,34 @@ add_action(
 	clear: both;
 }
 
+/* Punten-blok (points-and-rewards, #wps_cart_points + apply-knop): de
+   plugin zet input en knop inline-block naast elkaar met vaste breedtes —
+   in de smalle review-kolom schoof de knop over het veld en de
+   "0 Points = €"-tekst (screenshot Cas 1 sep). Gestapeld op volle breedte,
+   zelfde aanpak als het couponformulier hierboven. */
+.afas-checkout-col-review .custom_point_checkout {
+	position: static;
+	overflow: hidden;
+}
+.afas-checkout-col-review #wps_cart_points {
+	display: block;
+	width: 100%;
+	max-width: 100%;
+	margin: 0 0 .5rem;
+}
+.afas-checkout-col-review #wps_cart_points_apply {
+	display: block;
+	position: static;
+	float: none;
+	width: auto;
+	margin: 0 0 .5rem;
+}
+.afas-checkout-col-review #wps_cart_points_apply + p {
+	clear: both;
+	width: 100%;
+	margin: 0;
+}
+
 /* Mobiel (één kolom): besteloverzicht (rechterkolom) bovenaan, daarna
    adres/referentie/facturatie. .afas-checkout-cols is een grid; de plugin valt
    bij max-width:768px terug op één kolom — daar draaien we met `order` de twee
