@@ -620,10 +620,14 @@ PHP
 }
 
 # ---------------------------------------------------------------------------
-# Stap 10 — Afgekeurde klant-accounts verwijderen (besluit Cas 31 aug 2026):
-#   wc:18  edwin@roelse.net    (Edwin Roelse — stond ambigu in de mapping)
-#   wc:197 saliha@defibrion.nl (intern account)
-# Beide geverifieerd: 0 orders, geen rol. Verwijderen wist ook hun usermeta
+# Stap 10 — Afgekeurde klant-accounts verwijderen (besluiten Cas 31 aug +
+# 1 sep 2026):
+#   wc:18  edwin@roelse.net           (stond ambigu in de mapping)
+#   wc:197 saliha@defibrion.nl        (intern account)
+#   wc:16  oreogans1337@gmail.com     (geen rol — spam/test)
+#   wc:190 suambarawass@gmail.com     (geen rol — spam/test, dubbel)
+#   wc:191 suambarawass@gmail.com     (geen rol — spam/test, dubbel)
+# Allemaal geverifieerd: geen rol; de stap weigert accounts mét orders. Verwijderen wist ook hun usermeta
 # (incl. evt. afas_relatie_id). Idempotent: al-verwijderde users worden
 # overgeslagen. Default dry-run; `stap10 apply` verwijdert echt.
 # ---------------------------------------------------------------------------
@@ -631,7 +635,7 @@ stap10() {
     controleer_config
     local apply="${1:-}"
     local uid
-    for uid in 18 197; do
+    for uid in 18 197 16 190 191; do
         if ! wpr user get "$uid" --field=user_email 2>/dev/null | grep -q '@'; then
             echo "wc:$uid bestaat niet (meer) op $(doel_naam) — overslaan"
             continue
