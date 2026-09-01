@@ -1261,6 +1261,43 @@ PHP
 }
 
 # ---------------------------------------------------------------------------
+# Stap 16 — Afgekeurde draft-producten naar de prullenbak (besluit Cas 1 sep:
+# "alle drafts mogen sws prullenbak in" — de 9 draft-restgevallen uit
+# work/randy-restgevallen-revendeurs.csv). SKU + meta worden gestript zodat
+# ze nooit meer matchen; de sku-guard voorkomt dat een hergebruikt wc-id na
+# een verse pull per ongeluk iets anders raakt. Idempotent.
+# Default dry-run; `stap16 apply` voert uit.
+# ---------------------------------------------------------------------------
+stap16() {
+    controleer_config
+    local apply="${1:-}"
+    wpr_stdin eval-file - <<PHP
+<?php
+\$apply = $([ "$apply" == "apply" ] && echo true || echo false);
+\$besluit = [  // wc_id => verwachte sku (besluit Cas 1 sep 2026)
+    95 => 'A200', 134 => '11403-000001', 357 => 'G5A-11C-FR', 358 => 'G5S-11C-FR',
+    419 => '202-56052', 809 => '8008-0050-02', 863 => '03-DTR-G2006ZZ',
+    864 => 'M3871A', 872 => '03-DTR-G2052ZZ',
+];
+foreach (\$besluit as \$pid => \$sku) {
+    \$status = get_post_status(\$pid);
+    if (\$status === false || \$status === 'trash') { printf("wc:%d al weg/prullenbak — overslaan\n", \$pid); continue; }
+    \$echteSku = (string) get_post_meta(\$pid, '_sku', true);
+    if (\$echteSku !== \$sku) { printf("LET OP wc:%d sku='%s' != verwacht '%s' — overslaan\n", \$pid, \$echteSku, \$sku); continue; }
+    printf("%s wc:%d (%s) '%s'\n", \$apply ? 'PRULLENBAK' : 'ZOU PRULLENBAK', \$pid, \$sku, get_the_title(\$pid));
+    if (\$apply) {
+        update_post_meta(\$pid, '_sku', '');
+        delete_post_meta(\$pid, '_afas_artikelnummer');
+        wp_trash_post(\$pid);
+    }
+}
+PHP
+    if [[ "$apply" != "apply" ]]; then
+        echo "Dry-run — niets verwijderd. Draai '$0 stap16 apply' om uit te voeren."
+    fi
+}
+
+# ---------------------------------------------------------------------------
 # backup — volledige backup van de cp01-site (bestanden + database) vóór de
 # livegang-reeks. Alleen zinvol met REVEND_TARGET=cp01. Dump komt in de home
 # van de site-user te staan met timestamp; blijft daar tot handmatige opruiming.
@@ -1323,7 +1360,7 @@ reeks() {
     # container, dus de sync hoeft er geen aan te maken — één sync volstaat.
     for s in "stap1" "stap2" "stap3 apply" "stap4" "stap5 apply" "stap6 apply" \
              "stap7" "stap8" "stap13" "stap10 apply" "stap11 apply" "stap9" \
-             "stap12 apply" "stap14 apply" "stap15"; do
+             "stap12 apply" "stap14 apply" "stap15" "stap16 apply"; do
         echo ""
         echo "===== reeks: $s [$(( (SECONDS - t0) / 60 ))m] ====="
         # shellcheck disable=SC2086
@@ -1361,6 +1398,7 @@ Stappen:
   stap13        BeRocket-filterbalk: pad-cache verversen (na elke pull)
   stap14 [apply] Menu-items omhangen naar overlevende containers + dubbelen weg
   stap15        Variatie-knoppen: niet-beschikbaar grijs i.p.v. rood kruis
+  stap16 [apply] Afgekeurde draft-producten prullenbak (besluit 1 sep)
   backup        cp01: volledige backup (db + files) vóór de livegang-reeks
   slotstap [apply] Livegang-slot: order-push aan + mail aan (na controles)
   reeks         Alle stappen in de bewezen volgorde (repro-check / livegang)
@@ -1370,6 +1408,6 @@ EOF
 
 [[ $# -ge 1 ]] || usage
 case "$1" in
-    stap1|stap2|stap3|stap4|stap5|stap6|stap7|stap8|stap9|stap10|stap11|stap12|stap13|stap14|stap15|backup|slotstap|reeks) "$@" ;;
+    stap1|stap2|stap3|stap4|stap5|stap6|stap7|stap8|stap9|stap10|stap11|stap12|stap13|stap14|stap15|stap16|backup|slotstap|reeks) "$@" ;;
     *) usage ;;
 esac
