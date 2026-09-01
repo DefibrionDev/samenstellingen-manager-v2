@@ -529,6 +529,21 @@ stap9() {
     local opties="${*:-}"
     mkdir -p "$REPO_ROOT/tmp"
     local payload="$REPO_ROOT/tmp/revendeurs-stap9-payload.php"
+    # alleen-relaties: snelle her-run van de verkooprelaties-sync, bv. nadat
+    # accounts (stap17) of relatie-vlaggen zijn bijgewerkt — de sync schrijft
+    # dan ook factuuradressen naar alle gekoppelde WP-accounts.
+    if [[ "$opties" == *alleen-relaties* ]]; then
+        wpr_stdin eval-file - <<'PHP'
+<?php
+\Lefcreative\PluginBase\Core\Hooks::adminInit();
+do_action('afas_sync_verkooprelaties', true);
+global $wpdb;
+printf("relaties: %d
+", (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}lef_afas_verkooprelaties"));
+PHP
+        echo "OK — alleen verkooprelaties gesynct op $(doel_naam)"
+        return 0
+    fi
     cat > "$payload" <<'PHP'
 <?php
 $zonderPrijzen = PRIJZEN_PLACEHOLDER;
