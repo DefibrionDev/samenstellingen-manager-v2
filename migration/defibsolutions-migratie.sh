@@ -1488,7 +1488,7 @@ stap14() {
     )
     local email uid login
     for email in "${degradeer[@]}"; do
-        uid=$(wpr user get "$email" --field=ID 2>/dev/null | tr -d '[:space:]')
+        uid=$(wpr user get "$email" --field=ID 2>/dev/null | tr -d '[:space:]' || true)
         if [[ ! "$uid" =~ ^[0-9]+$ ]]; then
             echo "SKIP   $email — bestaat niet"
             continue
@@ -1509,7 +1509,7 @@ stap14() {
     done
 
     for email in "${weg[@]}"; do
-        uid=$(wpr user get "$email" --field=ID 2>/dev/null | tr -d '[:space:]')
+        uid=$(wpr user get "$email" --field=ID 2>/dev/null | tr -d '[:space:]' || true)
         if [[ ! "$uid" =~ ^[0-9]+$ ]]; then
             echo "SKIP   $email — bestaat niet (al verwijderd?)"
             continue
@@ -1522,6 +1522,56 @@ stap14() {
             echo "VERWIJDERD  $email (user $uid, login $login) -> content naar $doel_id"
         fi
     done
+    # CSV-gedreven schrappingen: Kevins "niet toegekende klanten"-lijst
+    # (1 sept, work/schrap-accounts-defibsolutions.csv). Vangrails: nooit
+    # administrators, nooit users die in de koppel-mapping staan; het
+    # aantal orders wordt getoond zodat een onverwachte klant-met-orders
+    # opvalt in de dry-run. Content gaat met reassign naar het doelaccount.
+    local schraplijst="$REPO_ROOT/work/schrap-accounts-defibsolutions.csv"
+    if [[ -f "$schraplijst" ]]; then
+        local schrap_ids koppel_ids
+        schrap_ids=$(tail -n +2 "$schraplijst" | cut -d';' -f1 | tr -dc '0-9\n' | paste -sd, -)
+        koppel_ids=$(tail -n +2 "$REPO_ROOT/work/klant-relatie-mapping.csv" | cut -d';' -f1 | tr -dc '0-9\n' | paste -sd, -)
+        cat > /tmp/afas-stap14-schrap.php <<'PHP'
+<?php
+$apply     = ('apply' === ($args[0] ?? ''));
+$doelId    = (int) ($args[1] ?? 1);
+$ids       = array_filter(array_map('intval', explode(',', 'SCHRAP_PLACEHOLDER')));
+$koppelIds = array_filter(array_map('intval', explode(',', 'KOPPEL_PLACEHOLDER')));
+global $wpdb;
+$weg = 0;
+foreach ($ids as $id) {
+    $u = get_user_by('id', $id);
+    if (!$u) { echo "SKIP   user $id - bestaat niet (al verwijderd?)\n"; continue; }
+    if (in_array('administrator', $u->roles, true)) {
+        echo "SKIP   user $id ({$u->user_email}) - is administrator, nooit via lijst schrappen\n";
+        continue;
+    }
+    if (in_array($id, $koppelIds, true)) {
+        echo "SKIP   user $id ({$u->user_email}) - staat in de koppel-mapping\n";
+        continue;
+    }
+    $orders = (int) $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$wpdb->postmeta} pm JOIN {$wpdb->posts} p ON p.ID = pm.post_id
+          WHERE pm.meta_key = '_customer_user' AND pm.meta_value = %s AND p.post_type = 'shop_order'",
+        (string) $id
+    ));
+    $label = sprintf('user %d (%s, %s, %d order%s)', $id, $u->user_login, $u->user_email, $orders, $orders === 1 ? '' : 's');
+    if (!$apply) {
+        echo "ZOU VERWIJDEREN  $label -> content naar user $doelId\n";
+        $weg++;
+        continue;
+    }
+    require_once ABSPATH . 'wp-admin/includes/user.php';
+    if (wp_delete_user($id, $doelId)) { echo "VERWIJDERD  $label\n"; $weg++; }
+    else { echo "FOUT   $label - verwijderen mislukt\n"; }
+}
+printf("--- schraplijst: %d account%s %s\n", $weg, $weg === 1 ? '' : 's', $apply ? 'verwijderd' : 'te verwijderen');
+PHP
+        sed -i "s/SCHRAP_PLACEHOLDER/$schrap_ids/" /tmp/afas-stap14-schrap.php
+        sed -i "s/KOPPEL_PLACEHOLDER/$koppel_ids/" /tmp/afas-stap14-schrap.php
+        wpr_stdin eval-file - "$apply" "$doel_id" < /tmp/afas-stap14-schrap.php
+    fi
     if [[ "$apply" != "apply" ]]; then
         echo "Dry-run — niets verwijderd. Draai '$0 stap14 apply' om uit te voeren."
     else

@@ -329,6 +329,15 @@ B2BKing opruimen).
       G5F-basisprijs rest voor Roelof. Bugrapport voor lefcreative:
       work/bugrapport-lefcreative-prijzen-historie.md. OPEN: zelfde fix op
       reseller-productie uitrollen (waar draait die? — Cas).
+- [x] Kevins klanten-terugkoppeling verwerkt ✓ 1 sept ("Niet toegekende
+      klanten defibsolutions NL"): Blad1 = 23 koppelingen toegevoegd aan
+      work/klant-relatie-mapping.csv (stap3 apply beide kopieën, 0 conflicten
+      — incl. de 3 order-klanten-kwestie afgesloten); Blad2 = 65 accounts
+      verwijderd via nieuw CSV-blok in stap14 (bron
+      work/schrap-accounts-defibsolutions.csv, vangrails: geen admins/
+      koppel-ids, ordertelling — alle 65 hadden 0 orders). Bijvangst-fix:
+      uid-lookups in stap14 pipefail-proof (herdraai brak op al-verwijderde
+      e-mailaccounts).
 - [ ] NÁ livegang (herinnering voor Cas, besluit 31 aug): Cloudflare
       oppakken — de definitieve shop-URL wordt **shop.defibsolutions.nl**
       (subdomein; hoofdsite blijft op het domein-root). Pas relevant als
