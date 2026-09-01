@@ -163,14 +163,13 @@ Stand 31 aug:
 - [x] Stap 7 — mu-plugins: expliciete FR-lijst van de oorspronkelijke 8;
       de NL-specifieke `defibs-*-restyle` (Divi/NL-huisstijl), Points-Pro-
       fix en wcpt-cli-cache-fix worden actief geweerd/opgeruimd.
-- [ ] AFAS-vlaggen `Sync/Tonen_Defibsolutions_FR` zetten — half klaar
-      (31 aug): de 16 omzet-bases zijn `base:publish`'d op website 6;
-      `publications:sync` dry-run toont **129 PUT-plannen** (bases +
-      variaties; per itemcode convergeren álle website-vlaggen, dus een
-      apply voert ook pending EU/revendeurs-publicaties mee uit —
-      afstemmen vóór apply). **Wacht op akkoord Cas voor `--apply`.**
-      Daarna: ±300 kale artikelen (accessoires) uit het vlag-voorstel via
-      het fix-vinkjes-patroon (connector-tools) — script nog te maken.
+- [x] AFAS-vlaggen samenstellingen (31 aug, akkoord Cas): 16 bases
+      `base:publish`'d op website 6, `publications:sync --apply` →
+      **129 toegepast, 0 gefaald**; verificatie-dry-run convergeert
+      ("alle 1565 itemcodes staan al goed").
+- [ ] AFAS-vlaggen kale artikelen: ±300 accessoires uit het vlag-voorstel
+      via het fix-vinkjes-patroon (connector-tools) — script nog te maken,
+      dry-run eerst.
 - [x] Stap 8 — Franse plugin-vertaling: 39 strings machinaal vertaald
       (`migration/afas-translations/lefcreative-afas-b2b-fr_FR.po/.mo`),
       geplaatst in `wp-content/languages/plugins/`, laadt geverifieerd.
