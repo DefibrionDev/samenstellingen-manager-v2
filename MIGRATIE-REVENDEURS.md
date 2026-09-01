@@ -75,11 +75,20 @@ Checkout bleek al shortcode-conform. Audits + curatie-lijst gegenereerd.
       stap9 (force, 830 container-blokkade-warnings) → stap11 apply →
       stap9 zonder-prijzen force (delta bouwt níet — geweigerde containers
       tellen niet als "gewijzigd") → stap9 vol (relaties erbij).
-- [x] stap11 gebouwd + toegepast: 17 handgemaakte containers + 518 variaties
-      opgeruimd (SKU/meta gestript → prullenbak); herkenning fresh-pull-proof
-      (variabel product zonder meta en zonder `-wpbase`-SKU). Plugin bouwde
-      15 nieuwe containers, 505 variaties publish; frontend toont prijzen
-      (Reanibex: 88 variaties onder één container, reseller-conform).
+- [x] stap11 **herschreven naar omzetten** (besluit Cas 1 sep: converteren
+      i.p.v. weggooien+herbouwen zodat post-ID's, content, afbeeldingen,
+      menu-links en URL-slugs behouden blijven): per head overleeft één
+      kandidaat (meeste publish-variaties; Reanibex-dubbelen 990678/990707
+      weg, hun slugs gingen naar de survivors) en krijgt meta + `-wpbase`-SKU.
+      Elke head heeft daarna een gekoppelde container → de sync hoeft er
+      geen aan te maken; de blokkade-dans verviel en de reeks is korter
+      (stap11 vóór stap9, één sync-run, schoon). Redirect-punt voor livegang
+      vervalt grotendeels: oude URL's blijven werken.
+- [x] stap14 menu-herstel: hangt items van getrashte dubbelen om naar de
+      survivor (via stap11-plan in tmp/) en ontdubbelt binnen een submenu;
+      deze run niets om te hangen (menu wees al naar de survivors) en 5
+      items naar draft-producten (G5 ×2, Aivia) gerapporteerd — wachten op
+      curatie.
 - [ ] **Adressen-sync**: `Get_Addresses` time-out na 300s (2×; 27.910 rijen
       binnen). Stap9 vangt hem nu af (waarschuwing, reeks loopt door) maar
       vóór livegang oplossen: filter/paginering of plugin-fix bij LEF.

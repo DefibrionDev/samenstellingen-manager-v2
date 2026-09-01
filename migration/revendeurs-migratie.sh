@@ -626,62 +626,154 @@ stap10() {
 }
 
 # ---------------------------------------------------------------------------
-# Stap 11 — Oude handgemaakte variabele containers (+ hun variaties) opruimen.
-# De plugin-sync bouwt eigen containers per family-head (SKU <head>-wpbase)
-# maar weigert zolang oude posts het head-artikelnummer of de head-SKU dragen
-# ("Aanmaken variabel product overgeslagen ... beoordeel handmatig", 830
-# warnings op 31 aug). Herkenning (fresh-pull-proof, spaart plugin-containers):
-# variabel product zónder _afas_artikelnummer-meta en zónder -wpbase-SKU.
-# SKU + meta worden gestript vóór de prullenbak zodat niets ooit nog matcht
-# (defibsolutions-stap8-patroon). Draai hierna stap9 'zonder-prijzen delta'.
-# Default dry-run; `stap11 apply` voert uit.
+# Stap 11 — Handgemaakte containers OMZETTEN naar de plugin-conventie
+# (besluit Cas 1 sep: omzetten i.p.v. weggooien+herbouwen, zodat post-ID's,
+# content, afbeeldingen en menu-links blijven werken).
+# Per oude container wordt de family-head bepaald uit zijn variaties
+# (sku → AFAS-artikel → Itemcode_Parent, meerderheid wint; kale AED-artikelen
+# via de pakket-map, bv. 20013-FR → 21013-UK). Per head overleeft ÉÉN
+# kandidaat (meeste publish-variaties, daarna laagste ID): die krijgt
+# _afas_artikelnummer = head + SKU = <head>-wpbase en behoudt al zijn
+# variaties (voorgekoppeld in stap6 — de sync werkt ze in-place bij en vult
+# ontbrekende aan). Overige kandidaten worden gestript en getrasht. Doordat
+# elke head daarna een gekoppelde container heeft, hoeft de sync GEEN
+# containers meer aan te maken — de blokkade-dans (sync→opruimen→sync)
+# vervalt; stap9 volgt ná deze stap.
+# Vereist work/cache/afas-artikelen-revendeurs.json (vers: audit --vers).
+# Herkenning fresh-pull-proof: containers mét meta of -wpbase-SKU worden
+# overgeslagen. Default dry-run; `stap11 apply` voert uit.
 # ---------------------------------------------------------------------------
 stap11() {
     controleer_config
     local apply="${1:-}"
+    local cache="$REPO_ROOT/work/cache/afas-artikelen-revendeurs.json"
+    [[ -f "$cache" ]] || { echo "FOUT: $cache ontbreekt (draai work/audit-koppelbaarheid-revendeurs.py --vers)" >&2; exit 1; }
     mkdir -p "$REPO_ROOT/tmp"
-    local payload="$REPO_ROOT/tmp/revendeurs-stap11-payload.php"
-    cat > "$payload" <<'PHP'
-<?php
-$apply = APPLY_PLACEHOLDER;
+    local prefix
+    prefix=$(wpr db prefix | tr -d '[:space:]')
+
+    # dump: oude containers (geen meta, geen -wpbase-sku) + variaties met sku
+    local dump="$REPO_ROOT/tmp/revendeurs-stap11-dump.tsv"
+    wpr db query "\"SELECT par.ID, COALESCE(psku.meta_value,''), par.post_title, v.ID,
+            COALESCE(vsku.meta_value,''), v.post_status
+        FROM ${prefix}posts par
+        JOIN ${prefix}term_relationships tr ON tr.object_id = par.ID
+        JOIN ${prefix}term_taxonomy tt ON tt.term_taxonomy_id = tr.term_taxonomy_id AND tt.taxonomy = 'product_type'
+        JOIN ${prefix}terms t ON t.term_id = tt.term_id AND t.name = 'variable'
+        LEFT JOIN ${prefix}postmeta pan ON pan.post_id = par.ID AND pan.meta_key = '_afas_artikelnummer'
+        LEFT JOIN ${prefix}postmeta psku ON psku.post_id = par.ID AND psku.meta_key = '_sku'
+        LEFT JOIN ${prefix}posts v ON v.post_parent = par.ID AND v.post_type = 'product_variation'
+             AND v.post_status IN ('publish','private')
+        LEFT JOIN ${prefix}postmeta vsku ON vsku.post_id = v.ID AND vsku.meta_key = '_sku'
+        WHERE par.post_status IN ('publish','private')
+          AND (pan.meta_value IS NULL OR pan.meta_value = '')
+          AND COALESCE(psku.meta_value,'') NOT LIKE '%-wpbase'\"" --skip-column-names > "$dump"
+
+    python3 - "$cache" "$dump" "$apply" <<'PY' > "$REPO_ROOT/tmp/revendeurs-stap11-payload.php"
+import json, sys
+from collections import Counter
+cache, dump, apply = sys.argv[1], sys.argv[2], sys.argv[3] == "apply"
+
+# Kale AED-artikelen die als container-variatie misbruikt zijn -> de head van
+# hun pakketfamilie (uitzoekwerk 31 aug, zie MIGRATIE-REVENDEURS.md).
+KALE_PAKKET_MAP = {"20013-FR": "21013-UK", "20014-FR": "21014-UK"}
+
+per_code, per_bhv = {}, {}
+for a in json.loads(open(cache).read()):
+    code = str(a.get("Itemcode") or "")
+    per_code.setdefault(code, a)
+    b = str(a.get("Artikelcode_BHV_Voordeelwinkel") or "").strip()
+    if b:
+        per_bhv.setdefault(b, {})[code] = a
+
+def head_van_sku(sku: str) -> str:
+    a = per_code.get(sku)
+    if a is None:
+        kandidaten = {c: k for c, k in per_bhv.get(sku, {}).items()
+                      if k.get("Geblokkeerd") is not True}
+        a = next(iter(kandidaten.values())) if len(kandidaten) == 1 else None
+    if a is None or a.get("Geblokkeerd") is True:
+        return ""
+    code = str(a.get("Itemcode"))
+    return KALE_PAKKET_MAP.get(code) or str(a.get("Itemcode_Parent") or "").strip()
+
+containers = {}
+for regel in open(dump, encoding="utf-8"):
+    d = regel.rstrip("\n").split("\t")
+    if len(d) < 6 or not d[0].isdigit():
+        continue
+    pid, psku, titel, vid, vsku, vstatus = d
+    c = containers.setdefault(pid, {"titel": titel, "sku": psku, "heads": Counter(),
+                                    "publish_vars": 0})
+    if vid.isdigit():
+        if vstatus == "publish":
+            c["publish_vars"] += 1
+        h = head_van_sku(vsku.strip())
+        if h:
+            c["heads"][h] += 1
+
+per_head = {}
+for pid, c in containers.items():
+    if not c["heads"]:
+        print(f"// LET OP: container wc:{pid} '{c['titel']}' zonder herleidbare head — overgeslagen", file=sys.stderr)
+        continue
+    head = c["heads"].most_common(1)[0][0]
+    per_head.setdefault(head, []).append((pid, c))
+
+plan = []  # (pid, actie, head, titel, n_publish)
+for head, kandidaten in per_head.items():
+    kandidaten.sort(key=lambda x: (-x[1]["publish_vars"], int(x[0])))
+    winnaar = kandidaten[0]
+    plan.append((winnaar[0], "convert", head, winnaar[1]["titel"], winnaar[1]["publish_vars"]))
+    for pid, c in kandidaten[1:]:
+        plan.append((pid, "trash", head, c["titel"], c["publish_vars"]))
+plan.sort(key=lambda x: int(x[0]))
+
+# plan bewaren voor stap14 (menu-herstel): pid -> head, ook voor de dubbelen
+import os
+plan_pad = os.path.join(os.path.dirname(dump), "revendeurs-container-omzetting.json")
+json.dump({p: {"actie": a, "head": h, "titel": t} for p, a, h, t, _ in plan},
+          open(plan_pad, "w"), ensure_ascii=False, indent=1)
+
+print(f"// {len(containers)} oude containers -> {sum(1 for p in plan if p[1]=='convert')} omzetten, "
+      f"{sum(1 for p in plan if p[1]=='trash')} weg; plan: {plan_pad}", file=sys.stderr)
+print("<?php")
+print(f"$apply = {'true' if apply else 'false'};")
+print(f"$plan = json_decode('{json.dumps([{'pid': int(p), 'actie': a, 'head': h} for p, a, h, _, _ in plan])}', true);")
+print(r"""
 global $wpdb;
-$q = new WP_Query(["post_type" => "product", "post_status" => ["publish","private","draft"],
-                   "posts_per_page" => -1, "fields" => "ids",
-                   "tax_query" => [["taxonomy" => "product_type", "field" => "slug", "terms" => "variable"]]]);
-$totVar = 0; $containers = 0;
-foreach ($q->posts as $pid) {
-    $meta = (string) get_post_meta($pid, '_afas_artikelnummer', true);
-    $sku  = (string) get_post_meta($pid, '_sku', true);
-    if ($meta !== '' || str_ends_with($sku, '-wpbase')) {
-        continue; // plugin-gebouwde of al voorgekoppelde container: afblijven
-    }
+foreach ($plan as $p) {
+    $pid = $p['pid']; $head = $p['head'];
     $kinderen = $wpdb->get_col($wpdb->prepare(
         "SELECT ID FROM {$wpdb->posts} WHERE post_parent = %d AND post_type = 'product_variation'", $pid));
-    printf("%s container wc:%d '%s' (sku='%s', %d variaties)\n",
-        $apply ? 'OPGERUIMD' : 'ZOU OPRUIMEN', $pid, get_the_title($pid), $sku, count($kinderen));
-    $containers++; $totVar += count($kinderen);
-    if (!$apply) { continue; }
-    foreach ($kinderen as $vid) {
-        update_post_meta($vid, '_sku', '');
-        delete_post_meta($vid, '_afas_artikelnummer');
-        wp_trash_post((int) $vid);
+    if ($p['actie'] === 'convert') {
+        printf("%s container wc:%d '%s' -> head %s (%d variaties blijven)\n",
+            $apply ? 'OMGEZET' : 'ZOU OMZETTEN', $pid, get_the_title($pid), $head, count($kinderen));
+        if ($apply) {
+            update_post_meta($pid, '_afas_artikelnummer', $head);
+            update_post_meta($pid, '_sku', $head . '-wpbase');
+        }
+    } else {
+        printf("%s container wc:%d '%s' (dubbel voor head %s, %d variaties)\n",
+            $apply ? 'WEGGEGOOID' : 'ZOU WEGGOOIEN', $pid, get_the_title($pid), $head, count($kinderen));
+        if ($apply) {
+            foreach ($kinderen as $vid) {
+                update_post_meta($vid, '_sku', '');
+                delete_post_meta($vid, '_afas_artikelnummer');
+                wp_trash_post((int) $vid);
+            }
+            update_post_meta($pid, '_sku', '');
+            wp_trash_post($pid);
+        }
     }
-    update_post_meta($pid, '_sku', '');
-    wp_trash_post($pid);
 }
 if (function_exists('wc_delete_product_transients')) { wc_delete_product_transients(); }
-printf("--- %s: %d containers, %d variaties\n", $apply ? 'APPLY' : 'DRY-RUN', $containers, $totVar);
-PHP
-    if [[ "$apply" == "apply" ]]; then
-        sed -i 's/APPLY_PLACEHOLDER/true/' "$payload"
-    else
-        sed -i 's/APPLY_PLACEHOLDER/false/' "$payload"
-    fi
-    wpr_stdin eval-file - < "$payload"
+""")
+PY
+
+    wpr_stdin eval-file - < "$REPO_ROOT/tmp/revendeurs-stap11-payload.php"
     if [[ "$apply" != "apply" ]]; then
-        echo "Dry-run — niets opgeruimd. Draai '$0 stap11 apply' om uit te voeren."
-    else
-        echo "Draai nu: $0 stap9 zonder-prijzen delta  (containers laten herbouwen)"
+        echo "Dry-run — niets gewijzigd. Draai '$0 stap11 apply' om uit te voeren."
     fi
 }
 
@@ -1011,6 +1103,89 @@ echo \\\$f ? implode(PHP_EOL, array_slice(array_unique(\\\$f), 0, 3)) . PHP_EOL 
 }
 
 # ---------------------------------------------------------------------------
+# Stap 14 — Menu-herstel. Nav-menu-items van type product die naar een
+# getrashte dubbele container wijzen (stap11-plan) worden omgehangen naar de
+# overlevende container van dezelfde head; daarna worden dubbelen binnen
+# hetzelfde submenu verwijderd (eerste op menu_order wint — "Reanibex 100
+# Auto" + "Auto (Connectivité)" worden er zo één). Items naar draft-producten
+# (G5, Aivia — open audit-gevallen) worden alleen gerapporteerd.
+# Vereist tmp/revendeurs-container-omzetting.json (bijproduct van stap11).
+# Default dry-run; `stap14 apply` voert uit.
+# ---------------------------------------------------------------------------
+stap14() {
+    controleer_config
+    local apply="${1:-}"
+    local plan="$REPO_ROOT/tmp/revendeurs-container-omzetting.json"
+    [[ -f "$plan" ]] || { echo "FOUT: $plan ontbreekt (draai eerst stap11)" >&2; exit 1; }
+    mkdir -p "$REPO_ROOT/tmp"
+
+    python3 - "$plan" "$apply" <<'PY' > "$REPO_ROOT/tmp/revendeurs-stap14-payload.php"
+import json, sys
+plan, apply = json.load(open(sys.argv[1])), sys.argv[2] == "apply"
+# alleen de getrashte dubbelen hebben een omhang-doel nodig
+weg = {pid: info["head"] for pid, info in plan.items() if info["actie"] == "trash"}
+print("<?php")
+print(f"$apply = {'true' if apply else 'false'};")
+print(f"$wegHeads = json_decode('{json.dumps(weg)}', true);")
+print(r"""
+global $wpdb;
+$omgehangen = $verwijderd = 0;
+foreach (wp_get_nav_menus() as $menu) {
+    $items = wp_get_nav_menu_items($menu->term_id, ['post_status' => 'any']) ?: [];
+    $gezien = []; // (parent|object_id) -> menu-item-ID die blijft
+    usort($items, fn($a, $b) => $a->menu_order <=> $b->menu_order);
+    foreach ($items as $i) {
+        if ($i->object !== 'product') { continue; }
+        $doelId = (int) $i->object_id;
+        $status = get_post_status($doelId) ?: 'weg';
+        if ($status === 'trash' && isset($wegHeads[(string) $doelId])) {
+            $head = $wegHeads[(string) $doelId];
+            $nieuw = $wpdb->get_var($wpdb->prepare(
+                "SELECT p.ID FROM {$wpdb->posts} p
+                  JOIN {$wpdb->postmeta} pm ON pm.post_id = p.ID
+                 WHERE pm.meta_key = '_afas_artikelnummer' AND pm.meta_value = %s
+                   AND p.post_type = 'product' AND p.post_status = 'publish'", $head));
+            if ($nieuw) {
+                printf("%s menu '%s' item %d '%s': product %d -> %d (head %s)\n",
+                    $apply ? 'OMGEHANGEN' : 'ZOU OMHANGEN', $menu->name, $i->ID, $i->title,
+                    $doelId, (int) $nieuw, $head);
+                if ($apply) { update_post_meta($i->ID, '_menu_item_object_id', (int) $nieuw); }
+                $doelId = (int) $nieuw;
+                $omgehangen++;
+            } else {
+                printf("LET OP menu '%s' item %d '%s': geen publish-product voor head %s\n",
+                    $menu->name, $i->ID, $i->title, $head);
+                continue;
+            }
+        } elseif ($status !== 'publish') {
+            printf("INFO menu '%s' item %d '%s' wijst naar %s product %d — laten staan (assortiment-besluit)\n",
+                $menu->name, $i->ID, $i->title, $status, $doelId);
+            continue;
+        }
+        $sleutel = $i->menu_item_parent . '|' . $doelId;
+        if (isset($gezien[$sleutel])) {
+            printf("%s menu '%s' item %d '%s' (dubbel op product %d naast item %d)\n",
+                $apply ? 'VERWIJDERD' : 'ZOU VERWIJDEREN', $menu->name, $i->ID, $i->title,
+                $doelId, $gezien[$sleutel]);
+            if ($apply) { wp_delete_post($i->ID, true); }
+            $verwijderd++;
+        } else {
+            $gezien[$sleutel] = $i->ID;
+        }
+    }
+}
+printf("--- %s: %d omgehangen, %d dubbele items verwijderd\n",
+    $apply ? 'APPLY' : 'DRY-RUN', $omgehangen, $verwijderd);
+""")
+PY
+
+    wpr_stdin eval-file - < "$REPO_ROOT/tmp/revendeurs-stap14-payload.php"
+    if [[ "$apply" != "apply" ]]; then
+        echo "Dry-run — niets gewijzigd. Draai '$0 stap14 apply' om uit te voeren."
+    fi
+}
+
+# ---------------------------------------------------------------------------
 # reeks — de volledige bewezen volgorde in één run (reproduceerbaarheids-
 # check en straks de cp01-livegang). Vereist een verse of bestaande kopie;
 # de verse pull zelf gaat via wordpress-migrater:
@@ -1021,9 +1196,11 @@ echo \\\$f ? implode(PHP_EOL, array_slice(array_unique(\\\$f), 0, 3)) . PHP_EOL 
 reeks() {
     local t0=$SECONDS
     local s
+    # stap11 (omzetten) vóór stap9: elke head heeft dan al een gekoppelde
+    # container, dus de sync hoeft er geen aan te maken — één sync volstaat.
     for s in "stap1" "stap2" "stap3 apply" "stap4" "stap5 apply" "stap6 apply" \
-             "stap7" "stap8" "stap13" "stap10 apply" "stap9" "stap11 apply" \
-             "stap9 zonder-prijzen" "stap12 apply"; do
+             "stap7" "stap8" "stap13" "stap10 apply" "stap11 apply" "stap9" \
+             "stap12 apply" "stap14 apply"; do
         echo ""
         echo "===== reeks: $s [$(( (SECONDS - t0) / 60 ))m] ====="
         # shellcheck disable=SC2086
@@ -1053,12 +1230,13 @@ Stappen:
                 Syncs draaien (vereist Sync_Revendeurs_FR-vlaggen in AFAS;
                 vlaggen zetten: afas-connector-tools/bin/apply-revendeurs-vlaggen.php)
   stap10 [apply] Afgekeurde klant-accounts (wc:18, wc:197) verwijderen
-  stap11 [apply] Oude handgemaakte containers + variaties opruimen
-                (daarna: stap9 zonder-prijzen force)
+  stap11 [apply] Handgemaakte containers omzetten naar plugin-conventie
+                (1 per head; dubbelen weg) — vóór stap9 draaien
   stap12 [apply] Franse containernamen (tool: model_name_fr) + variatie-assen
                 (pa_langue/pa_connectivite/pa_capteur-rcp/pa_options)
 
   stap13        BeRocket-filterbalk: pad-cache verversen (na elke pull)
+  stap14 [apply] Menu-items omhangen naar overlevende containers + dubbelen weg
   reeks         Alle stappen in de bewezen volgorde (repro-check / livegang)
 EOF
     exit 1
@@ -1066,6 +1244,6 @@ EOF
 
 [[ $# -ge 1 ]] || usage
 case "$1" in
-    stap1|stap2|stap3|stap4|stap5|stap6|stap7|stap8|stap9|stap10|stap11|stap12|stap13|reeks) "$@" ;;
+    stap1|stap2|stap3|stap4|stap5|stap6|stap7|stap8|stap9|stap10|stap11|stap12|stap13|stap14|reeks) "$@" ;;
     *) usage ;;
 esac
