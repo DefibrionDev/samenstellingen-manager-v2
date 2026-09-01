@@ -175,6 +175,30 @@ add_action(
 	font-weight: 600;
 }
 
+/* Coupon-/puntenformulier in de smalle rechterkolom: WooCommerce's
+   form-row-first/-last zijn floats van ±47% breedte, bedoeld voor de brede
+   linkerkolom — in de review-kolom schoof de knop over het invulveld
+   (gezien op revendeurs, 1 sep 2026). Binnen de review-kolom stapelen we ze
+   op volle breedte; elders blijft de standaard-layout staan. */
+.afas-checkout-col-review .checkout_coupon .form-row-first,
+.afas-checkout-col-review .checkout_coupon .form-row-last {
+	float: none;
+	width: 100%;
+	margin-right: 0;
+}
+.afas-checkout-col-review .checkout_coupon .input-text {
+	width: 100%;
+	margin-bottom: .5rem;
+}
+.afas-checkout-col-review .checkout_coupon button[type="submit"] {
+	width: auto;
+}
+.afas-checkout-col-review .checkout_coupon::after {
+	content: "";
+	display: block;
+	clear: both;
+}
+
 /* Mobiel (één kolom): besteloverzicht (rechterkolom) bovenaan, daarna
    adres/referentie/facturatie. .afas-checkout-cols is een grid; de plugin valt
    bij max-width:768px terug op één kolom — daar draaien we met `order` de twee
