@@ -98,8 +98,19 @@ Checkout bleek al shortcode-conform. Audits + curatie-lijst gegenereerd.
       dáár is de cache vermoedelijk óók stuk). Filterbalk is als gast
       nergens zichtbaar (B2B/private) → visuele check hoort bij de
       ingelogde checkout-test.
-- [ ] Checkout-test met testklant (user 26), incl. BeRocket-filterbalk
-      ingelogd vergelijken met live
+- [x] **Checkout-test geslaagd (1 sep):** testklant 26 (Groupe France
+      Protect, relatie 13054) — login ✓, klantprijs ✓ (€103 ingelogd vs
+      €159 gast, exact de AFAS-afspraak; ook in cart/checkout 2×103),
+      adresboek op checkout ✓, testorder #992414 via invoice-gateway ✓,
+      geen AFAS-push (orders_enabled=0) ✓, mails gelogd maar geblokkeerd
+      door disable-emails ✓. Bevindingen zonder actie: btw staat op de
+      shop uit (live-instelling, B2B excl. — TVA via AFAS-factuur);
+      invoice-gateway zet orders direct op completed. BeRocket-filterbalk
+      nergens aangetroffen, ook niet ingelogd — shop gebruikt hem
+      kennelijk niet op categoriepagina's (pad-fix blijft, is onschadelijk).
+      **Livegang-controlepunt:** verifiëren dat de order-push triggert
+      ondanks completed-sprong (trigger_status=processing) — zit al in de
+      fase-2-controles.
 - [x] **Reproduceerbaarheids-check geslaagd (31 aug):** verse pull
       (`./migrate.sh -c revendeurs --pull --local-refresh`) → nieuw
       `reeks`-commando (stap 1→8, 10 → stap9 vol → stap11 → stap9 herbouw →
