@@ -644,6 +644,122 @@ PHP
     echo "OK — syncs gedraaid op $(doel_naam)"
 }
 
+# ---------------------------------------------------------------------------
+# Stap 11 — Structuur-opruiming (NL-stap8-patroon): losse simple products
+# waarvan het gekoppelde AFAS-artikel een variatie hoort te zijn (artikel
+# heeft artikelcode_parent in wp_lef_afas_artikelen) gaan naar de prullenbak,
+# met SKU en _afas_artikelnummer gestript zodat ze nooit meer matchen. De
+# artikelen-sync maakt/behoudt daarna de variatie onder de familie-container.
+# Dekt beide gevallen: duplicaat (variatie bestaat al) en conversie (nog niet).
+# Ook: dubbele variaties met hetzelfde artikelnummer dedupliceren.
+# Default dry-run; `stap11 apply` voert uit. Draai hierna stap10 delta.
+# ---------------------------------------------------------------------------
+stap11() {
+    controleer_config
+    local apply="${1:-}"
+
+    cat > /tmp/afasfr-structuur-payload.php <<'PHP'
+<?php
+$apply = APPLY_PLACEHOLDER;
+global $wpdb;
+// Volgorde-guard: zonder gevulde artikelen-tabel (stap10 eerst!) ziet deze
+// stap niets en doet hij stilletjes te weinig.
+$n_tabel = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}lef_afas_artikelen");
+if ($n_tabel === 0) {
+    echo "FOUT: wp_lef_afas_artikelen is leeg — draai eerst de artikelen-sync (stap10).\n";
+    exit(1);
+}
+$rows = $wpdb->get_results("
+    SELECT p.ID, p.post_title, an.meta_value AS artikelnummer,
+           COALESCE(sku.meta_value, '') AS sku,
+           COALESCE(a.artikelcode_parent, '') AS artikelcode_parent
+      FROM {$wpdb->posts} p
+      JOIN {$wpdb->postmeta} an ON an.post_id = p.ID AND an.meta_key = '_afas_artikelnummer'
+ LEFT JOIN {$wpdb->prefix}lef_afas_artikelen a
+           ON a.artikelnummer COLLATE utf8mb4_unicode_520_ci = an.meta_value
+ LEFT JOIN {$wpdb->postmeta} sku ON sku.post_id = p.ID AND sku.meta_key = '_sku'
+     WHERE p.post_type = 'product'
+       AND p.post_status IN ('publish', 'private')
+     ORDER BY p.ID", ARRAY_A);
+
+$n = 0;
+foreach ($rows as $r) {
+    $product = wc_get_product((int) $r['ID']);
+    if ($product && $product->is_type('variable')) { continue; }
+    $variatieId = 0;
+    $ids = get_posts(['post_type' => 'product_variation', 'post_status' => ['publish', 'private'],
+        'meta_key' => '_afas_artikelnummer', 'meta_value' => $r['artikelnummer'],
+        'fields' => 'ids', 'numberposts' => 1, 'suppress_filters' => true]);
+    if (!empty($ids)) { $variatieId = (int) $ids[0]; }
+    // trash alleen: duplicaat (variatie bestaat al) of conversie (artikel
+    // hoort volgens de sync-tabel een variatie te zijn); anders overslaan
+    if ($variatieId === 0 && $r['artikelcode_parent'] === '') { continue; }
+    $soort = $variatieId ? "DUPLICAAT (variatie #$variatieId bestaat al)" : 'CONVERSIE (sync maakt variatie)';
+    // slug meeloggen: getrashte pagina's kunnen in menu's/links hangen —
+    // de CSV-regel hieronder is de bron voor redirect-/menu-herstel
+    printf("%s  #%d sku=%s art=%s parent=%s slug=%s — %s [%s]\n",
+        $apply ? 'PRULLENBAK' : 'ZOU TRASHEN', (int) $r['ID'], $r['sku'] ?: '-',
+        $r['artikelnummer'], $r['artikelcode_parent'],
+        get_post_field('post_name', (int) $r['ID']), $r['post_title'], $soort);
+    if ($apply) {
+        delete_post_meta((int) $r['ID'], '_afas_artikelnummer');
+        if ($r['sku'] !== '') { update_post_meta((int) $r['ID'], '_sku', ''); }
+        $wpdb->update($wpdb->prefix . 'wc_product_meta_lookup', ['sku' => ''], ['product_id' => (int) $r['ID']]);
+        wp_trash_post((int) $r['ID']);
+    }
+    $n++;
+}
+// Dubbele variaties: twee product_variations met hetzelfde _afas_artikelnummer.
+// De variatie waarvan de SKU gelijk is aan het artikelnummer blijft; de
+// andere(n) gaan naar de prullenbak.
+$dubbel = $wpdb->get_results("
+    SELECT an.meta_value AS artikelnummer, GROUP_CONCAT(p.ID ORDER BY p.ID) AS ids
+      FROM {$wpdb->posts} p
+      JOIN {$wpdb->postmeta} an ON an.post_id = p.ID AND an.meta_key = '_afas_artikelnummer'
+     WHERE p.post_type = 'product_variation' AND p.post_status IN ('publish', 'private')
+  GROUP BY an.meta_value HAVING COUNT(*) > 1", ARRAY_A);
+
+$d = 0;
+foreach ($dubbel as $grp) {
+    $ids = array_map('intval', explode(',', $grp['ids']));
+    $art = (string) $grp['artikelnummer'];
+    $houd = 0;
+    foreach ($ids as $id) {
+        if ((string) get_post_meta($id, '_sku', true) === $art) { $houd = $id; break; }
+    }
+    if ($houd === 0) {
+        printf("OVERSLAAN  dubbele variaties voor %s (%s): geen met SKU==artikelnummer, handmatig kiezen\n",
+            $art, implode(', ', $ids));
+        continue;
+    }
+    foreach ($ids as $id) {
+        if ($id === $houd) { continue; }
+        printf("%s  variatie #%d sku=%s art=%s — dubbel, #%d blijft\n",
+            $apply ? 'PRULLENBAK' : 'ZOU TRASHEN', $id,
+            (string) get_post_meta($id, '_sku', true) ?: '-', $art, $houd);
+        if ($apply) {
+            delete_post_meta($id, '_afas_artikelnummer');
+            update_post_meta($id, '_sku', '');
+            wp_trash_post($id);
+        }
+        $d++;
+    }
+}
+printf("--- %s: %d simples + %d dubbele variaties %s\n", $apply ? 'APPLY' : 'DRY-RUN', $n, $d,
+    $apply ? 'naar prullenbak (SKU + koppeling gestript)' : 'zouden naar de prullenbak gaan');
+PHP
+    if [[ "$apply" == "apply" ]]; then
+        sed -i 's/APPLY_PLACEHOLDER/true/' /tmp/afasfr-structuur-payload.php
+    else
+        sed -i 's/APPLY_PLACEHOLDER/false/' /tmp/afasfr-structuur-payload.php
+    fi
+
+    wpr_stdin eval-file - < /tmp/afasfr-structuur-payload.php
+    if [[ "$apply" != "apply" ]]; then
+        echo "Dry-run — niets getrasht. Draai '$0 stap11 apply' om uit te voeren."
+    fi
+}
+
 hulp() {
     cat <<EOF
 Gebruik: $0 <stap> [apply|opties]   (DEFIBSFR_TARGET=lokaal|cp01, default lokaal)
@@ -658,6 +774,7 @@ Gebruik: $0 <stap> [apply|opties]   (DEFIBSFR_TARGET=lokaal|cp01, default lokaal
   stap8            Franse plugin-vertaling plaatsen (fr_FR.mo)
   stap9   [apply]  BeRocket-filterbalk: pad-cache regenereren na pull
   stap10  [zonder-prijzen|delta]  Syncs draaien (artikelen/prijzen/relaties + 2x wc-sync)
+  stap11  [apply]  Structuur-opruiming: simples die variatie horen te zijn
 
 Zie MIGRATIE-DEFIBSOLUTIONS-FR.md voor het fase-overzicht.
 EOF
@@ -674,5 +791,6 @@ case "${1:-}" in
     stap8) stap8 ;;
     stap9) stap9 "${2:-}" ;;
     stap10) shift; stap10 "$@" ;;
+    stap11) stap11 "${2:-}" ;;
     *) hulp; [[ -n "${1:-}" ]] && exit 1 || exit 0 ;;
 esac

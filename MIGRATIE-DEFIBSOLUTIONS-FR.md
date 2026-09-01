@@ -182,9 +182,22 @@ Stand 31 aug:
       rendert de filterbalk nergens (live én kopie 0 bapf-elementen;
       BeRocket dient hier alleen WPBakery-grids). Divi-feature-cache-
       handoff n.v.t.: FR draait Woodmart.
-- [ ] Structuur-opruiming + schrappingen (wacht op Randy/actielijst) ·
-      syncs (stap11-equivalent) · variatie-assen · checkout-pagina ·
-      weergave-instellingen (Woodmart i.p.v. Divi-stap).
+- [x] Stap 10 — syncs draaien (1 sep): 446 artikelen (incl. 16 family-heads
+      — run 1 faalde op "parent not found", heads bijgevlagd conform
+      cross-site-regel), 71.860 prijsregels, 56 relaties, 39 kortingen;
+      wc-sync run schoon (0 warnings). Get_Prijzen kan time-outen op 300s
+      (transient — retry hielp).
+- [x] Stap 11 — structuur-opruiming geport; dry-run vindt 0 gevallen:
+      plugin 2.0.4 bouwt gekoppelde simples **in-place** om tot variaties
+      onder de containers (16 gedaan). Stap blijft als vangnet in de
+      herhaal-reeks. Shop heeft nu de reseller-structuur: 402 producten +
+      146 variaties. LET OP stap 1.6: oude product-URL's van de 16
+      omgebouwde toestellen bestaan niet meer (variatie ≠ pagina) —
+      redirects/menu's checken.
+- [ ] Nog te doen: variatie-assen + container-opmaak/taal (containers
+      heten nu "AED Package: … (EN)" — NL-stap12/13-equivalent) ·
+      checkout-pagina · weergave-instellingen (Woodmart) · schrappingen
+      (na Randy) · rest SKU-actielijst.
 
 **Klaar als:** elke handeling een genummerde stap is die lokaal groen draait.
 
