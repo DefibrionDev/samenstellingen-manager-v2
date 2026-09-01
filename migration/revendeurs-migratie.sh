@@ -1261,9 +1261,9 @@ PHP
 }
 
 # ---------------------------------------------------------------------------
-# Stap 16 — Afgekeurde draft-producten naar de prullenbak (besluit Cas 1 sep:
-# "alle drafts mogen sws prullenbak in" — de 9 draft-restgevallen uit
-# work/randy-restgevallen-revendeurs.csv). SKU + meta worden gestript zodat
+# Stap 16 — Afgekeurde producten naar de prullenbak (besluiten Cas 1 sep:
+# de 9 draft-restgevallen + wc:685 Laerdal-veer 141700 "eruit").
+# SKU + meta worden gestript zodat
 # ze nooit meer matchen; de sku-guard voorkomt dat een hergebruikt wc-id na
 # een verse pull per ongeluk iets anders raakt. Idempotent.
 # Default dry-run; `stap16 apply` voert uit.
@@ -1278,6 +1278,7 @@ stap16() {
     95 => 'A200', 134 => '11403-000001', 357 => 'G5A-11C-FR', 358 => 'G5S-11C-FR',
     419 => '202-56052', 809 => '8008-0050-02', 863 => '03-DTR-G2006ZZ',
     864 => 'M3871A', 872 => '03-DTR-G2052ZZ',
+    685 => '141700', // Laerdal compressieveer — besluit Cas 1 sep: eruit
 ];
 foreach (\$besluit as \$pid => \$sku) {
     \$status = get_post_status(\$pid);
