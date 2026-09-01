@@ -431,7 +431,8 @@ PY
 # ---------------------------------------------------------------------------
 # Stap 7 — mu-plugins plaatsen uit migration/mu-plugins/ (gedeelde map met
 # defibsolutions — daarom een EXPLICIETE selectie, geen *.php):
-#   in:  wc-variation-threshold, variations-json-cache, checkout-ajax-fallback,
+#   in:  checkout-coupon-points-right (Kadence-checkout-opmaak, van reseller),
+#        wc-variation-threshold, variations-json-cache, checkout-ajax-fallback,
 #        afas-preview-winkelmanager, shop-manager-login-as-klant,
 #        order-email-afas-debiteur, order-email-unit-prices,
 #        afas-tracktrace-style, wcpt-cli-cache-fix (shop draait wc-product-
@@ -448,6 +449,7 @@ stap7() {
     local bron="$REPO_ROOT/migration/mu-plugins"
     [[ -d "$bron" ]] || { echo "FOUT: $bron ontbreekt" >&2; exit 1; }
     local selectie=(
+        checkout-coupon-points-right.php
         wc-variation-threshold.php
         variations-json-cache.php
         checkout-ajax-fallback.php
