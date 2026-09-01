@@ -167,9 +167,12 @@ Stand 31 aug:
       `base:publish`'d op website 6, `publications:sync --apply` →
       **129 toegepast, 0 gefaald**; verificatie-dry-run convergeert
       ("alle 1565 itemcodes staan al goed").
-- [ ] AFAS-vlaggen kale artikelen: ±300 accessoires uit het vlag-voorstel
-      via het fix-vinkjes-patroon (connector-tools) — script nog te maken,
-      dry-run eerst.
+- [x] AFAS-vlaggen kale artikelen + relaties (1 sep, akkoord Cas):
+      `fix-defibsolutionsfr-vinkjes.php` → **301 artikelen** aan (input
+      `work/defibsolutionsfr-vinkjes-input.csv`; de kale AED's 10140/10559/
+      10189FR bewust uitgesloten — Randy-gevallen, kale AED's nooit
+      publiceren) en `apply-defibsolutionsfr-relatie-vlaggen.php` →
+      **56 verkooprelaties** aan. Beide geconvergeerd (herrun: 0 te doen).
 - [x] Stap 8 — Franse plugin-vertaling: 39 strings machinaal vertaald
       (`migration/afas-translations/lefcreative-afas-b2b-fr_FR.po/.mo`),
       geplaatst in `wp-content/languages/plugins/`, laadt geverifieerd.
