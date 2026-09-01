@@ -307,6 +307,13 @@ Pas plannen na Fase G; aparte go/no-go met Cas. Checklist staat in het
 runbook (backup → alle stappen → controles → mail aan → week monitoren →
 B2BKing opruimen).
 
+- [ ] Login-pagina-fix (besluit Cas 31 aug, bestond op live óók) — wacht op
+      check Cas: mu-plugin defibs-login-fix.php verbergt de altijd-zichtbare
+      "Caps lock staat aan."-melding (plugin-markup brak de core-selector
+      .wp-pwd; regel bewust zonder !important zodat echte caps-detectie
+      blijft werken) en maakt "Onthoud mij" klikbaar (submit-paragraaf
+      overlapte de checkbox; forgetmenot kreeg z-index). Via stap7 op
+      cp-01 + lokaal; browser-geverifieerd (klik vinkt aan, toggle intact).
 - [ ] NÁ livegang (herinnering voor Cas, besluit 31 aug): Cloudflare
       oppakken — de definitieve shop-URL wordt **shop.defibsolutions.nl**
       (subdomein; hoofdsite blijft op het domein-root). Pas relevant als
