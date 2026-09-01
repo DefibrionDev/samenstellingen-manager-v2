@@ -1186,6 +1186,31 @@ PY
 }
 
 # ---------------------------------------------------------------------------
+# Stap 15 — Variatie-knoppen: niet-beschikbare opties grijs i.p.v. rood kruis
+# (verzoek Cas 1 sep). woo-variation-swatches-instelling attribute_behavior:
+# 'blur' (vervagen + rood kruis) -> 'blur-no-cross' (alleen vervagen).
+# Alleen deze sleutel; de rest van de live-config blijft staan. Idempotent.
+# ---------------------------------------------------------------------------
+stap15() {
+    controleer_config
+    wpr_stdin eval-file - <<'PHP'
+<?php
+$o = get_option('woo_variation_swatches');
+if (!is_array($o)) { echo "woo_variation_swatches ontbreekt - overslaan\n"; return; }
+$was = $o['attribute_behavior'] ?? '(leeg)';
+if ($was === 'blur-no-cross') {
+    echo "attribute_behavior staat al op blur-no-cross\n";
+} else {
+    $o['attribute_behavior'] = 'blur-no-cross';
+    update_option('woo_variation_swatches', $o);
+    delete_transient('woo_variation_swatches_cache');
+    printf("attribute_behavior: %s -> blur-no-cross\n", $was);
+}
+PHP
+    echo "OK — niet-beschikbare variatie-opties vervagen zonder kruis op $(doel_naam)"
+}
+
+# ---------------------------------------------------------------------------
 # reeks — de volledige bewezen volgorde in één run (reproduceerbaarheids-
 # check en straks de cp01-livegang). Vereist een verse of bestaande kopie;
 # de verse pull zelf gaat via wordpress-migrater:
@@ -1200,7 +1225,7 @@ reeks() {
     # container, dus de sync hoeft er geen aan te maken — één sync volstaat.
     for s in "stap1" "stap2" "stap3 apply" "stap4" "stap5 apply" "stap6 apply" \
              "stap7" "stap8" "stap13" "stap10 apply" "stap11 apply" "stap9" \
-             "stap12 apply" "stap14 apply"; do
+             "stap12 apply" "stap14 apply" "stap15"; do
         echo ""
         echo "===== reeks: $s [$(( (SECONDS - t0) / 60 ))m] ====="
         # shellcheck disable=SC2086
@@ -1237,6 +1262,7 @@ Stappen:
 
   stap13        BeRocket-filterbalk: pad-cache verversen (na elke pull)
   stap14 [apply] Menu-items omhangen naar overlevende containers + dubbelen weg
+  stap15        Variatie-knoppen: niet-beschikbaar grijs i.p.v. rood kruis
   reeks         Alle stappen in de bewezen volgorde (repro-check / livegang)
 EOF
     exit 1
@@ -1244,6 +1270,6 @@ EOF
 
 [[ $# -ge 1 ]] || usage
 case "$1" in
-    stap1|stap2|stap3|stap4|stap5|stap6|stap7|stap8|stap9|stap10|stap11|stap12|stap13|stap14|reeks) "$@" ;;
+    stap1|stap2|stap3|stap4|stap5|stap6|stap7|stap8|stap9|stap10|stap11|stap12|stap13|stap14|stap15|reeks) "$@" ;;
     *) usage ;;
 esac
