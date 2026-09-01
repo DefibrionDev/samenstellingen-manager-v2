@@ -1051,6 +1051,11 @@ foreach ($containers as $parId => $data) {
                 if ($pos === false) {
                     $pos = 100 + (ord(substr($naam, 0, 1)) - 65);
                 }
+                // WooCommerce 3.6+ sorteert menu_order-attributen op termmeta
+                // 'order'; de oude conventie 'order_pa_<tax>' blijft erbij voor
+                // compatibiliteit (defibsolutions-script gebruikte alleen die,
+                // waardoor Défibrillateur hier achteraan zakte — Cas 1 sep).
+                update_term_meta($tid, 'order', (int) $pos);
                 update_term_meta($tid, 'order_' . $tax, (int) $pos);
             }
         }
