@@ -301,10 +301,14 @@ prijsgerelateerde punten op (K6/K11) en beantwoordde K12 deels
       klanten op lijst 029 zien de CPR-keuze anders niet. Staat in het
       antwoorden-document onder punt 12; geen actie meer aan onze kant.
 
-## Fase H — Livegang (runbook fase 2, buiten kantooruren)
+## Fase H — Livegang: GEPLAND DINSDAG 8 SEPT 2026 (buiten kantooruren)
 
-Pas plannen na Fase G; aparte go/no-go met Cas. Checklist staat in het
-runbook (backup → alle stappen → controles → mail aan → week monitoren →
+Besluit Cas 1 sept; antwoordmail naar Kevin/Roelof is verstuurd. Volgorde
+in het venster: verse pull live → cp-01 (wordpress-migrater) → runner
+stap1-17 (tmp/generale-cp01-runner.sh + stap1/2) → controles (testorder,
+steekproeven) → slotlijstje handmatig (order-push aan, order-vrije-velden,
+cron-intervallen terug, mail aan) → DNS/URL-omzetting. Checklist runbook
+fase 2 (backup → alle stappen → controles → mail aan → week monitoren →
 B2BKing opruimen).
 
 - [x] Login-pagina-fix ✓ 31 aug (check Cas: "geverifieerd, werkt"; bestond
