@@ -381,7 +381,9 @@ print("""
 $gezet = $al = $overschreven = $onbekend = 0;
 foreach ($map as $pid => $code) {
     $pid = (int) $pid;
-    if (!get_post_status($pid)) { echo "ONBEKEND PRODUCT wc:$pid ($code)\n"; $onbekend++; continue; }
+    $status = get_post_status($pid);
+    if (!$status) { echo "ONBEKEND PRODUCT wc:$pid ($code)\n"; $onbekend++; continue; }
+    if ($status === 'trash') { continue; } // opgeruimd (stap11/16): nooit meta terugzetten
     $huidig = (string) get_post_meta($pid, '_afas_artikelnummer', true);
     if ($huidig === (string) $code) { $al++; continue; }
     if ($apply) { update_post_meta($pid, '_afas_artikelnummer', (string) $code); }
@@ -1291,6 +1293,7 @@ stap16() {
     419 => '202-56052', 809 => '8008-0050-02', 863 => '03-DTR-G2006ZZ',
     864 => 'M3871A', 872 => '03-DTR-G2052ZZ',
     685 => '141700', // Laerdal compressieveer — besluit Cas 1 sep: eruit
+    135 => '11403-000002', // draft-duplicaat van wc:991865 (10227); hield de BHV-sku bezet
 ];
 foreach (\$besluit as \$pid => \$sku) {
     \$status = get_post_status(\$pid);
