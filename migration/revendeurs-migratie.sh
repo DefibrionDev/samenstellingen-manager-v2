@@ -1316,6 +1316,46 @@ PHP
 }
 
 # ---------------------------------------------------------------------------
+# Stap 17 — Beheerders koppelen aan een AFAS-relatie (patroon defibsolutions-
+# stap17, verzoek Cas 1 sep): zonder afas_relatie_id werkt de checkout-
+# adres-dropdown (en klantprijs-weergave) niet voor admins. Relatie 23135
+# (IDEALIS BRETAGNE, F — keuze Cas; huis-alternatief: 10003 Defibrion sarl) +
+# afas_sync_paused=1 ("gegevens van dit account niet synchroniseren vanuit
+# AFAS") zodat de relatie-sync het admin-account nooit overschrijft.
+# Bestaande koppelingen blijven staan. Default dry-run; `stap17 apply` schrijft.
+# ---------------------------------------------------------------------------
+stap17() {
+    controleer_config
+    local apply="${1:-}"
+    wpr_stdin eval-file - "$apply" <<'PHP'
+<?php
+$apply = ('apply' === ($args[0] ?? ''));
+$relatie = '23135';
+foreach (get_users(['role' => 'administrator']) as $u) {
+    $huidig = (string) get_user_meta($u->ID, 'afas_relatie_id', true);
+    $paused = (string) get_user_meta($u->ID, 'afas_sync_paused', true);
+    $acties = [];
+    if ($huidig === '') { $acties[] = "relatie -> $relatie"; }
+    if ($paused !== '1') { $acties[] = 'sync_paused -> 1'; }
+    if (!$acties) {
+        printf("%-40s staat al goed (relatie %s)\n", $u->user_login, $huidig);
+        continue;
+    }
+    if ($apply) {
+        if ($huidig === '') { update_user_meta($u->ID, 'afas_relatie_id', $relatie); }
+        if ($paused !== '1') { update_user_meta($u->ID, 'afas_sync_paused', '1'); }
+    }
+    printf("%-40s %s%s\n", $u->user_login, implode(', ', $acties), $apply ? '' : ' (dry-run)');
+}
+PHP
+    if [[ "$apply" != "apply" ]]; then
+        echo "Dry-run — draai '$0 stap17 apply' om te schrijven."
+    else
+        echo "OK — beheerders gekoppeld op $(doel_naam)"
+    fi
+}
+
+# ---------------------------------------------------------------------------
 # backup — volledige backup van de cp01-site (bestanden + database) vóór de
 # livegang-reeks. Alleen zinvol met REVEND_TARGET=cp01. Dump komt in de home
 # van de site-user te staan met timestamp; blijft daar tot handmatige opruiming.
@@ -1378,7 +1418,7 @@ reeks() {
     # container, dus de sync hoeft er geen aan te maken — één sync volstaat.
     for s in "stap1" "stap2" "stap3 apply" "stap4" "stap5 apply" "stap6 apply" \
              "stap7" "stap8" "stap13" "stap10 apply" "stap11 apply" "stap9" \
-             "stap12 apply" "stap14 apply" "stap15" "stap16 apply"; do
+             "stap12 apply" "stap14 apply" "stap15" "stap16 apply" "stap17 apply"; do
         echo ""
         echo "===== reeks: $s [$(( (SECONDS - t0) / 60 ))m] ====="
         # shellcheck disable=SC2086
@@ -1417,6 +1457,7 @@ Stappen:
   stap14 [apply] Menu-items omhangen naar overlevende containers + dubbelen weg
   stap15        Variatie-knoppen: niet-beschikbaar grijs i.p.v. rood kruis
   stap16 [apply] Afgekeurde draft-producten prullenbak (besluit 1 sep)
+  stap17 [apply] Beheerders koppelen aan relatie 23135 + sync-pauze
   backup        cp01: volledige backup (db + files) vóór de livegang-reeks
   slotstap [apply] Livegang-slot: order-push aan + mail aan (na controles)
   reeks         Alle stappen in de bewezen volgorde (repro-check / livegang)
@@ -1426,6 +1467,6 @@ EOF
 
 [[ $# -ge 1 ]] || usage
 case "$1" in
-    stap1|stap2|stap3|stap4|stap5|stap6|stap7|stap8|stap9|stap10|stap11|stap12|stap13|stap14|stap15|stap16|backup|slotstap|reeks) "$@" ;;
+    stap1|stap2|stap3|stap4|stap5|stap6|stap7|stap8|stap9|stap10|stap11|stap12|stap13|stap14|stap15|stap16|stap17|backup|slotstap|reeks) "$@" ;;
     *) usage ;;
 esac
