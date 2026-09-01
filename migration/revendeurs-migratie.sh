@@ -686,16 +686,28 @@ for a in json.loads(open(cache).read()):
     if b:
         per_bhv.setdefault(b, {})[code] = a
 
-def head_van_sku(sku: str) -> str:
+def artikel_van_sku(sku: str):
     a = per_code.get(sku)
     if a is None:
         kandidaten = {c: k for c, k in per_bhv.get(sku, {}).items()
                       if k.get("Geblokkeerd") is not True}
         a = next(iter(kandidaten.values())) if len(kandidaten) == 1 else None
     if a is None or a.get("Geblokkeerd") is True:
+        return None
+    return a
+
+def head_van_sku(sku: str) -> str:
+    a = artikel_van_sku(sku)
+    if a is None:
         return ""
     code = str(a.get("Itemcode"))
     return KALE_PAKKET_MAP.get(code) or str(a.get("Itemcode_Parent") or "").strip()
+
+def is_kaal(sku: str) -> bool:
+    # kale AED als variatie (Type_item geen Samenstelling) — hoort niet in
+    # een pakket-container; de pakketfamilie dekt hem (zie audit 31 aug)
+    a = artikel_van_sku(sku)
+    return a is not None and str(a.get("Type_item") or "") != "Samenstelling"
 
 containers = {}
 for regel in open(dump, encoding="utf-8"):
@@ -704,11 +716,14 @@ for regel in open(dump, encoding="utf-8"):
         continue
     pid, psku, titel, vid, vsku, vstatus = d
     c = containers.setdefault(pid, {"titel": titel, "sku": psku, "heads": Counter(),
-                                    "publish_vars": 0})
+                                    "publish_vars": 0, "kale_vars": []})
     if vid.isdigit():
         if vstatus == "publish":
             c["publish_vars"] += 1
-        h = head_van_sku(vsku.strip())
+        vsku = vsku.strip()
+        if is_kaal(vsku):
+            c["kale_vars"].append(int(vid))
+        h = head_van_sku(vsku)
         if h:
             c["heads"][h] += 1
 
@@ -720,26 +735,27 @@ for pid, c in containers.items():
     head = c["heads"].most_common(1)[0][0]
     per_head.setdefault(head, []).append((pid, c))
 
-plan = []  # (pid, actie, head, titel, n_publish)
+plan = []  # (pid, actie, head, titel, n_publish, kale_vars)
 for head, kandidaten in per_head.items():
     kandidaten.sort(key=lambda x: (-x[1]["publish_vars"], int(x[0])))
     winnaar = kandidaten[0]
-    plan.append((winnaar[0], "convert", head, winnaar[1]["titel"], winnaar[1]["publish_vars"]))
+    plan.append((winnaar[0], "convert", head, winnaar[1]["titel"],
+                 winnaar[1]["publish_vars"], winnaar[1]["kale_vars"]))
     for pid, c in kandidaten[1:]:
-        plan.append((pid, "trash", head, c["titel"], c["publish_vars"]))
+        plan.append((pid, "trash", head, c["titel"], c["publish_vars"], []))
 plan.sort(key=lambda x: int(x[0]))
 
 # plan bewaren voor stap14 (menu-herstel): pid -> head, ook voor de dubbelen
 import os
 plan_pad = os.path.join(os.path.dirname(dump), "revendeurs-container-omzetting.json")
-json.dump({p: {"actie": a, "head": h, "titel": t} for p, a, h, t, _ in plan},
+json.dump({p: {"actie": a, "head": h, "titel": t} for p, a, h, t, _, _ in plan},
           open(plan_pad, "w"), ensure_ascii=False, indent=1)
 
 print(f"// {len(containers)} oude containers -> {sum(1 for p in plan if p[1]=='convert')} omzetten, "
       f"{sum(1 for p in plan if p[1]=='trash')} weg; plan: {plan_pad}", file=sys.stderr)
 print("<?php")
 print(f"$apply = {'true' if apply else 'false'};")
-print(f"$plan = json_decode('{json.dumps([{'pid': int(p), 'actie': a, 'head': h} for p, a, h, _, _ in plan])}', true);")
+print(f"$plan = json_decode('{json.dumps([{'pid': int(p), 'actie': a, 'head': h, 'kale': k} for p, a, h, _, _, k in plan])}', true);")
 print(r"""
 global $wpdb;
 foreach ($plan as $p) {
@@ -749,6 +765,15 @@ foreach ($plan as $p) {
     if ($p['actie'] === 'convert') {
         printf("%s container wc:%d '%s' -> head %s (%d variaties blijven)\n",
             $apply ? 'OMGEZET' : 'ZOU OMZETTEN', $pid, get_the_title($pid), $head, count($kinderen));
+        foreach ($p['kale'] as $vid) {
+            printf("%s   kale variatie wc:%d (sku=%s) uit deze container\n",
+                $apply ? 'WEGGEGOOID' : 'ZOU WEGGOOIEN', $vid, get_post_meta($vid, '_sku', true));
+            if ($apply) {
+                update_post_meta($vid, '_sku', '');
+                delete_post_meta($vid, '_afas_artikelnummer');
+                wp_trash_post((int) $vid);
+            }
+        }
         if ($apply) {
             update_post_meta($pid, '_afas_artikelnummer', $head);
             update_post_meta($pid, '_sku', $head . '-wpbase');
