@@ -1289,6 +1289,15 @@ if ($was === 'blur-no-cross') {
 }
 PHP
     echo "OK — niet-beschikbare variatie-opties vervagen zonder kruis op $(doel_naam)"
+
+    # Checkout-veldinstellingen conform reseller/defibsolutions (verzoek Cas
+    # 1 sep): bedrijfsnaam verbergen (komt uit de AFAS-relatie), telefoon en
+    # adresregel 2 optioneel — zonder dit stonden company/phone op required
+    # en liepen B2B-klanten vast op velden die AFAS al kent.
+    wpr option update woocommerce_checkout_company_field hidden >/dev/null
+    wpr option update woocommerce_checkout_phone_field optional >/dev/null
+    wpr option update woocommerce_checkout_address_2_field optional >/dev/null
+    echo "OK — checkout-velden: bedrijfsnaam hidden, telefoon/adres2 optional op $(doel_naam)"
 }
 
 # ---------------------------------------------------------------------------
@@ -1470,7 +1479,8 @@ Stappen:
 
   stap13        BeRocket-filterbalk: pad-cache verversen (na elke pull)
   stap14 [apply] Menu-items omhangen naar overlevende containers + dubbelen weg
-  stap15        Variatie-knoppen: niet-beschikbaar grijs i.p.v. rood kruis
+  stap15        Weergave: variatie-knoppen grijs i.p.v. kruis + checkout-velden
+                (bedrijfsnaam hidden, telefoon/adres2 optional)
   stap16 [apply] Afgekeurde draft-producten prullenbak (besluit 1 sep)
   stap17 [apply] Beheerders koppelen aan relatie 23135 + sync-pauze
   backup        cp01: volledige backup (db + files) vóór de livegang-reeks
