@@ -361,10 +361,18 @@ paren = {}
 with open(audit, encoding="utf-8-sig") as f:
     for r in csv.DictReader(f, delimiter=";"):
         # KALE-AED-VARIATIE: zwerf-variatie aan een kaal artikel (11661,
-        # 20013-FR, 20014-FR) — niet voorkoppelen, stap10 ruimt op.
+        # 20013-FR, 20014-FR) — niet voorkoppelen, stap11 ruimt op.
         if (r["afas_itemcode"] and r["status"] != "draft"
                 and r["type"] != "variable" and r["oordeel"] != "KALE-AED-VARIATIE"):
             paren[r["wc_id"]] = r["afas_itemcode"]
+# Uitzonderingen (besluiten Cas) overrulen de audit — bv. wc:991865 -> 10227,
+# waar de shop-sku zelf onvindbaar is maar het product 1-op-1 bestaat.
+import os
+uitz = os.path.join(os.path.dirname(audit), "revendeurs-voorkoppel-uitzonderingen.csv")
+if os.path.exists(uitz):
+    for r in csv.DictReader(open(uitz, encoding="utf-8-sig"), delimiter=";"):
+        if r.get("wc_id") and r.get("itemcode"):
+            paren[r["wc_id"].strip()] = r["itemcode"].strip()
 print(f"// {len(paren)} voorkoppelingen uit {audit}", file=sys.stderr)
 print("<?php")
 print(f"$apply = {'true' if apply else 'false'};")
