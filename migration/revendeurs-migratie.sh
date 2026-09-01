@@ -1432,8 +1432,8 @@ reeks() {
     # stap11 (omzetten) vóór stap9: elke head heeft dan al een gekoppelde
     # container, dus de sync hoeft er geen aan te maken — één sync volstaat.
     for s in "stap1" "stap2" "stap3 apply" "stap4" "stap5 apply" "stap6 apply" \
-             "stap7" "stap8" "stap13" "stap10 apply" "stap11 apply" "stap9" \
-             "stap12 apply" "stap14 apply" "stap15" "stap16 apply" "stap17 apply"; do
+             "stap7" "stap8" "stap13" "stap10 apply" "stap17 apply" "stap11 apply" \
+             "stap9" "stap12 apply" "stap14 apply" "stap15" "stap16 apply"; do
         echo ""
         echo "===== reeks: $s [$(( (SECONDS - t0) / 60 ))m] ====="
         # shellcheck disable=SC2086
