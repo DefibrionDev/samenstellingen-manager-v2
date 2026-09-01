@@ -387,6 +387,28 @@ foreach ($map as $pid => $code) {
 }
 printf("--- %s: %d nieuw, %d overschreven (afwijkende meta), %d stonden al goed, %d onbekend\n",
     $apply ? 'APPLY' : 'DRY-RUN', $gezet, $overschreven, $al, $onbekend);
+
+// Schoonmaakpass: dode koppelingen strippen. De plugin self-healt SKU->meta
+// op eerste lees; producten buiten de mapping (GEEN-MATCH/GEBLOKKEERD-
+// audit-gevallen) krijgen zo een artikelnummer dat niet (actief) in AFAS
+// bestaat -> order-push zou stukgaan. Meta weg, SKU en product blijven.
+global $wpdb;
+$dood = $wpdb->get_results("SELECT p.ID, an.meta_value AS art
+    FROM {$wpdb->posts} p
+    JOIN {$wpdb->postmeta} an ON an.post_id = p.ID AND an.meta_key = '_afas_artikelnummer' AND an.meta_value <> ''
+    LEFT JOIN {$wpdb->prefix}lef_afas_artikelen la ON la.artikelnummer = an.meta_value
+    WHERE p.post_type IN ('product','product_variation')
+      AND p.post_status IN ('publish','draft','private')
+      AND la.artikelnummer IS NULL", ARRAY_A);
+$gestript = 0;
+foreach ($dood as $d) {
+    if (isset($map[(string) $d['ID']])) { continue; } // hoort in de mapping: niet strippen
+    printf("%s dode koppeling wc:%s (meta=%s was self-heal)\n",
+        $apply ? 'GESTRIPT' : 'ZOU STRIPPEN', $d['ID'], $d['art']);
+    if ($apply) { delete_post_meta((int) $d['ID'], '_afas_artikelnummer'); }
+    $gestript++;
+}
+printf("--- %s schoonmaak: %d dode koppelingen\n", $apply ? 'APPLY' : 'DRY-RUN', $gestript);
 """)
 PY
 
@@ -703,11 +725,14 @@ def head_van_sku(sku: str) -> str:
     code = str(a.get("Itemcode"))
     return KALE_PAKKET_MAP.get(code) or str(a.get("Itemcode_Parent") or "").strip()
 
-def is_kaal(sku: str) -> bool:
-    # kale AED als variatie (Type_item geen Samenstelling) — hoort niet in
-    # een pakket-container; de pakketfamilie dekt hem (zie audit 31 aug)
+def is_vervallen(sku: str) -> bool:
+    # variatie die niet in de container thuishoort: kale AED (Type_item geen
+    # Samenstelling), of sku zonder actief AFAS-artikel (B-prefix/soft-delete,
+    # bv. 52137*/52138*/21017 — de actieve opvolgers komen via de sync)
     a = artikel_van_sku(sku)
-    return a is not None and str(a.get("Type_item") or "") != "Samenstelling"
+    if a is None:
+        return sku != ""
+    return str(a.get("Type_item") or "") != "Samenstelling"
 
 containers = {}
 for regel in open(dump, encoding="utf-8"):
@@ -721,7 +746,7 @@ for regel in open(dump, encoding="utf-8"):
         if vstatus == "publish":
             c["publish_vars"] += 1
         vsku = vsku.strip()
-        if is_kaal(vsku):
+        if is_vervallen(vsku):
             c["kale_vars"].append(int(vid))
         h = head_van_sku(vsku)
         if h:
