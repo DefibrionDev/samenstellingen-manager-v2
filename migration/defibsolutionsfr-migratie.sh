@@ -551,6 +551,99 @@ PHP
     fi
 }
 
+# ---------------------------------------------------------------------------
+# Stap 10 — Syncs draaien: plugin-migraties, artikelen (AFAS → tabel),
+# prijslijsten + prijzen, verkooprelaties/kortingen/landen/adressen, en 2× de
+# WooCommerce-sync (run 2 is het vangnet voor variaties wier container pas in
+# run 1 ontstond). Print per fase voortgang en eindigt met de warning-telling.
+# Vereist dat de Sync_/Tonen_Defibsolutions_FR-vlaggen in AFAS staan
+# (publications:sync + vinkjes-scripts, gedaan 31 aug/1 sep).
+# Opties (combineerbaar):
+#   zonder-prijzen  slaat de prijs-/relatie-import over (herhaal-runs)
+#   delta           wc-sync zonder force: alleen gewijzigde artikelen
+# ---------------------------------------------------------------------------
+stap10() {
+    controleer_config
+    local opties="${*:-}"
+    local zonder_prijzen=""; [[ "$opties" == *zonder-prijzen* ]] && zonder_prijzen="zonder-prijzen"
+    cat > /tmp/afasfr-stap10-payload.php <<'PHP'
+<?php
+$zonderPrijzen = PRIJZEN_PLACEHOLDER;
+$force = FORCE_PLACEHOLDER;   // false = delta-sync (alleen gewijzigde rijen)
+$t0 = microtime(true);
+$fase = function (string $m) use ($t0) {
+    printf("[%5.1fs] %s\n", microtime(true) - $t0, $m);
+    flush(); // live voortgang in logs/terminal i.p.v. alles aan het einde
+    if (function_exists('wp_cache_flush_runtime')) { wp_cache_flush_runtime(); }
+};
+global $wpdb;
+$tabel = $wpdb->prefix . 'lef_afas_artikelen';
+
+$fase('plugin-migraties');
+\Lefcreative\PluginBase\Core\Hooks::adminInit();
+
+$fase('artikelen-sync (AFAS -> tabel)');
+do_action('afas_sync_artikelen', true);
+printf("         tabel: %d artikelen\n", (int) $wpdb->get_var("SELECT COUNT(*) FROM `$tabel`"));
+
+if ($zonderPrijzen) {
+    $fase('prijslijsten + prijzen + verkooprelaties OVERGESLAGEN (zonder-prijzen)');
+} else {
+    $fase('prijslijsten + prijzen');
+    do_action('afas_sync_prijslijsten', true);
+    do_action('afas_sync_prijzen', true);
+    printf("         prijzen: %d regels\n",
+        (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}lef_afas_prijzen"));
+    // verkooprelaties: nodig voor prijslijst-/kortingsgroep-resolutie per klant
+    $fase('verkooprelaties + kortingen + landen + adressen');
+    do_action('afas_sync_verkooprelaties', true);
+    do_action('afas_sync_kortingen', true);
+    do_action('afas_sync_landen', true);
+    do_action('afas_sync_addresses', true);
+    printf("         relaties: %d, kortingen: %d\n",
+        (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}lef_afas_verkooprelaties"),
+        (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}lef_afas_kortingen"));
+}
+
+$wpdb->query("DELETE FROM {$wpdb->prefix}lef_logs WHERE channel = 'woocommerce'");
+$warnings = function () use ($wpdb): int {
+    return (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}lef_logs
+        WHERE channel = 'woocommerce' AND level = 'warning'");
+};
+// term-hertellingen uitstellen: anders hertelt elke productsave alle
+// categorie-/attribuuttellers (honderden keren); nu één keer aan het eind
+wp_defer_term_counting(true);
+$fase($force ? 'wc-sync run 1 (force: alle productsaves, paar minuten)'
+             : 'wc-sync run 1 (delta: alleen gewijzigde artikelen)');
+do_action('afas_sync_woocommerce', $force, true);
+if ($warnings() > 0) {
+    $fase(sprintf('wc-sync run 2 (vangnet: %d warnings na run 1)', $warnings()));
+    do_action('afas_sync_woocommerce', $force, true);
+} else {
+    $fase('run 2 overgeslagen: run 1 was schoon');
+}
+wp_defer_term_counting(false);
+
+$fase('klaar — logsamenvatting:');
+foreach ($wpdb->get_results("SELECT level, COUNT(*) n FROM {$wpdb->prefix}lef_logs
+    WHERE channel = 'woocommerce' GROUP BY level", ARRAY_A) as $r) {
+    printf("         %s: %d\n", $r['level'], (int) $r['n']);
+}
+PHP
+    if [[ "$zonder_prijzen" == "zonder-prijzen" ]]; then
+        sed -i 's/PRIJZEN_PLACEHOLDER/true/' /tmp/afasfr-stap10-payload.php
+    else
+        sed -i 's/PRIJZEN_PLACEHOLDER/false/' /tmp/afasfr-stap10-payload.php
+    fi
+    if [[ "$opties" == *delta* ]]; then
+        sed -i 's/FORCE_PLACEHOLDER/false/' /tmp/afasfr-stap10-payload.php
+    else
+        sed -i 's/FORCE_PLACEHOLDER/true/' /tmp/afasfr-stap10-payload.php
+    fi
+    wpr_stdin eval-file - < /tmp/afasfr-stap10-payload.php
+    echo "OK — syncs gedraaid op $(doel_naam)"
+}
+
 hulp() {
     cat <<EOF
 Gebruik: $0 <stap> [apply|opties]   (DEFIBSFR_TARGET=lokaal|cp01, default lokaal)
@@ -564,6 +657,7 @@ Gebruik: $0 <stap> [apply|opties]   (DEFIBSFR_TARGET=lokaal|cp01, default lokaal
   stap7            mu-plugins plaatsen
   stap8            Franse plugin-vertaling plaatsen (fr_FR.mo)
   stap9   [apply]  BeRocket-filterbalk: pad-cache regenereren na pull
+  stap10  [zonder-prijzen|delta]  Syncs draaien (artikelen/prijzen/relaties + 2x wc-sync)
 
 Zie MIGRATIE-DEFIBSOLUTIONS-FR.md voor het fase-overzicht.
 EOF
@@ -579,5 +673,6 @@ case "${1:-}" in
     stap7) stap7 ;;
     stap8) stap8 ;;
     stap9) stap9 "${2:-}" ;;
+    stap10) shift; stap10 "$@" ;;
     *) hulp; [[ -n "${1:-}" ]] && exit 1 || exit 0 ;;
 esac
