@@ -327,8 +327,11 @@ B2BKing opruimen).
       herimport cp-01: HS1 overal 775, AED Plus 979, G5 1540/1780 — de
       prijspunten 6/11/12 uit Kevins mail zijn hiermee opgelost, alleen
       G5F-basisprijs rest voor Roelof. Bugrapport voor lefcreative:
-      work/bugrapport-lefcreative-prijzen-historie.md. OPEN: zelfde fix op
-      reseller-productie uitrollen (waar draait die? — Cas).
+      work/bugrapport-lefcreative-prijzen-historie.md. Reseller: lefcreative
+      heeft al een plugin-fix uitgerold (melding Cas 1 sept) — beslispunt
+      vervallen. Bij livegang checken of er een nieuwere plugin-zip voor
+      stap4 is; zo niet is 2.0.4 + de mu-plugin ook goed (workaround is
+      onschadelijk naast een gefixte plugin).
 - [x] Kevins klanten-terugkoppeling verwerkt ✓ 1 sept ("Niet toegekende
       klanten defibsolutions NL"): Blad1 = 23 koppelingen toegevoegd aan
       work/klant-relatie-mapping.csv (stap3 apply beide kopieën, 0 conflicten
