@@ -318,6 +318,17 @@ B2BKing opruimen).
       blijft werken) en maakt "Onthoud mij" klikbaar (submit-paragraaf
       overlapte de checkbox; forgetmenot kreeg z-index). Via stap7 op
       cp-01 + lokaal; browser-geverifieerd (klik vinkt aan, toggle intact).
+- [x] Prijzen-sync-bug ✓ 1 sept (melding Cas: HS1 toonde 825 i.p.v. 775):
+      de plugin-import upsert alle AFAS-prijshistorie over de unieke sleutel
+      zonder geldigheids-check; de connector levert actueel-eerst → de
+      verlopen generatie wint. Elke ooit-gewijzigde prijs stond verkeerd
+      (ook op reseller-productie!). Fix: mu-plugin afas-prijzen-orderby.php
+      (pre_http_request → orderbyfieldids=Begindatum,… op Get_Prijzen);
+      herimport cp-01: HS1 overal 775, AED Plus 979, G5 1540/1780 — de
+      prijspunten 6/11/12 uit Kevins mail zijn hiermee opgelost, alleen
+      G5F-basisprijs rest voor Roelof. Bugrapport voor lefcreative:
+      work/bugrapport-lefcreative-prijzen-historie.md. OPEN: zelfde fix op
+      reseller-productie uitrollen (waar draait die? — Cas).
 - [ ] NÁ livegang (herinnering voor Cas, besluit 31 aug): Cloudflare
       oppakken — de definitieve shop-URL wordt **shop.defibsolutions.nl**
       (subdomein; hoofdsite blijft op het domein-root). Pas relevant als
