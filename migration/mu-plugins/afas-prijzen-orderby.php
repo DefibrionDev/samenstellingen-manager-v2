@@ -26,6 +26,19 @@ declare(strict_types=1);
  * gemeld bij lefcreative; deze mu-plugin kan weg zodra dat geleverd is.
  */
 
+// Na elke prijzen-sync de WooCommerce variatieprijs-cache legen: de plugin
+// doet dat zelf niet, waardoor prijs-ranges op productpagina's ("€ x - € y")
+// oude prijzen bleven tonen nadat de tabel al ververst was.
+add_action('afas_sync_prijzen', static function (): void {
+    global $wpdb;
+    $wpdb->query(
+        "DELETE FROM {$wpdb->options}
+          WHERE option_name LIKE '\_transient\_wc\_var\_prices\_%'
+             OR option_name LIKE '\_transient\_timeout\_wc\_var\_prices\_%'"
+    );
+    wp_cache_flush();
+}, 999);
+
 add_filter('pre_http_request', static function ($preempt, array $args, string $url) {
     if ($preempt !== false) {
         return $preempt;
