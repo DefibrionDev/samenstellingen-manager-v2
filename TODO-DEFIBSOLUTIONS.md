@@ -307,8 +307,8 @@ Pas plannen na Fase G; aparte go/no-go met Cas. Checklist staat in het
 runbook (backup → alle stappen → controles → mail aan → week monitoren →
 B2BKing opruimen).
 
-- [ ] Login-pagina-fix (besluit Cas 31 aug, bestond op live óók) — wacht op
-      check Cas: mu-plugin defibs-login-fix.php verbergt de altijd-zichtbare
+- [x] Login-pagina-fix ✓ 31 aug (check Cas: "geverifieerd, werkt"; bestond
+      op live óók): mu-plugin defibs-login-fix.php verbergt de altijd-zichtbare
       "Caps lock staat aan."-melding (plugin-markup brak de core-selector
       .wp-pwd; regel bewust zonder !important zodat echte caps-detectie
       blijft werken) en maakt "Onthoud mij" klikbaar (submit-paragraaf
