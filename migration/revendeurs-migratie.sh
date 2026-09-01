@@ -1261,6 +1261,54 @@ PHP
 }
 
 # ---------------------------------------------------------------------------
+# backup — volledige backup van de cp01-site (bestanden + database) vóór de
+# livegang-reeks. Alleen zinvol met REVEND_TARGET=cp01. Dump komt in de home
+# van de site-user te staan met timestamp; blijft daar tot handmatige opruiming.
+# ---------------------------------------------------------------------------
+backup() {
+    controleer_config
+    if [[ "$TARGET" != "cp01" ]]; then
+        echo "backup is bedoeld voor REVEND_TARGET=cp01 (lokale kopie is wegwerp)." >&2
+        exit 1
+    fi
+    local stempel
+    stempel=$(date +%Y%m%d-%H%M)
+    echo "database-dump..."
+    ssh "$SERVER" "cd '$WP_ROOT' && wp db export ~/backup-revendeurs-$stempel.sql --add-drop-table && gzip ~/backup-revendeurs-$stempel.sql"
+    echo "bestanden (tar, exclusief cache)..."
+    ssh "$SERVER" "tar --exclude='*/cache/*' -czf ~/backup-revendeurs-$stempel-files.tar.gz -C '$(dirname "$WP_ROOT")' '$(basename "$WP_ROOT")'"
+    echo "--- controle:"
+    ssh "$SERVER" "ls -lh ~/backup-revendeurs-$stempel*"
+    echo "OK — backup staat in de home van de site-user op $SERVER"
+}
+
+# ---------------------------------------------------------------------------
+# slotstap — allerlaatste livegang-acties, pas ná alle controles (fase 2):
+# order-push naar AFAS aan + mail weer aan. Default dry-run; `slotstap apply`
+# voert uit en herinnert aan de handmatige acties (Bron Order-code +
+# administratie-keuze in AFAS — besluiten 3.1/3.2 van Cas).
+# ---------------------------------------------------------------------------
+slotstap() {
+    controleer_config
+    local apply="${1:-}"
+    echo "huidige stand: afas_sync_orders_enabled=$(wpr option get afas_sync_orders_enabled 2>/dev/null | tr -d '[:space:]')"
+    wpr plugin list --status=active --field=name 2>/dev/null | grep -q '^disable-emails$' \
+        && echo "huidige stand: disable-emails ACTIEF (mail uit)" \
+        || echo "huidige stand: disable-emails niet actief (mail aan)"
+    if [[ "$apply" != "apply" ]]; then
+        echo "Dry-run — zou order-push aanzetten en disable-emails deactiveren."
+        echo "Draai '$0 slotstap apply' als alle fase-2-controles groen zijn."
+        return 0
+    fi
+    wpr option update afas_sync_orders_enabled 1 >/dev/null
+    wpr plugin deactivate disable-emails 2>/dev/null || true
+    echo "OK — order-push AAN en mail AAN op $(doel_naam)"
+    echo "LET OP handmatig in AFAS (besluit Cas): eigen 'Bron Order'-code voor"
+    echo "revendeurs zetten in afas_sync_orders_vrije_velden (nu 68 = reseller)"
+    echo "en de administratie-keuze controleren (afas_sync_orders_administratie=1)."
+}
+
+# ---------------------------------------------------------------------------
 # reeks — de volledige bewezen volgorde in één run (reproduceerbaarheids-
 # check en straks de cp01-livegang). Vereist een verse of bestaande kopie;
 # de verse pull zelf gaat via wordpress-migrater:
@@ -1313,6 +1361,8 @@ Stappen:
   stap13        BeRocket-filterbalk: pad-cache verversen (na elke pull)
   stap14 [apply] Menu-items omhangen naar overlevende containers + dubbelen weg
   stap15        Variatie-knoppen: niet-beschikbaar grijs i.p.v. rood kruis
+  backup        cp01: volledige backup (db + files) vóór de livegang-reeks
+  slotstap [apply] Livegang-slot: order-push aan + mail aan (na controles)
   reeks         Alle stappen in de bewezen volgorde (repro-check / livegang)
 EOF
     exit 1
@@ -1320,6 +1370,6 @@ EOF
 
 [[ $# -ge 1 ]] || usage
 case "$1" in
-    stap1|stap2|stap3|stap4|stap5|stap6|stap7|stap8|stap9|stap10|stap11|stap12|stap13|stap14|stap15|reeks) "$@" ;;
+    stap1|stap2|stap3|stap4|stap5|stap6|stap7|stap8|stap9|stap10|stap11|stap12|stap13|stap14|stap15|backup|slotstap|reeks) "$@" ;;
     *) usage ;;
 esac

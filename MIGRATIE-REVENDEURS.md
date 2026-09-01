@@ -324,16 +324,26 @@ stappen draaien eerst op de kopie.
 
 ## Fase 2 — omschakeling op cp-01 (`REVEND_TARGET=cp01`, buiten kantooruren)
 
-1. [ ] Volledige backup (bestanden + database) van de site op cp-01.
-2. [ ] UniFi: cp-01 allowlisten vóór bulk-ssh (THREAT_BLOCKED-les van 24 aug).
-3. [ ] Alle script-stappen draaien (`REVEND_TARGET=cp01 ... reeks`);
-       controles: prijzen 0 onverklaard, testorder t/m AFAS-order (incl.
-       push-trigger vs completed-sprong van de invoice-gateway), steekproef
-       klantafspraak, én **site blijft privé**: gast → login-redirect,
-       `jonradio-private-site` actief, geen `zz-unlock-local` in mu-plugins
-       (dat bestand is lokaal migrater-gereedschap en mag nooit op de server).
-4. [ ] Mail weer aan, monitoren; na een week stabiel Wholesale-Suite-plugins
-       en restdata opruimen.
+Vooraf: Randy's e-mail-akkoord verwerkt (geen open REVIEW-EMAIL-BEVESTIGING),
+UniFi: cp-01 allowlisten vóór bulk-ssh (THREAT_BLOCKED-les van 24 aug),
+adressen-sync lokaal een keer volledig gezien.
+
+1. [ ] `REVEND_TARGET=cp01 ./migration/revendeurs-migratie.sh backup`
+       (db-dump + files-tar in de home van de site-user).
+2. [ ] `REVEND_TARGET=cp01 ./migration/revendeurs-migratie.sh reeks`
+       (zelfde bewezen volgorde als lokaal; order-push blijft uit, mail
+       gaat uit via stap1).
+3. [ ] Controles: prijzen-steekproef klantafspraak (bv. relatie 13054 →
+       €103 op Heartsine Pad-pak) · **site blijft privé** (gast →
+       login-redirect, `jonradio-private-site` actief, geen
+       `zz-unlock-local` op de server) · menu's/containers ogen goed ·
+       filterbalk ingelogd.
+4. [ ] Cas in AFAS: eigen "Bron Order"-code voor revendeurs +
+       administratie-keuze (besluiten 3.1/3.2).
+5. [ ] `... slotstap apply`: order-push aan + mail aan; daarna testorder
+       van echt klantaccount t/m AFAS-order (let op push-trigger vs
+       completed-sprong van de invoice-gateway) en monitoren. Na een week
+       stabiel: Wholesale-Suite-plugins + restdata opruimen.
 
 ## Wat dit runbook níet doet
 
