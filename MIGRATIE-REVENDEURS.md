@@ -326,8 +326,12 @@ stappen draaien eerst op de kopie.
 
 1. [ ] Volledige backup (bestanden + database) van de site op cp-01.
 2. [ ] UniFi: cp-01 allowlisten vóór bulk-ssh (THREAT_BLOCKED-les van 24 aug).
-3. [ ] Alle script-stappen draaien; controles: prijzen 0 onverklaard,
-       testorder t/m AFAS-order, steekproef klantafspraak + gast.
+3. [ ] Alle script-stappen draaien (`REVEND_TARGET=cp01 ... reeks`);
+       controles: prijzen 0 onverklaard, testorder t/m AFAS-order (incl.
+       push-trigger vs completed-sprong van de invoice-gateway), steekproef
+       klantafspraak, én **site blijft privé**: gast → login-redirect,
+       `jonradio-private-site` actief, geen `zz-unlock-local` in mu-plugins
+       (dat bestand is lokaal migrater-gereedschap en mag nooit op de server).
 4. [ ] Mail weer aan, monitoren; na een week stabiel Wholesale-Suite-plugins
        en restdata opruimen.
 
