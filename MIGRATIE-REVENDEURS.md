@@ -12,6 +12,12 @@ DefibSolutions (`MIGRATIE-DEFIBSOLUTIONS.md`, `migration/defibsolutions-migratie
 API-keys weg · voorkoppeling (790) · 9 mu-plugins · Wholesale Suite uit.
 Checkout bleek al shortcode-conform. Audits + curatie-lijst gegenereerd.
 
+**Curatie verwerkt (2 sep):** Randy's sheet (kolom "Toevoegen FR",
+17× TRUE) → `work/revendeurs-curatie-vlaggen.csv` → 131 artikelen gevlagd
+(incl. family-head 11142) → sync + stap12: nieuwe container Defibtech
+Lifeline Semi-automatique + C1/C2-uitbreidingen (4G/DE/FR), 926 artikelen
+totaal. FALSE-rijen = geen wijziging (bestaand assortiment blijft).
+
 **Wachtend op Randy (via Cas, uitgezet 27 aug):**
 - [ ] Curatie-CSV invullen (`work/randy-curatie-revendeurs-fr.csv`, 195 bases)
 - [ ] Klantmapping: Randy's relatie-keuzes ontvangen (31 aug,
