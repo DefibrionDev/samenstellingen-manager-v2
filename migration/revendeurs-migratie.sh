@@ -245,8 +245,10 @@ stap4() {
             sh -c "php -d memory_limit=512M /usr/local/bin/wp plugin install '/revend-work/$(basename "$zip")' --force --activate" 2>&1 | _filter_ruis
     else
         echo "upload $(basename "$zip") ..."
-        scp -q "$zip" "$SERVER:/tmp/lefcreative-afas-b2b.zip"
-        wpr plugin install /tmp/lefcreative-afas-b2b.zip --force --activate
+        # naar de home van de site-user, niet /tmp: daar ligt al een zip van
+        # een andere site-user (sticky bit -> Permission denied, gezien 2 sep)
+        scp -q "$zip" "$SERVER:lefcreative-afas-b2b.zip"
+        wpr plugin install "\$HOME/lefcreative-afas-b2b.zip" --force --activate
     fi
 
     python3 - "$settings" <<'PY' > "$REPO_ROOT/tmp/revendeurs-settings-payload.php"
