@@ -243,9 +243,20 @@ Stand 31 aug:
       (akkoord Cas 2 sep) + sync-pauze; relatie-herrun gedaan zodat het
       factuuradres direct op de admin-accounts staat (geverifieerd:
       Betton/FR). In herhaal-reeks vóór stap10.
+- [x] Stap 18 — assortiment-schrappingen (Randy-sheet tab regulier,
+      akkoord Cas 2 sep): 64 producten geschrapt (SKU/koppeling/lookup
+      gestript). Geen ervan had AFAS-vlaggen op andere shops. **500P
+      (wc:3187) bewust behouden** — besluit Cas: Sync+Tonen staan op
+      Revendeurs aan → hier ook houden (container-guard in de stap).
+      Correctie: 91950 (Laerdal Spider Riemen) was door ons FR-gevlagd
+      maar staat op de schraplijst → vlag weer uit in AFAS, anders maakt
+      de sync hem opnieuw aan. Shop: 402 → 338 published producten.
+      Openstaand uit de sheet: 3× "Zou er wel in moeten staan?" = de
+      CR2's (dekt ons AED-lijstje cluster 1: houden).
 - [ ] Nog te doen: checkout-pagina · weergave-instellingen ·
-      schrappingen (na Randy) · rest SKU-actielijst · AFAS-prijzengat
-      (85 samenstellingen, zie hierboven).
+      rest AED-lijst (9 over: CR2 ×4 houden-hoe, View/Lifeline-vol,
+      Zoll Pro, G5 ×2) · rest SKU-actielijst (~20 rijen zonder verdict) ·
+      AFAS-prijzengat (85 samenstellingen, zie hierboven).
 
 **Klaar als:** elke handeling een genummerde stap is die lokaal groen draait.
 
