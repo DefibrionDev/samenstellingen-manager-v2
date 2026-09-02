@@ -235,8 +235,17 @@ Stand 31 aug:
       niet koopbaar. Mindray/Reanibex/Heartsine hebben hem wél. Aanpak:
       base-verkoopprijs bepalen (business: Cas/Kevin), dan varianten via
       base+delta (`prices:fix-missing`-patroon, dry-run eerst).
+- [x] Stap 10-volgordefix + herrun (2 sep, handoff-beheerders-afas-
+      koppeling): landen-sync nu vóór verkooprelaties (eerste run liet
+      billing_country 'F' onvertaald op 51 accounts — hersteld: F→FR,
+      L→LU); nieuwe optie `alleen-relaties` voor zulke herruns.
+- [ ] Stap 17 — beheerders AFAS-testrelatie + sync-pauze: geport, dry-run
+      klaar met voorstel **32120 CARDIOUEST** (actieve FR-klant, 162
+      geverifieerde orders, in de mapping). **Wacht op akkoord Cas over
+      de relatie-keuze**, dan apply. In herhaal-reeks vóór stap10.
 - [ ] Nog te doen: checkout-pagina · weergave-instellingen ·
-      schrappingen (na Randy) · rest SKU-actielijst.
+      schrappingen (na Randy) · rest SKU-actielijst · AFAS-prijzengat
+      (85 samenstellingen, zie hierboven).
 
 **Klaar als:** elke handeling een genummerde stap is die lokaal groen draait.
 

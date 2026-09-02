@@ -568,9 +568,11 @@ stap10() {
     controleer_config
     local opties="${*:-}"
     local zonder_prijzen=""; [[ "$opties" == *zonder-prijzen* ]] && zonder_prijzen="zonder-prijzen"
+    local alleen_relaties=""; [[ "$opties" == *alleen-relaties* ]] && alleen_relaties="1"
     cat > /tmp/afasfr-stap10-payload.php <<'PHP'
 <?php
 $zonderPrijzen = PRIJZEN_PLACEHOLDER;
+$alleenRelaties = RELATIES_PLACEHOLDER; // alleen landen + verkooprelaties herdraaien
 $force = FORCE_PLACEHOLDER;   // false = delta-sync (alleen gewijzigde rijen)
 $t0 = microtime(true);
 $fase = function (string $m) use ($t0) {
@@ -588,6 +590,13 @@ $fase('artikelen-sync (AFAS -> tabel)');
 do_action('afas_sync_artikelen', true);
 printf("         tabel: %d artikelen\n", (int) $wpdb->get_var("SELECT COUNT(*) FROM `$tabel`"));
 
+if ($alleenRelaties) {
+    $fase('alleen-relaties: landen + verkooprelaties');
+    do_action('afas_sync_landen', true);
+    do_action('afas_sync_verkooprelaties', true);
+    $fase('klaar (alleen-relaties)');
+    exit(0);
+}
 if ($zonderPrijzen) {
     $fase('prijslijsten + prijzen + verkooprelaties OVERGESLAGEN (zonder-prijzen)');
 } else {
@@ -596,11 +605,14 @@ if ($zonderPrijzen) {
     do_action('afas_sync_prijzen', true);
     printf("         prijzen: %d regels\n",
         (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}lef_afas_prijzen"));
-    // verkooprelaties: nodig voor prijslijst-/kortingsgroep-resolutie per klant
-    $fase('verkooprelaties + kortingen + landen + adressen');
+    // verkooprelaties: nodig voor prijslijst-/kortingsgroep-resolutie per klant.
+    // VOLGORDE: landen vóór verkooprelaties — de relatie-sync vertaalt de
+    // AFAS-landcode via lef_afas_landen; op een lege tabel blijft 'F' staan
+    // in billing_country (les van revendeurs, zie handoff-beheerders-afas-koppeling)
+    $fase('landen + verkooprelaties + kortingen + adressen');
+    do_action('afas_sync_landen', true);
     do_action('afas_sync_verkooprelaties', true);
     do_action('afas_sync_kortingen', true);
-    do_action('afas_sync_landen', true);
     do_action('afas_sync_addresses', true);
     printf("         relaties: %d, kortingen: %d\n",
         (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}lef_afas_verkooprelaties"),
@@ -636,6 +648,11 @@ PHP
         sed -i 's/PRIJZEN_PLACEHOLDER/true/' /tmp/afasfr-stap10-payload.php
     else
         sed -i 's/PRIJZEN_PLACEHOLDER/false/' /tmp/afasfr-stap10-payload.php
+    fi
+    if [[ "$alleen_relaties" == "1" ]]; then
+        sed -i 's/RELATIES_PLACEHOLDER/true/' /tmp/afasfr-stap10-payload.php
+    else
+        sed -i 's/RELATIES_PLACEHOLDER/false/' /tmp/afasfr-stap10-payload.php
     fi
     if [[ "$opties" == *delta* ]]; then
         sed -i 's/FORCE_PLACEHOLDER/false/' /tmp/afasfr-stap10-payload.php
@@ -1392,6 +1409,48 @@ PY
 }
 
 
+# ---------------------------------------------------------------------------
+# Stap 17 — Beheerders een AFAS-id + sync-pauze geven (patroon NL/revendeurs,
+# zie work/handoff-beheerders-afas-koppeling.md). Zonder afas_relatie_id ziet
+# een admin een "kapotte" checkout (geen adres-dropdown, geen klantprijzen).
+# Testrelatie: 32120 (CARDIOUEST — actieve Franse klant met orderhistorie,
+# gevlagd + gesynct via de mapping; voorstel 2 sep, akkoord Cas vereist).
+# afas_sync_paused=1 voorkomt dat de relatie-sync naam/e-mail van het
+# admin-account overschrijft; het factuuradres komt wél mee (bewust).
+# Alleen lege koppelingen vullen; idempotent. Draai vóór de relatie-sync
+# (stap10) in de herhaal-reeks. Default dry-run; `stap17 apply` schrijft.
+# ---------------------------------------------------------------------------
+stap17() {
+    controleer_config
+    local apply="${1:-}"
+    wpr_stdin eval-file - "$apply" <<'PHP'
+<?php
+$apply = ('apply' === ($args[0] ?? ''));
+$relatie = '32120';
+foreach (get_users(['role' => 'administrator']) as $u) {
+    $huidig = (string) get_user_meta($u->ID, 'afas_relatie_id', true);
+    $paused = (string) get_user_meta($u->ID, 'afas_sync_paused', true);
+    $acties = [];
+    if ($huidig === '') { $acties[] = "relatie -> $relatie"; }
+    if ($paused !== '1') { $acties[] = 'sync_paused -> 1'; }
+    if (!$acties) {
+        printf("%-40s staat al goed (relatie %s)\n", $u->user_login, $huidig);
+        continue;
+    }
+    if ($apply) {
+        if ($huidig === '') { update_user_meta($u->ID, 'afas_relatie_id', $relatie); }
+        if ($paused !== '1') { update_user_meta($u->ID, 'afas_sync_paused', '1'); }
+    }
+    printf("%-40s %s%s\n", $u->user_login, implode(', ', $acties), $apply ? '' : ' (dry-run)');
+}
+PHP
+    if [[ "$apply" != "apply" ]]; then
+        echo "Dry-run — draai '$0 stap17 apply' om te schrijven."
+    else
+        echo "OK — beheerders gekoppeld op $(doel_naam)"
+    fi
+}
+
 hulp() {
     cat <<EOF
 Gebruik: $0 <stap> [apply|opties]   (DEFIBSFR_TARGET=lokaal|cp01, default lokaal)
@@ -1405,13 +1464,14 @@ Gebruik: $0 <stap> [apply|opties]   (DEFIBSFR_TARGET=lokaal|cp01, default lokaal
   stap7            mu-plugins plaatsen
   stap8            Franse plugin-vertaling plaatsen (fr_FR.mo)
   stap9   [apply]  BeRocket-filterbalk: pad-cache regenereren na pull
-  stap10  [zonder-prijzen|delta]  Syncs draaien (artikelen/prijzen/relaties + 2x wc-sync)
+  stap10  [zonder-prijzen|delta|alleen-relaties]  Syncs draaien
   stap11  [apply]  Structuur-opruiming: simples die variatie horen te zijn
   stap12  [apply]  /boutique-restanten strippen uit content-URLs
   stap13           FontAwesome terugzetten (node_modules-exclude-gat)
   stap14  [apply]  Containers erven taxonomie-termen van variaties
   stap15  [apply]  Oude AED-producten omvormen tot containers (content behouden)
   stap16  [apply]  Franse variatie-assen (langue/connectivite/capteur-rcp/options)
+  stap17  [apply]  Beheerders AFAS-testrelatie + sync-pauze geven
 
 Zie MIGRATIE-DEFIBSOLUTIONS-FR.md voor het fase-overzicht.
 EOF
@@ -1434,5 +1494,6 @@ case "${1:-}" in
     stap14) stap14 "${2:-}" ;;
     stap15) stap15 "${2:-}" ;;
     stap16) stap16 "${2:-}" ;;
+    stap17) stap17 "${2:-}" ;;
     *) hulp; [[ -n "${1:-}" ]] && exit 1 || exit 0 ;;
 esac
