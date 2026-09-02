@@ -984,6 +984,114 @@ PHP
     fi
 }
 
+# ---------------------------------------------------------------------------
+# Stap 15 — Oude AED-producten OMVORMEN tot familie-containers (les uit de
+# revendeurs-migratie, work/handoff-variabele-containers-omvormen.md: nooit
+# content weggooien en kaal herbouwen). Het oude product behoudt ID, titel,
+# slug, beschrijving, foto's, categorieën en menu-links en wordt zelf het
+# variable product met head-koppeling (SKU <head>-wpbase); de plugin-sync
+# vult/actualiseert de variaties eronder.
+# Dekt twee toestanden (idempotent):
+#   - verse pull: oude post is simple product -> direct omvormen
+#     (draai stap15 dan VÓÓR stap10, dan ontstaan er nooit kale containers);
+#   - huidige kopie: oude post is al variatie onder een kale sync-container
+#     -> terug-omvormen, sibling-variaties omhangen, kale container strippen
+#     en trashen.
+# Bron: work/defibsolutionsfr-omzet-aed.csv (OMZETTEN-rijen) + AFAS-cache
+# (head = Itemcode_Parent van doel_base). Draai na apply altijd stap10
+# zonder-prijzen + stap14. Default dry-run; `stap15 apply` schrijft.
+# ---------------------------------------------------------------------------
+stap15() {
+    controleer_config
+    local apply="${1:-}"
+    local cache="$REPO_ROOT/work/cache/afas-artikelen-defibsolutionsfr.json"
+    local omzet="$REPO_ROOT/work/defibsolutionsfr-omzet-aed.csv"
+    [[ -f "$cache" ]] || { echo "FOUT: $cache ontbreekt" >&2; exit 1; }
+    [[ -f "$omzet" ]] || { echo "FOUT: $omzet ontbreekt" >&2; exit 1; }
+
+    python3 - "$cache" "$omzet" "$apply" <<'PY' > /tmp/afasfr-omvorm-payload.php
+import csv, json, sys
+cache, omzet, apply = sys.argv[1], sys.argv[2], sys.argv[3] == "apply"
+per_code = {}
+for a in json.load(open(cache)):
+    per_code.setdefault(str(a.get("Itemcode") or ""), a)
+plan = []
+for r in csv.DictReader(open(omzet, encoding="utf-8-sig"), delimiter=";"):
+    if r["status"].strip() != "OMZETTEN" or not r["doel_base"].strip():
+        continue
+    base = r["doel_base"].strip()
+    head = str(per_code.get(base, {}).get("Itemcode_Parent") or "").strip() or base
+    plan.append({"wc": int(r["wc_id"]), "base": base, "head": head,
+                 "titel": r["shop_naam"].strip()})
+print(f"// {len(plan)} omvormingen", file=sys.stderr)
+print("<?php")
+print(f"$apply = {'true' if apply else 'false'};")
+print(f"$plan = json_decode('{json.dumps(plan)}', true);")
+print(r"""
+global $wpdb;
+$n = 0;
+foreach ($plan as $p) {
+    $post = get_post($p['wc']);
+    if (!$post) { printf("LET OP: wc:%d bestaat niet — overslaan\n", $p['wc']); continue; }
+    $sku = (string) get_post_meta($post->ID, '_sku', true);
+    $meta = (string) get_post_meta($post->ID, '_afas_artikelnummer', true);
+    if ($post->post_type === 'product' && $meta === $p['head'] && str_ends_with($sku, '-wpbase')) {
+        continue; // al omgevormd
+    }
+    $n++;
+    if ($post->post_type === 'product_variation') {
+        // huidige kopie: terug-omvormen + kale sync-container opruimen
+        $oudeContainer = (int) $post->post_parent;
+        $siblings = $wpdb->get_col($wpdb->prepare(
+            "SELECT ID FROM {$wpdb->posts} WHERE post_parent = %d
+              AND post_type = 'product_variation' AND ID <> %d", $oudeContainer, $post->ID));
+        printf("%s  wc:%d '%s' wordt container voor head %s (%d sibling-variaties omgehangen, kale container #%d weg)\n",
+            $apply ? 'OMGEVORMD' : 'ZOU OMVORMEN', $post->ID, $post->post_title,
+            $p['head'], count($siblings), $oudeContainer);
+        if ($apply) {
+            // titel terug naar de originele productnaam (de sync had hem
+            // hernoemd naar "container - variatie"); slug blijft origineel
+            wp_update_post(['ID' => $post->ID, 'post_type' => 'product',
+                'post_parent' => 0, 'post_title' => $p['titel']]);
+            wp_set_object_terms($post->ID, 'variable', 'product_type');
+            update_post_meta($post->ID, '_afas_artikelnummer', $p['head']);
+            update_post_meta($post->ID, '_sku', $p['head'] . '-wpbase');
+            $wpdb->update($wpdb->prefix . 'wc_product_meta_lookup',
+                ['sku' => $p['head'] . '-wpbase'], ['product_id' => $post->ID]);
+            foreach ($siblings as $vid) {
+                wp_update_post(['ID' => (int) $vid, 'post_parent' => $post->ID]);
+            }
+            // kale plugin-container strippen (nooit meer laten matchen) + weg
+            delete_post_meta($oudeContainer, '_afas_artikelnummer');
+            update_post_meta($oudeContainer, '_sku', '');
+            $wpdb->update($wpdb->prefix . 'wc_product_meta_lookup',
+                ['sku' => ''], ['product_id' => $oudeContainer]);
+            wp_trash_post($oudeContainer);
+        }
+    } else {
+        // verse pull: simple product direct omvormen; sync bouwt variaties
+        printf("%s  wc:%d '%s' (simple) wordt container voor head %s\n",
+            $apply ? 'OMGEVORMD' : 'ZOU OMVORMEN', $post->ID, $post->post_title, $p['head']);
+        if ($apply) {
+            wp_set_object_terms($post->ID, 'variable', 'product_type');
+            update_post_meta($post->ID, '_afas_artikelnummer', $p['head']);
+            update_post_meta($post->ID, '_sku', $p['head'] . '-wpbase');
+            $wpdb->update($wpdb->prefix . 'wc_product_meta_lookup',
+                ['sku' => $p['head'] . '-wpbase'], ['product_id' => $post->ID]);
+        }
+    }
+}
+if ($apply && function_exists('wc_delete_product_transients')) { wc_delete_product_transients(); }
+printf("--- %s: %d omvormingen\n", $apply ? 'APPLY' : 'DRY-RUN', $n);
+""")
+PY
+
+    wpr_stdin eval-file - < /tmp/afasfr-omvorm-payload.php
+    if [[ "$apply" != "apply" ]]; then
+        echo "Dry-run — niets gewijzigd. Draai '$0 stap15 apply', daarna stap10 zonder-prijzen + stap14 apply."
+    fi
+}
+
 hulp() {
     cat <<EOF
 Gebruik: $0 <stap> [apply|opties]   (DEFIBSFR_TARGET=lokaal|cp01, default lokaal)
@@ -1002,6 +1110,7 @@ Gebruik: $0 <stap> [apply|opties]   (DEFIBSFR_TARGET=lokaal|cp01, default lokaal
   stap12  [apply]  /boutique-restanten strippen uit content-URLs
   stap13           FontAwesome terugzetten (node_modules-exclude-gat)
   stap14  [apply]  Containers erven taxonomie-termen van variaties
+  stap15  [apply]  Oude AED-producten omvormen tot containers (content behouden)
 
 Zie MIGRATIE-DEFIBSOLUTIONS-FR.md voor het fase-overzicht.
 EOF
@@ -1022,5 +1131,6 @@ case "${1:-}" in
     stap12) stap12 "${2:-}" ;;
     stap13) stap13 ;;
     stap14) stap14 "${2:-}" ;;
+    stap15) stap15 "${2:-}" ;;
     *) hulp; [[ -n "${1:-}" ]] && exit 1 || exit 0 ;;
 esac

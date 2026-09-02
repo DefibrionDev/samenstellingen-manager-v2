@@ -211,10 +211,19 @@ Stand 31 aug:
       archieven, en WC-filters lezen de attributes-lookup-tabel die uit de
       attribuut-config gevuld wordt, niet uit losse termen). Filtertellingen
       nu exact gelijk aan live (zoll=5, zoll+7ans=2).
-- [ ] Nog te doen: variatie-assen + container-opmaak/taal (containers
-      heten nu "AED Package: … (EN)" — NL-stap12/13-equivalent) ·
-      checkout-pagina · weergave-instellingen (Woodmart) · schrappingen
-      (na Randy) · rest SKU-actielijst.
+- [x] Stap 15 — oude AED-producten omgevormd tot containers (2 sep,
+      melding Cas + handoff-variabele-containers-omvormen): het oude
+      product behoudt ID/titel/slug/foto's/content/menu-links en is nu
+      zelf het variable product met head-koppeling (<head>-wpbase); de 16
+      kale sync-containers zijn gestript en getrasht, sibling-variaties
+      omgehangen, originele Franse titels hersteld uit de omzet-lijst.
+      In de herhaal-reeks draait stap15 VÓÓR stap10 (simples direct
+      omvormen → nooit kale containers). Geverifieerd: oude URL 301 naar
+      nette slug, foto terug, filters intact.
+- [ ] Nog te doen: variatie-assen (Frans: pa_langue/pa_connectivite/
+      pa_options, "naam"-as weg — revendeurs-stap12-patroon, incl.
+      termmeta `order`) · checkout-pagina · weergave-instellingen ·
+      schrappingen (na Randy) · rest SKU-actielijst.
 
 **Klaar als:** elke handeling een genummerde stap is die lokaal groen draait.
 
