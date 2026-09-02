@@ -283,11 +283,21 @@ Stand 31 aug:
       website 6; `variants:fix-missing --apply` maakte 65 kast-varianten
       + 42 lijst-prijzen; publications geconvergeerd (1640 itemcodes).
       Shop-kant blijft geparkeerd tot het containerstructuur-besluit.
-- [ ] Nog te doen: prijzen-restant — Kevin: 11143-FR (geen NL-referentie)
-      + het 85-gat + *****-prijzen voor de 65 nieuwe varianten (route
-      bekend: base+delta via FbSalesPrice PrLi='*****') · Zoll Pro
-      schrappen · containerstructuur-besluit (Cas, revendeurs-vergelijk) ·
-      checkout/weergave · rest SKU-actielijst (~20) · handi-pharm.
+- [x] Prijzengat gedicht (3 sep, besluit Cas: **catalogusprijs = Dealers
+      FR-lijst 003**, geen aparte consumentenprijzen): via
+      `afas-connector-tools/bin/prijs-basis-defibsolutionsfr.php` kregen
+      146 FR-gevlagde samenstellingen hun basisprijs (eigen 003-regel, of
+      base-003 + kast-toeslag uit de tool); 003-regels toegevoegd voor de
+      6 nieuwe bases. Convergentie geverifieerd (0 te vullen). Restant:
+      11143-FR (+ tas-variant) — voorstel € 1300 (NL-vol-zuster 11141),
+      wacht op bevestiging Cas. Onderhoudsafspraak: wijzigt 003, dan moet
+      de basisprijs mee.
+- [x] **Containerstructuur-besluit (Cas, 3 sep): optie (a)** — één
+      productpagina per model, uitvoeringen als keuze-as (USB/WiFi via
+      pa_connectivite, CPR via pa_capteur-rcp). Shop-koppeling kan los.
+- [ ] Nog te doen: shop-koppeling nieuwe samenstellingen (survivor-keuze
+      + omvormen + sync + assen) · Zoll Pro schrappen · checkout/weergave ·
+      rest SKU-actielijst (~20) · handi-pharm-antwoord · 11143-FR-prijs.
 
 **Klaar als:** elke handeling een genummerde stap is die lokaal groen draait.
 
