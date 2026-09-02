@@ -837,6 +837,52 @@ PHP
     fi
 }
 
+# ---------------------------------------------------------------------------
+# Stap 13 — FontAwesome terugzetten. De migrater sluit node_modules/ uit bij
+# elke pull (hardcoded rsync/lftp-exclude), maar WPBakery (js_composer)
+# levert FontAwesome uitgerekend in assets/lib/vendor/node_modules/
+# @fortawesome/ — zonder deze bestanden 404't vc_font_awesome_5 en vallen
+# alle fa-iconen weg (o.a. het huisje voor "Home" in de menubalk, melding
+# Cas 2 sep). Bron: de live-site zelf (publieke assets, exact de juiste
+# versie). Idempotent; hoort in elke herhaal-reeks na een pull. Geldt ook
+# voor de kale cp-01-verhuizing (zelfde exclude).
+# ---------------------------------------------------------------------------
+_FA_BRON="https://www.defibsolutions.fr/boutique/wp-content/plugins/js_composer/assets/lib/vendor/node_modules/@fortawesome/fontawesome-free"
+_FA_REL="wp-content/plugins/js_composer/assets/lib/vendor/node_modules/@fortawesome/fontawesome-free"
+_FA_BESTANDEN=(css/all.min.css css/v4-shims.min.css
+    webfonts/fa-solid-900.woff2 webfonts/fa-solid-900.ttf
+    webfonts/fa-regular-400.woff2 webfonts/fa-regular-400.ttf
+    webfonts/fa-brands-400.woff2 webfonts/fa-brands-400.ttf)
+
+stap13() {
+    controleer_config
+    local f code
+    if [[ "$TARGET" == "lokaal" ]]; then
+        local content_dir doel
+        content_dir=$(grep '^CONTENT_DIR=' "$MIGRATER_DIR/.env-defibsolutionsfr" | cut -d= -f2)
+        doel="$MIGRATER_DIR/${content_dir#./}/${_FA_REL#wp-content/}"
+        mkdir -p "$doel/css" "$doel/webfonts"
+        for f in "${_FA_BESTANDEN[@]}"; do
+            code=$(curl -s -o "$doel/$f" -w '%{http_code}' "$_FA_BRON/$f")
+            [[ "$code" == "200" ]] || { echo "FOUT: $f -> HTTP $code" >&2; exit 1; }
+        done
+    else
+        ssh "$SERVER" "mkdir -p '$WP_ROOT/$_FA_REL/css' '$WP_ROOT/$_FA_REL/webfonts'"
+        for f in "${_FA_BESTANDEN[@]}"; do
+            ssh "$SERVER" "curl -sf -o '$WP_ROOT/$_FA_REL/$f' '$_FA_BRON/$f'" \
+                || { echo "FOUT: $f niet opgehaald op $SERVER" >&2; exit 1; }
+        done
+    fi
+    echo "--- controle:"
+    if [[ "$TARGET" == "lokaal" ]]; then
+        curl -s -o /dev/null -w "all.min.css lokaal: HTTP %{http_code}\n" \
+            "http://localhost:8896/$_FA_REL/css/all.min.css"
+    else
+        ssh "$SERVER" "ls -la '$WP_ROOT/$_FA_REL/css/'"
+    fi
+    echo "OK — FontAwesome (${#_FA_BESTANDEN[@]} bestanden) teruggezet op $(doel_naam)"
+}
+
 hulp() {
     cat <<EOF
 Gebruik: $0 <stap> [apply|opties]   (DEFIBSFR_TARGET=lokaal|cp01, default lokaal)
@@ -853,6 +899,7 @@ Gebruik: $0 <stap> [apply|opties]   (DEFIBSFR_TARGET=lokaal|cp01, default lokaal
   stap10  [zonder-prijzen|delta]  Syncs draaien (artikelen/prijzen/relaties + 2x wc-sync)
   stap11  [apply]  Structuur-opruiming: simples die variatie horen te zijn
   stap12  [apply]  /boutique-restanten strippen uit content-URLs
+  stap13           FontAwesome terugzetten (node_modules-exclude-gat)
 
 Zie MIGRATIE-DEFIBSOLUTIONS-FR.md voor het fase-overzicht.
 EOF
@@ -871,5 +918,6 @@ case "${1:-}" in
     stap10) shift; stap10 "$@" ;;
     stap11) stap11 "${2:-}" ;;
     stap12) stap12 "${2:-}" ;;
+    stap13) stap13 ;;
     *) hulp; [[ -n "${1:-}" ]] && exit 1 || exit 0 ;;
 esac

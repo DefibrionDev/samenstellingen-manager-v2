@@ -200,6 +200,11 @@ Stand 31 aug:
       rijen gefixt, homepage schoon, links landen (200), idempotent.
       **Zelfde gat geldt bij de fase-2-rewrite naar
       boutique.defibsolutions.fr — stap 12 hoort in de livegang-reeks.**
+- [x] Stap 13 — FontAwesome teruggezet (2 sep, melding Cas: huisje voor
+      "Home" miste): de migrater excludet `node_modules/` bij elke pull,
+      maar WPBakery levert FontAwesome dáár — alle fa-iconen 404'ten.
+      Stap downloadt de 8 bestanden van de live-site (publieke assets).
+      Geldt ook voor de kale cp-01-verhuizing (zelfde exclude).
 - [ ] Nog te doen: variatie-assen + container-opmaak/taal (containers
       heten nu "AED Package: … (EN)" — NL-stap12/13-equivalent) ·
       checkout-pagina · weergave-instellingen (Woodmart) · schrappingen
