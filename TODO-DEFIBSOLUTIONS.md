@@ -371,6 +371,9 @@ B2BKing opruimen).
 - [x] K18 → BIJ ROELOF (Kevin heeft het daar direct belegd): 70160 vs
       70160-1 prijsgelijktrekking in AFAS; shop volgt vanzelf.
 
+- [ ] NÁ livegang (K15 deel 2, toegezegd aan Kevin): Mindray-tas als
+      samenstellings-optie (+€25) op C1 én C2, op álle reseller-shops —
+      samenstellingen in AFAS + tool, daarna sync + stap12-patroon.
 - [ ] NÁ livegang (herinnering voor Cas, besluit 31 aug): Cloudflare
       oppakken — de definitieve shop-URL wordt **shop.defibsolutions.nl**
       (subdomein; hoofdsite blijft op het domein-root). Pas relevant als
