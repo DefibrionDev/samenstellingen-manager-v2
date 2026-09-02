@@ -239,10 +239,10 @@ Stand 31 aug:
       koppeling): landen-sync nu vóór verkooprelaties (eerste run liet
       billing_country 'F' onvertaald op 51 accounts — hersteld: F→FR,
       L→LU); nieuwe optie `alleen-relaties` voor zulke herruns.
-- [ ] Stap 17 — beheerders AFAS-testrelatie + sync-pauze: geport, dry-run
-      klaar met voorstel **32120 CARDIOUEST** (actieve FR-klant, 162
-      geverifieerde orders, in de mapping). **Wacht op akkoord Cas over
-      de relatie-keuze**, dan apply. In herhaal-reeks vóór stap10.
+- [x] Stap 17 — beheerders gekoppeld aan testrelatie **32120 CARDIOUEST**
+      (akkoord Cas 2 sep) + sync-pauze; relatie-herrun gedaan zodat het
+      factuuradres direct op de admin-accounts staat (geverifieerd:
+      Betton/FR). In herhaal-reeks vóór stap10.
 - [ ] Nog te doen: checkout-pagina · weergave-instellingen ·
       schrappingen (na Randy) · rest SKU-actielijst · AFAS-prijzengat
       (85 samenstellingen, zie hierboven).
