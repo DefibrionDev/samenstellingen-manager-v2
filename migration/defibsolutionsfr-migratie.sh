@@ -1451,6 +1451,72 @@ PHP
     fi
 }
 
+# ---------------------------------------------------------------------------
+# Stap 18 — Assortiment-schrappingen (besluit Randy, sheet "Prijsverschillen
+# defibsolutionsfr" tab regulier kolom J, 31 aug; geanalyseerd 2 sep: geen
+# van de 65 heeft een AFAS-artikel met vlaggen op welke shop dan ook, dus
+# puur webshop-werk). De producten uit work/schraplijst-defibsolutionsfr.csv
+# gaan naar de prullenbak met SKU + koppeling gestript (ook de
+# wc_product_meta_lookup-rij — les van de 11151-botsing bij NL) zodat niets
+# ooit nog matcht. Kinderen (variaties) expliciet mee-gestript.
+# Default dry-run; `stap18 apply` voert uit.
+# ---------------------------------------------------------------------------
+stap18() {
+    controleer_config
+    local apply="${1:-}"
+    local lijst="$REPO_ROOT/work/schraplijst-defibsolutionsfr.csv"
+    [[ -f "$lijst" ]] || { echo "FOUT: $lijst ontbreekt" >&2; exit 1; }
+
+    python3 - "$lijst" "$apply" <<'PY2' > /tmp/afasfr-schrap-payload.php
+import csv, json, sys
+lijst, apply = sys.argv[1], sys.argv[2] == "apply"
+rijen = [(r["wc_id"].strip(), r["itemcode"].strip(), r["titel"].strip())
+         for r in csv.DictReader(open(lijst, encoding="utf-8-sig"), delimiter=";")
+         if r["wc_id"].strip().isdigit()]
+print(f"// {len(rijen)} schrappingen uit {lijst}", file=sys.stderr)
+print("<?php")
+print(f"$apply = {'true' if apply else 'false'};")
+veilig = json.dumps(rijen).replace("\\", "\\\\").replace("'", "\\'")
+print(f"$lijst = json_decode('{veilig}', true);")
+print("""
+$weg = $al = 0;
+foreach ($lijst as [$pid, $code, $titel]) {
+    $post = get_post((int) $pid);
+    if (!$post || $post->post_status === 'trash') { $al++; continue; }
+    // guard: producten die inmiddels een samenstellings-container zijn
+    // (stap15) nooit blind trashen — tegenstrijdig besluit, mens beslist
+    $product = function_exists('wc_get_product') ? wc_get_product((int) $pid) : null;
+    if ($product && $product->is_type('variable')) {
+        printf("LET OP  #%d is inmiddels een variable container (%s) — overgeslagen, handmatig beoordelen\n",
+            (int) $pid, $titel);
+        continue;
+    }
+    printf("%s  #%d [%s] %s\n", $apply ? 'PRULLENBAK' : 'ZOU TRASHEN', (int) $pid, $code ?: '-', $titel);
+    if ($apply) {
+        global $wpdb;
+        delete_post_meta((int) $pid, '_afas_artikelnummer');
+        update_post_meta((int) $pid, '_sku', '');
+        $wpdb->update($wpdb->prefix . 'wc_product_meta_lookup', ['sku' => ''], ['product_id' => (int) $pid]);
+        wp_trash_post((int) $pid);
+        foreach (get_children(['post_parent' => (int) $pid, 'post_type' => 'product_variation', 'fields' => 'ids']) as $kind) {
+            delete_post_meta((int) $kind, '_afas_artikelnummer');
+            update_post_meta((int) $kind, '_sku', '');
+            $wpdb->update($wpdb->prefix . 'wc_product_meta_lookup', ['sku' => ''], ['product_id' => (int) $kind]);
+        }
+    }
+    $weg++;
+}
+printf("--- %s: %d geschrapt, %d stonden al in de prullenbak/bestaan niet\n",
+    $apply ? 'APPLY' : 'DRY-RUN', $weg, $al);
+""")
+PY2
+
+    wpr_stdin eval-file - < /tmp/afasfr-schrap-payload.php
+    if [[ "$apply" != "apply" ]]; then
+        echo "Dry-run — niets geschrapt. Draai '$0 stap18 apply' om uit te voeren."
+    fi
+}
+
 hulp() {
     cat <<EOF
 Gebruik: $0 <stap> [apply|opties]   (DEFIBSFR_TARGET=lokaal|cp01, default lokaal)
@@ -1472,6 +1538,7 @@ Gebruik: $0 <stap> [apply|opties]   (DEFIBSFR_TARGET=lokaal|cp01, default lokaal
   stap15  [apply]  Oude AED-producten omvormen tot containers (content behouden)
   stap16  [apply]  Franse variatie-assen (langue/connectivite/capteur-rcp/options)
   stap17  [apply]  Beheerders AFAS-testrelatie + sync-pauze geven
+  stap18  [apply]  Assortiment-schrappingen (Randy-lijst, 65 producten)
 
 Zie MIGRATIE-DEFIBSOLUTIONS-FR.md voor het fase-overzicht.
 EOF
@@ -1495,5 +1562,6 @@ case "${1:-}" in
     stap15) stap15 "${2:-}" ;;
     stap16) stap16 "${2:-}" ;;
     stap17) stap17 "${2:-}" ;;
+    stap18) stap18 "${2:-}" ;;
     *) hulp; [[ -n "${1:-}" ]] && exit 1 || exit 0 ;;
 esac
