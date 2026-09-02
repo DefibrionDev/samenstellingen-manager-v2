@@ -60,12 +60,15 @@ eigen scriptkopie `migration/defibsolutionsfr-migratie.sh` (besluit 27 aug).
       (staat al zo in `afas-settings-fr.json`). Data: 289/403 uniek BHV,
       30 itemcode, 83 no-match + 1 zonder SKU → FR-actielijst in stap 1.4.
 - [x] **Klant↔relatie-mapping: orderhistorie + e-mail-fallback** (besluit
-      Cas 31 aug). Gedaan via `work/mine-order-koppeling-defibsolutionsfr.py`:
-      56/88 gekoppeld (35 orderhistorie e-mail-geverifieerd, 21 unieke
-      e-mail-match) en met stap 3 lokaal gezet. Restant in
-      `work/defibsolutionsfr-klantmapping-review.csv`: 15 EMAIL-AMBIGU
-      (dubbele AFAS-relaties — saneren zoals Ehabo bij NL), 16 GEEN-MATCH,
-      1 ONGEVERIFIEERD, 1 intern account.
+      Cas 31 aug) — 56/88 gekoppeld via stap 3. **Restant verwerkt 2 sep
+      (Randy, klanten-match-sheet):** +20 koppelingen (14 ambigu + 6
+      geen-match met kolom-G-nummer; totaal 76 gekoppeld, relatie-vlaggen
+      +17 gezet in AFAS, adressen via relatie-herrun), 9 accounts
+      verwijderd met stap 19 (reassign naar info@defibsolutions.fr).
+      **Open: handi-pharm (wc:661)** — Randy's tegenvraag: "meerdere
+      profielen in AFAS (±20 handi-pharm.com) — zijn er ook meerdere
+      accounts bekend?" → Cas beantwoordt; koppeling 31176 geparkeerd.
+      wc:751 (michel@defibrion.nl, intern) bewust gelaten.
 - [ ] **Points/rewards-plugins**: uit tijdens migratie (zoals B2BKing-aanpak)
       of blijven ze actief? Reseller draait ze ook — cross-check gewenst.
 - [ ] **Prijzen FR**: welke AFAS-prijslijst(en) bedienen Franse klanten;

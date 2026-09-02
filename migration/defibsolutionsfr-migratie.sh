@@ -1517,6 +1517,56 @@ PY2
     fi
 }
 
+# ---------------------------------------------------------------------------
+# Stap 19 — Accounts verwijderen (besluit Randy, klanten-match-sheet kolom J,
+# 1 sep: 7x "Onbekend, verwijderen", 1x "Verwijderen, klant Defibrion",
+# 1x "Oud collega, graag verwijderen"). Content (orders/posts) gaat via
+# --reassign naar het hoofdaccount info@defibsolutions.fr zodat er niets
+# cascade-verdwijnt (NL-stap14-patroon). Idempotent; al-verwijderde accounts
+# worden gemeld en overgeslagen. Default dry-run; `stap19 apply` verwijdert.
+# ---------------------------------------------------------------------------
+stap19() {
+    controleer_config
+    local apply="${1:-}"
+    local doel_email="info@defibsolutions.fr"
+    local weg=(
+        "benblu83@gmail.com"
+        "chris.ber@bluewin.ch"
+        "commercial@biomedicpro.fr"
+        "contact.fomaction3s@gmail.com"
+        "elformations@sfr.fr"
+        "julien.goncet@gmail.com"
+        "pmalterre@asgar-securite.fr"
+        "shura.strelnikov.76@inbox.ru"
+        "nabil@defibrion.fr"
+    )
+    local doel_id
+    doel_id=$(wpr user get "$doel_email" --field=ID 2>/dev/null | tail -1 | tr -d '[:space:]')
+    [[ "$doel_id" =~ ^[0-9]+$ ]] || { echo "FOUT: doelaccount $doel_email niet gevonden" >&2; exit 1; }
+    echo "reassign-doel: $doel_email (user $doel_id)"
+
+    local email uid login
+    for email in "${weg[@]}"; do
+        uid=$(wpr user get "$email" --field=ID 2>/dev/null | tail -1 | tr -d '[:space:]' || true)
+        if [[ ! "$uid" =~ ^[0-9]+$ ]]; then
+            echo "SKIP   $email — bestaat niet (al verwijderd?)"
+            continue
+        fi
+        login=$(wpr user get "$uid" --field=user_login 2>/dev/null | tail -1 | tr -d '[:space:]')
+        if [[ "$apply" != "apply" ]]; then
+            echo "ZOU VERWIJDEREN  $email (user $uid, login $login)"
+        else
+            wpr user delete "$uid" --reassign="$doel_id" --yes >/dev/null
+            echo "VERWIJDERD  $email (user $uid, login $login)"
+        fi
+    done
+    if [[ "$apply" != "apply" ]]; then
+        echo "Dry-run — draai '$0 stap19 apply' om te verwijderen."
+    else
+        echo "OK — accounts opgeruimd op $(doel_naam)"
+    fi
+}
+
 hulp() {
     cat <<EOF
 Gebruik: $0 <stap> [apply|opties]   (DEFIBSFR_TARGET=lokaal|cp01, default lokaal)
@@ -1538,7 +1588,8 @@ Gebruik: $0 <stap> [apply|opties]   (DEFIBSFR_TARGET=lokaal|cp01, default lokaal
   stap15  [apply]  Oude AED-producten omvormen tot containers (content behouden)
   stap16  [apply]  Franse variatie-assen (langue/connectivite/capteur-rcp/options)
   stap17  [apply]  Beheerders AFAS-testrelatie + sync-pauze geven
-  stap18  [apply]  Assortiment-schrappingen (Randy-lijst, 65 producten)
+  stap18  [apply]  Assortiment-schrappingen (Randy-lijst)
+  stap19  [apply]  Accounts verwijderen (Randy klanten-sheet, 9 accounts)
 
 Zie MIGRATIE-DEFIBSOLUTIONS-FR.md voor het fase-overzicht.
 EOF
@@ -1563,5 +1614,6 @@ case "${1:-}" in
     stap16) stap16 "${2:-}" ;;
     stap17) stap17 "${2:-}" ;;
     stap18) stap18 "${2:-}" ;;
+    stap19) stap19 "${2:-}" ;;
     *) hulp; [[ -n "${1:-}" ]] && exit 1 || exit 0 ;;
 esac
