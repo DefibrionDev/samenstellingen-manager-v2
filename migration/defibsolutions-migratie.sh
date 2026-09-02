@@ -1738,6 +1738,66 @@ PHP
     fi
 }
 # ---------------------------------------------------------------------------
+# stap18 — Contentcorrecties (Kevins feedback ronde 2, punt K13, besluit Cas
+# 1 sept): het bedrijfsadres in de footer en in de WooCommerce-winkelinstel-
+# lingen staat nog op het oude Middelburg-adres (live ook). Nieuw adres:
+# Edisonweg 41, 4382 NV Vlissingen. Privacybeleid/Algemene voorwaarden
+# bevatten het oude adres óók maar gaan bewust NIET mee (ligt bij Kevin).
+# Idempotent; dry-run default.
+stap18() {
+    controleer_config
+    local apply="${1:-}"
+    wpr_stdin eval-file - "$apply" <<'PHP'
+<?php
+$apply = ('apply' === ($args[0] ?? ''));
+
+// 1. Footer-template(s): adresregels vervangen.
+$vervang = [
+    'Arnesteinweg 36'      => 'Edisonweg 41',
+    '4338 PD Middelburg'   => '4382 NV Vlissingen',
+];
+$footers = get_posts(['post_type' => 'et_footer_layout', 'post_status' => 'any', 'numberposts' => -1]);
+foreach ($footers as $f) {
+    $c = $f->post_content;
+    $hits = 0;
+    foreach ($vervang as $oud => $nieuw) { $hits += substr_count($c, $oud); }
+    if ($hits === 0) {
+        $al = substr_count($f->post_content, 'Edisonweg 41') > 0;
+        printf("footer #%d (%s): %s\n", $f->ID, $f->post_title, $al ? 'al goed' : 'geen adres gevonden');
+        continue;
+    }
+    if ($apply) {
+        wp_update_post(['ID' => $f->ID, 'post_content' => strtr($c, $vervang)]);
+    }
+    printf("footer #%d (%s): %d adresregel(s) %s\n", $f->ID, $f->post_title, $hits,
+        $apply ? 'vervangen' : 'te vervangen');
+}
+
+// 2. WooCommerce-winkeladres (e-mails/belasting) — stond op een derde
+//    variant van het oude adres (4383 BG).
+$opties = [
+    'woocommerce_store_address'  => 'Edisonweg 41',
+    'woocommerce_store_address_2' => '',
+    'woocommerce_store_city'     => 'Vlissingen',
+    'woocommerce_store_postcode' => '4382 NV',
+];
+foreach ($opties as $naam => $waarde) {
+    $huidig = (string) get_option($naam, '');
+    if ($huidig === $waarde) { printf("%s: al goed\n", $naam); continue; }
+    if ($apply) { update_option($naam, $waarde); }
+    printf("%s: '%s' -> '%s'%s\n", $naam, $huidig, $waarde, $apply ? '' : ' (dry-run)');
+}
+if (!$apply) { echo "Dry-run - niets gewijzigd.\n"; }
+PHP
+    if [[ "$apply" != "apply" ]]; then
+        echo "Dry-run — draai '$0 stap18 apply' om uit te voeren."
+    else
+        # Template-wijziging: Divi-caches verversen (stap15-les).
+        stap15 apply
+        echo "OK — contentcorrecties uitgevoerd op $(doel_naam)"
+    fi
+}
+# ---------------------------------------------------------------------------
 usage() {
     echo "gebruik: [DEFIBS_TARGET=lokaal|cp01] $0 <stap>   (default: lokaal)"
     echo "stappen:"
@@ -1758,6 +1818,7 @@ usage() {
     echo "  stap15  Divi-caches resetten na URL-rewrite (dry-run; 'stap15 apply')"
     echo "  stap16  Kevins staging-opruiming K9/K10: lege categorieën + menu-items weg (dry-run; 'stap16 apply')"
     echo "  stap17  Beheerders koppelen aan klantrelatie 35801 + sync-pauze (dry-run; 'stap17 apply')"
+    echo "  stap18  Contentcorrecties: footer-adres + WooCommerce-winkeladres naar Vlissingen (dry-run; 'stap18 apply')"
     echo ""
     echo "volledige herbouw (na verse pull), in deze volgorde:"
     echo "  stap1, stap2, stap3 apply, stap4, stap5 apply, stap6 apply, stap7,"
@@ -1786,5 +1847,6 @@ case "${1:-}" in
     stap15) stap15 "${2:-}" ;;
     stap16) stap16 "${2:-}" ;;
     stap17) stap17 "${2:-}" ;;
+    stap18) stap18 "${2:-}" ;;
     *) usage ;;
 esac

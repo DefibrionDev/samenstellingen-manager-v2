@@ -341,6 +341,35 @@ B2BKing opruimen).
       koppel-ids, ordertelling — alle 65 hadden 0 orders). Bijvangst-fix:
       uid-lookups in stap14 pipefail-proof (herdraai brak op al-verwijderde
       e-mailaccounts).
+## Kevins feedback ronde 2 (1 sept, via Cas) — per punt bespreken, dan pas uitvoeren
+
+- [ ] K13 Footer-adres — UITGEVOERD (wacht op check Cas): nieuwe stap18
+      "contentcorrecties" vervangt in de footer-template Arnesteinweg 36 /
+      4338 PD Middelburg door Edisonweg 41 / 4382 NV Vlissingen én zet het
+      WooCommerce-winkeladres om (stond op nóg een variant: 4383 BG). Apply
+      op cp-01 + lokaal, render toont het nieuwe adres. In runner + usage.
+      NAAR KEVIN: het oude adres staat ook in Privacybeleid en Algemene
+      voorwaarden (pagina's 3 en 106324) — bewust niet aangepast, Kevins
+      besluit.
+- [ ] K14 G5-prijzen met/zonder CPR-feedback differentiëren (€100
+      inkoopverschil, concurrentie AEDpartner). Kevins voorstel: "met
+      feedback" €1640, "zonder feedback" €1540, semi en vol gelijk, en
+      doortrekken naar de pakketten. LET OP: Kevins met/zonder-labels per
+      code lijken intern tegenstrijdig (11148=met én 11149F=met kan niet
+      allebei als F één betekenis heeft) — eerst verifiëren welke code wat
+      is; prijsmutaties zelf richting Roelof, pakket-doortrekking via ons
+      chained-prijzen-patroon.
+- [ ] K15 Mindray draagtas als keuze-optie (pa_opties "Mindray Draagtas")
+      op C1 én C2, meerprijs +€25 — zoals de Defibtech draagtas. Nu: C2
+      heeft een los aanvink-bolletje +€40 (product-options-plugin, moet dan
+      weg), C1 heeft niets. Vergt samenstellingen in AFAS + tool.
+- [ ] K16 Lifepak 1000: uit het hoofdmenu + achterliggende productpagina
+      weg (/product/physio-control-lifepak-1000/).
+- [ ] K17 Zoll AED Pro: idem — uit hoofdmenu + pagina weg ("mogen deze
+      niet eens verkopen").
+- [ ] K18 70160 (Kiss of Life rood) vs 70160-1: prijsverschil; beide
+      €1,50/stuk, 70160 leidend — AFAS-actie, Kevin vroeg Roelof.
+
 - [ ] NÁ livegang (herinnering voor Cas, besluit 31 aug): Cloudflare
       oppakken — de definitieve shop-URL wordt **shop.defibsolutions.nl**
       (subdomein; hoofdsite blijft op het domein-root). Pas relevant als
