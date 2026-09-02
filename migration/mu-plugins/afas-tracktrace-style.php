@@ -152,6 +152,7 @@ add_filter('gettext_lefcreative-afas-b2b', static function ($translation, $text)
         'Adressen ophalen'           => 'Récupération des adresses',
         'Afleveradres'               => 'Adresse de livraison',
         'Annuleren'                  => 'Annuler',
+        'Bewerken'                   => 'Modifier',
         'Bezig...'                   => 'En cours...',
         'bijv. Magazijn, Filiaal Rotterdam' => 'p.ex. Entrepôt, Agence Lyon',
         'BTW/VAT nummer'             => 'Numéro de TVA',
