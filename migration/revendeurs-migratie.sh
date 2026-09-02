@@ -1385,6 +1385,30 @@ PHP
 }
 
 # ---------------------------------------------------------------------------
+# bouwlocatie-afronding — na een migrater-deploy naar de dev-site
+# (revendeursfr.defibrion.dev): de lokale kopie heeft de loginmuur uit
+# (migrater deactiveert jonradio-private-site en plaatst zz-unlock-local) en
+# die staat komt met de push mee. Hier: unlock-/lokale-mailblok-bestanden weg,
+# jonradio-private-site aan, en controle dat een gast naar de login redirect.
+# Draai met REVEND_TARGET=cp01 en REVEND_SERVER/WP_ROOT op de dev-site.
+# ---------------------------------------------------------------------------
+bouwlocatie-afronding() {
+    controleer_config
+    if [[ "$TARGET" != "cp01" ]]; then
+        echo "bouwlocatie-afronding is bedoeld voor REVEND_TARGET=cp01 (dev-site)." >&2
+        exit 1
+    fi
+    ssh "$SERVER" "rm -f '$WP_ROOT/wp-content/mu-plugins/zz-unlock-local.php' '$WP_ROOT/wp-content/mu-plugins/zz-disable-emails-local.php'"
+    echo "lokale unlock-/mailblok-mu-plugins verwijderd"
+    wpr plugin activate jonradio-private-site
+    local url
+    url=$(wpr option get siteurl | tr -d '[:space:]')
+    echo "--- controle (gast hoort een redirect naar de login te krijgen):"
+    curl -s -o /dev/null -w "gast %{http_code} -> %{redirect_url}\n" --max-time 20 "$url/" || true
+    echo "OK — bouwlocatie afgeschermd op $(doel_naam)"
+}
+
+# ---------------------------------------------------------------------------
 # backup — volledige backup van de cp01-site (bestanden + database) vóór de
 # livegang-reeks. Alleen zinvol met REVEND_TARGET=cp01. Dump komt in de home
 # van de site-user te staan met timestamp; blijft daar tot handmatige opruiming.
@@ -1489,6 +1513,7 @@ Stappen:
   stap16 [apply] Afgekeurde draft-producten prullenbak (besluit 1 sep)
   stap17 [apply] Beheerders koppelen aan relatie 23135 + sync-pauze
   backup        cp01: volledige backup (db + files) vóór de livegang-reeks
+  bouwlocatie-afronding  dev-site afschermen (unlock weg, jonradio aan)
   slotstap [apply] Livegang-slot: order-push aan + mail aan (na controles)
   reeks         Alle stappen in de bewezen volgorde (repro-check / livegang)
 EOF
@@ -1497,6 +1522,6 @@ EOF
 
 [[ $# -ge 1 ]] || usage
 case "$1" in
-    stap1|stap2|stap3|stap4|stap5|stap6|stap7|stap8|stap9|stap10|stap11|stap12|stap13|stap14|stap15|stap16|stap17|backup|slotstap|reeks) "$@" ;;
+    stap1|stap2|stap3|stap4|stap5|stap6|stap7|stap8|stap9|stap10|stap11|stap12|stap13|stap14|stap15|stap16|stap17|backup|slotstap|bouwlocatie-afronding|reeks) "$@" ;;
     *) usage ;;
 esac
