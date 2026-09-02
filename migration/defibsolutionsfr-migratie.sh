@@ -44,7 +44,9 @@ MIGRATER_DIR="${DEFIBSFR_MIGRATER_DIR:-$HOME/projects/wordpress-migrater}"
 # "Deprecated:"-meldingen vervuilen elke stap-output en worden weggefilterd.
 # --line-buffered: zonder dit houdt grep de output vast tot het eind en zie je
 # fase-voortgang van lange stappen pas als alles klaar is.
-_filter_ruis() { grep --line-buffered -vE '^(Deprecated|Notice):' || true; }
+# ook PHP-runtime-Warnings (wpforms-bug) en de gelogde varianten met
+# timestamp eruit — die vervuilen gevangen output zoals `wpr db prefix`
+_filter_ruis() { grep --line-buffered -vE '^(Deprecated|Notice|Warning):|^\[[0-9]{2}-[A-Z][a-z]{2}-[0-9]{4} [^]]*\] PHP ' || true; }
 
 _lokaal_compose() {
     # --progress quiet: compose-statusregels ("Container ... Running") gaan
@@ -1092,6 +1094,304 @@ PY
     fi
 }
 
+# ---------------------------------------------------------------------------
+# Stap 16 — Franse variatie-assen, geport van revendeurs-stap12 (zie
+# work/handoff-variabele-containers-omvormen.md). Elke container krijgt:
+#   pa_langue         <- group_bases.language_code ("FR/EN/NL" -> "Français · Anglais · Néerlandais")
+#   pa_connectivite   <- group_bases.variant_label (leeg -> "Aucune", WiFi -> "Wi-Fi", …)
+#   pa_capteur-rcp    <- variant_label met/zonder CPR-sensor -> Avec/Sans
+#   pa_options        <- accessoires.naam_kort_fr (geen accessoire -> "Défibrillateur")
+# Een as wordt variatie-attribuut bij >1 waarde, anders vast. De platte
+# "Naam"-as van de plugin verdwijnt. Term-volgorde via termmeta `order`
+# (WC 3.6+). FR-afwijking t.o.v. revendeurs: titels blijven de originele
+# shop-titels (stap15). Default dry-run; `stap16 apply` schrijft.
+# Draai na stap15 + stap10.
+# ---------------------------------------------------------------------------
+stap16() {
+    controleer_config
+    local apply="${1:-}"
+    local snapshot="$REPO_ROOT/tmp/samenstellingen.sqlite"
+    [[ -f "$snapshot" ]] || { echo "FOUT: $snapshot ontbreekt (tool-snapshot nodig)" >&2; exit 1; }
+    mkdir -p "$REPO_ROOT/tmp"
+    local prefix
+    prefix=$(wpr db prefix | tail -1 | tr -d '[:space:]')
+
+    # shop-dump: variable containers + hun variaties met artikelnummer
+    local dump="$REPO_ROOT/tmp/defibsfr-varianten-dump.tsv"
+    wpr db query "\"SELECT par.ID, COALESCE(pan.meta_value,''), v.ID, COALESCE(van.meta_value,'')
+        FROM ${prefix}posts par
+        JOIN ${prefix}term_relationships tr ON tr.object_id = par.ID
+        JOIN ${prefix}term_taxonomy tt ON tt.term_taxonomy_id = tr.term_taxonomy_id AND tt.taxonomy = 'product_type'
+        JOIN ${prefix}terms t ON t.term_id = tt.term_id AND t.name = 'variable'
+        LEFT JOIN ${prefix}postmeta pan ON pan.post_id = par.ID AND pan.meta_key = '_afas_artikelnummer'
+        JOIN ${prefix}posts v ON v.post_parent = par.ID AND v.post_type = 'product_variation'
+             AND v.post_status IN ('publish','private')
+        LEFT JOIN ${prefix}postmeta van ON van.post_id = v.ID AND van.meta_key = '_afas_artikelnummer'
+        WHERE par.post_status IN ('publish','private')\"" --skip-column-names > "$dump"
+
+    python3 - "$snapshot" "$dump" "$apply" <<'PY' > "$REPO_ROOT/tmp/afasfr-assen-payload.php"
+import json, sqlite3, sys
+snapshot, dump, apply = sys.argv[1], sys.argv[2], sys.argv[3] == "apply"
+
+TALEN = {"NL": "Néerlandais", "EN": "Anglais", "FR": "Français", "DE": "Allemand",
+         "ES": "Espagnol", "IT": "Italien", "DK": "Danois", "NO": "Norvégien",
+         "SE": "Suédois", "FI": "Finnois", "PL": "Polonais", "CZ": "Tchèque",
+         "SK": "Slovaque", "SL": "Slovène", "HU": "Hongrois", "HR": "Croate",
+         "EL": "Grec", "GA": "Irlandais", "PT": "Portugais", "LV": "Letton",
+         "LT": "Lituanien", "RO": "Roumain", "TR": "Turc", "CH": "Édition Suisse"}
+CONNECT = {"": "Aucune", "USB": "USB", "WiFi": "Wi-Fi", "SIGFOX": "Sigfox",
+           "4G": "4G", "GPS+WiFi+SIGFOX": "GPS+Wi-Fi+SIGFOX"}
+CPR = {"met CPR-sensor": "Avec", "zonder CPR-sensor": "Sans"}
+
+con = sqlite3.connect(snapshot)
+# accessoire-itemcode -> Franse korte naam (tool = bron; fallback = label)
+opties_fr = {code: (fr or label) for code, fr, label in con.execute(
+    "SELECT itemcode, naam_kort_fr, label FROM accessoires")}
+# family-head -> Franse modelnaam (containertitel)
+titel_fr = {head: naam for head, naam in con.execute(
+    "SELECT family_head_itemcode, model_name_fr FROM groups WHERE model_name_fr IS NOT NULL")}
+info = {}
+for code, taal, label in con.execute(
+        "SELECT afas_itemcode, COALESCE(language_code,''), COALESCE(variant_label,'')"
+        " FROM group_bases WHERE afas_itemcode IS NOT NULL AND afas_itemcode <> ''"):
+    info[code] = (taal, label, None, code)
+for code, taal, label, acc, basecode in con.execute(
+        "SELECT v.afas_samenstelling_itemcode, COALESCE(b.language_code,''),"
+        "       COALESCE(b.variant_label,''), a.itemcode, COALESCE(b.afas_itemcode,'')"
+        "  FROM group_variants v"
+        "  JOIN group_bases b ON b.id = v.base_id"
+        "  LEFT JOIN accessoires a ON a.id = v.accessoire_id"
+        " WHERE v.afas_samenstelling_itemcode IS NOT NULL AND v.afas_samenstelling_itemcode <> ''"):
+    info[code] = (taal, label, acc, basecode)
+con.close()
+
+def taal_naam(code):
+    delen = [TALEN.get(d.strip().upper(), d.strip()) for d in code.split("/") if d.strip()]
+    return " · ".join(delen) if delen else ""
+
+containers, onbekend = {}, []
+for regel in open(dump, encoding="utf-8"):
+    d = regel.rstrip("\n").split("\t")
+    if len(d) < 4 or not d[0].isdigit():
+        continue
+    par_id, par_code, var_id, var_code = d[0], d[1].strip(), d[2], d[3].strip()
+    rij = info.get(var_code)
+    if rij is None:
+        onbekend.append((var_id, var_code))
+        continue
+    taal, label, acc, basecode = rij
+    cpr = CPR.get(label, "")
+    containers.setdefault(par_id, {"code": par_code, "titel_fr": titel_fr.get(par_code, ""),
+                                   "varianten": {}})
+    containers[par_id]["varianten"][var_id] = {
+        "Langue": taal_naam(taal),
+        "Connectivité": "Aucune" if cpr else CONNECT.get(label, label or "Aucune"),
+        "Capteur RCP": cpr,
+        "Options": opties_fr.get(acc, "Défibrillateur") if acc else "Défibrillateur",
+    }
+    if cpr and not basecode.endswith("F"):
+        containers[par_id]["cpr_default"] = cpr
+
+print(f"// {len(containers)} containers, {sum(len(c['varianten']) for c in containers.values())} variaties"
+      f", {len(onbekend)} zonder tool-data", file=sys.stderr)
+if onbekend[:5]:
+    print(f"//   zonder tool-data (eerste 5): {onbekend[:5]}", file=sys.stderr)
+print("<?php")
+print(f"$apply = {'true' if apply else 'false'};")
+print(f"$containers = json_decode('{json.dumps(containers, ensure_ascii=False)}', true);")
+print(r"""
+global $wpdb;
+$AS_TAX = ['Langue' => 'pa_langue', 'Connectivité' => 'pa_connectivite',
+    'Capteur RCP' => 'pa_capteur-rcp', 'Options' => 'pa_options'];
+$gemaakt = $gezet = $overgeslagen = 0;
+
+$slugVan = function (string $naam): string {
+    return sanitize_title(str_replace(['·', '+'], [' ', ' '], $naam));
+};
+
+// Dropdown-volgorde: kaal toestel eerst, dan accessoires oplopend.
+$VOLGORDE = [
+    'pa_langue' => ['Français'],
+    'pa_connectivite' => ['Aucune', 'USB', 'Wi-Fi', '4G', 'Sigfox', 'GPS+Wi-Fi+SIGFOX'],
+    'pa_capteur-rcp' => ['Avec', 'Sans'],
+    'pa_options' => ['Défibrillateur', 'Sac à Dos', 'Armoire Intérieure ARKY (Blanche)',
+        'Armoire Intérieure ARKY (Verte)', 'Armoire Extérieure ARKY (Non Chauffée)',
+        'Armoire Extérieure ARKY (Chauffée)', 'Armoire Extérieure ARKY Core Classic',
+        'Armoire Extérieure ARKY Core Plus', 'Sacoche Defibtech', 'Sacoche Mindray'],
+];
+// Default-keuze per as: het kale Franstalige toestel zonder opties.
+$DEFAULT_VOORKEUR = ['pa_langue' => 'Français', 'pa_connectivite' => 'Aucune',
+    'pa_options' => 'Défibrillateur'];
+
+foreach ($AS_TAX as $label => $tax) {
+    if (taxonomy_exists($tax)) { continue; }
+    if (!$apply) { echo "ZOU AANMAKEN attribuut: $label ($tax)\n"; continue; }
+    $id = wc_create_attribute(['name' => $label, 'slug' => str_replace('pa_', '', $tax),
+        'type' => 'select', 'order_by' => 'menu_order', 'has_archives' => false]);
+    if (is_wp_error($id)) { echo "FOUT attribuut $label: " . $id->get_error_message() . "\n"; continue; }
+    register_taxonomy($tax, 'product', ['hierarchical' => false, 'show_ui' => false, 'query_var' => true]);
+    echo "attribuut aangemaakt: $label ($tax)\n";
+}
+
+// pa_langue als knoppen (zoals pa_taal op reseller)
+if ($apply) {
+    $wpdb->update($wpdb->prefix . 'woocommerce_attribute_taxonomies',
+        ['attribute_type' => 'button'], ['attribute_name' => 'langue']);
+    delete_transient('wc_attribute_taxonomies');
+}
+
+foreach ($containers as $parId => $data) {
+    $parent = wc_get_product((int) $parId);
+    if (!$parent || !$parent->is_type('variable')) { $overgeslagen++; continue; }
+
+    $waarden = [];
+    foreach ($data['varianten'] as $vid => $assen) {
+        foreach ($assen as $label => $waarde) {
+            if ($waarde !== '') { $waarden[$label][$waarde] = true; }
+        }
+    }
+    if (empty($waarden)) { $overgeslagen++; continue; }
+
+    // Alleen het platte "Naam" verdwijnt; overige bestaande attributen blijven
+    // als vast attribuut staan.
+    $attributes = [];
+    foreach ($parent->get_attributes() as $sleutel => $bestaand) {
+        if (strcasecmp($bestaand->get_name(), 'Naam') === 0) { continue; }
+        if (isset($AS_TAX[$bestaand->get_name()]) || in_array($bestaand->get_name(), $AS_TAX, true)) { continue; }
+        if ($bestaand->get_variation()) { $bestaand->set_variation(false); }
+        $attributes[$sleutel] = $bestaand;
+    }
+    $positie = count($attributes);
+    foreach ($AS_TAX as $label => $tax) {
+        if (empty($waarden[$label])) { continue; }
+        $namen = array_keys($waarden[$label]);
+        $termIds = [];
+        foreach ($namen as $naam) {
+            $term = get_term_by('name', $naam, $tax) ?: get_term_by('slug', $slugVan($naam), $tax);
+            if (!$term) {
+                if (!$apply) { continue; }
+                $res = wp_insert_term($naam, $tax, ['slug' => $slugVan($naam)]);
+                if (is_wp_error($res)) { echo "FOUT term '$naam' in $tax: " . $res->get_error_message() . "\n"; continue; }
+                $term = get_term($res['term_id'], $tax);
+                $gemaakt++;
+            }
+            $termIds[] = (int) $term->term_id;
+        }
+        if (!$termIds) { continue; }
+        if ($apply) {
+            foreach ($termIds as $tid) {
+                $naam = get_term($tid, $tax)->name ?? '';
+                $pos = array_search($naam, $VOLGORDE[$tax] ?? [], true);
+                if ($pos === false) {
+                    $pos = 100 + (ord(substr($naam, 0, 1)) - 65);
+                }
+                // WooCommerce 3.6+ sorteert menu_order-attributen op termmeta
+                // 'order'; de oude conventie 'order_pa_<tax>' blijft erbij voor
+                // compatibiliteit (defibsolutions-script gebruikte alleen die,
+                // waardoor Défibrillateur hier achteraan zakte — Cas 1 sep).
+                update_term_meta($tid, 'order', (int) $pos);
+                update_term_meta($tid, 'order_' . $tax, (int) $pos);
+            }
+        }
+        $attr = new WC_Product_Attribute();
+        $attr->set_id(wc_attribute_taxonomy_id_by_name($tax));
+        $attr->set_name($tax);
+        $attr->set_options($termIds);
+        $attr->set_position($positie++);
+        $attr->set_visible(true);
+        $attr->set_variation(count($termIds) > 1);
+        $attributes[$tax] = $attr;
+        if ($apply) { wp_set_object_terms((int) $parId, $termIds, $tax); }
+    }
+
+    // rapporteer op basis van de VERZAMELDE waarden (in dry-run bestaan de
+    // termen nog niet, dus $attributes onderrapporteert daar)
+    $assenTekst = [];
+    foreach ($AS_TAX as $label => $tax) {
+        if (empty($waarden[$label])) { continue; }
+        $n = count($waarden[$label]);
+        $assenTekst[] = str_replace('pa_', '', $tax) . '=' . $n . ($n > 1 ? '' : ' (vast)');
+    }
+    printf("%s  container #%d [%s] '%s': %s\n", $apply ? 'GEZET' : 'ZOU ZETTEN',
+        (int) $parId, $data['code'] ?: '-', $data['titel_fr'] ?: get_the_title((int) $parId),
+        implode(', ', $assenTekst));
+
+    if (!$apply) { continue; }
+
+    // FR: containertitels bewust NIET hernoemen — de originele shop-titels
+    // (hersteld in stap15) blijven leidend.
+
+    $parent->set_attributes($attributes);
+
+    $defaults = [];
+    foreach ($AS_TAX as $label => $tax) {
+        if (!isset($attributes[$tax]) || !$attributes[$tax]->get_variation()) { continue; }
+        $voorkeur = $tax === 'pa_capteur-rcp'
+            ? ($data['cpr_default'] ?? 'Avec')
+            : ($DEFAULT_VOORKEUR[$tax] ?? '');
+        $namen = array_keys($waarden[$label]);
+        sort($namen);
+        $keuze = null;
+        foreach ($namen as $n) { if ($n === $voorkeur) { $keuze = $n; break; } }
+        if ($keuze === null && $voorkeur !== '') {
+            foreach ($namen as $n) { if (str_starts_with($n, $voorkeur)) { $keuze = $n; break; } }
+            if ($keuze === null) {
+                foreach ($namen as $n) { if (str_contains($n, $voorkeur)) { $keuze = $n; break; } }
+            }
+        }
+        if ($keuze === null) { $keuze = $namen[0] ?? null; }
+        if ($keuze !== null) {
+            $term = get_term_by('name', $keuze, $tax);
+            if ($term) { $defaults[$tax] = $term->slug; }
+        }
+    }
+    if ($defaults) {
+        $parent->set_default_attributes($defaults);
+        printf("         default: %s\n", implode(', ', array_map(
+            fn($k, $v) => str_replace('pa_', '', $k) . '=' . $v,
+            array_keys($defaults), $defaults)));
+    }
+    $parent->save();
+
+    foreach ($data['varianten'] as $vid => $assen) {
+        $variatie = wc_get_product((int) $vid);
+        if (!$variatie) { continue; }
+        $nieuw = [];
+        foreach ($AS_TAX as $label => $tax) {
+            if (!isset($attributes[$tax]) || !$attributes[$tax]->get_variation()) { continue; }
+            $naam = $assen[$label] ?? '';
+            if ($naam === '') { continue; }
+            $term = get_term_by('name', $naam, $tax);
+            if ($term) { $nieuw[$tax] = $term->slug; }
+        }
+        $variatie->set_attributes($nieuw);
+        // "Locked" containers laten nieuwe variaties als private binnenkomen;
+        // wij kennen de assen, dus publiceren — mits AFAS het artikel actief noemt.
+        if ($variatie->get_status() === 'private' && $nieuw) {
+            $actief = $wpdb->get_var($wpdb->prepare(
+                "SELECT lef_is_active FROM {$wpdb->prefix}lef_afas_artikelen
+                  WHERE artikelnummer = %s", (string) get_post_meta((int) $vid, '_afas_artikelnummer', true)));
+            if ($actief === null || (int) $actief === 1) {
+                $variatie->set_status('publish');
+                printf("         variatie #%d gepubliceerd (was private, assen bekend)\n", (int) $vid);
+            }
+        }
+        $variatie->save();
+        $gezet++;
+    }
+}
+printf("--- %s: %d containers, %d variaties bijgewerkt, %d termen aangemaakt, %d overgeslagen\n",
+    $apply ? 'APPLY' : 'DRY-RUN', count($containers), $gezet, $gemaakt, $overgeslagen);
+""")
+PY
+
+    wpr_stdin eval-file - < "$REPO_ROOT/tmp/afasfr-assen-payload.php"
+    if [[ "$apply" != "apply" ]]; then
+        echo "Dry-run — niets gewijzigd. Draai '$0 stap16 apply' om te schrijven."
+    fi
+}
+
+
 hulp() {
     cat <<EOF
 Gebruik: $0 <stap> [apply|opties]   (DEFIBSFR_TARGET=lokaal|cp01, default lokaal)
@@ -1111,6 +1411,7 @@ Gebruik: $0 <stap> [apply|opties]   (DEFIBSFR_TARGET=lokaal|cp01, default lokaal
   stap13           FontAwesome terugzetten (node_modules-exclude-gat)
   stap14  [apply]  Containers erven taxonomie-termen van variaties
   stap15  [apply]  Oude AED-producten omvormen tot containers (content behouden)
+  stap16  [apply]  Franse variatie-assen (langue/connectivite/capteur-rcp/options)
 
 Zie MIGRATIE-DEFIBSOLUTIONS-FR.md voor het fase-overzicht.
 EOF
@@ -1132,5 +1433,6 @@ case "${1:-}" in
     stap13) stap13 ;;
     stap14) stap14 "${2:-}" ;;
     stap15) stap15 "${2:-}" ;;
+    stap16) stap16 "${2:-}" ;;
     *) hulp; [[ -n "${1:-}" ]] && exit 1 || exit 0 ;;
 esac

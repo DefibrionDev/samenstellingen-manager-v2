@@ -220,9 +220,22 @@ Stand 31 aug:
       In de herhaal-reeks draait stap15 VÓÓR stap10 (simples direct
       omvormen → nooit kale containers). Geverifieerd: oude URL 301 naar
       nette slug, foto terug, filters intact.
-- [ ] Nog te doen: variatie-assen (Frans: pa_langue/pa_connectivite/
-      pa_options, "naam"-as weg — revendeurs-stap12-patroon, incl.
-      termmeta `order`) · checkout-pagina · weergave-instellingen ·
+- [x] Stap 16 — Franse variatie-assen (2 sep, revendeurs-stap12-port):
+      pa_langue (knoppen) / pa_connectivite / pa_capteur-rcp / pa_options
+      uit de tool, "naam"-as weg, defaults Français+Défibrillateur,
+      termmeta `order`; titels blijven de shop-titels (FR-afwijking).
+      145 variaties bijgewerkt. Picker werkt (Mindray/Reanibex: 9 keuzes).
+      Bijvangst: `_filter_ruis` breder (wpforms-Warnings vervuilden
+      `wpr db prefix`).
+- [ ] **AFAS-prijzengat (blokkeert koopbaarheid van 85 samenstellingen):**
+      alle Zoll-pakketten (11650/51/56/57 + varianten), 11142-FR-,
+      11145-FR- en 10144-FR-varianten + heads 11100/11186EN/11145-EN
+      missen een standaardverkoopprijs (`*****`/VerkPreijs) in AFAS —
+      zonder die prijs zet de sync geen catalogusprijs en is de variatie
+      niet koopbaar. Mindray/Reanibex/Heartsine hebben hem wél. Aanpak:
+      base-verkoopprijs bepalen (business: Cas/Kevin), dan varianten via
+      base+delta (`prices:fix-missing`-patroon, dry-run eerst).
+- [ ] Nog te doen: checkout-pagina · weergave-instellingen ·
       schrappingen (na Randy) · rest SKU-actielijst.
 
 **Klaar als:** elke handeling een genummerde stap is die lokaal groen draait.
