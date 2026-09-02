@@ -351,24 +351,25 @@ B2BKing opruimen).
       NAAR KEVIN: het oude adres staat ook in Privacybeleid en Algemene
       voorwaarden (pagina's 3 en 106324) — bewust niet aangepast, Kevins
       besluit.
-- [ ] K14 G5-prijzen met/zonder CPR-feedback differentiëren (€100
-      inkoopverschil, concurrentie AEDpartner). Kevins voorstel: "met
-      feedback" €1640, "zonder feedback" €1540, semi en vol gelijk, en
-      doortrekken naar de pakketten. LET OP: Kevins met/zonder-labels per
-      code lijken intern tegenstrijdig (11148=met én 11149F=met kan niet
-      allebei als F één betekenis heeft) — eerst verifiëren welke code wat
-      is; prijsmutaties zelf richting Roelof, pakket-doortrekking via ons
-      chained-prijzen-patroon.
-- [ ] K15 Mindray draagtas als keuze-optie (pa_opties "Mindray Draagtas")
-      op C1 én C2, meerprijs +€25 — zoals de Defibtech draagtas. Nu: C2
-      heeft een los aanvink-bolletje +€40 (product-options-plugin, moet dan
-      weg), C1 heeft niets. Vergt samenstellingen in AFAS + tool.
-- [ ] K16 Lifepak 1000: uit het hoofdmenu + achterliggende productpagina
-      weg (/product/physio-control-lifepak-1000/).
-- [ ] K17 Zoll AED Pro: idem — uit hoofdmenu + pagina weg ("mogen deze
-      niet eens verkopen").
-- [ ] K18 70160 (Kiss of Life rood) vs 70160-1: prijsverschil; beide
-      €1,50/stuk, 70160 leidend — AFAS-actie, Kevin vroeg Roelof.
+- [x] K14 → VOLLEDIG BIJ ROELOF/KEVIN (besluit Cas 2 sept): G5-prijzen
+      met/zonder CPR-feedback passen zij in AFAS aan; de shop volgt AFAS.
+- [ ] K15 — deel 1 UITGEVOERD (wacht op check Cas): oude pofw-optiegroepen
+      verwijderd via stap16 (Mindray C2 draagtas/taal, wees-"Kleur",
+      2× Prestan-taal, lege Schiller-groep); "Taalpakket" op de Zoll AED 3
+      trainer bewust behouden (echte keuze +€50). Deel 2 = NA VERHUIZING:
+      Mindray-tas als samenstellings-optie (+€25) op C1+C2 op álle
+      reseller-shops — toegezegd aan Kevin in het antwoorden-doc.
+- [ ] K16 Lifepak 1000 — UITGEVOERD alleen-DefibSolutions (wacht op check
+      Cas): dode menulink weg (stap16), product+9 variaties trash+strip,
+      AFAS-vlaggen 11153-familie defNL uit (8 mutaties, reseller blijft),
+      tool-publicatie website 3 unpublished, delta-sync: uit beheer, URL
+      404, publications:sync consistent. Accessoire-menu-item + batterij/
+      elektroden blijven. VRAAG AAN KEVIN: ook van andere shops af?
+- [ ] K17 Zoll AED Pro — UITGEVOERD (wacht op check Cas): dode menulink
+      weg via stap16; er bestond geen product (de "pagina" was een
+      404-gok-redirect). Batterij 10259 + accessoire-filter-item blijven.
+- [x] K18 → BIJ ROELOF (Kevin heeft het daar direct belegd): 70160 vs
+      70160-1 prijsgelijktrekking in AFAS; shop volgt vanzelf.
 
 - [ ] NÁ livegang (herinnering voor Cas, besluit 31 aug): Cloudflare
       oppakken — de definitieve shop-URL wordt **shop.defibsolutions.nl**

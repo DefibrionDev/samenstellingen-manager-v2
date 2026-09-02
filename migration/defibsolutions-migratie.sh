@@ -1691,6 +1691,56 @@ foreach ($namen as $naam) {
         count($menuItems), count($menuItems) === 1 ? '' : 's',
         $apply ? ' -> verwijderd' : ' -> te verwijderen');
 }
+
+// K15 (ronde 2, besluit Cas 2 sept): oude pofw-optiegroepen (plugin
+// product-options-for-woocommerce) die dubbelop zijn met onze assen of als
+// wees achterbleven. Groep 3 ("Taalpakket" op de Zoll AED 3 trainer, echte
+// keuze met meerprijs) blijft bewust staan.
+$pofwWeg = [2, 9, 11, 12, 16, 17, 18];
+$in = implode(',', $pofwWeg);
+$n = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}pofw_product_option WHERE option_id IN ($in)");
+if ($apply && $n > 0) {
+    $wpdb->query("DELETE FROM {$wpdb->prefix}pofw_product_option_value WHERE option_id IN ($in)");
+    $wpdb->query("DELETE FROM {$wpdb->prefix}pofw_product_option WHERE option_id IN ($in)");
+}
+printf("pofw-optiegroepen (%s): %d aanwezig%s\n", $in, $n,
+    $n === 0 ? ' (al weg)' : ($apply ? ' -> verwijderd (incl. waarden)' : ' -> te verwijderen'));
+
+// K16/K17 (ronde 2): dode hoofdmenu-links naar niet meer bestaande
+// productslugs. Match op URL-pad (domein-onafhankelijk); de werkende
+// accessoire-filter-items blijven staan.
+$dodePaden = ['/product/physio-control-lifepak-1000/', '/product/zoll-aed-pro-defibrillator/'];
+foreach ($dodePaden as $pad) {
+    $items = $wpdb->get_col($wpdb->prepare(
+        "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_menu_item_url' AND meta_value LIKE %s",
+        '%' . $wpdb->esc_like($pad)
+    ));
+    if (!$items) { echo "menu-link $pad: al weg\n"; continue; }
+    if ($apply) { foreach ($items as $mid) { wp_delete_post((int) $mid, true); } }
+    printf("menu-link %s: %d item(s)%s\n", $pad, count($items), $apply ? ' verwijderd' : ' te verwijderen');
+}
+
+// K16: het Lifepak 1000-product zelf (11153-familie) — bestond op live niet
+// als product maar is door onze sync aangemaakt; AFAS-vlaggen staan sinds
+// 2 sept uit, dus na trash+strip komt hij niet terug. Bij livegang vindt
+// dit blok niets (verse pull heeft het product niet).
+$lifepak = $wpdb->get_results(
+    "SELECT p.ID, p.post_type, p.post_title, pm.meta_value AS code
+       FROM {$wpdb->posts} p
+       JOIN {$wpdb->postmeta} pm ON pm.post_id = p.ID AND pm.meta_key = '_afas_artikelnummer'
+      WHERE pm.meta_value LIKE '11153%' AND p.post_status <> 'trash'", ARRAY_A
+);
+foreach ($lifepak as $r) {
+    if ($apply) {
+        delete_post_meta((int) $r['ID'], '_afas_artikelnummer');
+        update_post_meta((int) $r['ID'], '_sku', '');
+        $wpdb->update($wpdb->prefix . 'wc_product_meta_lookup', ['sku' => ''], ['product_id' => (int) $r['ID']]);
+        wp_trash_post((int) $r['ID']);
+    }
+    printf("lifepak %s #%d [%s]%s\n", $r['post_type'], (int) $r['ID'], $r['code'],
+        $apply ? ' -> prullenbak + gestript' : ' -> te trashen');
+}
+if (!$lifepak) { echo "lifepak-product: al weg\n"; }
 if (!$apply) { echo "Dry-run - niets gewijzigd.\n"; }
 PHP
     if [[ "$apply" != "apply" ]]; then
