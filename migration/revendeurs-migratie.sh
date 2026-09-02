@@ -101,6 +101,19 @@ controleer_config() {
             echo "FOUT: zet eerst REVEND_SERVER en REVEND_WP_ROOT (zie kop van dit script)." >&2
             exit 1
         fi
+        # Vangrail (incident 2 sep: dev-wp-config wees naar de LIVE-database
+        # doordat de migrater-configstap wegviel — de reeks liep toen op live).
+        # Zet REVEND_DB_NAME om af te dwingen dat de site op de verwachte
+        # database draait; zonder match stopt elke stap.
+        if [[ -n "${REVEND_DB_NAME:-}" ]]; then
+            local echte_db
+            echte_db=$(ssh "$SERVER" "cd '$WP_ROOT' && wp config get DB_NAME" 2>/dev/null | tr -d '[:space:]')
+            if [[ "$echte_db" != "$REVEND_DB_NAME" ]]; then
+                echo "FOUT: wp-config op $SERVER gebruikt database '$echte_db', verwacht '$REVEND_DB_NAME' — gestopt." >&2
+                exit 1
+            fi
+            echo "[db-vangrail: $echte_db ✓]"
+        fi
     else
         echo "FOUT: onbekend REVEND_TARGET '$TARGET' (lokaal of cp01)." >&2
         exit 1
