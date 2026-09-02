@@ -267,10 +267,27 @@ Stand 31 aug:
       Cas' revendeurs-vergelijk. LET OP: stap10-sync niet draaien vóór
       dat besluit (de sync zou anders zelf containers bouwen); heads
       11161/11162 zijn ook nog niet FR-gevlagd.
-- [ ] Nog te doen: AED-blok B (5 nieuwe samenstellingen — uitdraai voor
-      Roelof/Randy, zie work/) · Zoll Pro schrappen · checkout-pagina ·
-      weergave-instellingen · rest SKU-actielijst (~20) · AFAS-prijzengat
-      (85) · handi-pharm-antwoord.
+- [x] AED-blok B uitgevoerd (3 sep, akkoord Cas "1-5 mogen aangemaakt",
+      G5 in béide CPR-uitvoeringen): via
+      `afas-connector-tools/bin/create-defibsolutionsfr-uitbreiding.php`
+      5 kale artikelen (10198FR, 10148FR, 10148F-FR, 10149FR, 10149F-FR;
+      specs+categorisatie van NL-referentie, fabrikantcode in BHV-veld,
+      SaPrice waar NL-prijs bestond) + 7 samenstellingen (11162-FR,
+      11043-FR, 11143-FR, 11148-FR, 11148F-FR, 11149-FR, 11149F-FR;
+      G5F-precedent, family-heads gezet) + 6 voorlopige standaardprijzen.
+      **Doorbraak prijzengat: `FbSalesPrice` met `PrLi='*****'` zet de
+      standaardverkoopprijs** (zonder lijst weigert AFAS; FbComposition
+      heeft geen verkoopprijsveld — dáárom misten 85 samenstellingen hun
+      prijs). Tool: 7 bases geregistreerd (labels incl. CPR-conventie:
+      half 11148=met/F=zonder, vol 11149=zónder/F=mét), gepubliceerd op
+      website 6; `variants:fix-missing --apply` maakte 65 kast-varianten
+      + 42 lijst-prijzen; publications geconvergeerd (1640 itemcodes).
+      Shop-kant blijft geparkeerd tot het containerstructuur-besluit.
+- [ ] Nog te doen: prijzen-restant — Kevin: 11143-FR (geen NL-referentie)
+      + het 85-gat + *****-prijzen voor de 65 nieuwe varianten (route
+      bekend: base+delta via FbSalesPrice PrLi='*****') · Zoll Pro
+      schrappen · containerstructuur-besluit (Cas, revendeurs-vergelijk) ·
+      checkout/weergave · rest SKU-actielijst (~20) · handi-pharm.
 
 **Klaar als:** elke handeling een genummerde stap is die lokaal groen draait.
 
