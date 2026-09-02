@@ -65,9 +65,9 @@ eigen scriptkopie `migration/defibsolutionsfr-migratie.sh` (besluit 27 aug).
       geen-match met kolom-G-nummer; totaal 76 gekoppeld, relatie-vlaggen
       +17 gezet in AFAS, adressen via relatie-herrun), 9 accounts
       verwijderd met stap 19 (reassign naar info@defibsolutions.fr).
-      **Open: handi-pharm (wc:661)** — Randy's tegenvraag: "meerdere
-      profielen in AFAS (±20 handi-pharm.com) — zijn er ook meerdere
-      accounts bekend?" → Cas beantwoordt; koppeling 31176 geparkeerd.
+      Handi-pharm (wc:661) op 3 sep alsnog gekoppeld aan 31176 na
+      akkoord Randy (77 klanten gekoppeld, relatie gevlagd, adres
+      ververst) — klantenlijst compleet.
       wc:751 (michel@defibrion.nl, intern) bewust gelaten.
 - [ ] **Points/rewards-plugins**: uit tijdens migratie (zoals B2BKing-aanpak)
       of blijven ze actief? Reseller draait ze ook — cross-check gewenst.
@@ -305,7 +305,7 @@ Stand 31 aug:
       (CR2 semi/vol 17/17, G5 17/17, View 10/10, Zoll 9/9) behalve
       Lifeline vol (11143-FR: wacht op prijsbevestiging €1300).
 - [ ] Nog te doen: 11143-FR-prijs ("1300 ok"?) · checkout/weergave-stap ·
-      rest SKU-actielijst (~20) · handi-pharm-antwoord · stap 1.6
+      rest SKU-actielijst (~20) · stap 1.6
       (prijsrapport + checkout-test) · stap 1.7 (reproduceerbaarheid —
       volgorde herhaal-reeks is gewijzigd: stap15 vóór stap10!).
 
