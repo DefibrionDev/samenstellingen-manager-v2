@@ -218,6 +218,13 @@ Kopie weg (na akkoord Cas), verse pull, alle stappen achter elkaar.
 
 ## Fase 2 — livegang (`DEFIBSFR_TARGET=cp01`, buiten kantooruren)
 
+**Definitieve URL (besluit Cas 1 sep): `boutique.defibsolutions.fr`** — de
+shop verhuist van submap `defibsolutions.fr/boutique` naar een subdomein.
+Lokaal draait de kopie al zonder submap (root van poort 8896), dus de
+URL-herschrijving bij livegang is root → root. De hoofdsite op
+`defibsolutions.fr` (aparte installatie) blijft waar hij is; daar moet bij
+livegang een verwijzing/redirect van `/boutique` naar het subdomein komen.
+
 **Vooraf regelen:** cp-01-site `defibsolutionsfr` + site-user aanmaken
 (let op: CloudPanel-homes `750`, group-writable `770` laat sshd de
 authorized_keys stil weigeren). UniFi Threat Management: bron- én doelserver
