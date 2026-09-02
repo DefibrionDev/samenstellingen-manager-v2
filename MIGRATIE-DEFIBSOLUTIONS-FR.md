@@ -205,6 +205,12 @@ Stand 31 aug:
       maar WPBakery levert FontAwesome dáár — alle fa-iconen 404'ten.
       Stap downloadt de 8 bestanden van de live-site (publieke assets).
       Geldt ook voor de kale cp-01-verhuizing (zelfde exclude).
+- [x] Stap 14 — containers erven categorieën/tags (termen) én pa_*-filters
+      als échte WC-attributen van hun variaties (2 sep, melding Cas:
+      Zoll-filterlink toonde niets — variaties verschijnen niet in
+      archieven, en WC-filters lezen de attributes-lookup-tabel die uit de
+      attribuut-config gevuld wordt, niet uit losse termen). Filtertellingen
+      nu exact gelijk aan live (zoll=5, zoll+7ans=2).
 - [ ] Nog te doen: variatie-assen + container-opmaak/taal (containers
       heten nu "AED Package: … (EN)" — NL-stap12/13-equivalent) ·
       checkout-pagina · weergave-instellingen (Woodmart) · schrappingen

@@ -883,6 +883,107 @@ stap13() {
     echo "OK — FontAwesome (${#_FA_BESTANDEN[@]} bestanden) teruggezet op $(doel_naam)"
 }
 
+# ---------------------------------------------------------------------------
+# Stap 14 — Containers erven taxonomie-termen van hun variaties. De wc-sync
+# maakt familie-containers kaal aan ("Uncategorized", geen attributen); de
+# omgebouwde oude producten (nu variaties) dragen de categorie-/filter-termen
+# (product_cat, pa_fabricant, pa_periode-de-garantie, …) — maar variaties
+# verschijnen niet in archieven/filters, dus de AED's zijn onvindbaar
+# (melding Cas 2 sep: Zoll-filterlink toont niets). Deze stap zet per
+# variable container de UNIE van de termen van zijn variaties, en haalt
+# "Uncategorized" weg zodra er echte categorieën zijn. Idempotent.
+# Default dry-run; `stap14 apply` schrijft.
+# ---------------------------------------------------------------------------
+stap14() {
+    controleer_config
+    local apply="${1:-}"
+    cat > /tmp/afasfr-containerterms-payload.php <<'PHP'
+<?php
+$apply = APPLY_PLACEHOLDER;
+$skip = ['product_type', 'product_visibility', 'product_shipping_class'];
+$taxen = array_diff(get_object_taxonomies('product'), $skip);
+$containers = get_posts(['post_type' => 'product', 'post_status' => ['publish', 'private'],
+    'numberposts' => -1, 'fields' => 'ids', 'suppress_filters' => true,
+    'tax_query' => [['taxonomy' => 'product_type', 'field' => 'slug', 'terms' => 'variable']]]);
+$totaal = 0;
+foreach ($containers as $cid) {
+    $kinderen = get_children(['post_parent' => $cid, 'post_type' => 'product_variation',
+        'post_status' => ['publish', 'private'], 'fields' => 'ids']);
+    if (!$kinderen) { continue; }
+    $regels = [];
+    // product_cat/product_tag: losse term-toewijzing volstaat voor archieven
+    foreach (['product_cat', 'product_tag'] as $tax) {
+        $unie = [];
+        foreach ($kinderen as $kid) {
+            foreach (wp_get_object_terms($kid, $tax, ['fields' => 'ids']) as $tid) {
+                $unie[$tid] = true;
+            }
+        }
+        $huidig = wp_get_object_terms($cid, $tax, ['fields' => 'ids']);
+        $huidig = is_wp_error($huidig) ? [] : $huidig;
+        $doel = array_keys($unie);
+        if ($tax === 'product_cat' && $doel !== []) {
+            // "Uncategorized" weghalen zodra er echte categorieën zijn
+            $unc = (int) get_option('default_product_cat');
+            $doel = array_values(array_diff(array_unique(array_merge($huidig, $doel)), [$unc]));
+        } else {
+            $doel = array_values(array_unique(array_merge($huidig, $doel)));
+        }
+        sort($doel); $h = $huidig; sort($h);
+        if ($doel === [] || $doel === $h) { continue; }
+        $regels[] = sprintf("%s: %d -> %d termen", $tax, count($h), count($doel));
+        if ($apply) { wp_set_object_terms($cid, $doel, $tax); }
+    }
+    // pa_*: als échte WC-attributen op de container (filters/lookup-tabel
+    // lezen uit de attribuut-config, niet uit losse termen); bestaande
+    // attributen (o.a. de variatie-as van de plugin) blijven staan
+    $product = wc_get_product($cid);
+    $attrs = $product->get_attributes();
+    $nieuw = 0;
+    foreach ($taxen as $tax) {
+        if (!str_starts_with($tax, 'pa_') || isset($attrs[$tax])) { continue; }
+        $unie = [];
+        foreach ($kinderen as $kid) {
+            foreach (wp_get_object_terms($kid, $tax, ['fields' => 'ids']) as $tid) {
+                $unie[$tid] = true;
+            }
+        }
+        if ($unie === []) { continue; }
+        $a = new WC_Product_Attribute();
+        $a->set_id(wc_attribute_taxonomy_id_by_name($tax));
+        $a->set_name($tax);
+        $a->set_options(array_keys($unie));
+        $a->set_visible(true);
+        $a->set_variation(false);
+        $attrs[$tax] = $a;
+        $nieuw++;
+    }
+    if ($nieuw > 0) {
+        $regels[] = sprintf("attributen: +%d (pa_*)", $nieuw);
+        if ($apply) {
+            $product->set_attributes($attrs);
+            $product->save(); // triggert ook de attributes-lookup-tabel
+        }
+    }
+    if ($regels) {
+        printf("%s  #%d %s\n    %s\n", $apply ? 'GEZET' : 'ZOU ZETTEN', $cid,
+            get_the_title($cid), implode(' · ', $regels));
+        $totaal++;
+    }
+}
+printf("--- %s: %d containers bijgewerkt\n", $apply ? 'APPLY' : 'DRY-RUN', $totaal);
+PHP
+    if [[ "$apply" == "apply" ]]; then
+        sed -i 's/APPLY_PLACEHOLDER/true/' /tmp/afasfr-containerterms-payload.php
+    else
+        sed -i 's/APPLY_PLACEHOLDER/false/' /tmp/afasfr-containerterms-payload.php
+    fi
+    wpr_stdin eval-file - < /tmp/afasfr-containerterms-payload.php
+    if [[ "$apply" != "apply" ]]; then
+        echo "Dry-run — niets gewijzigd. Draai '$0 stap14 apply' om te schrijven."
+    fi
+}
+
 hulp() {
     cat <<EOF
 Gebruik: $0 <stap> [apply|opties]   (DEFIBSFR_TARGET=lokaal|cp01, default lokaal)
@@ -900,6 +1001,7 @@ Gebruik: $0 <stap> [apply|opties]   (DEFIBSFR_TARGET=lokaal|cp01, default lokaal
   stap11  [apply]  Structuur-opruiming: simples die variatie horen te zijn
   stap12  [apply]  /boutique-restanten strippen uit content-URLs
   stap13           FontAwesome terugzetten (node_modules-exclude-gat)
+  stap14  [apply]  Containers erven taxonomie-termen van variaties
 
 Zie MIGRATIE-DEFIBSOLUTIONS-FR.md voor het fase-overzicht.
 EOF
@@ -919,5 +1021,6 @@ case "${1:-}" in
     stap11) stap11 "${2:-}" ;;
     stap12) stap12 "${2:-}" ;;
     stap13) stap13 ;;
+    stap14) stap14 "${2:-}" ;;
     *) hulp; [[ -n "${1:-}" ]] && exit 1 || exit 0 ;;
 esac
