@@ -760,6 +760,83 @@ PHP
     fi
 }
 
+# ---------------------------------------------------------------------------
+# Stap 12 — /boutique-restanten uit content-URL's strippen. De live shop stond
+# in submap /boutique; de migrater herschrijft domein+submap, maar de
+# escaped-slashes-variant (Woodmart cms_blocks/Elementor-JSON:
+# https:\/\/…\/boutique\/…) valt buiten zijn passes, waardoor het domein wél
+# en /boutique níet gestript werd. Deze stap vervangt alle drie de vormen
+# (plain, \/-escaped, %2F-encoded) van "<home>/boutique" door "<home>" in
+# posts, postmeta en options. Idempotent; hoort in elke herhaal-reeks ná de
+# pull. Bij de livegang (boutique.defibsolutions.fr) geldt hetzelfde gat —
+# zie runbook fase 2. Default dry-run; `stap12 apply` schrijft.
+# ---------------------------------------------------------------------------
+stap12() {
+    controleer_config
+    local apply="${1:-}"
+    cat > /tmp/afasfr-boutiquepad-payload.php <<'PHP'
+<?php
+$apply = APPLY_PLACEHOLDER;
+global $wpdb;
+$home = untrailingslashit(home_url());               // bv. http://localhost:8896
+$kaal = preg_replace('#^https?://#', '', $home);     // localhost:8896
+// De bron-data mengt coderingen (WPBakery: url:http%3A%2F%2Fhost/boutique%2F…),
+// dus elke combinatie van host-vorm × slash-vorm apart strippen. Vervanging =
+// alleen de host-vorm; de scheider die op "boutique" volgt blijft staan en
+// wordt vanzelf de nieuwe pad-scheider. "…/boutique" aan het einde (shop-root)
+// wordt zo de homepage — klopt: de shop draait op de root.
+$paren = [];
+foreach ([$kaal, str_replace(':', '%3A', $kaal)] as $hostvorm) {
+    foreach (['/', '\\/', '%2F'] as $slash) {
+        $paren[$hostvorm . $slash . 'boutique'] = $hostvorm;
+    }
+}
+$doelen = [
+    ["{$wpdb->posts}", 'post_content', 'ID'],
+    ["{$wpdb->postmeta}", 'meta_value', 'meta_id'],
+    ["{$wpdb->options}", 'option_value', 'option_id'],
+];
+$totaal = 0;
+foreach ($doelen as [$tabel, $kolom, $pk]) {
+    foreach ($paren as $van => $naar) {
+        // LIKE-specials in één pass escapen: literal '\' wordt '\\', en
+        // '%'/'_' krijgen een '\' ervoor (esc_like + naïef verdubbelen
+        // sloopt elkaars escaping — les van 2 sep)
+        $patroon = addcslashes($van, '\\%_');
+        $rows = $wpdb->get_col($wpdb->prepare(
+            "SELECT $pk FROM $tabel WHERE $kolom LIKE %s",
+            '%' . $patroon . '%'
+        ));
+        if (!$rows) { continue; }
+        printf("%s%s.%s: %d rijen met '%s'\n", $apply ? 'FIX  ' : 'ZOU FIXEN  ',
+            $tabel, $kolom, count($rows), $van);
+        $totaal += count($rows);
+        if ($apply) {
+            foreach ($rows as $id) {
+                $wpdb->query($wpdb->prepare(
+                    "UPDATE $tabel SET $kolom = REPLACE($kolom, %s, %s) WHERE $pk = %d",
+                    $van, $naar, $id
+                ));
+            }
+        }
+    }
+}
+if ($apply && $totaal > 0) { wp_cache_flush(); }
+printf("--- %s: %d rijen\n", $apply ? 'APPLY' : 'DRY-RUN', $totaal);
+PHP
+    if [[ "$apply" == "apply" ]]; then
+        sed -i 's/APPLY_PLACEHOLDER/true/' /tmp/afasfr-boutiquepad-payload.php
+    else
+        sed -i 's/APPLY_PLACEHOLDER/false/' /tmp/afasfr-boutiquepad-payload.php
+    fi
+    wpr_stdin eval-file - < /tmp/afasfr-boutiquepad-payload.php
+    if [[ "$apply" != "apply" ]]; then
+        echo "Dry-run — niets gewijzigd. Draai '$0 stap12 apply' om te fixen."
+    else
+        echo "OK — /boutique-restanten gestript op $(doel_naam)"
+    fi
+}
+
 hulp() {
     cat <<EOF
 Gebruik: $0 <stap> [apply|opties]   (DEFIBSFR_TARGET=lokaal|cp01, default lokaal)
@@ -775,6 +852,7 @@ Gebruik: $0 <stap> [apply|opties]   (DEFIBSFR_TARGET=lokaal|cp01, default lokaal
   stap9   [apply]  BeRocket-filterbalk: pad-cache regenereren na pull
   stap10  [zonder-prijzen|delta]  Syncs draaien (artikelen/prijzen/relaties + 2x wc-sync)
   stap11  [apply]  Structuur-opruiming: simples die variatie horen te zijn
+  stap12  [apply]  /boutique-restanten strippen uit content-URLs
 
 Zie MIGRATIE-DEFIBSOLUTIONS-FR.md voor het fase-overzicht.
 EOF
@@ -792,5 +870,6 @@ case "${1:-}" in
     stap9) stap9 "${2:-}" ;;
     stap10) shift; stap10 "$@" ;;
     stap11) stap11 "${2:-}" ;;
+    stap12) stap12 "${2:-}" ;;
     *) hulp; [[ -n "${1:-}" ]] && exit 1 || exit 0 ;;
 esac

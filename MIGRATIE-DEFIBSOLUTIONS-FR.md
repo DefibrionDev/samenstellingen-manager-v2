@@ -194,6 +194,12 @@ Stand 31 aug:
       146 variaties. LET OP stap 1.6: oude product-URL's van de 16
       omgebouwde toestellen bestaan niet meer (variatie ≠ pagina) —
       redirects/menu's checken.
+- [x] Stap 12 — /boutique-restanten gestript (2 sep, melding Cas): de
+      WPBakery-menu-blokken (cms_blocks) bevatten gemengd gecodeerde URL's
+      (`host%3A…/boutique%2F…`) die buiten álle migrater-passes vallen; 47
+      rijen gefixt, homepage schoon, links landen (200), idempotent.
+      **Zelfde gat geldt bij de fase-2-rewrite naar
+      boutique.defibsolutions.fr — stap 12 hoort in de livegang-reeks.**
 - [ ] Nog te doen: variatie-assen + container-opmaak/taal (containers
       heten nu "AED Package: … (EN)" — NL-stap12/13-equivalent) ·
       checkout-pagina · weergave-instellingen (Woodmart) · schrappingen
