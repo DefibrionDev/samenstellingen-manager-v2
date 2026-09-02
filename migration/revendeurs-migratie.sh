@@ -588,10 +588,14 @@ if ($zonderPrijzen) {
     printf("         prijzen: %d regels\n",
         (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}lef_afas_prijzen"));
     // verkooprelaties: nodig voor prijslijst-/kortingsgroep-resolutie per klant
-    $fase('verkooprelaties + kortingen + landen + adressen');
+    $fase('landen + verkooprelaties + kortingen + adressen');
+    // landen EERST: de relatie-sync schrijft factuuradressen en vertaalt de
+    // AFAS-landcode via lef_afas_landen — bij de eerste run was die tabel
+    // nog leeg en bleef 'F' (Frankrijk) onvertaald in billing_country staan
+    // (lege verplichte Pays-select op de checkout, gezien 2 sep).
+    do_action('afas_sync_landen', true);
     do_action('afas_sync_verkooprelaties', true);
     do_action('afas_sync_kortingen', true);
-    do_action('afas_sync_landen', true);
     // Get_Addresses is de zwaarste connector (geen filter -> alle adressen)
     // en time-out't af en toe na 300s (AFAS-kant, bevestigd door Cas: "gewoon
     // nog een keer runnen"). Tot 3 pogingen; de delta-cursor maakt elke
