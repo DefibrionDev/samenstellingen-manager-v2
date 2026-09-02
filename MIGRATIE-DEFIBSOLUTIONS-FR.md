@@ -295,9 +295,19 @@ Stand 31 aug:
 - [x] **Containerstructuur-besluit (Cas, 3 sep): optie (a)** — één
       productpagina per model, uitvoeringen als keuze-as (USB/WiFi via
       pa_connectivite, CPR via pa_capteur-rcp). Shop-koppeling kan los.
-- [ ] Nog te doen: shop-koppeling nieuwe samenstellingen (survivor-keuze
-      + omvormen + sync + assen) · Zoll Pro schrappen · checkout/weergave ·
-      rest SKU-actielijst (~20) · handi-pharm-antwoord · 11143-FR-prijs.
+- [x] Shop-koppeling compleet (2-3 sep, besluit a): 6 heads bijgevlagd,
+      8 producten omgevormd/omgehangen (WiFi-producten = survivors voor
+      CR2; USB-producten wc:4570/4571 getrasht en komen terug als
+      keuze-optie), Zoll Pro geschrapt (stap 18), stap15 met survivor-
+      logica per head, stap6-guard tegen terugzetten van containers.
+      Prijzen: 152 overbruggingsregels (AFAS-UTC: DaBg 3 sep werd pas
+      morgen actief). Eindstand: álle containers volledig beschikbaar
+      (CR2 semi/vol 17/17, G5 17/17, View 10/10, Zoll 9/9) behalve
+      Lifeline vol (11143-FR: wacht op prijsbevestiging €1300).
+- [ ] Nog te doen: 11143-FR-prijs ("1300 ok"?) · checkout/weergave-stap ·
+      rest SKU-actielijst (~20) · handi-pharm-antwoord · stap 1.6
+      (prijsrapport + checkout-test) · stap 1.7 (reproduceerbaarheid —
+      volgorde herhaal-reeks is gewijzigd: stap15 vóór stap10!).
 
 **Klaar als:** elke handeling een genummerde stap is die lokaal groen draait.
 

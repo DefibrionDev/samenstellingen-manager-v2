@@ -397,6 +397,8 @@ for line in open(shopdump, encoding="utf-8"):
         continue
     wc_id, _ptype, sku, huidig = delen[0], delen[1], delen[2].strip(), delen[3].strip()
     doel = None
+    if huidig.endswith("-wpbase") or sku.endswith("-wpbase"):
+        continue  # al omgevormde container (stap15) — nooit terugzetten
     if wc_id in akkoord:
         doel = akkoord[wc_id]
     elif sku and len(per_bhv.get(sku, [])) == 1:
@@ -1042,7 +1044,19 @@ for r in csv.DictReader(open(omzet, encoding="utf-8-sig"), delimiter=";"):
     head = str(per_code.get(base, {}).get("Itemcode_Parent") or "").strip() or base
     plan.append({"wc": int(r["wc_id"]), "base": base, "head": head,
                  "titel": r["shop_naam"].strip()})
-print(f"// {len(plan)} omvormingen", file=sys.stderr)
+# Survivor-keuze per head (besluit Cas 3 sep, structuuroptie a): delen twee
+# shop-producten één family-head (CR2 USB+WiFi, …), dan wordt het laagste
+# wc-id de container; de ander wordt gestript+getrasht en komt als variatie
+# terug via de sync (revendeurs-patroon).
+from collections import defaultdict
+per_head = defaultdict(list)
+for r in plan:
+    per_head[r["head"]].append(r)
+for head, rows in per_head.items():
+    rows.sort(key=lambda x: x["wc"])
+    for verliezer in rows[1:]:
+        verliezer["actie"] = "trash_dubbel"
+print(f"// {len(plan)} omvormingen ({sum(1 for r in plan if r.get('actie') == 'trash_dubbel')} dubbelen -> trash)", file=sys.stderr)
 print("<?php")
 print(f"$apply = {'true' if apply else 'false'};")
 print(f"$plan = json_decode('{json.dumps(plan)}', true);")
@@ -1052,6 +1066,20 @@ $n = 0;
 foreach ($plan as $p) {
     $post = get_post($p['wc']);
     if (!$post) { printf("LET OP: wc:%d bestaat niet — overslaan\n", $p['wc']); continue; }
+    if (($p['actie'] ?? '') === 'trash_dubbel') {
+        if ($post->post_status === 'trash') { continue; }
+        printf("%s  wc:%d '%s' — tweede product op head %s; komt als variatie terug via de sync\n",
+            $apply ? 'PRULLENBAK' : 'ZOU TRASHEN', $post->ID, $post->post_title, $p['head']);
+        if ($apply) {
+            global $wpdb;
+            delete_post_meta($post->ID, '_afas_artikelnummer');
+            update_post_meta($post->ID, '_sku', '');
+            $wpdb->update($wpdb->prefix . 'wc_product_meta_lookup', ['sku' => ''], ['product_id' => $post->ID]);
+            wp_trash_post($post->ID);
+        }
+        $n++;
+        continue;
+    }
     $sku = (string) get_post_meta($post->ID, '_sku', true);
     $meta = (string) get_post_meta($post->ID, '_afas_artikelnummer', true);
     if ($post->post_type === 'product' && $meta === $p['head'] && str_ends_with($sku, '-wpbase')) {
