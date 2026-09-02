@@ -343,7 +343,7 @@ B2BKing opruimen).
       e-mailaccounts).
 ## Kevins feedback ronde 2 (1 sept, via Cas) — per punt bespreken, dan pas uitvoeren
 
-- [ ] K13 Footer-adres — UITGEVOERD (wacht op check Cas): nieuwe stap18
+- [x] K13 Footer-adres ✓ 2 sept (check Cas akkoord): nieuwe stap18
       "contentcorrecties" vervangt in de footer-template Arnesteinweg 36 /
       4338 PD Middelburg door Edisonweg 41 / 4382 NV Vlissingen én zet het
       WooCommerce-winkeladres om (stond op nóg een variant: 4383 BG). Apply
@@ -353,19 +353,19 @@ B2BKing opruimen).
       besluit.
 - [x] K14 → VOLLEDIG BIJ ROELOF/KEVIN (besluit Cas 2 sept): G5-prijzen
       met/zonder CPR-feedback passen zij in AFAS aan; de shop volgt AFAS.
-- [ ] K15 — deel 1 UITGEVOERD (wacht op check Cas): oude pofw-optiegroepen
+- [x] K15 — deel 1 ✓ 2 sept (check Cas akkoord): oude pofw-optiegroepen
       verwijderd via stap16 (Mindray C2 draagtas/taal, wees-"Kleur",
       2× Prestan-taal, lege Schiller-groep); "Taalpakket" op de Zoll AED 3
       trainer bewust behouden (echte keuze +€50). Deel 2 = NA VERHUIZING:
       Mindray-tas als samenstellings-optie (+€25) op C1+C2 op álle
       reseller-shops — toegezegd aan Kevin in het antwoorden-doc.
-- [ ] K16 Lifepak 1000 — UITGEVOERD alleen-DefibSolutions (wacht op check
-      Cas): dode menulink weg (stap16), product+9 variaties trash+strip,
+- [x] K16 Lifepak 1000 ✓ 2 sept alleen-DefibSolutions (check Cas akkoord):
+      dode menulink weg (stap16), product+9 variaties trash+strip,
       AFAS-vlaggen 11153-familie defNL uit (8 mutaties, reseller blijft),
       tool-publicatie website 3 unpublished, delta-sync: uit beheer, URL
       404, publications:sync consistent. Accessoire-menu-item + batterij/
       elektroden blijven. VRAAG AAN KEVIN: ook van andere shops af?
-- [ ] K17 Zoll AED Pro — UITGEVOERD (wacht op check Cas): dode menulink
+- [x] K17 Zoll AED Pro ✓ 2 sept (check Cas akkoord): dode menulink
       weg via stap16; er bestond geen product (de "pagina" was een
       404-gok-redirect). Batterij 10259 + accessoire-filter-item blijven.
 - [x] K18 → BIJ ROELOF (Kevin heeft het daar direct belegd): 70160 vs
