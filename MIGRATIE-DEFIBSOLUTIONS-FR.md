@@ -256,10 +256,21 @@ Stand 31 aug:
       de sync hem opnieuw aan. Shop: 402 → 338 published producten.
       Openstaand uit de sheet: 3× "Zou er wel in moeten staan?" = de
       CR2's (dekt ons AED-lijstje cluster 1: houden).
-- [ ] Nog te doen: checkout-pagina · weergave-instellingen ·
-      rest AED-lijst (9 over: CR2 ×4 houden-hoe, View/Lifeline-vol,
-      Zoll Pro, G5 ×2) · rest SKU-actielijst (~20 rijen zonder verdict) ·
-      AFAS-prijzengat (85 samenstellingen, zie hierboven).
+- [x] AED-blok A (akkoord Cas 2 sep): bestaande CR2-FR-samenstellingen
+      geregistreerd via `group:add-base-from-afas` — 11165 (semi USB FR),
+      11167 (semi WiFi FR), 11163 (vol WiFi FR-NL); variant-labels gezet,
+      `base:publish` website 6 + publications:sync (3 vlaggen aan) en
+      `base:fix-parent --apply` (heads 11161/11162 gezet in AFAS).
+      Kale FR-toestelcodes ontdekt via BOM: 10165 (WiFi semi FR) en
+      10168 (WiFi vol FR). **Shop-koppeling geparkeerd**: twee semi-bases
+      onder één head (11161) = containerstructuur-besluit — hoort bij
+      Cas' revendeurs-vergelijk. LET OP: stap10-sync niet draaien vóór
+      dat besluit (de sync zou anders zelf containers bouwen); heads
+      11161/11162 zijn ook nog niet FR-gevlagd.
+- [ ] Nog te doen: AED-blok B (5 nieuwe samenstellingen — uitdraai voor
+      Roelof/Randy, zie work/) · Zoll Pro schrappen · checkout-pagina ·
+      weergave-instellingen · rest SKU-actielijst (~20) · AFAS-prijzengat
+      (85) · handi-pharm-antwoord.
 
 **Klaar als:** elke handeling een genummerde stap is die lokaal groen draait.
 
