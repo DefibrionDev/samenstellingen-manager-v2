@@ -394,7 +394,8 @@ B2BKing opruimen).
       4338 PD Middelburg door Edisonweg 41 / 4382 NV Vlissingen én zet het
       WooCommerce-winkeladres om (stond op nóg een variant: 4383 BG). Apply
       op cp-01 + lokaal, render toont het nieuwe adres. In runner + usage.
-      NAAR KEVIN: het oude adres staat ook in Privacybeleid en Algemene
+      VERVALLEN 8 sept (besluit Cas: niet meer over beginnen):
+      het oude adres staat ook in Privacybeleid en Algemene
       voorwaarden (pagina's 3 en 106324) — bewust niet aangepast, Kevins
       besluit.
 - [x] K14 → VOLLEDIG BIJ ROELOF/KEVIN (besluit Cas 2 sept): G5-prijzen
@@ -410,7 +411,8 @@ B2BKing opruimen).
       AFAS-vlaggen 11153-familie defNL uit (8 mutaties, reseller blijft),
       tool-publicatie website 3 unpublished, delta-sync: uit beheer, URL
       404, publications:sync consistent. Accessoire-menu-item + batterij/
-      elektroden blijven. VRAAG AAN KEVIN: ook van andere shops af?
+      elektroden blijven. Vraag "ook van andere shops af?" VERVALLEN
+      8 sept (besluit Cas: niet meer over beginnen).
 - [x] K17 Zoll AED Pro ✓ 2 sept (check Cas akkoord): dode menulink
       weg via stap16; er bestond geen product (de "pagina" was een
       404-gok-redirect). Batterij 10259 + accessoire-filter-item blijven.
