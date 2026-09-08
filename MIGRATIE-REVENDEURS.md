@@ -7,6 +7,21 @@ DefibSolutions (`MIGRATIE-DEFIBSOLUTIONS.md`, `migration/defibsolutions-migratie
 
 ## Waar staan we + openstaande todos
 
+**Stand 8 sep 2026:** eindvalidatie groen op plugin **2.0.7** (verse pull →
+reeks 30 min, 0 fouten: 926 artikelen, 69k prijzen, 182 relaties, 57,6k
+adressen, 306 publish-producten allemaal gekoppeld, 15 containers
+omgevormd). Bouwlocatie https://revendeursfr.defibrion.dev staat klaar;
+mail met testverzoek aan Randy is bij Cas als concept klaargezet.
+defibsolutions.nl ging vandaag live — lessen verwerkt in fase 2 hieronder
+(zie `work/handoff-livegang-lessen-defibsolutions.md`). **Open vóór
+livegang:** (1) Randy/Danilo zetten bij 9(+1 MEDHYBRIDE-voorstel)
+klanten het AFAS-hoofd-e-mailadres om (mail loopt, thread "Klanten match
+revendeurs") → daarna verse audit + stap3 apply; (2) zes wacht-relaties
+AFAS-vlaggen (dry-run klaar, wacht op akkoord Cas:
+`apply-revendeurs-relatie-vlaggen.php` met bijgewerkte
+`work/revendeurs-relatie-extra.csv`); (3) Randy's bouwlocatie-feedback;
+(4) settings-merge hervalidatie (run 3, loopt).
+
 **Klaar (lokaal groen, 27 aug):** stap 1–8 van `migration/revendeurs-migratie.sh`
 — mail uit · plugins uit · klantkoppeling (175) · plugin 2.0.4 + settings ·
 API-keys weg · voorkoppeling (790) · 9 mu-plugins · Wholesale Suite uit.
@@ -334,22 +349,58 @@ Vooraf: Randy's e-mail-akkoord verwerkt (geen open REVIEW-EMAIL-BEVESTIGING),
 UniFi: cp-01 allowlisten vóór bulk-ssh (THREAT_BLOCKED-les van 24 aug),
 adressen-sync lokaal een keer volledig gezien.
 
+**Vooraf aan Cas vragen (lessen defNL-livegang 8 sep,
+`work/handoff-livegang-lessen-defibsolutions.md`):**
+
+- [ ] **Ordervenster/maintenance.** De migratie is in-place (geen
+      server-verhuizing), maar tijdens de reeks (~30 min) wisselen plugins
+      en prijzen onder bezoekers. Keuze vóór het venster: maintenance aan
+      (`.maintenance` met `$upgrading = time()+86400`, na afloop weg) /
+      venster accepteren / 's avonds draaien. NB: de loginmuur
+      (jonradio-private-site) vangt gasten al af — alleen ingelogde
+      klanten zien de tussentoestand.
+- [ ] **Bron Order-code vóór het venster** in AFAS klaarzetten (reseller=68,
+      ARKY=71, defNL=72 — revendeurs krijgt een eigen nummer). Niet
+      mid-slot regelen.
+- [ ] **URL-bevestiging:** revendeurs blijft op revendeurs.defibrion.fr
+      (geen URL-switch, geen search-replace — de les-2-valkuil van defNL
+      speelt hier niet). Bevestigd door Cas? Zo niet: eerst les 1/2 van de
+      handoff lezen.
+- [ ] **Testorder-afspraak:** na `slotstap apply` staat de testorder als
+      échte order in AFAS; via het normale proces annuleren.
+
 1. [ ] `REVEND_TARGET=cp01 ./migration/revendeurs-migratie.sh backup`
        (db-dump + files-tar in de home van de site-user).
 2. [ ] `REVEND_TARGET=cp01 ./migration/revendeurs-migratie.sh reeks`
        (zelfde bewezen volgorde als lokaal; order-push blijft uit, mail
-       gaat uit via stap1).
+       gaat uit via stap1). Wrapper met `|| echo FAALDE`-vangrail draaien
+       en het log op de slotregel "reeks compleet" checken — exitcodes
+       door een pipe/tee zijn onbetrouwbaar (les 4 defNL). En:
+       `REVEND_DB_NAME=defibrion-revendeurs` zetten (db-vangrail).
 3. [ ] Controles: prijzen-steekproef klantafspraak (bv. relatie 13054 →
        €103 op Heartsine Pad-pak) · **site blijft privé** (gast →
        login-redirect, `jonradio-private-site` actief, geen
        `zz-unlock-local` op de server) · menu's/containers ogen goed ·
-       filterbalk ingelogd.
+       filterbalk ingelogd · `lef_afas_addresses` gevuld (~57k; les 6
+       defNL: stale `lef_migrations` kan de tabel stil overslaan) ·
+       artikelen/prijzen/relaties-counts uit de stap9-output vergelijken
+       met lokaal (926 / ~69k / 182).
 4. [ ] Cas in AFAS: eigen "Bron Order"-code voor revendeurs +
        administratie-keuze (besluiten 3.1/3.2).
 5. [ ] `... slotstap apply`: order-push aan + mail aan; daarna testorder
        van echt klantaccount t/m AFAS-order (let op push-trigger vs
        completed-sprong van de invoice-gateway) en monitoren. Na een week
        stabiel: Wholesale-Suite-plugins + restdata opruimen.
+
+**Settings-pariteit (les 9 defNL):** `work/afas-settings-revendeurs.json`
+is 8 sep bijgemergd met 41 2.0.7-opties uit de verse reseller-live-export
+(`work/afas-settings.json` van de defNL-agent): woonplaatsen-sync aan,
+chunk-instellingen, relatie-push ICL/btw-codes (vadu/csty), magazijn-mode
+vast, voorraad/facturen/dossieritems-connectors (uit). Delta-cursors en
+shop-eigen keys niet overgenomen. Bij een re-run van
+`work/maak-afas-settings-revendeurs.py`: merge herhalen. Open keuze voor
+Cas: `afas_relatie_push_admin_email` staat op cas@defibrion.nl (defNL
+gebruikt info@defibsolutions.nl).
 
 ## Wat dit runbook níet doet
 
