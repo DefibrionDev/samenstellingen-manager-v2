@@ -745,6 +745,20 @@ $tabel = $wpdb->prefix . 'lef_afas_artikelen';
 
 $fase('plugin-migraties');
 \Lefcreative\PluginBase\Core\Hooks::adminInit();
+// Vangrail (livegang 8 sept): de live-dump bevat een stale wp_lef_migrations-
+// boekhouding (plugin-test juli 2026) die o.a. de adres-tabel als 'applied'
+// aanmerkt terwijl hij niet bestaat — de runner slaat hem dan stil over.
+// Detecteer dat, wis de betreffende rijen en draai de migraties opnieuw.
+$adresTabel = $wpdb->prefix . 'lef_afas_addresses';
+if ($wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $adresTabel)) === null) {
+    $wpdb->query("DELETE FROM {$wpdb->prefix}lef_migrations WHERE migration LIKE '%addresses%'");
+    \Lefcreative\PluginBase\Core\Hooks::adminInit();
+    if ($wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $adresTabel)) === null) {
+        fwrite(STDERR, "FOUT: adres-tabel ontbreekt na migratie-herdraai\n");
+        exit(1);
+    }
+    echo "         stale migratie-boekhouding hersteld: adres-tabel aangemaakt\n";
+}
 
 $fase('artikelen-sync (AFAS -> tabel)');
 do_action('afas_sync_artikelen', true);
@@ -763,10 +777,22 @@ if ($zonderPrijzen) {
     do_action('afas_sync_verkooprelaties', true);
     do_action('afas_sync_kortingen', true);
     do_action('afas_sync_landen', true);
-    do_action('afas_sync_addresses', true);
-    printf("         relaties: %d, kortingen: %d\n",
+    // adressen: 2.0.7 heeft de oude hook 'afas_sync_addresses' niet meer
+    // (stille no-op, gevonden bij livegang 8 sept); de job direct aanroepen
+    // werkt op 2.0.4 én 2.0.7. Vangnet: als de klasse ontbreekt, hard falen
+    // i.p.v. stil overslaan.
+    if (class_exists('\App\Jobs\SyncAddressesJob')) {
+        (new \App\Jobs\SyncAddressesJob())->handle(true);
+    } elseif (has_action('afas_sync_addresses')) {
+        do_action('afas_sync_addresses', true);
+    } else {
+        fwrite(STDERR, "FOUT: geen adressen-syncpad (job noch hook) gevonden\n");
+        exit(1);
+    }
+    printf("         relaties: %d, kortingen: %d, adressen: %d\n",
         (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}lef_afas_verkooprelaties"),
-        (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}lef_afas_kortingen"));
+        (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}lef_afas_kortingen"),
+        (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}lef_afas_addresses"));
 }
 
 $wpdb->query("DELETE FROM {$wpdb->prefix}lef_logs WHERE channel = 'woocommerce'");
