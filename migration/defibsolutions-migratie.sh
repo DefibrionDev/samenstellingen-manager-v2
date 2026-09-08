@@ -1882,6 +1882,73 @@ PHP
     fi
 }
 # ---------------------------------------------------------------------------
+# Stap 19 — Livegang-slot (8 sept): order-push aan, order-vrije-velden,
+# sync-intervallen naar productie-waarden (15 min, conform reseller + ARKY),
+# mail aan. De Bron Order-code is per shop uniek in de AFAS-waardenlijst
+# (reseller=68, ARKY=71) en daarom een verplicht argument.
+# Gebruik: stap19 <bron-order-waarde> [apply]
+stap19() {
+    controleer_config
+    local bron="${1:-}" apply="${2:-}"
+    [[ "$bron" =~ ^[0-9]+$ ]] || { echo "FOUT: eerste argument moet de Bron Order-waarde zijn (getal), bv. stap19 72 apply" >&2; exit 1; }
+    wpr_stdin eval-file - "$bron" "$apply" <<'PHP'
+<?php
+$bron  = (string) ($args[0] ?? '');
+$apply = ('apply' === ($args[1] ?? ''));
+
+$vrijeVelden = [
+    ['referentie' => 'Status Verzending', 'veld' => 'SeSt', 'waarde' => '1'],
+    ['referentie' => 'opmerking',         'veld' => 'Re',   'waarde' => '{customer_note}'],
+    ['referentie' => 'Bron Order',        'veld' => 'U923B5458459E495CFD945A303684E740', 'waarde' => $bron],
+    ['referentie' => 'Backorder',         'veld' => 'BkOr', 'waarde' => '1'],
+];
+$doel = [
+    'afas_sync_orders_enabled'          => '1',
+    'afas_sync_verkooporders_enabled'   => '1',
+    'afas_sync_orders_administratie'    => '1',
+    'afas_sync_orders_magazijn'         => '*****',
+    'afas_sync_orders_rfcs_prefix'      => '{order_id}',
+    'afas_sync_orders_vrije_velden'     => $vrijeVelden,
+    // productie-intervallen (reseller-live): 15 min i.p.v. wekelijks
+    'afas_sync_addresses_interval'       => '900',
+    'afas_sync_artikelen_interval'       => '900',
+    'afas_sync_kortingen_interval'       => '900',
+    'afas_sync_prijslijsten_interval'    => '900',
+    'afas_sync_prijzen_interval'         => '900',
+    'afas_sync_verkooprelaties_interval' => '900',
+    'afas_sync_woocommerce_interval'     => '900',
+];
+foreach ($doel as $optie => $waarde) {
+    $huidig = get_option($optie);
+    $gelijk = is_array($waarde) ? ($huidig == $waarde) : ((string) $huidig === $waarde);
+    $toon   = is_array($waarde) ? sprintf('[%d vrije velden, bron=%s]', count($waarde), $bron) : $waarde;
+    if ($gelijk) {
+        printf("%-38s staat al goed (%s)\n", $optie, $toon);
+        continue;
+    }
+    if ($apply) { update_option($optie, $waarde); }
+    printf("%-38s %s -> %s%s\n", $optie,
+        is_array($huidig) ? '[array]' : var_export($huidig, true), $toon,
+        $apply ? '' : ' (dry-run)');
+}
+if ($apply && class_exists('\App\Services\AfasScheduler')) {
+    foreach (['addresses','artikelen','kortingen','prijslijsten','prijzen',
+              'verkooprelaties','woocommerce','verkooporders'] as $c) {
+        \App\Services\AfasScheduler::reschedule($c);
+    }
+    echo "sync-schema's herpland op de nieuwe intervallen\n";
+}
+PHP
+    if [[ "$apply" != "apply" ]]; then
+        echo "Dry-run — draai '$0 stap19 $bron apply' om uit te voeren (zet ook mail aan)."
+    else
+        wpr plugin deactivate disable-emails
+        echo "--- controle:"
+        wpr plugin list --name=disable-emails --field=status || true
+        echo "OK — livegang-slot uitgevoerd op $(doel_naam): push aan, intervallen 15 min, mail aan"
+    fi
+}
+# ---------------------------------------------------------------------------
 usage() {
     echo "gebruik: [DEFIBS_TARGET=lokaal|cp01] $0 <stap>   (default: lokaal)"
     echo "stappen:"
@@ -1903,6 +1970,7 @@ usage() {
     echo "  stap16  Kevins staging-opruiming K9/K10: lege categorieën + menu-items weg (dry-run; 'stap16 apply')"
     echo "  stap17  Beheerders koppelen aan klantrelatie 35801 + sync-pauze (dry-run; 'stap17 apply')"
     echo "  stap18  Contentcorrecties: footer-adres + WooCommerce-winkeladres naar Vlissingen (dry-run; 'stap18 apply')"
+    echo "  stap19  Livegang-slot: order-push aan + vrije velden + intervallen 15 min + mail aan (dry-run; 'stap19 <bronwaarde> apply')"
     echo ""
     echo "volledige herbouw (na verse pull), in deze volgorde:"
     echo "  stap1, stap2, stap3 apply, stap4, stap5 apply, stap6 apply, stap7,"
@@ -1932,5 +2000,6 @@ case "${1:-}" in
     stap16) stap16 "${2:-}" ;;
     stap17) stap17 "${2:-}" ;;
     stap18) stap18 "${2:-}" ;;
+    stap19) stap19 "${2:-}" "${3:-}" ;;
     *) usage ;;
 esac
