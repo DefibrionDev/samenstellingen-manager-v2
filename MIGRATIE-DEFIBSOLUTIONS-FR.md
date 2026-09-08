@@ -326,7 +326,30 @@ Kopie weg (na akkoord Cas), verse pull, alle stappen achter elkaar.
 
 ---
 
-## Fase 2 — livegang (`DEFIBSFR_TARGET=cp01`, buiten kantooruren)
+## Fase 2 — livegang (`DEFIBSFR_TARGET=cp01`)
+
+**Lessen NL-livegang 8 sep verwerkt** (bron:
+`work/handoff-livegang-lessen-defibsolutions.md`; patronen geport 8 sep:
+2.0.7-upgrade + verse settings-export in stap 4, adressen-job +
+migrations-vangrail + relatie-kruischeck in stap 10, SyncRelatiesJob in
+stap 17, livegang-slot als **stap 20**). Vooraf regelen:
+
+1. [ ] **Bron Order-code FR opvragen** (Kevin/AFAS-waardenlijst; reseller=68,
+       ARKY=71, defNL=72) — verplicht argument van stap 20.
+2. [ ] **Bouwlocatie-vraag aan Cas**: dev-URL of direct
+       boutique.defibsolutions.fr vóór livegang (NL-les 1: DNS/cert/vhost/
+       rewrite als eigen stap plannen, niet improviseren). Cloudflare:
+       grijs → cert → oranje (526-valkuil); alleen IPv4.
+3. [ ] **Ordervenster/maintenance-besluit** vóór het venster (NL: maintenance
+       met `$upgrading = time()+86400`, reist mee met rsync — op doel weer
+       verwijderen; 503 verifiëren met cache-bust).
+4. [ ] **Search-replace altijd mét protocol** (`https://oude` → `https://
+       nieuwe`) — kale hostnames herschrijven ook bestandspaden in de DB
+       (NL: site-brede 500). wp-config WP_HOME/WP_SITEURL zijn hardcoded.
+5. [ ] Runner met `set -o pipefail` + slotregel-check; pre-flight `docker ps`
+       op alles waar stappen van lezen; testorder-afspraak (komt echt in
+       AFAS); stap 12 (boutique-strip) in de reeks; Cloudflare-redirect
+       `defibsolutions.fr/boutique*` → subdomein ná livegang.
 
 **Definitieve URL (besluit Cas 1 sep): `boutique.defibsolutions.fr`** — de
 shop verhuist van submap `defibsolutions.fr/boutique` naar een subdomein.

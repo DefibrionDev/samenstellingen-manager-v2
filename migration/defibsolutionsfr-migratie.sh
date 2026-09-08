@@ -587,6 +587,18 @@ $tabel = $wpdb->prefix . 'lef_afas_artikelen';
 
 $fase('plugin-migraties');
 \Lefcreative\PluginBase\Core\Hooks::adminInit();
+// Vangrail (NL-livegang 8 sep): stale wp_lef_migrations in een live-dump kan
+// de adres-tabel als 'applied' aanmerken terwijl hij niet bestaat.
+$adresTabel = $wpdb->prefix . 'lef_afas_addresses';
+if ($wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $adresTabel)) === null) {
+    $wpdb->query("DELETE FROM {$wpdb->prefix}lef_migrations WHERE migration LIKE '%addresses%'");
+    \Lefcreative\PluginBase\Core\Hooks::adminInit();
+    if ($wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $adresTabel)) === null) {
+        fwrite(STDERR, "FOUT: adres-tabel ontbreekt na migratie-herdraai\n");
+        exit(1);
+    }
+    echo "         stale migratie-boekhouding hersteld: adres-tabel aangemaakt\n";
+}
 
 $fase('artikelen-sync (AFAS -> tabel)');
 do_action('afas_sync_artikelen', true);
@@ -644,6 +656,20 @@ $fase('klaar — logsamenvatting:');
 foreach ($wpdb->get_results("SELECT level, COUNT(*) n FROM {$wpdb->prefix}lef_logs
     WHERE channel = 'woocommerce' GROUP BY level", ARRAY_A) as $r) {
     printf("         %s: %d\n", $r['level'], (int) $r['n']);
+}
+// Kruischeck (NL-livegang-les): gekoppelde klant zonder verkooprelatie-rij =
+// relatie-vlag Sync_Defibsolutions_FR ontbreekt in AFAS -> geen klantprijzen.
+$zonderRij = $wpdb->get_results("SELECT DISTINCT m.meta_value r, u.user_email e
+    FROM {$wpdb->usermeta} m JOIN {$wpdb->users} u ON u.ID = m.user_id
+    LEFT JOIN {$wpdb->prefix}lef_afas_verkooprelaties vr
+      ON vr.afas_relatie_id = CONVERT(m.meta_value USING utf8mb4) COLLATE utf8mb4_unicode_ci
+    WHERE m.meta_key = 'afas_relatie_id' AND m.meta_value <> '' AND vr.id IS NULL
+    ORDER BY m.meta_value");
+if ($zonderRij) {
+    printf("         LET OP: %d gekoppelde relatie(s) zonder verkooprelatie-rij (vlag in AFAS ontbreekt?):\n", count($zonderRij));
+    foreach ($zonderRij as $z) { printf("           %s  %s\n", $z->r, $z->e); }
+} else {
+    echo "         kruischeck: alle gekoppelde relaties hebben een verkooprelatie-rij\n";
 }
 PHP
     if [[ "$zonder_prijzen" == "zonder-prijzen" ]]; then
@@ -1471,6 +1497,12 @@ foreach (get_users(['role' => 'administrator']) as $u) {
     }
     printf("%-40s %s%s\n", $u->user_login, implode(', ', $acties), $apply ? '' : ' (dry-run)');
 }
+// factuur-usermeta direct vullen (NL-les: anders pas bij de volgende
+// relaties-sync en lijkt de checkout stuk voor admins)
+if ($apply && class_exists('\\App\\Jobs\\SyncRelatiesJob')) {
+    (new \\App\\Jobs\\SyncRelatiesJob())->handleForDebtor($relatie);
+    echo "factuurgegevens ververst voor relatie $relatie\n";
+}
 PHP
     if [[ "$apply" != "apply" ]]; then
         echo "Dry-run — draai '$0 stap17 apply' om te schrijven."
@@ -1595,6 +1627,95 @@ stap19() {
     fi
 }
 
+# (geport van NL-stap19, livegang 8 sep — zie work/handoff-livegang-lessen-defibsolutions.md)
+# ---------------------------------------------------------------------------
+# Stap 19 — Livegang-slot (8 sept): order-push aan, order-vrije-velden,
+# sync-intervallen naar productie-waarden (15 min, conform reseller + ARKY),
+# mail aan. De Bron Order-code is per shop uniek in de AFAS-waardenlijst
+# (reseller=68, ARKY=71, defNL=72; FR-code opvragen bij Kevin) en daarom een verplicht argument.
+# Gebruik: stap20 <bron-order-waarde> [apply]
+stap20() {
+    controleer_config
+    local bron="${1:-}" apply="${2:-}"
+    [[ "$bron" =~ ^[0-9]+$ ]] || { echo "FOUT: eerste argument moet de Bron Order-waarde zijn (getal), bv. stap20 <FR-code> apply" >&2; exit 1; }
+    wpr_stdin eval-file - "$bron" "$apply" <<'PHP'
+<?php
+$bron  = (string) ($args[0] ?? '');
+$apply = ('apply' === ($args[1] ?? ''));
+
+$vrijeVelden = [
+    ['referentie' => 'Status Verzending', 'veld' => 'SeSt', 'waarde' => '1'],
+    ['referentie' => 'opmerking',         'veld' => 'Re',   'waarde' => '{customer_note}'],
+    ['referentie' => 'Bron Order',        'veld' => 'U923B5458459E495CFD945A303684E740', 'waarde' => $bron],
+    ['referentie' => 'Backorder',         'veld' => 'BkOr', 'waarde' => '1'],
+];
+$doel = [
+    'afas_sync_orders_enabled'          => '1',
+    'afas_sync_verkooporders_enabled'   => '1',
+    'afas_sync_orders_administratie'    => '1',
+    'afas_sync_orders_magazijn'         => '*****',
+    'afas_sync_orders_rfcs_prefix'      => '{order_id}',
+    'afas_sync_orders_vrije_velden'     => $vrijeVelden,
+    // productie-intervallen (reseller-live): 15 min i.p.v. wekelijks
+    'afas_sync_addresses_interval'       => '900',
+    'afas_sync_artikelen_interval'       => '900',
+    'afas_sync_kortingen_interval'       => '900',
+    'afas_sync_prijslijsten_interval'    => '900',
+    'afas_sync_prijzen_interval'         => '900',
+    'afas_sync_verkooprelaties_interval' => '900',
+    'afas_sync_woocommerce_interval'     => '900',
+    // reseller-conforme instellingen (diff 8 sept, melding Cas: o.a.
+    // complete_on_push stond uit): scalars + expliciete mappings die op
+    // defNL op plugin-defaults terugvielen. Shop-eigen waarden (filter-/
+    // actief-velden, admin-mail, bron-order) blijven bewust ongemoeid.
+    'afas_sync_orders_complete_on_push' => '1',
+    'afas_sync_orders_retry_delay' => '5',
+    'afas_sync_orders_rfcs_field' => 'U6A53D0A280B94BE188C88373C2808436',
+    'afas_sync_pakbonnen_interval' => '900',
+    'afas_connector_woonplaatsen' => 'Get_Woonplaatsen',
+    'afas_sync_woonplaatsen_enabled' => '1',
+    'afas_sync_woonplaatsen_interval' => '86400',
+    'afas_mapping_addresses' => '{"afas_adres_id":"","debiteur_id":"","type":"","postbus":"","omschrijving":"","straat":"","huisnummer":"","huisnummer_toevoeging":"","postcode":"","plaats":"","land":"","modified_on":""}',
+    'afas_mapping_kortingen' => '{"afas_kortingsgroep_id":"Kortingsgroep","artikelgroep":"Artikelgroep","artikelnummer":"Itemcode","korting_percentage":"Korting____","korting_bedrag":"Bedrag_korting","begindatum":"","einddatum":"","op_basis_van":"","actiekorting":"","vaste_korting":"","staffelkorting":"","hoeveelheid":"","modified_on":"Gewijzigd_op"}',
+    'afas_mapping_landen' => '{"afas_code":"id","iso":"iso","naam":"name"}',
+    'afas_mapping_pakbonnen' => '{"pakbonnummer":"Nummer_pakbon","ordernummer":"Bijbehorende_order","pakbondatum":"Datum","status":"Status","vervoerder":"Code_vervoerder","track_trace_code":"","track_trace_url":"Track_-_Trace_-_handmatig","modified_on":"Gewijzigd_op"}',
+    'afas_mapping_prijzen' => '{"afas_prijslijst_id":"Prijslijst","afas_relatie_id":"Debiteur","artikelnummer":"Itemcode","naam":"Omschrijving","prijs":"Verkoopprijs","type_item":"","valuta":"","eenheid":"","grondslag_berekening":"","actieprijs":"","staffelprijs":"","begindatum":"","einddatum":"","modified_on":"Gewijzigd_op"}',
+    'afas_mapping_verkooporderregels' => '{"ordernummer":"Ordernummer","regelnummer":"Volgnummer","artikelnummer":"Itemcode","omschrijving":"Omschrijving","aantal":"Aantal_per_eenheid","eenheid":"Eenheid","prijs":"ppe","bedrag":"Prijs","modified_on":"Gewijzigd_op"}',
+    'afas_mapping_verkooporders' => '{"ordernummer":"Nummer","debiteur_id":"Verkooprelatie","orderdatum":"Datum","referentie":"Opdrachtnummer_referentie","status":"status","totaal":"Factuurtotaal","modified_on":"Gewijzigd_op"}',
+    'afas_mapping_verkooprelaties' => '{"afas_relatie_id":"Debiteurnummer","naam":"Naam_debiteur","email":"E-mail_werk","telefoon":"Telefoonnr._werk","afas_prijslijst_id":"Voorkeur_prijslijst","afas_kortingsgroep_id":"Kortingsgroep","relatie_type":"Organisatie_persoon","straat":"Straat","huisnummer":"Huisnummer","postcode":"Postcode","woonplaats":"Woonplaats","land":"Land","modified_on":"Gewijzigd_op"}',
+    'afas_custom_fields_verkooprelaties' => '[{"afas_field":"Artikelcode_BHV_Voordeelwinkel","local_key":"artikelcode_bhv_voordeelwinkel","target_type":"","target_key":"Artikelcode_BHV_Voordeelwinkel","true_label":"","false_label":""}]',
+];
+foreach ($doel as $optie => $waarde) {
+    $huidig = get_option($optie);
+    $gelijk = is_array($waarde) ? ($huidig == $waarde) : ((string) $huidig === $waarde);
+    $toon   = is_array($waarde) ? sprintf('[%d vrije velden, bron=%s]', count($waarde), $bron) : $waarde;
+    if ($gelijk) {
+        printf("%-38s staat al goed (%s)\n", $optie, $toon);
+        continue;
+    }
+    if ($apply) { update_option($optie, $waarde); }
+    printf("%-38s %s -> %s%s\n", $optie,
+        is_array($huidig) ? '[array]' : var_export($huidig, true), $toon,
+        $apply ? '' : ' (dry-run)');
+}
+if ($apply && class_exists('\App\Services\AfasScheduler')) {
+    foreach (['addresses','artikelen','kortingen','prijslijsten','prijzen',
+              'verkooprelaties','woocommerce','verkooporders'] as $c) {
+        \App\Services\AfasScheduler::reschedule($c);
+    }
+    echo "sync-schema's herpland op de nieuwe intervallen\n";
+}
+PHP
+    if [[ "$apply" != "apply" ]]; then
+        echo "Dry-run — draai '$0 stap20 $bron apply' om uit te voeren (zet ook mail aan)."
+    else
+        wpr plugin deactivate disable-emails
+        echo "--- controle:"
+        wpr plugin list --name=disable-emails --field=status || true
+        echo "OK — livegang-slot uitgevoerd op $(doel_naam): push aan, intervallen 15 min, mail aan"
+    fi
+}
+
 hulp() {
     cat <<EOF
 Gebruik: $0 <stap> [apply|opties]   (DEFIBSFR_TARGET=lokaal|cp01, default lokaal)
@@ -1618,6 +1739,7 @@ Gebruik: $0 <stap> [apply|opties]   (DEFIBSFR_TARGET=lokaal|cp01, default lokaal
   stap17  [apply]  Beheerders AFAS-testrelatie + sync-pauze geven
   stap18  [apply]  Assortiment-schrappingen (Randy-lijst)
   stap19  [apply]  Accounts verwijderen (Randy klanten-sheet, 9 accounts)
+  stap20  <bron> [apply]  Livegang-slot: push aan, vrije velden, intervallen, mail aan
 
 Zie MIGRATIE-DEFIBSOLUTIONS-FR.md voor het fase-overzicht.
 EOF
@@ -1643,5 +1765,6 @@ case "${1:-}" in
     stap17) stap17 "${2:-}" ;;
     stap18) stap18 "${2:-}" ;;
     stap19) stap19 "${2:-}" ;;
+    stap20) stap20 "${2:-}" "${3:-}" ;;
     *) hulp; [[ -n "${1:-}" ]] && exit 1 || exit 0 ;;
 esac
