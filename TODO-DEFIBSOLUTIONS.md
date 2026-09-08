@@ -301,7 +301,41 @@ prijsgerelateerde punten op (K6/K11) en beantwoordde K12 deels
       klanten op lijst 029 zien de CPR-keuze anders niet. Staat in het
       antwoorden-document onder punt 12; geen actie meer aan onze kant.
 
-## Fase H — Livegang: GEPLAND DINSDAG 8 SEPT 2026 (buiten kantooruren)
+## Fase H — Livegang: UITGEVOERD DINSDAG 8 SEPT 2026 (wacht op eindcheck Cas)
+
+Verloop 8 sept: 13:10 live op 503-maintenance → volle migratie (foutloos, data
+t/m 7 sept) → stap1-18 (plugin 2.0.7 mét prijzen-fix; 117 koppelingen; 494
+voorkoppelingen; eindsync 0 warnings; 363/864/26 = reseller-pariteit; 0
+verlopen prijsregels) → URL direct omgezet naar **shop.defibsolutions.nl**
+(besluit Cas: geen dubbele cutover; LE-cert beide namen, vhost-alias,
+wp-config + DB) → stap19 72 apply (push aan bron=72, intervallen 15 min,
+mail aan). Testorder 108451 geslaagd (vóór push-aan, staat alleen in WC).
+
+Livegang-bevindingen (gefixt + gecommit):
+- search-replace herschreef ook bestandspaden in de DB (mapnaam bevat oude
+  hostnaam) → theme-guard 500; pad-reparatie gedraaid, stap15 erachteraan.
+- stale wp_lef_migrations uit de live-dump (plugin-test juli) → adres-tabel
+  ontbrak; 2.0.7 kent de oude hook afas_sync_addresses niet meer (stille
+  no-op). stap11 verbouwd: SyncAddressesJob + vangrail; 57.594 adressen.
+- stap17 draaide ná de relaties-sync → admins misten factuur-meta (checkout
+  eist die); stap17 synct nu zelf via handleForDebtor.
+- 21 gekoppelde relaties ontbreken in de verkooprelaties-connector (óók op
+  reseller; AFAS-vlag) → geen klantprijzen/factuurdata voor die accounts.
+  Lijst: work/relaties-zonder-verkooprelatie-livegang.txt → NAAR KEVIN/ROELOF.
+
+Nog open (zie onder): Cloudflare-redirect oude /shop, eindcheck Cas,
+week monitoren, B2BKing opruimen.
+
+- [ ] Cas: Cloudflare redirect-rule defibsolutions.nl/shop* ->
+      shop.defibsolutions.nl/$1 (oude links + SEO; 503-maintenance op
+      TransIP blijft als vangnet erachter staan)
+- [ ] Eindcheck Cas op de live shop → dan pas deze fase afvinken
+- [ ] Testorder 108451: annuleren of alsnog verwerken (keuze Cas)
+- [ ] Week monitoren (orders/syncs/mails), daarna B2BKing-data opruimen
+      (runbook fase 2-slot)
+- [ ] 21 relaties zonder connector-rij melden aan Kevin/Roelof (AFAS-vlag)
+
+### Fase H — oorspronkelijke planning
 
 Besluit Cas 1 sept; antwoordmail naar Kevin/Roelof is verstuurd. Volgorde
 in het venster: verse pull live → cp-01 (wordpress-migrater) → runner
