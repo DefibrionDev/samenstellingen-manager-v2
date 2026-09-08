@@ -331,8 +331,11 @@ week monitoren, B2BKing opruimen.
       query strings, hoofdsite ongemoeid. Valkuil gezien: gedupliceerde
       wildcard-rule hield het oude patroon in wildcard_replace vast
       (redirect-naar-zichzelf) — vers aanmaken loste het op.
-- [ ] Eindcheck Cas op de live shop → dan pas deze fase afvinken
-- [ ] Testorder 108451: annuleren of alsnog verwerken (keuze Cas)
+- [x] Eindcheck Cas op de live shop ✓ 8 sept ("gecheckt, ziet er goed uit")
+      — FASE H AFGEROND: shop live op shop.defibsolutions.nl
+- [x] Order-push end-to-end bewezen ✓ 8 sept: testorder 108451 gepusht en
+      werkt (check Cas). NB: de testorder staat nu als echte order in AFAS —
+      daar afhandelen/annuleren via het normale proces.
 - [ ] Week monitoren (orders/syncs/mails), daarna B2BKing-data opruimen
       (runbook fase 2-slot)
 - [ ] 21 relaties zonder connector-rij melden aan Kevin/Roelof (AFAS-vlag)

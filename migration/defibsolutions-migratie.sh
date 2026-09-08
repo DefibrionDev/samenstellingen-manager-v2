@@ -819,6 +819,23 @@ foreach ($wpdb->get_results("SELECT level, COUNT(*) n FROM {$wpdb->prefix}lef_lo
     WHERE channel = 'woocommerce' GROUP BY level", ARRAY_A) as $r) {
     printf("         %s: %d\n", $r['level'], (int) $r['n']);
 }
+// Kruischeck (livegang-les 8 sept): elke gekoppelde klant hoort een rij in
+// verkooprelaties te hebben — de connector filtert op de relatie-vlag
+// Sync_Defibsolutions_NL in AFAS, en een ontbrekende vlag betekent géén
+// klantprijzen en géén factuurgegevens voor dat account. 19 van Kevins 23
+// nieuwe koppelingen misten de vlag; dat viel eerder nergens op.
+$zonderRij = $wpdb->get_results("SELECT DISTINCT m.meta_value r, u.user_email e
+    FROM {$wpdb->usermeta} m JOIN {$wpdb->users} u ON u.ID = m.user_id
+    LEFT JOIN {$wpdb->prefix}lef_afas_verkooprelaties vr
+      ON vr.afas_relatie_id = CONVERT(m.meta_value USING utf8mb4) COLLATE utf8mb4_unicode_ci
+    WHERE m.meta_key = 'afas_relatie_id' AND m.meta_value <> '' AND vr.id IS NULL
+    ORDER BY m.meta_value");
+if ($zonderRij) {
+    printf("         LET OP: %d gekoppelde relatie(s) zonder verkooprelatie-rij (vlag Sync_Defibsolutions_NL in AFAS ontbreekt?):\n", count($zonderRij));
+    foreach ($zonderRij as $z) { printf("           %s  %s\n", $z->r, $z->e); }
+} else {
+    echo "         kruischeck: alle gekoppelde relaties hebben een verkooprelatie-rij\n";
+}
 PHP
     if [[ "$zonder_prijzen" == "zonder-prijzen" ]]; then
         sed -i 's/PRIJZEN_PLACEHOLDER/true/' /tmp/afas-stap11-payload.php
