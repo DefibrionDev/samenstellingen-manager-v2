@@ -1917,6 +1917,26 @@ $doel = [
     'afas_sync_prijzen_interval'         => '900',
     'afas_sync_verkooprelaties_interval' => '900',
     'afas_sync_woocommerce_interval'     => '900',
+    // reseller-conforme instellingen (diff 8 sept, melding Cas: o.a.
+    // complete_on_push stond uit): scalars + expliciete mappings die op
+    // defNL op plugin-defaults terugvielen. Shop-eigen waarden (filter-/
+    // actief-velden, admin-mail, bron-order) blijven bewust ongemoeid.
+    'afas_sync_orders_complete_on_push' => '1',
+    'afas_sync_orders_retry_delay' => '5',
+    'afas_sync_orders_rfcs_field' => 'U6A53D0A280B94BE188C88373C2808436',
+    'afas_sync_pakbonnen_interval' => '900',
+    'afas_connector_woonplaatsen' => 'Get_Woonplaatsen',
+    'afas_sync_woonplaatsen_enabled' => '1',
+    'afas_sync_woonplaatsen_interval' => '86400',
+    'afas_mapping_addresses' => '{"afas_adres_id":"","debiteur_id":"","type":"","postbus":"","omschrijving":"","straat":"","huisnummer":"","huisnummer_toevoeging":"","postcode":"","plaats":"","land":"","modified_on":""}',
+    'afas_mapping_kortingen' => '{"afas_kortingsgroep_id":"Kortingsgroep","artikelgroep":"Artikelgroep","artikelnummer":"Itemcode","korting_percentage":"Korting____","korting_bedrag":"Bedrag_korting","begindatum":"","einddatum":"","op_basis_van":"","actiekorting":"","vaste_korting":"","staffelkorting":"","hoeveelheid":"","modified_on":"Gewijzigd_op"}',
+    'afas_mapping_landen' => '{"afas_code":"id","iso":"iso","naam":"name"}',
+    'afas_mapping_pakbonnen' => '{"pakbonnummer":"Nummer_pakbon","ordernummer":"Bijbehorende_order","pakbondatum":"Datum","status":"Status","vervoerder":"Code_vervoerder","track_trace_code":"","track_trace_url":"Track_-_Trace_-_handmatig","modified_on":"Gewijzigd_op"}',
+    'afas_mapping_prijzen' => '{"afas_prijslijst_id":"Prijslijst","afas_relatie_id":"Debiteur","artikelnummer":"Itemcode","naam":"Omschrijving","prijs":"Verkoopprijs","type_item":"","valuta":"","eenheid":"","grondslag_berekening":"","actieprijs":"","staffelprijs":"","begindatum":"","einddatum":"","modified_on":"Gewijzigd_op"}',
+    'afas_mapping_verkooporderregels' => '{"ordernummer":"Ordernummer","regelnummer":"Volgnummer","artikelnummer":"Itemcode","omschrijving":"Omschrijving","aantal":"Aantal_per_eenheid","eenheid":"Eenheid","prijs":"ppe","bedrag":"Prijs","modified_on":"Gewijzigd_op"}',
+    'afas_mapping_verkooporders' => '{"ordernummer":"Nummer","debiteur_id":"Verkooprelatie","orderdatum":"Datum","referentie":"Opdrachtnummer_referentie","status":"status","totaal":"Factuurtotaal","modified_on":"Gewijzigd_op"}',
+    'afas_mapping_verkooprelaties' => '{"afas_relatie_id":"Debiteurnummer","naam":"Naam_debiteur","email":"E-mail_werk","telefoon":"Telefoonnr._werk","afas_prijslijst_id":"Voorkeur_prijslijst","afas_kortingsgroep_id":"Kortingsgroep","relatie_type":"Organisatie_persoon","straat":"Straat","huisnummer":"Huisnummer","postcode":"Postcode","woonplaats":"Woonplaats","land":"Land","modified_on":"Gewijzigd_op"}',
+    'afas_custom_fields_verkooprelaties' => '[{"afas_field":"Artikelcode_BHV_Voordeelwinkel","local_key":"artikelcode_bhv_voordeelwinkel","target_type":"","target_key":"Artikelcode_BHV_Voordeelwinkel","true_label":"","false_label":""}]',
 ];
 foreach ($doel as $optie => $waarde) {
     $huidig = get_option($optie);
