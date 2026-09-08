@@ -1806,6 +1806,14 @@ foreach (get_users(['role' => 'administrator']) as $u) {
     }
     printf("%-20s %s%s\n", $u->user_login, implode(', ', $acties), $apply ? '' : ' (dry-run)');
 }
+// Livegang-bevinding 8 sept: stap17 draait ná de relaties-sync (stap11), dus
+// de zojuist gekoppelde beheerders hebben nog geen factuur-usermeta (checkout
+// eist die velden). Haal de factuurgegevens voor de doelrelatie direct op —
+// de job schrijft ze naar álle accounts met deze relatie, ook gepauzeerde.
+if ($apply && class_exists('\App\Jobs\SyncRelatiesJob')) {
+    (new \App\Jobs\SyncRelatiesJob())->handleForDebtor($relatie);
+    echo "factuurgegevens relatie $relatie naar gekoppelde accounts gesynct\n";
+}
 PHP
     if [[ "$apply" != "apply" ]]; then
         echo "Dry-run — draai '$0 stap17 apply' om te schrijven."
