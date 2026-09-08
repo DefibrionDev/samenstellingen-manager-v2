@@ -326,9 +326,11 @@ Livegang-bevindingen (gefixt + gecommit):
 Nog open (zie onder): Cloudflare-redirect oude /shop, eindcheck Cas,
 week monitoren, B2BKing opruimen.
 
-- [ ] Cas: Cloudflare redirect-rule defibsolutions.nl/shop* ->
-      shop.defibsolutions.nl/$1 (oude links + SEO; 503-maintenance op
-      TransIP blijft als vangnet erachter staan)
+- [x] Cas: Cloudflare redirect-rules (kaal + www) /shop* ->
+      shop.defibsolutions.nl${1} ✓ 8 sept ~16:00, geverifieerd: diepe links,
+      query strings, hoofdsite ongemoeid. Valkuil gezien: gedupliceerde
+      wildcard-rule hield het oude patroon in wildcard_replace vast
+      (redirect-naar-zichzelf) — vers aanmaken loste het op.
 - [ ] Eindcheck Cas op de live shop → dan pas deze fase afvinken
 - [ ] Testorder 108451: annuleren of alsnog verwerken (keuze Cas)
 - [ ] Week monitoren (orders/syncs/mails), daarna B2BKing-data opruimen
