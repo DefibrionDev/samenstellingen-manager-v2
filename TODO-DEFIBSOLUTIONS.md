@@ -338,7 +338,14 @@ week monitoren, B2BKing opruimen.
       daar afhandelen/annuleren via het normale proces.
 - [ ] Week monitoren (orders/syncs/mails), daarna B2BKing-data opruimen
       (runbook fase 2-slot)
-- [ ] 21 relaties zonder connector-rij melden aan Kevin/Roelof (AFAS-vlag)
+- [x] Relatie-vlaggen: 20 van de 21 zelf aangezet ✓ 8 sept via
+      afas-connector-tools/bin/apply-defibsolutions-relaties.php (dry-run →
+      apply 20 ok / 0 fail; besluit Cas "waarom zouden we niet zelf
+      aanvinken"). Sync direct getriggerd: relaties 95 -> 115, factuur-meta
+      gevuld, kruischeck nog 1.
+- [ ] Restgeval 38170 (info@aedwijzer.nl): bestaat niet als debiteurnummer
+      in AFAS — juiste relatienummer opvragen bij Kevin (zit in de mail),
+      daarna herkoppelen.
 
 ### Fase H — oorspronkelijke planning
 
