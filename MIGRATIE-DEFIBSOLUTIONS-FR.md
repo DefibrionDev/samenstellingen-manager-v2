@@ -334,10 +334,11 @@ Kopie weg (na akkoord Cas), verse pull, alle stappen achter elkaar.
 migrations-vangrail + relatie-kruischeck in stap 10, SyncRelatiesJob in
 stap 17, livegang-slot als **stap 20**). Vooraf regelen:
 
-1. [ ] **Bron Order-code FR opvragen** (Kevin/AFAS-waardenlijst; reseller=68,
-       ARKY=71, defNL=72) — verplicht argument van stap 20.
-2. [ ] **Bouwlocatie-vraag aan Cas**: dev-URL of direct
-       boutique.defibsolutions.fr vóór livegang (NL-les 1: DNS/cert/vhost/
+1. [x] **Bron Order-code FR = 74** (Cas, 9 sep) — argument van stap 20:
+       `stap20 74 apply`.
+2. [x] **Bouwlocatie (Cas, 9 sep): eerst dev-URL**
+       (defibsolutionsfr.defibrion.dev); de URL-switch naar
+       boutique.defibsolutions.fr gebeurt tijdens de livegang (NL-les 1: DNS/cert/vhost/
        rewrite als eigen stap plannen, niet improviseren). Cloudflare:
        grijs → cert → oranje (526-valkuil); alleen IPv4.
 3. [ ] **Ordervenster/maintenance-besluit** vóór het venster (NL: maintenance
