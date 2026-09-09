@@ -7,6 +7,24 @@ DefibSolutions (`MIGRATIE-DEFIBSOLUTIONS.md`, `migration/defibsolutions-migratie
 
 ## Waar staan we + openstaande todos
 
+**LIVE sinds 9 sep 2026, 11:33** (Kevin go 10:5x → maintenance 11:03 →
+backup → reeks 28 min, 0 fouten → controles groen → gateway-fix
+(order_status processing) → slotstap 11:50 → testorder 992125 gepusht als
+AFAS 60107971, bron 73). Cijfers live: 1101 artikelen · 69.344 prijzen ·
+192 relaties · 57.603 adressen · 191 klantkoppelingen · 788
+voorkoppelingen · 15 containers omgevormd · 9 accounts weg. Rollback-punt:
+`~/backup-revendeurs-20260909-1103.*` op de site-user. **Nalijst:** (1)
+testorders 992124/992125 + AFAS 60107971 annuleren (Cas); (2) push-fouten
+eerste dagen monitoren (`_afas_push_status=failed`, `lef_logs` level
+error); (3) **afleveradres-risico:** AFAS weigerde postadres 25984 als
+afleveradres ("hoort niet bij de verkooprelatie"), 83 gekoppelde klanten
+hebben in de plugin-tabel alléén Postadres-rijen — oorzaak uitzoeken met
+LEF/AFAS (Get_Addresses levert per Adres_Id twee typen, plugin-tabel houdt
+er één); (4) MEDHYBRIDE-koppeling na akkoord Randy (stap3-delta); (5) na
+een week: Wholesale-Suite-plugins + restdata weg, bouwlocatie
+revendeursfr.defibrion.dev opruimen, slotstap-herinneringstekst (68)
+opschonen.
+
 **Stand 8 sep 2026:** eindvalidatie groen op plugin **2.0.7** (verse pull →
 reeks 30 min, 0 fouten: 926 artikelen, 69k prijzen, 182 relaties, 57,6k
 adressen, 306 publish-producten allemaal gekoppeld, 15 containers
@@ -402,8 +420,11 @@ adressen-sync lokaal een keer volledig gezien.
        order_status processing`), flow = processing → push →
        complete_on_push → completed, identiek aan reseller/defNL.
        **Voor elke volgende shop: gateway-status vóór de slotstap checken.**
-6. [ ] `... slotstap apply`: order-push aan + mail aan; daarna testorder
-       van echt klantaccount t/m AFAS-order (bron 73) en monitoren. Na een
+6. [x] `... slotstap apply` gedraaid 9 sep 11:50: order-push aan + mail
+       aan; testorder 992125 → AFAS 60107971 (relatie 23135, 52123). Let op
+       bij hertesten: de push-trigger is de statuswissel náár processing —
+       een order die al op processing stond vóór push-aan gaat pas mee na
+       on-hold → processing. Na een
        week stabiel: Wholesale-Suite-plugins + restdata opruimen,
        bouwlocatie revendeursfr.defibrion.dev opruimen.
 
