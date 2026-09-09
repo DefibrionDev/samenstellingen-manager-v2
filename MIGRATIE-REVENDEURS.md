@@ -359,9 +359,13 @@ adressen-sync lokaal een keer volledig gezien.
       venster accepteren / 's avonds draaien. NB: de loginmuur
       (jonradio-private-site) vangt gasten al af — alleen ingelogde
       klanten zien de tussentoestand.
-- [ ] **Bron Order-code vóór het venster** in AFAS klaarzetten (reseller=68,
-      ARKY=71, defNL=72 — revendeurs krijgt een eigen nummer). Niet
-      mid-slot regelen.
+- [x] **Bron Order-code: 73** (besluit Cas 9 sep; reseller=68, ARKY=71,
+      defNL=72). Staat in `work/afas-settings-revendeurs.json`
+      (`afas_sync_orders_vrije_velden`), dus stap4 zet hem automatisch;
+      de slotstap verifieert hem vóór push-aan. Geen handmatige
+      AFAS-actie mid-slot meer nodig.
+- [x] `afas_relatie_push_admin_email` blijft cas@defibrion.nl (besluit
+      Cas 9 sep).
 - [ ] **URL-bevestiging:** revendeurs blijft op revendeurs.defibrion.fr
       (geen URL-switch, geen search-replace — de les-2-valkuil van defNL
       speelt hier niet). Bevestigd door Cas? Zo niet: eerst les 1/2 van de
@@ -385,8 +389,9 @@ adressen-sync lokaal een keer volledig gezien.
        defNL: stale `lef_migrations` kan de tabel stil overslaan) ·
        artikelen/prijzen/relaties-counts uit de stap9-output vergelijken
        met lokaal (926 / ~69k / 182).
-4. [ ] Cas in AFAS: eigen "Bron Order"-code voor revendeurs +
-       administratie-keuze (besluiten 3.1/3.2).
+4. [ ] Check vóór slotstap: Bron Order=73 en administratie=1 staan in de
+       plugin-opties (stap4 zet ze uit de settings-json; de slotstap
+       verifieert 73 en weigert anders).
 5. [ ] `... slotstap apply`: order-push aan + mail aan; daarna testorder
        van echt klantaccount t/m AFAS-order (let op push-trigger vs
        completed-sprong van de invoice-gateway) en monitoren. Na een week
