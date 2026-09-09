@@ -13,8 +13,8 @@ backup → reeks 28 min, 0 fouten → controles groen → gateway-fix
 AFAS 60107971, bron 73). Cijfers live: 1101 artikelen · 69.344 prijzen ·
 192 relaties · 57.603 adressen · 191 klantkoppelingen · 788
 voorkoppelingen · 15 containers omgevormd · 9 accounts weg. Rollback-punt:
-`~/backup-revendeurs-20260909-1103.*` op de site-user. **Nalijst:** (1)
-testorders 992124/992125 + AFAS 60107971 annuleren (Cas); (2) push-fouten
+`~/backup-revendeurs-20260909-1103.*` op de site-user. **Nalijst:** (1) ✓
+testorders opgeruimd in WC + AFAS, Kevin/Randy geïnformeerd (Cas, 9 sep); (2) push-fouten
 eerste dagen monitoren (`_afas_push_status=failed`, `lef_logs` level
 error); (3) **afleveradres-risico:** AFAS weigerde postadres 25984 als
 afleveradres ("hoort niet bij de verkooprelatie"), 83 gekoppelde klanten
