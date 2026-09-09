@@ -316,8 +316,10 @@ Stand 31 aug:
       drafts: Prestan komt terug als sync-product PP-AM-400M-MS,
       Reanibex-wit bestond al als variatie 52124-60112). Bijvangst:
       reseller-shop heeft 123-30050 nog gekoppeld aan het geblokkeerde
-      90273 — doorgeven. Statussen in
-      `work/defibsolutionsfr-sku-restlijst.csv` · stap 1.6
+      90273 — doorgeven. Uitgevoerd op de dev-site en geverifieerd
+      (sync 0 warnings): 3765 €80 · 4352 €204 · nieuw sync-product
+      wc:9893 PP-AM-400M-MS €980; eindstand dev 326 published.
+      Statussen in `work/defibsolutionsfr-sku-restlijst.csv` · stap 1.6
       (prijsrapport + checkout-test) · stap 1.7 (reproduceerbaarheid —
       volgorde herhaal-reeks is gewijzigd: stap15 vóór stap10!).
 
