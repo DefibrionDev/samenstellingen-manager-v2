@@ -659,27 +659,48 @@ PHP
 
 # ---------------------------------------------------------------------------
 # Stap 10 — Afgekeurde klant-accounts verwijderen (besluiten Cas 31 aug +
-# 1 sep 2026):
+# 1 sep + 9 sep 2026):
 #   wc:18  edwin@roelse.net           (stond ambigu in de mapping)
 #   wc:197 saliha@defibrion.nl        (intern account)
 #   wc:16  oreogans1337@gmail.com     (geen rol — spam/test)
 #   wc:190 suambarawass@gmail.com     (geen rol — spam/test, dubbel)
 #   wc:191 suambarawass@gmail.com     (geen rol — spam/test, dubbel)
-# Allemaal geverifieerd: geen rol; de stap weigert accounts mét orders. Verwijderen wist ook hun usermeta
-# (incl. evt. afas_relatie_id). Idempotent: al-verwijderde users worden
-# overgeslagen. Default dry-run; `stap10 apply` verwijdert echt.
+#   wc:179 o.patti@techni-contact.com      (dubbelaccount oud AFAS-adres;
+#   wc:192 serviceachats@franceneir.fr      hoofdaccount is gekoppeld, deze
+#   wc:206 contact.lecoeurdunsam@gmail.com  hingen los na de AFAS-e-mailwissel
+#   wc:210 fournisseurs@sopro59.net         van 8 sep — alle vier 0 orders)
+# De stap weigert accounts mét orders, en een e-mail-vangrail weigert een
+# uid waarvan het adres afwijkt van de lijst hierboven (uid-drift na een
+# verse pull). Verwijderen wist ook usermeta (incl. evt. afas_relatie_id).
+# Idempotent: al-verwijderde users worden overgeslagen. Default dry-run;
+# `stap10 apply` verwijdert echt.
 # ---------------------------------------------------------------------------
 stap10() {
     controleer_config
     local apply="${1:-}"
+    local -A verwacht=(
+        [18]='edwin@roelse.net'
+        [197]='saliha@defibrion.nl'
+        [16]='oreogans1337@gmail.com'
+        [190]='suambarawass@gmail.com'
+        [191]='suambarawass@gmail.com'
+        [179]='o.patti@techni-contact.com'
+        [192]='serviceachats@franceneir.fr'
+        [206]='contact.lecoeurdunsam@gmail.com'
+        [210]='fournisseurs@sopro59.net'
+    )
     local uid
-    for uid in 18 197 16 190 191; do
+    for uid in 18 197 16 190 191 179 192 206 210; do
         if ! wpr user get "$uid" --field=user_email 2>/dev/null | grep -q '@'; then
             echo "wc:$uid bestaat niet (meer) op $(doel_naam) — overslaan"
             continue
         fi
         local email orders
         email=$(wpr user get "$uid" --field=user_email | tr -d '[:space:]')
+        if [[ "${email,,}" != "${verwacht[$uid],,}" ]]; then
+            echo "LET OP: wc:$uid heeft e-mail $email, verwacht ${verwacht[$uid]} — NIET verwijderd (uid-drift?)." >&2
+            continue
+        fi
         orders=$(wpr eval "\"echo count(wc_get_orders(['customer_id' => $uid, 'limit' => -1, 'return' => 'ids']));\"" | tr -d '[:space:]')
         if [[ "$orders" != "0" ]]; then
             echo "LET OP: wc:$uid ($email) heeft $orders orders — NIET verwijderd; eerst besluiten wat daarmee moet." >&2
