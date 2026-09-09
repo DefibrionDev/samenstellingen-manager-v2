@@ -392,10 +392,20 @@ adressen-sync lokaal een keer volledig gezien.
 4. [ ] Check vóór slotstap: Bron Order=73 en administratie=1 staan in de
        plugin-opties (stap4 zet ze uit de settings-json; de slotstap
        verifieert 73 en weigert anders).
-5. [ ] `... slotstap apply`: order-push aan + mail aan; daarna testorder
-       van echt klantaccount t/m AFAS-order (let op push-trigger vs
-       completed-sprong van de invoice-gateway) en monitoren. Na een week
-       stabiel: Wholesale-Suite-plugins + restdata opruimen.
+5. [x] **Invoice-gateway vs push-trigger (gevonden 9 sep, testorder
+       992124):** de Addify Invoice Payment Gateway stond op
+       `order_status=completed` → orders sprongen bij afrekenen van pending
+       direct naar completed en raakten de push-trigger (`processing`)
+       nooit. Pre-existent gedrag (alle oude live-orders zelfde flow;
+       verklaart mogelijk het MEDISOINS-ticket van 8 sep). Fix: gateway op
+       `processing` (`wp option patch update woocommerce_invoice_settings
+       order_status processing`), flow = processing → push →
+       complete_on_push → completed, identiek aan reseller/defNL.
+       **Voor elke volgende shop: gateway-status vóór de slotstap checken.**
+6. [ ] `... slotstap apply`: order-push aan + mail aan; daarna testorder
+       van echt klantaccount t/m AFAS-order (bron 73) en monitoren. Na een
+       week stabiel: Wholesale-Suite-plugins + restdata opruimen,
+       bouwlocatie revendeursfr.defibrion.dev opruimen.
 
 **Settings-pariteit (les 9 defNL):** `work/afas-settings-revendeurs.json`
 is 8 sep bijgemergd met 41 2.0.7-opties uit de verse reseller-live-export
