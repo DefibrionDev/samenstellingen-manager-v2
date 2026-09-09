@@ -365,18 +365,21 @@ stap6() {
     local apply="${1:-}"
     local cache="$REPO_ROOT/work/cache/afas-artikelen-defibsolutionsfr.json"
     local omzet="$REPO_ROOT/work/defibsolutionsfr-omzet-aed.csv"
+    local restkoppel="$REPO_ROOT/work/defibsolutionsfr-restlijst-koppelingen.csv"
     [[ -f "$cache" ]] || { echo "FOUT: $cache ontbreekt (draai de koppelbaarheids-audit met --vers)" >&2; exit 1; }
     [[ -f "$omzet" ]] || { echo "FOUT: $omzet ontbreekt" >&2; exit 1; }
+    [[ -f "$restkoppel" ]] || { echo "FOUT: $restkoppel ontbreekt" >&2; exit 1; }
 
     mkdir -p "$REPO_ROOT/tmp"
     local shopdump="$REPO_ROOT/tmp/defibsfr-shop-skus.tsv"
     wpr db query "\"SELECT p.ID, p.post_type, COALESCE(sku.meta_value,''), COALESCE(an.meta_value,'') FROM wp_posts p LEFT JOIN wp_postmeta sku ON sku.post_id=p.ID AND sku.meta_key='_sku' LEFT JOIN wp_postmeta an ON an.post_id=p.ID AND an.meta_key='_afas_artikelnummer' WHERE p.post_type IN ('product','product_variation') AND p.post_status IN ('publish','private')\"" --skip-column-names > "$shopdump"
 
-    python3 - "$cache" "$omzet" "$shopdump" "$apply" <<'PY' > /tmp/afasfr-voorkoppel-payload.php
+    python3 - "$cache" "$omzet" "$shopdump" "$apply" "$restkoppel" <<'PY' > /tmp/afasfr-voorkoppel-payload.php
 import csv, json, sys
 from collections import defaultdict
 
 cache, omzet, shopdump, apply = sys.argv[1:5]
+restkoppel = sys.argv[5]
 d = json.load(open(cache))
 
 per_itemcode, per_bhv = {}, defaultdict(list)
@@ -403,6 +406,17 @@ for r in csv.DictReader(open(omzet, encoding="utf-8-sig"), delimiter=";"):
             print(f"// LET OP: doel_base {doel} (wc:{r['wc_id']}) niet actief in AFAS — overgeslagen", file=sys.stderr)
             continue
         akkoord[r["wc_id"].strip()] = doel
+
+# restlijst-koppelingen (besluit Cas 9 sep): expliciete wc_id -> itemcode-paren
+# voor producten wier SKU een fabrikantcode is die nergens in AFAS staat
+for r in csv.DictReader(open(restkoppel, encoding="utf-8-sig"), delimiter=";"):
+    doel = r["itemcode"].strip()
+    if not r["wc_id"].strip().isdigit() or not doel:
+        continue
+    if not actief(doel):
+        print(f"// LET OP: restlijst-doel {doel} (wc:{r['wc_id']}) niet actief in AFAS — overgeslagen", file=sys.stderr)
+        continue
+    akkoord[r["wc_id"].strip()] = doel
 
 paren = {}
 for line in open(shopdump, encoding="utf-8"):

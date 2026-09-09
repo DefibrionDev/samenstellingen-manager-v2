@@ -305,11 +305,19 @@ Stand 31 aug:
       (CR2 semi/vol 17/17, G5 17/17, View 10/10, Zoll 9/9) behalve
       Lifeline vol (11143-FR: wacht op prijsbevestiging €1300).
 - [ ] Nog te doen: 11143-FR-prijs ("1300 ok"?) · checkout/weergave-stap ·
-      rest SKU-actielijst: teruggebracht tot 17 rijen
-      (`work/defibsolutionsfr-sku-restlijst.csv`, 9 sep — actielijst minus
-      schraplijst/omzet-lijst); mail aan Randy/Roelof belegd bij
-      mailer-agent via `work/handoff-mailer-sku-restlijst-fr.md`,
-      niet blokkerend voor livegang · stap 1.6
+      rest SKU-actielijst: **afgehandeld 9 sep zonder mail** — alle 17
+      rijen beantwoord met revendeurs-besluiten, de reseller-
+      voorkoppeling en de AFAS-cache (besluit Cas): 2 gekoppeld
+      (3765→103747, 4352→70223, via nieuwe
+      `work/defibsolutionsfr-restlijst-koppelingen.csv` die stap6 nu
+      meeleest + FR-vlaggen gezet op 103747/70223/PP-AM-400M-MS) en
+      15 geschrapt (schraplijst +15, incl. de 3 Randy-twijfelgevallen,
+      het 10260-duplicaat wc:2763 — wc:4740 was al gekoppeld — en 2
+      drafts: Prestan komt terug als sync-product PP-AM-400M-MS,
+      Reanibex-wit bestond al als variatie 52124-60112). Bijvangst:
+      reseller-shop heeft 123-30050 nog gekoppeld aan het geblokkeerde
+      90273 — doorgeven. Statussen in
+      `work/defibsolutionsfr-sku-restlijst.csv` · stap 1.6
       (prijsrapport + checkout-test) · stap 1.7 (reproduceerbaarheid —
       volgorde herhaal-reeks is gewijzigd: stap15 vóór stap10!).
 
