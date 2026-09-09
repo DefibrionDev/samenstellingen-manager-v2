@@ -387,11 +387,29 @@ doet het **wordpress-migrater**-project (patroon:
       `reeks`-subcommando = volledige stappenreeks met pipefail +
       slotregel "KLAAR — reeks" (volgorde: 1,2,3,4,5,6,**15**,7,8,9,12,
       13,**17**,10,11,10-delta,14,16,18,19).
-- [ ] Verse pull + deploy live → cp-01 (draait 9 sep, log
-      `tmp/defibsfr-cp01-verhuizing.log`)
-- [ ] **Cas: DNS A-record `defibsolutionsfr.defibrion.dev` →
-      138.199.223.146, GRIJS (DNS-only)** — nodig vóór cert + Kevin-check
-- [ ] `DEFIBSFR_TARGET=cp01 reeks` + controles → dev-URL naar Kevin
+- [x] Verse pull + deploy live → cp-01 geslaagd (9 sep; de migrater eindigt
+      met exit 1 door een cosmetische cleanup-bug bij FTP-bron —
+      `SOURCE_CONFIG[ssh_host]` unbound — de "Migration completed
+      successfully!"-banner is de echte indicator).
+- [x] DNS + cert: A-record gezet (Cas), cert uitgegeven zodra het record
+      grijs stond (526-valkuil bevestigd: oranje + Full strict + geen
+      origin-cert), daarna weer oranje — dev-URL serveert 200.
+- [x] `DEFIBSFR_TARGET=cp01 reeks` groen (9 sep, log
+      `tmp/defibsfr-cp01-reeks.log`): 526 artikelen · 74 relaties ·
+      39 kortingen · 57.606 adressen · 0 sync-warnings · kruischeck schoon ·
+      22 containers/226 variaties · 65 geschrapt · pariteit met lokaal
+      exact (335 published producten + 227 variaties + 16 drafts) ·
+      prijzen-steekproef klopt (11143-FR €1300, 11148-FR €2049,
+      11162-FR €2295) · 1 variatie zonder prijs = Peli 1450-duplicaat
+      wc:6285 (staat op de restlijst, pre-existent).
+      Lessen deze run: (a) stap4 scp't nu naar
+      `/tmp/lefcreative-afas-b2b-fr.zip` — de NL-livegang bezet de oude
+      naam op cp-01 (sticky /tmp); (b) stap17's relatie-herrun faalt op
+      een VERSE database ("wp_lef_afas_verkooprelaties doesn't exist" —
+      die tabel maakt stap10 pas) — onschuldig zolang de volle
+      relatie-sync van stap10 erna draait (geverifieerd: admin-billing
+      staat op Betton); (c) pipefail hoort óók in de wrapper om de
+      reeks heen, de slotregel "KLAAR — reeks" is de succes-indicator.
 
 **Livegang-dag (10 sep):**
 
