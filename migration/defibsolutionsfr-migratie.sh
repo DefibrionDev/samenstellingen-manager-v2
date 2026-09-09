@@ -256,8 +256,11 @@ stap4() {
             sh -c "php -d memory_limit=512M /usr/local/bin/wp plugin install '/defibs-work/$(basename "$zip")' --force --activate" 2>&1 | _filter_ruis
     else
         echo "upload $(basename "$zip") ..."
-        scp -q "$zip" "$SERVER:/tmp/lefcreative-afas-b2b.zip"
-        wpr plugin install /tmp/lefcreative-afas-b2b.zip --force --activate
+        # eigen bestandsnaam: /tmp/lefcreative-afas-b2b.zip is op cp-01 al
+        # bezet door een andere site-user (NL-livegang) — sticky /tmp weigert
+        # overschrijven door een ander
+        scp -q "$zip" "$SERVER:/tmp/lefcreative-afas-b2b-fr.zip"
+        wpr plugin install /tmp/lefcreative-afas-b2b-fr.zip --force --activate
     fi
 
     local settings="$REPO_ROOT/work/afas-settings-fr.json"

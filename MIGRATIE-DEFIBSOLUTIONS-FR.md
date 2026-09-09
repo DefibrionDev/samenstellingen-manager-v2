@@ -305,7 +305,11 @@ Stand 31 aug:
       (CR2 semi/vol 17/17, G5 17/17, View 10/10, Zoll 9/9) behalve
       Lifeline vol (11143-FR: wacht op prijsbevestiging €1300).
 - [ ] Nog te doen: 11143-FR-prijs ("1300 ok"?) · checkout/weergave-stap ·
-      rest SKU-actielijst (~20) · stap 1.6
+      rest SKU-actielijst: teruggebracht tot 17 rijen
+      (`work/defibsolutionsfr-sku-restlijst.csv`, 9 sep — actielijst minus
+      schraplijst/omzet-lijst); mail aan Randy/Roelof belegd bij
+      mailer-agent via `work/handoff-mailer-sku-restlijst-fr.md`,
+      niet blokkerend voor livegang · stap 1.6
       (prijsrapport + checkout-test) · stap 1.7 (reproduceerbaarheid —
       volgorde herhaal-reeks is gewijzigd: stap15 vóór stap10!).
 
