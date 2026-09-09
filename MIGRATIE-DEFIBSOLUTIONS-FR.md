@@ -366,12 +366,42 @@ allowlisten vóór de pull (les van 24 aug). De kale verhuizing live → cp-01
 doet het **wordpress-migrater**-project (patroon:
 `HANDOFF-defibsolutions-cp01.md` aldaar); de inrichting doet dit script.
 
-1. [ ] Volledige backup + verse pull van live
-2. [ ] Alle scriptstappen (mail uit t/m vertaling/mu-plugins)
-3. [ ] Controles: prijsrapport 0 onverklaard · testorder echte klant t/m
-       AFAS-order · steekproef klantprijzen / gast
-4. [ ] Mail weer aan, monitoren
-5. [ ] Na een week stabiel: woocommerce-b2b + overbodige data verwijderen
+**Stand 9 sep (dev-site voor Kevin-check; livegang 10 sep ochtend):**
+
+- [x] cp-01-site aangemaakt: `defibsolutionsfr.defibrion.dev` (PHP 8.3,
+      WordPress-vhost, site-user `defibsolutionsfr`, home 750, SSH-key
+      geverifieerd) + database `defibrion-defibsolutionsfr`. Wachtwoorden
+      in `~/projects/wordpress-migrater/.secrets-defibsolutionsfr-cp01`
+      (chmod 600, buiten git — nooit printen).
+- [x] Migrater-config `config-defibsolutionsfr-cp01.ini`: FTP-bron
+      (`wp_path=/boutique`!), doel cp-01, URL-rewrite
+      `https://www.defibsolutions.fr/boutique` → dev-URL (mét protocol),
+      extra_source_urls beide kale domeinen, regenerate_salts.
+- [x] Script-target cp01: `DEFIBSFR_SERVER`/`DEFIBSFR_WP_ROOT`/
+      `DEFIBSFR_DB_NAME` in `.env`; DB_NAME-vangrail in
+      `controleer_config` (memory-les: dev draaide elders op live-db);
+      `reeks`-subcommando = volledige stappenreeks met pipefail +
+      slotregel "KLAAR — reeks" (volgorde: 1,2,3,4,5,6,**15**,7,8,9,12,
+      13,**17**,10,11,10-delta,14,16,18,19).
+- [ ] Verse pull + deploy live → cp-01 (draait 9 sep, log
+      `tmp/defibsfr-cp01-verhuizing.log`)
+- [ ] **Cas: DNS A-record `defibsolutionsfr.defibrion.dev` →
+      138.199.223.146, GRIJS (DNS-only)** — nodig vóór cert + Kevin-check
+- [ ] `DEFIBSFR_TARGET=cp01 reeks` + controles → dev-URL naar Kevin
+
+**Livegang-dag (10 sep):**
+
+1. [ ] Maintenance-besluit + `.maintenance` op live (`$upgrading =
+       time()+86400`; reist mee met rsync — op doel verwijderen)
+2. [ ] Verse pull (incrementeel, ~10 min) + `reeks`
+3. [ ] URL-switch → `boutique.defibsolutions.fr`: DNS grijs → vhost-alias →
+       cert (`--subjectAlternativeName`) → wp-config WP_HOME/WP_SITEURL
+       (hardcoded!) → search-replace mét protocol → stap12 → checks
+4. [ ] Controles: prijsrapport 0 onverklaard · testorder echte klant t/m
+       AFAS-order (`stap20 74 apply` eerst) · steekproef klantprijzen / gast
+5. [ ] Cloudflare oranje + redirect `defibsolutions.fr/boutique*` →
+       subdomein; mail aan; monitoren. Na een week stabiel:
+       woocommerce-b2b + overbodige data verwijderen
 
 `afas_sync_orders_enabled` blijft overal geforceerd 0 tot de livegang
 (zelfde gordel als NL-stap 4); Cas zet hem live bewust handmatig aan.

@@ -110,6 +110,17 @@ controleer_config() {
             echo "FOUT: zet eerst DEFIBSFR_SERVER en DEFIBSFR_WP_ROOT (zie kop van dit script)." >&2
             exit 1
         fi
+        # Vangrail (memory: migrater-deploy-dbnaam-verifieren): dwing af dat de
+        # site op de verwachte database draait — een weggevallen wp-config-stap
+        # liet elders een dev op de live-db draaien.
+        if [[ -n "${DEFIBSFR_DB_NAME:-}" ]]; then
+            local echte_db
+            echte_db=$(ssh "$SERVER" "cd '$WP_ROOT' && wp config get DB_NAME" 2>/dev/null | tail -1 | tr -d '[:space:]')
+            if [[ "$echte_db" != "$DEFIBSFR_DB_NAME" ]]; then
+                echo "FOUT: wp-config op $SERVER gebruikt database '$echte_db', verwacht '$DEFIBSFR_DB_NAME' — gestopt." >&2
+                exit 1
+            fi
+        fi
     else
         echo "FOUT: onbekend DEFIBSFR_TARGET '$TARGET' (lokaal of cp01)." >&2
         exit 1
@@ -1726,6 +1737,30 @@ PHP
     fi
 }
 
+# ---------------------------------------------------------------------------
+# reeks — de volledige stappenreeks in de bewezen volgorde (verse pull →
+# werkende shop). stap15 vóór stap10 (omvormen vóór de eerste sync), stap17
+# vóór stap10 (admins vóór de relatie-sync), stap11-vangnet + delta-herrun ná
+# stap10, schrappingen (18/19) als slot. Apply-stappen krijgen apply.
+# Slotregel "KLAAR — reeks" is de succes-indicator (NL-les: exitcodes door
+# tee zijn onbetrouwbaar).
+# ---------------------------------------------------------------------------
+reeks() {
+    set -o pipefail
+    local s
+    for s in "stap1" "stap2" "stap3 apply" "stap4" "stap5 apply" \
+             "stap6 apply" "stap15 apply" "stap7" "stap8" "stap9 apply" \
+             "stap12 apply" "stap13" "stap17 apply" "stap10" \
+             "stap11 apply" "stap10 zonder-prijzen delta" "stap14 apply" \
+             "stap16 apply" "stap18 apply" "stap19 apply"; do
+        echo ""
+        echo "===================== $s ====================="
+        # shellcheck disable=SC2086
+        "$0" $s || { echo "REEKS GESTOPT op: $s" >&2; exit 1; }
+    done
+    echo "KLAAR — reeks volledig doorlopen op $(doel_naam)"
+}
+
 hulp() {
     cat <<EOF
 Gebruik: $0 <stap> [apply|opties]   (DEFIBSFR_TARGET=lokaal|cp01, default lokaal)
@@ -1750,6 +1785,7 @@ Gebruik: $0 <stap> [apply|opties]   (DEFIBSFR_TARGET=lokaal|cp01, default lokaal
   stap18  [apply]  Assortiment-schrappingen (Randy-lijst)
   stap19  [apply]  Accounts verwijderen (Randy klanten-sheet, 9 accounts)
   stap20  <bron> [apply]  Livegang-slot: push aan, vrije velden, intervallen, mail aan
+  reeks            Volledige stappenreeks (verse pull -> werkende shop)
 
 Zie MIGRATIE-DEFIBSOLUTIONS-FR.md voor het fase-overzicht.
 EOF
@@ -1776,5 +1812,6 @@ case "${1:-}" in
     stap18) stap18 "${2:-}" ;;
     stap19) stap19 "${2:-}" ;;
     stap20) stap20 "${2:-}" "${3:-}" ;;
+    reeks) reeks ;;
     *) hulp; [[ -n "${1:-}" ]] && exit 1 || exit 0 ;;
 esac
