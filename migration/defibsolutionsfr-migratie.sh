@@ -627,10 +627,20 @@ if ($zonderPrijzen) {
     do_action('afas_sync_landen', true);
     do_action('afas_sync_verkooprelaties', true);
     do_action('afas_sync_kortingen', true);
-    do_action('afas_sync_addresses', true);
-    printf("         relaties: %d, kortingen: %d\n",
+    // adressen: op NL-live was de oude hook in 2.0.7 een stille no-op — de
+    // job-class is het betrouwbare pad, met hook-fallback en hard falen
+    if (class_exists('\App\Jobs\SyncAddressesJob')) {
+        (new \App\Jobs\SyncAddressesJob())->handle(true);
+    } elseif (has_action('afas_sync_addresses')) {
+        do_action('afas_sync_addresses', true);
+    } else {
+        fwrite(STDERR, "FOUT: geen adressen-syncpad (job noch hook) gevonden\n");
+        exit(1);
+    }
+    printf("         relaties: %d, kortingen: %d, adressen: %d\n",
         (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}lef_afas_verkooprelaties"),
-        (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}lef_afas_kortingen"));
+        (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}lef_afas_kortingen"),
+        (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}lef_afas_addresses"));
 }
 
 $wpdb->query("DELETE FROM {$wpdb->prefix}lef_logs WHERE channel = 'woocommerce'");
@@ -1499,8 +1509,8 @@ foreach (get_users(['role' => 'administrator']) as $u) {
 }
 // factuur-usermeta direct vullen (NL-les: anders pas bij de volgende
 // relaties-sync en lijkt de checkout stuk voor admins)
-if ($apply && class_exists('\\App\\Jobs\\SyncRelatiesJob')) {
-    (new \\App\\Jobs\\SyncRelatiesJob())->handleForDebtor($relatie);
+if ($apply && class_exists('\App\Jobs\SyncRelatiesJob')) {
+    (new \App\Jobs\SyncRelatiesJob())->handleForDebtor($relatie);
     echo "factuurgegevens ververst voor relatie $relatie\n";
 }
 PHP
