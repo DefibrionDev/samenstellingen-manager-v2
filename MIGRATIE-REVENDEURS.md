@@ -16,11 +16,14 @@ voorkoppelingen · 15 containers omgevormd · 9 accounts weg. Rollback-punt:
 `~/backup-revendeurs-20260909-1103.*` op de site-user. **Nalijst:** (1) ✓
 testorders opgeruimd in WC + AFAS, Kevin/Randy geïnformeerd (Cas, 9 sep); (2) push-fouten
 eerste dagen monitoren (`_afas_push_status=failed`, `lef_logs` level
-error); (3) **afleveradres-risico:** AFAS weigerde postadres 25984 als
-afleveradres ("hoort niet bij de verkooprelatie"), 83 gekoppelde klanten
-hebben in de plugin-tabel alléén Postadres-rijen — oorzaak uitzoeken met
-LEF/AFAS (Get_Addresses levert per Adres_Id twee typen, plugin-tabel houdt
-er één); (4) MEDHYBRIDE-koppeling na akkoord Randy (stap3-delta); (5) na
+error); (3) **afleveradres-risico (gecorrigeerd 9 sep):** AFAS weigerde het
+secundaire adres 25984 van 23135 als afleveradres; het eigen adres (34504)
+ging wel. Alle 192 gekoppelde relaties hebben hun eigen adres in de
+adrestabel; 86 hebben alléén dat adres (veilig). 106 hebben méér adressen
+(3117 totaal) — of AFAS al hun secundaire adressen als afleveradres
+accepteert is niet bewezen. Eerdere '83 alleen-postadres'-claim was fout:
+het type-label is een dedupe-artefact. Actie: push-fouten monitoren en bij
+een 2e weigering met LEF/AFAS uitzoeken welke adressen FbSales accepteert; (4) MEDHYBRIDE-koppeling na akkoord Randy (stap3-delta); (5) na
 een week: Wholesale-Suite-plugins + restdata weg, bouwlocatie
 revendeursfr.defibrion.dev opruimen, slotstap-herinneringstekst (68)
 opschonen.
