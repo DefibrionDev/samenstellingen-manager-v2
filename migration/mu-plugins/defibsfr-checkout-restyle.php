@@ -102,16 +102,25 @@ add_action('wp_enqueue_scripts', static function (): void {
     clear: both;
 }
 
-/* --- coupon-melding: rustige balk met accentrand (NL-stijl) --- */
+/* --- coupon-melding: rustige balk met accentrand (NL-stijl). De extra
+       specifieke toggle-selector wint van Woodmart's compacte notice-CSS
+       (melding Cas: box zat te krap om de tekst) --- */
+.afas-checkout-cols .woocommerce-form-coupon-toggle {
+    margin: 20px 0 0;
+}
+.afas-checkout-cols .woocommerce-form-coupon-toggle .woocommerce-info,
 .afas-checkout-cols .woocommerce-info {
     background: #fff !important;
     border: 1px solid #e2e2e2 !important;
     border-left: 3px solid var(--btn-accented-bgcolor, #83b735) !important;
     border-radius: 4px;
-    padding: 12px 16px !important;
+    padding: 16px 20px !important;
     margin: 16px 0;
     font-size: 14px;
-    line-height: 1.5;
+    line-height: 1.6;
+}
+.afas-checkout-cols .woocommerce-form-coupon-toggle .woocommerce-info {
+    margin: 0 !important;
 }
 .afas-checkout-cols .woocommerce-info::before {
     display: none !important;
@@ -164,7 +173,7 @@ add_action('wp_enqueue_scripts', static function (): void {
     .afas-checkout-cols .afas-checkout-col-main   { order: 0; }
 }
 CSS;
-    wp_register_style('defibsfr-checkout-restyle', false, [], '1.2');
+    wp_register_style('defibsfr-checkout-restyle', false, [], '1.3');
     wp_enqueue_style('defibsfr-checkout-restyle');
     wp_add_inline_style('defibsfr-checkout-restyle', $css);
 }, 20);
