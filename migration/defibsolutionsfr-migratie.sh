@@ -161,7 +161,11 @@ stap1() {
 stap2() {
     controleer_config
     local p
-    for p in woocommerce-b2b wp-staging-pro wp-staging mainwp-child jetpack mailchimp-for-woocommerce; do
+    # woocommerce-eu-vat-number (livegang 10 sep): maakte "Numéro de TVA"
+    # verplicht (b2b=yes, failure_handling=reject) en blokkeerde de checkout;
+    # vervangen door de BTW-afhandeling van lefcreative zelf
+    # (afas_vat_number_field_enabled/zero_rate/validation = 1 in de settings).
+    for p in woocommerce-b2b wp-staging-pro wp-staging mainwp-child jetpack mailchimp-for-woocommerce woocommerce-eu-vat-number; do
         if wpr plugin is-installed "$p" >/dev/null 2>&1; then
             wpr plugin deactivate "$p"
         else
