@@ -97,6 +97,15 @@ add_action('wp_enqueue_scripts', static function (): void {
     margin-left: 0; /* gap regelt de afstand */
 }
 
+/* --- placeholders: licht grijs (melding Cas: renderden zwart en leken
+       al ingevuld) --- */
+.afas-checkout-cols .input-text::placeholder,
+.afas-checkout-cols input::placeholder,
+.afas-checkout-cols textarea::placeholder {
+    color: #9a9a9a !important;
+    opacity: 1;
+}
+
 /* --- adresformulier: knoppenrij onder de floats van form-row-first/last --- */
 .afas-checkout-address-selector #afas-checkout-address-form > p.form-row:last-child {
     clear: both;
@@ -173,7 +182,7 @@ add_action('wp_enqueue_scripts', static function (): void {
     .afas-checkout-cols .afas-checkout-col-main   { order: 0; }
 }
 CSS;
-    wp_register_style('defibsfr-checkout-restyle', false, [], '1.3');
+    wp_register_style('defibsfr-checkout-restyle', false, [], '1.4');
     wp_enqueue_style('defibsfr-checkout-restyle');
     wp_add_inline_style('defibsfr-checkout-restyle', $css);
 }, 20);
