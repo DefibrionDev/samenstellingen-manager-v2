@@ -10,6 +10,17 @@
 
 declare(strict_types=1);
 
+// Coupon-blok van bovenaan naar onder de totalen in de rechterkolom —
+// zelfde aanpak als NL/reseller. Op wp_loaded omdat WooCommerce de hook
+// pas tijdens plugin-load registreert.
+add_action('wp_loaded', static function (): void {
+    if (!function_exists('woocommerce_checkout_coupon_form')) {
+        return;
+    }
+    remove_action('woocommerce_before_checkout_form', 'woocommerce_checkout_coupon_form', 10);
+    add_action('woocommerce_checkout_after_order_review', 'woocommerce_checkout_coupon_form', 10);
+});
+
 add_action('wp_enqueue_scripts', static function (): void {
     if (!function_exists('is_checkout') || !is_checkout()) {
         return;
@@ -50,9 +61,11 @@ add_action('wp_enqueue_scripts', static function (): void {
        hier in de Woodmart-knopkleur (accent-var van het thema), met
        flex-centrering zodat de tekst in het midden van de knop staat --- */
 .afas-checkout-cols .btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    /* géén flex: de plugin-JS toont de Modifier-knop met display:inline-block
+       (inline style) — dan moeten beide knoppen in die modus gelijk renderen */
+    display: inline-block;
+    vertical-align: middle;
+    text-align: center;
     background: var(--btn-accented-bgcolor, #83b735);
     color: var(--btn-accented-color, #fff);
     border: none;
@@ -64,6 +77,10 @@ add_action('wp_enqueue_scripts', static function (): void {
     text-decoration: none;
     cursor: pointer;
     transition: opacity .15s;
+}
+.afas-checkout-cols .btn > span {
+    display: block;
+    line-height: 1.2;
 }
 .afas-checkout-cols .btn:hover {
     background: var(--btn-accented-bgcolor-hover, var(--btn-accented-bgcolor, #83b735));
@@ -85,13 +102,69 @@ add_action('wp_enqueue_scripts', static function (): void {
     clear: both;
 }
 
+/* --- coupon-melding: rustige balk met accentrand (NL-stijl) --- */
+.afas-checkout-cols .woocommerce-info {
+    background: #fff !important;
+    border: 1px solid #e2e2e2 !important;
+    border-left: 3px solid var(--btn-accented-bgcolor, #83b735) !important;
+    border-radius: 4px;
+    padding: 12px 16px !important;
+    margin: 16px 0;
+    font-size: 14px;
+    line-height: 1.5;
+}
+.afas-checkout-cols .woocommerce-info::before {
+    display: none !important;
+}
+.afas-checkout-cols .checkout_coupon {
+    border: 1px solid #e2e2e2;
+    border-radius: 4px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+/* --- betaalblok: grijs kader zoals NL --- */
+.afas-checkout-cols #payment {
+    background: #f7f7f7;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+}
+.afas-checkout-cols #payment ul.payment_methods {
+    padding: 16px 20px;
+    border-bottom: 1px solid #e2e2e2;
+}
+.afas-checkout-cols #payment ul.payment_methods li {
+    list-style: none;
+    margin-bottom: 8px;
+}
+.afas-checkout-cols #payment ul.payment_methods label {
+    display: inline;
+    font-weight: 600;
+}
+.afas-checkout-cols #payment div.payment_box {
+    background: #fff;
+    border-radius: 4px;
+    padding: 12px 16px;
+    margin-top: 8px;
+    font-size: 14px;
+}
+.afas-checkout-cols #payment div.form-row.place-order {
+    padding: 16px 20px;
+    margin: 0;
+}
+.afas-checkout-cols .woocommerce-terms-and-conditions-wrapper {
+    margin-bottom: 12px;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
 /* --- mobiel: besteloverzicht bovenaan --- */
 @media (max-width: 768px) {
     .afas-checkout-cols .afas-checkout-col-review { order: -1; }
     .afas-checkout-cols .afas-checkout-col-main   { order: 0; }
 }
 CSS;
-    wp_register_style('defibsfr-checkout-restyle', false, [], '1.1');
+    wp_register_style('defibsfr-checkout-restyle', false, [], '1.2');
     wp_enqueue_style('defibsfr-checkout-restyle');
     wp_add_inline_style('defibsfr-checkout-restyle', $css);
 }, 20);
