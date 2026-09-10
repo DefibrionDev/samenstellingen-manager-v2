@@ -45,6 +45,41 @@ add_action('wp_enqueue_scripts', static function (): void {
     top: 24px;
 }
 
+/* --- plugin-knoppen (+ Nouvelle adresse / Modifier / Opslaan): de plugin
+       gebruikt Bootstrap-achtige .btn-classes die Woodmart niet kent —
+       hier in de Woodmart-knopkleur (accent-var van het thema), met
+       flex-centrering zodat de tekst in het midden van de knop staat --- */
+.afas-checkout-cols .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--btn-accented-bgcolor, #83b735);
+    color: var(--btn-accented-color, #fff);
+    border: none;
+    border-radius: 4px;
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.2;
+    text-decoration: none;
+    cursor: pointer;
+    transition: opacity .15s;
+}
+.afas-checkout-cols .btn:hover {
+    background: var(--btn-accented-bgcolor-hover, var(--btn-accented-bgcolor, #83b735));
+    color: var(--btn-accented-color, #fff);
+    opacity: .9;
+}
+.afas-checkout-cols .buttons-holder {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+.afas-checkout-cols .buttons-holder .btn + .btn {
+    margin-left: 0; /* gap regelt de afstand */
+}
+
 /* --- adresformulier: knoppenrij onder de floats van form-row-first/last --- */
 .afas-checkout-address-selector #afas-checkout-address-form > p.form-row:last-child {
     clear: both;
@@ -56,7 +91,7 @@ add_action('wp_enqueue_scripts', static function (): void {
     .afas-checkout-cols .afas-checkout-col-main   { order: 0; }
 }
 CSS;
-    wp_register_style('defibsfr-checkout-restyle', false, [], '1.0');
+    wp_register_style('defibsfr-checkout-restyle', false, [], '1.1');
     wp_enqueue_style('defibsfr-checkout-restyle');
     wp_add_inline_style('defibsfr-checkout-restyle', $css);
 }, 20);
