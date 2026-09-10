@@ -21,6 +21,39 @@ add_action('wp_loaded', static function (): void {
     add_action('woocommerce_checkout_after_order_review', 'woocommerce_checkout_coupon_form', 10);
 });
 
+// Leeg "Détails de facturation"-blok verbergen (NL-aanpak): de plugin
+// verbergt de gevulde billing-velden per rij (CheckoutReadonlyFields), maar
+// de sectiekop bleef staan zodra er geen zichtbaar veld meer is. Bij een
+// checkout_error toont de plugin de velden weer en komt de sectie terug.
+add_action('wp_footer', static function (): void {
+    if (!function_exists('is_checkout') || !is_checkout()) {
+        return;
+    }
+    ?>
+    <script id="defibsfr-billing-wrap-toggle">
+    (function () {
+        function toggle() {
+            var wrap = document.querySelector('.afas-checkout-cols .woocommerce-billing-fields');
+            if (!wrap) { return; }
+            var rows = wrap.querySelectorAll('.form-row');
+            var zichtbaar = false;
+            rows.forEach(function (r) { if (r.offsetParent !== null) { zichtbaar = true; } });
+            wrap.style.display = (!rows.length || !zichtbaar) ? 'none' : '';
+        }
+        var run = function () { setTimeout(toggle, 0); };
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', run);
+        } else {
+            run();
+        }
+        if (typeof jQuery !== 'undefined') {
+            jQuery(document.body).on('updated_checkout checkout_error', run);
+        }
+    })();
+    </script>
+    <?php
+}, 100);
+
 add_action('wp_enqueue_scripts', static function (): void {
     if (!function_exists('is_checkout') || !is_checkout()) {
         return;
@@ -182,7 +215,7 @@ add_action('wp_enqueue_scripts', static function (): void {
     .afas-checkout-cols .afas-checkout-col-main   { order: 0; }
 }
 CSS;
-    wp_register_style('defibsfr-checkout-restyle', false, [], '1.4');
+    wp_register_style('defibsfr-checkout-restyle', false, [], '1.5');
     wp_enqueue_style('defibsfr-checkout-restyle');
     wp_add_inline_style('defibsfr-checkout-restyle', $css);
 }, 20);
