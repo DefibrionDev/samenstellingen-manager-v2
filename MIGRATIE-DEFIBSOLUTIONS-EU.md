@@ -447,6 +447,12 @@ Alle 45 rijen hebben een besluit. Verwerking (alles idempotent in de scriptstapp
 - **Zoll Trainer FR 103255 → 10681**: parent stond live al op 10698 (cache van
   9 sep was stale; `fix-defibsolutionseu-trainer-parent.php` dry-run: 0 te doen).
   SKU-correctie → stap6 → stap8 (conversie naar variatie onder de trainer-container).
+- **2e ronde Martina (10 sep 15:05Z):** 224, 634, 121 → delete (schraplijst +3,
+  stap10 lokaal+cp01). 187: zij las "103212" als AFAS-code (was het wc_id van
+  het QCPR-tas-product); AFAS blijkt **90256 "Laerdal Little Junior draagtas,
+  183-820"** te hebben = SKU 183820 → sku-correcties +1, vlag 90256 aan, stap18/
+  stap6 lokaal+cp01. Antwoord-handoff: `work/handoff-mail-martina-antwoord-187.md`.
+  Daarmee alle 45 rijen afgehandeld; alleen 306 (nieuw artikel) loopt via financieel.
 - **5 rijen terug naar Martina**: 4 codes zijn al aan een ander shop-product
   gekoppeld (224→70231 is de Airway, suggestie 70202 "Ambu Man Defib Wireless
   Next Generation"; 634→10526-IQF is de Basic; 121→10595 is adult; 187→90257 is
