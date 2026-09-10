@@ -438,6 +438,17 @@ cp01-slotstap). **Valkuil:** jonradio bouwt redirect_to uit
 URL-switch de nieuwe domeinnaam vooraan zetten, anders landt elke klant na
 login op de dev-URL (cookie-mismatch).
 
+**Naschokken livegang 10 sep (alle gefixt + geborgd):** (a) menu-links:
+51 rijen hybride-gecodeerde oude-host-URL's + childtheme dat siteurl/home
+op élke load terugschreef (woodmart-child/functions.php r.3-4) — beide in
+stap12; (b) variatie-assen: de tool-snapshot (tmp/samenstellingen.sqlite)
+was 9 sep 17:29 door een andere sessie herbouwd zónder de FR-rijen in
+group_variants → stap16 sloeg 86 kast-varianten over ("zonder tool-data")
+en de pickers toonden alleen taal — stap16 heeft nu een fallback die
+<base>-<accessoire> afleidt uit group_bases + accessoires en is daarmee
+zelfvoorzienend. **Naloop: FR-variant-registraties in de tool herstellen**
+(group_variants), anders mist het volgende tool-werk ze ook.
+
 **Livegang-dag (10 sep):**
 
 1. [ ] Maintenance-besluit + `.maintenance` op live (`$upgrading =

@@ -1309,6 +1309,15 @@ for regel in open(dump, encoding="utf-8"):
         continue
     par_id, par_code, var_id, var_code = d[0], d[1].strip(), d[2], d[3].strip()
     rij = info.get(var_code)
+    if rij is None and "-" in var_code:
+        # Fallback (10 sep): een tool-herbouw door een andere sessie kan de
+        # FR-rijen in group_variants missen (livegang: 86 kast-varianten
+        # "zonder tool-data"). Kast-varianten volgen strak <base>-<acc>;
+        # leid taal/label af van de base en de optienaam van de accessoire.
+        basecode, acc = var_code.rsplit("-", 1)
+        if basecode in info and acc in opties_fr:
+            taal_b, label_b, _acc_b, _bc = info[basecode]
+            rij = (taal_b, label_b, acc, basecode)
     if rij is None:
         onbekend.append((var_id, var_code))
         continue
