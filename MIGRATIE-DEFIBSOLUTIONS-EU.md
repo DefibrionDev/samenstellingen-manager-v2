@@ -13,11 +13,12 @@ als bij .fr, geen shop-parameter in het NL-script).
       NL · nieuwe cp-01-site · eigen scriptkopie · talen geïnspecteerd
 - [x] Verkenning lokale kopie (read-only, 27 aug) — zie hieronder
 - [x] AFAS-aanvraagtekst klaargezet → `work/afas-aanvraag-defibsolutions-eu.md`
-- [ ] **Aanvraag versturen naar AFAS-beheer ← actie Cas (lange doorlooptijd)**
+- [x] AFAS-velden — Cas maakte ze zelf aan (31 aug)
 - [x] Akkoord op dit runbook (Cas, 27 aug)
 - [x] Fase 0 — script-skelet + targetlaag (stap0 groen, 27 aug)
-- [ ] **Fase 1 — lokale migratie (poort 8895) ← WE ZIJN HIER**
-- [ ] Fase 2 — livegang op cp-01 (nieuwe site)
+- [x] Fase 1 — lokale migratie (poort 8895): **afgerond 10 sep** (1.6 groen)
+- [ ] **Fase 2 — livegang op cp-01 (nieuwe site) ← WE ZIJN HIER**
+      (proefverhuizing 10 sep; venster pas na reactie Martina/Rogier)
 
 ## Wat de verkenning opleverde (27 aug 2026, alles read-only)
 
@@ -382,7 +383,7 @@ Spiegel van NL-fase 1; per stap eerst dry-run, EU-verschillen expliciet:
        met tool-assen (1188 variaties), 4 Prestan + trainer WC-only.
        Prijsrapport-equivalent: nog niet gedraaid (klantafspraken op EU zijn
        beperkt; prijslijst-check volstond).
-   [ ] **1.6 reproduceerbaarheids-check** — gestart 9 sep: `migrate.sh --pull
+   [x] **1.6 reproduceerbaarheids-check** — gestart 9 sep: `migrate.sh --pull
        --local-refresh --config defibsolutionseu` (verse pull van Satserver,
        lokale DB gewist en herladen) gevolgd door `defibsolutionseu-runner.sh`
        (19 stappen in bewezen volgorde); log `tmp/defibseu-repro-*.log`.
@@ -397,6 +398,15 @@ Spiegel van NL-fase 1; per stap eerst dry-run, EU-verschillen expliciet:
        pipefail + minimale dump-grootte (weigert < 1 KB). Oorzaak-onderzoek
        poort 3306: UniFi-IPS-blokkade na bulk-FTP? (memory) of Satserver-
        whitelist. **Lokale kopie is nu leeg tot een geslaagde dump.**
+       **Run 2 (10 sep, 3306 weer open): GROEN.** Verse pull (dump 26 MB
+       gz), lokale DB herladen, runner 19 stappen in **28 min**, slotregel
+       "KLAAR — volledige reeks groen". Eerste force-sync had 16 transiënte
+       warnings (oude variaties vóór stap8), de delta-sync erna 0; kruischeck
+       schoon. Eindstand identiek qua opbouw aan 1.5: **321 simples · 22
+       variabele containers (21 met assen, 1196 variaties bijgewerkt) · 1208
+       variaties**; Defibtech vol (11141) nu 8 variaties. Verschil met 1.5:
+       de 4 Prestan-containers staan op live als draft en gaan in stap10
+       met de concepten weg (in de oude kopie had de sync ze gepubliceerd).
 
 ### AFAS-vlaggen gezet (9 sep, akkoord Cas "mag meteen") ✓
 
