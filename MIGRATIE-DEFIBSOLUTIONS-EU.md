@@ -352,9 +352,10 @@ Spiegel van NL-fase 1; per stap eerst dry-run, EU-verschillen expliciet:
              (NL/EN WiFi) — publications:sync, heads via vinkjes (`HEADS_AAN`
              in de generator), force-sync, stap14 + stap12. **Open: Defibtech
              volautomaat (head 11141) heeft geen Engelse base** (alleen NL
-             11141 en FR 11143-FR) → Cas: NL-base publiceren of EN-base laten
-             aanmaken in de tool? Idem voor CR2 USB (11161 NL / 11165 FR;
-             11162 NL / 11162-FR) — WiFi-bases dekken die containers nu.
+             11141 en FR 11143-FR) → **besluit Cas 10 sep: optie (a), NL-base
+             11141 gepubliceerd op EU** (publications:sync toegepast). CR2 USB
+             (11161 NL / 11165 FR; 11162 NL / 11162-FR) bewust weggelaten —
+             de WiFi-bases (NL/EN) dekken die containers.
              Resultaat force-sync (run 7): 1475 artikelen in de tabel, 0
              warnings, **20 containers met variaties** (Defibtech vol wacht op
              base-keuze). stap12 met fallback: variaties die de tool niet
@@ -464,13 +465,19 @@ tabellen nog niet — na de 2.0.7-upgrade opnieuw checken); wél 115
    runner.sh` (stap1–15; ~40 min, syncs ~20). Check slotregel "KLAAR —",
    0 warnings, kruischeck schoon.
 5. **URL-switch naar shop.defibsolutions.eu** (NL-les 1/2, in deze volgorde):
-   a. DNS A-record aan, Cloudflare **grijs** (DNS only);
-   b. nginx-vhost op cp-01: `server_name defibsolutionseu.defibrion.dev
-      shop.defibsolutions.eu;` (root-edit → Cas met `!`), `nginx -t && systemctl
-      reload nginx`;
-   c. cert: `clpctl lets-encrypt:install:certificate
+   a. [x] DNS A-record `shop.defibsolutions.eu` → 138.199.223.146, Cloudflare
+      **grijs** (Cas, 10 sep). **Na cert-uitgifte: op oranje zetten** (Cas
+      herinneren).
+   b. [x] nginx-vhost op cp-01: `server_name defibsolutionseu.defibrion.dev
+      shop.defibsolutions.eu;` (10 sep, root; backup in /root/nginx-backups),
+      nginx herladen.
+   c. [x] cert: `clpctl lets-encrypt:install:certificate
       --domainName=defibsolutionseu.defibrion.dev
-      --subjectAlternativeName=shop.defibsolutions.eu`;
+      --subjectAlternativeName=shop.defibsolutions.eu` — eerste poging
+      NXDOMAIN (de EU-dev-naam had, anders dan NL/FR, geen DNS-record);
+      na Cas' A-record (grijs) uitgegeven 10 sep 09:26: Let's Encrypt, SAN
+      voor beide namen, geldig t/m 9 dec 2026, nginx herladen en via SNI
+      geverifieerd. **→ Cas: beide records op oranje.**
    d. wp-config: `WP_HOME`/`WP_SITEURL` (door de migrater HARDCODED gezet) →
       `https://shop.defibsolutions.eu`;
    e. `wp search-replace 'https://defibsolutionseu.defibrion.dev'
