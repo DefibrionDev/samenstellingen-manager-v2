@@ -1,0 +1,17 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: ultimate-woocommerce-points-and-rewards fr_FR maatwerk\n"
+"Language: fr_FR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Domain: ultimate-woocommerce-points-and-rewards\n"
+
+msgid "Cart Discount"
+msgstr "Remise sur le panier"
+
+msgid "Failed to Remove Cart Discount"
+msgstr "Échec de la suppression de la remise sur le panier"
+
+msgid "Successfully Removed Cart Discount"
+msgstr "Remise sur le panier supprimée avec succès"
