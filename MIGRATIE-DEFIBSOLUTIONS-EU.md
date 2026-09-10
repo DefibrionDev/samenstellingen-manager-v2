@@ -454,6 +454,38 @@ Alle 45 rijen hebben een besluit. Verwerking (alles idempotent in de scriptstapp
   Rij 306 (Ambu Man Advanced Wireless zonder I.V.): nieuw AFAS-artikel nodig —
   aanvraag-info voor financieel in `work/aanvraag-afas-artikel-ambu-advanced-
   zonder-iv.md`; product blijft tot dan ongekoppeld in de shop.
+- **Les (10 sep, 2×):** het migratiescript nooit bewerken terwijl een run bezig is.
+  Bash leest het bestand incrementeel; een lopende stap (stap11, 25 min) leest na
+  zijn eval-file verder op de oude byte-offset in het gewijzigde bestand →
+  "syntax error near unexpected token `('" en de runner stopt (lokale herhaalrun
+  14:01 brak na stap11 af; staart daarna los gedraaid). Wijzigingen pas doorvoeren
+  als geen runner/stap actief is (`pgrep -f defibsolutionseu-migratie`).
+- **Order-push administratie = 9 (Cas 10 sep):** `afas_sync_orders_administratie`
+  stond via het reseller-sjabloon op 1. Nu 9 in `maak-afas-settings-defibsolutionseu.py`
+  (aanpassing 6, JSON opnieuw gegenereerd; stap4 importeert hem) én expliciet in
+  stap19 (livegang-slot). Op de huidige dev-sites staat nog 1 (push uit, dus
+  zonder effect); de livegang-runner zet 9.
+- **Stickers afgerond (10 sep):** 483 anderstalige samenstellingen zonder NL-set;
+  oorzaak was de prefix-bug in `stickers:restore` (NL-base 10144 zag 10144-UK-… als
+  eigen varianten; run 9 sep zette 81111 in ~480 BOMs) — gefixt met test.
+  11162-FR → taal FR; 11163 (FR-NL-toestel, DS FR) → taal FR/NL + set 81211 i.p.v.
+  81111. Audits: stickers OK, 1783 matched / 0 no_match. Prestan-uitvinken →
+  cp01 force-sync 0 warnings.
+- **Prestan (besluit Cas 10 sep): voorlopig helemaal uit op .eu** ("komt later
+  wel"). De 8 gevlagde Prestan-artikelen (4 MS-heads + 4 DS/4-pack) stonden aan
+  omdat de audit hun (concept-)shop-producten zag; ze gaven bij elke volledige
+  sync 24 warnings ("Aanmaken variabel product overgeslagen", SKU in prullenbak).
+  `maak-vinkjes-input`: `PRESTAN_UIT` + alle `PP-*` uitgesloten, 0-rijen in de
+  input → `fix-defibsolutionseu-vinkjes.php --apply` 10 sep 14:25: 8 ok. Verwacht
+  daarna: 0 sync-warnings op cp01 (controle `stap11 zonder-prijzen`).
+- **Les (10 sep, cp01-staart):** nieuwe OMZETTEN-rijen altijd via de REEKS-volgorde
+  (stap6 → stap16 → … → stap11 → stap8). Ik draaide stap11 vóór stap16: de plugin
+  zag het gekoppelde simple 103295 (artikelnummer 064.1339-UK = kind van head
+  064.1338-SAM-DE) en maakte er een product_variation onder zijn eigen container
+  van; stap16 vormde dat "simple" daarna om, stap8 trashte het als dubbele
+  variatie → container weg, 8 variaties wees. Fix in script: stap16 zet een
+  simple eerst terug naar product/parent 0/publish; stap8 raakt nooit een
+  `-wpbase`-SKU. Herstelketen op cp01: stap16 → stap11 delta → stap8 → stap12 → stap15.
 - **Les (10 sep):** een volle `migrate.sh` (pull+upload, proefverhuizing) overschrijft
   de lokale wp-content met live (lefcreative weg, b2bking terug, mu-plugins weg)
   terwijl de lokale DB de runner-stand houdt → lokaal is daarna inconsistent

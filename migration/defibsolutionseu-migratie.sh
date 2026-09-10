@@ -1356,6 +1356,12 @@ foreach ($dubbel as $grp) {
     $ids = array_map('intval', explode(',', $grp['ids']));
     $art = (string) $grp['artikelnummer'];
     $houd = 0;
+    // Nooit een container (SKU <head>-wpbase) als "dubbele variatie" trashen —
+    // een door de plugin tot variatie omgezet simple dat stap16 daarna tot
+    // container maakte, draagt nog even post_type=product_variation (cp01 10 sep).
+    $ids = array_values(array_filter($ids, static fn (int $id): bool =>
+        !str_ends_with((string) get_post_meta($id, '_sku', true), '-wpbase')));
+    if (count($ids) < 2) { continue; }
     foreach ($ids as $id) {
         if ((string) get_post_meta($id, '_sku', true) === $art) { $houd = $id; break; }
     }
@@ -1586,7 +1592,16 @@ foreach ($plan as $p) {
             if ($apply) { wp_update_post(['ID' => (int) $vid, 'post_parent' => (int) $naar]); }
         }
         if ($apply) {
-            if ($p['bron'] === 'simple') { wp_set_object_terms($pid, 'variable', 'product_type'); }
+            if ($p['bron'] === 'simple') {
+                // Heeft de plugin dit simple al vóór ons gezien (sync vóór stap16,
+                // cp01-staart 10 sep), dan is het een product_variation onder de
+                // plugin-container geworden en kan stap8 het daarna als "dubbele
+                // variatie" hebben getrasht (103295). Eerst terug naar een los,
+                // gepubliceerd product; daarna pas container maken. Idempotent.
+                $wpdb->update($wpdb->posts, ['post_type' => 'product', 'post_parent' => 0, 'post_status' => 'publish'], ['ID' => $pid]);
+                clean_post_cache($pid);
+                wp_set_object_terms($pid, 'variable', 'product_type');
+            }
             update_post_meta($pid, '_afas_artikelnummer', $head);
             update_post_meta($pid, '_sku', $head . '-wpbase');
             $wpdb->update($wpdb->prefix . 'wc_product_meta_lookup', ['sku' => $head . '-wpbase'], ['product_id' => $pid]);
@@ -1704,7 +1719,7 @@ $vrijeVelden = [
 $doel = [
     'afas_sync_orders_enabled'          => '1',
     'afas_sync_verkooporders_enabled'   => '1',
-    'afas_sync_orders_administratie'    => '1',
+    'afas_sync_orders_administratie'    => '9',
     'afas_sync_orders_magazijn'         => '*****',
     'afas_sync_orders_rfcs_prefix'      => '{order_id}',
     'afas_sync_orders_vrije_velden'     => $vrijeVelden,

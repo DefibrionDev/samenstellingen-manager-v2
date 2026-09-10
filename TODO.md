@@ -301,6 +301,6 @@ FR-sessie 81111 bijzette — die rijen gaan met de strip mee).
       81211 i.p.v. 81111: `stickers:restore` (na de fix, verwacht 9 inserts) →
       `bom:strip-component 81111 --only-with=81211` (verwacht 9) → `afas:pull`.
 - [x] 11162-FR: taal FR (Cas 10 sep) — `base:set-language 11162-FR FR`.
-- [ ] Nazorg: `afas:pull` → `group:sync-afas` voor de 13 heads → `audit:variant-parent`,
+- [x] Nazorg (10 sep): `afas:pull` → `group:sync-afas` voor de 13 heads → `audit:variant-parent`,
       `audit:no-match` schoon → EU-stap12 apply op lokaal + cp01 (diff met
       fallback-assen noteren) → handoff-md + EU-runbook bijgewerkt.
