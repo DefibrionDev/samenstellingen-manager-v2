@@ -876,6 +876,16 @@ foreach ([$kaal, str_replace(':', '%3A', $kaal)] as $hostvorm) {
         $paren[$hostvorm . $slash . 'boutique'] = $hostvorm;
     }
 }
+// De cp-01-verhuizing (10 sep) liet hybride varianten van de OUDE live-host
+// staan (https%3A%2F%2Fwww.defibsolutions.fr/boutique%2F… — encoded scheme +
+// plátte /boutique; valt buiten alle migrater-passes). Die vormen hier ook
+// naar de huidige host strippen. Volgorde: www vóór kaal, zodat de kale vorm
+// nooit binnen een al vervangen www-variant matcht.
+foreach (['www.defibsolutions.fr', 'defibsolutions.fr'] as $oudehost) {
+    foreach (['/', '\\/', '%2F', '%252F'] as $slash) {
+        $paren[$oudehost . $slash . 'boutique'] = $kaal;
+    }
+}
 $doelen = [
     ["{$wpdb->posts}", 'post_content', 'ID'],
     ["{$wpdb->postmeta}", 'meta_value', 'meta_id'],
@@ -915,6 +925,20 @@ PHP
         sed -i 's/APPLY_PLACEHOLDER/false/' /tmp/afasfr-boutiquepad-payload.php
     fi
     wpr_stdin eval-file - < /tmp/afasfr-boutiquepad-payload.php
+    # Het childtheme pint de oude live-URL hard: woodmart-child/functions.php
+    # regel 3-4 doen update_option('siteurl'/'home', oude URL) op ELKE load
+    # (gevonden livegang 10 sep via backtrace-mu-plugin — elke fix van de
+    # options werd stil teruggedraaid). Regels met de oude URL strippen.
+    if [[ "$apply" == "apply" ]]; then
+        local ftheme="wp-content/themes/woodmart-child/functions.php"
+        if [[ "$TARGET" == "cp01" ]]; then
+            ssh "$SERVER" "sed -i '/www.defibsolutions.fr\/boutique/d' '$WP_ROOT/$ftheme'"
+        else
+            _lokaal_compose run "${_LOKAAL_RUN_OPTS[@]}" wpcli \
+                sh -c "sed -i '/www.defibsolutions.fr\/boutique/d' /var/www/html/$ftheme"
+        fi
+        echo "childtheme-URL-pin gestript ($ftheme)"
+    fi
     if [[ "$apply" != "apply" ]]; then
         echo "Dry-run — niets gewijzigd. Draai '$0 stap12 apply' om te fixen."
     else
