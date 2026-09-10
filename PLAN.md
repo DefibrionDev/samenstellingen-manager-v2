@@ -427,3 +427,13 @@ PrSe niet uniek is binnen de samenstelling (dubbele PrSe komt veel voor, bv.
 11165: drie regels op 10) en die als "onveilig, overgeslagen" rapporteren; de reader
 levert daarvoor alle regels van de geraakte samenstellingen.
 
+**Oorzaak van de dubbele stickersets gevonden (10 sep, na de strip).**
+`stickers:restore` verzamelt de varianten van een base via prefix
+`<base>-`. Voor een NL-base zonder taal-suffix (10144, 11145, 11186, 21011, …)
+matcht die prefix óók alle taal-bases en hún varianten (10144-UK, 10144-UK-60110,
+…), waardoor de NL-set 81111 in ~480 anderstalige samenstellingen werd
+geïnserteerd (run 9 sep: "850 inserted"). Dry-run na de strip stelde dezelfde
+475 inserts opnieuw voor. Fix: kandidaten die zelf een andere base zijn (of
+onder een andere base vallen) uitsluiten. Zonder deze fix maakt elke
+`stickers:restore` de strip ongedaan.
+

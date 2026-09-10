@@ -295,6 +295,12 @@ FR-sessie 81111 bijzette — die rijen gaan met de strip mee).
 - [x] Herstel 11167 (10 sep 14:00): 70112 terug (Art, 30); delete PrSe 10 pakte de AED
       10165 → terug op 40; tweede delete PrSe 10 haalde 81111 weg; `afas:pull` →
       BOM 10165/70112/81211, 8/8 varianten gematcht, 1783 matched / 0 no_match.
+- [x] `stickers:restore`: prefix-bug in `collectVariants` (NL-base 10144 matcht 10144-UK-…)
+      → andere bases en hun varianten uitsluiten; test met 10144 (NL) + 10144-UK (EN).
+- [x] 11163 (FR/NL-toestel, alleen DS FR; besluit Cas 10 sep): taal FR/NL + sticker
+      81211 i.p.v. 81111: `stickers:restore` (na de fix, verwacht 9 inserts) →
+      `bom:strip-component 81111 --only-with=81211` (verwacht 9) → `afas:pull`.
+- [x] 11162-FR: taal FR (Cas 10 sep) — `base:set-language 11162-FR FR`.
 - [ ] Nazorg: `afas:pull` → `group:sync-afas` voor de 13 heads → `audit:variant-parent`,
       `audit:no-match` schoon → EU-stap12 apply op lokaal + cp01 (diff met
       fallback-assen noteren) → handoff-md + EU-runbook bijgewerkt.

@@ -49,6 +49,10 @@ final readonly class RestoreStickersHandler
 
         $toolInserts = [];
         $afasPlans = [];
+        // Alle base-itemcodes: een NL-base zonder taal-suffix (10144) mag de
+        // taal-bases 10144-UK/-DE/… en hún varianten niet als eigen variant zien
+        // (bug 9 sep 2026: 81111 in ~480 anderstalige BOMs).
+        $allBaseCodes = $this->bases->findAllAfasItemcodes();
         $filterLang = $command->languageCode !== null ? strtoupper(trim($command->languageCode)) : null;
 
         foreach ($this->groups->findAll() as $group) {
@@ -81,7 +85,7 @@ final readonly class RestoreStickersHandler
                     continue;
                 }
 
-                foreach ($this->collectVariants($base->afasItemcode, $afasByItemcode) as $itemcode) {
+                foreach ($this->collectVariants($base->afasItemcode, $afasByItemcode, $allBaseCodes) as $itemcode) {
                     $samenstelling = $afasByItemcode[$itemcode];
                     if (in_array($expectedSticker, $samenstelling->bomItemcodes, true)) {
                         continue;
@@ -133,17 +137,30 @@ final readonly class RestoreStickersHandler
 
     /**
      * @param array<string, \Defibrion\Samenstellingen\Domain\Afas\AfasSamenstelling> $afasByItemcode
+     * @param list<string> $allBaseCodes
      * @return list<string>
      */
-    private function collectVariants(string $baseSku, array $afasByItemcode): array
+    private function collectVariants(string $baseSku, array $afasByItemcode, array $allBaseCodes): array
     {
         $result = [];
         $prefix = $baseSku . '-';
+        // andere bases die onder deze prefix vallen (10144-UK onder 10144-): hun
+        // codes en varianten horen niet bij deze base
+        $otherBases = array_values(array_filter(
+            $allBaseCodes,
+            static fn (string $c): bool => $c !== $baseSku && str_starts_with($c, $prefix),
+        ));
         foreach ($afasByItemcode as $itemcode => $_) {
             $code = (string) $itemcode;
-            if ($code === $baseSku || str_starts_with($code, $prefix)) {
-                $result[] = $code;
+            if ($code !== $baseSku && !str_starts_with($code, $prefix)) {
+                continue;
             }
+            foreach ($otherBases as $other) {
+                if ($code === $other || str_starts_with($code, $other . '-')) {
+                    continue 2;
+                }
+            }
+            $result[] = $code;
         }
         sort($result);
 

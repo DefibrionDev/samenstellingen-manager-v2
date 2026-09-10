@@ -108,6 +108,37 @@ final class RestoreStickersHandlerTest extends TestCase
         self::assertSame([], $result->afasPlans);
     }
 
+    #[Test]
+    public function nlBaseWithoutLanguageSuffixDoesNotClaimSiblingLanguageBasesAsVariants(): void
+    {
+        // Bug 9 sep 2026: prefix "10144-" van NL-base 10144 matchte óók 10144-UK en
+        // 10144-UK-60110, waardoor 81111 in ~480 anderstalige BOMs terechtkwam.
+        $groups = new InMemoryGroupRepository();
+        $bases = new InMemoryGroupBaseRepository($groups);
+        $items = new InMemoryGroupBaseItemRepository($bases);
+        $afas = new InMemoryAfasSamenstellingenRepository();
+        $afas->replaceSnapshot([
+            new AfasSamenstelling('10144', 'AED NL', null, ['10144X', '70112', '81111']),
+            new AfasSamenstelling('10144-60110', 'AED NL tas', '10144', ['10144X', '70112', '81111', '60110']),
+            new AfasSamenstelling('10144-UK', 'AED EN', null, ['10144X-UK', '70112']),
+            new AfasSamenstelling('10144-UK-60110', 'AED EN tas', '10144-UK', ['10144X-UK', '70112', '60110']),
+        ]);
+        $groups->save(new Group('HS1', '10144-UK'));
+        $nl = $bases->saveForGroup('10144-UK', new GroupBase(null, 'AED pakket NL', 'NL', '10144'));
+        $en = $bases->saveForGroup('10144-UK', new GroupBase(null, 'AED pakket EN', 'EN', '10144-UK'));
+        self::assertNotNull($nl->id);
+        self::assertNotNull($en->id);
+        $items->saveForBase($nl->id, new GroupBaseItem('81111', 'sticker NL'));
+        $reader = (new InMemoryBomLineReader())->withLines(new BomLine('10144-UK', '70112', 'Art', 20));
+        $handler = new RestoreStickersHandler($groups, $bases, $items, $afas, $reader, new InMemoryBomComponentRestoreWriter());
+
+        $result = ($handler)(new RestoreStickers());
+
+        $plans = array_map(static fn ($p) => $p->samenstellingItemcode . '=' . $p->bomItemcode, $result->afasPlans);
+        sort($plans);
+        self::assertSame(['10144-UK-60110=81611', '10144-UK=81611'], $plans);
+    }
+
     /**
      * @param list<string>                                            $existingToolItems
      * @param list<AfasSamenstelling>                                 $afasSamenstellingen
