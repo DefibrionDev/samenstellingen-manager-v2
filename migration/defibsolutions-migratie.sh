@@ -454,6 +454,28 @@ stap7() {
         ssh "$SERVER" "ls '$WP_ROOT/wp-content/mu-plugins'"
     fi
     echo "OK — $(ls "$bron"/*.php | wc -l) mu-plugins geplaatst op $(doel_naam)"
+
+    # Maatwerk-vertalingen (bevinding 10 sept, klant kon niet afrekenen): de
+    # punten-korting is een virtuele coupon met als code de VERTAALDE naam
+    # van 'Cart Discount'. De free plugin (points-and-rewards) heeft een
+    # NL-vertaling ("Winkelwagenkorting"), de pro (ultimate-...) niet — de
+    # pro-validator matcht dan nooit en WooCommerce keurt de coupon af.
+    # Reseller loste dit 20 juli op met een Loco-vertaling voor de pro;
+    # die vendoren we hier en plaatsen we in languages/plugins (wordt door
+    # WP core geladen, Loco-plugin niet nodig).
+    local talen="$REPO_ROOT/migration/languages"
+    if [[ -d "$talen" ]] && ls "$talen"/* >/dev/null 2>&1; then
+        if [[ "$TARGET" == "lokaal" ]]; then
+            local content_dir2
+            content_dir2=$(grep '^CONTENT_DIR=' "$MIGRATER_DIR/.env-defibsolutions" | cut -d= -f2)
+            mkdir -p "$MIGRATER_DIR/${content_dir2#./}/languages/plugins"
+            cp "$talen"/* "$MIGRATER_DIR/${content_dir2#./}/languages/plugins/"
+        else
+            ssh "$SERVER" "mkdir -p '$WP_ROOT/wp-content/languages/plugins'"
+            scp -q "$talen"/* "$SERVER:$WP_ROOT/wp-content/languages/plugins/"
+        fi
+        echo "OK — $(ls "$talen" | wc -l) vertaalbestanden geplaatst op $(doel_naam)"
+    fi
 }
 
 # ---------------------------------------------------------------------------

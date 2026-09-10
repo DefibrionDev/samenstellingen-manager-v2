@@ -1,0 +1,5136 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Points and Rewards For WooCommerce Pro 3.7.2\n"
+"POT-Creation-Date: 2026-07-10 14:42+0530\n"
+"PO-Revision-Date: 2026-07-20 11:43+0000\n"
+"Last-Translator: Test Bestelling, Verwijder Mij\n"
+"Language-Team: Nederlands\n"
+"Language: nl_NL\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Loco https://localise.biz/\n"
+"X-Poedit-Basepath: ..\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Poedit-KeywordsList: __;_e;_n;_x;_ex;_nx;esc_attr__;esc_attr_e;esc_attr_x;"
+"esc_html;esc_html__;esc_html_e;esc_html_x;_n_noop;_nx_noop;"
+"translate_nooped_plural\n"
+"X-Poedit-SearchPath-0: .\n"
+"Report-Msgid-Bugs-To: \n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Loco-Version: 2.8.7; wp-7.0.2; php-8.5.7"
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:131
+msgid "Please enter a valid points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:132
+msgid "Enter the Name of the Level"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:133
+msgid "Enter Level"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:134
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1331
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3961
+#: admin/partials/template/wps-pro-purchase-points.php:213
+msgid "Enter Points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:135
+#: admin/partials/template/wps-pro-purchase-points.php:41
+msgid "Select Product Category"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:136
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2255
+msgid "Remove"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:138
+msgid "Select Product"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:139
+msgid "Enter Discount (%)"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:140
+msgid "Fields cannot be empty"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:141
+msgid "Please Enter the Name of the Level"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:142
+msgid "Please Enter valid Points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:143
+msgid "Please select a category"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:144
+msgid "Please select a product"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:145
+msgid "Please enter a valid discount"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:146
+msgid "Points are assigned successfully!"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:147
+msgid ""
+"This is a category-wise setting for assigning points to product categories. "
+"Enter some points for giving, leave blank fields for removing assigned points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:148
+msgid "Enter Some Valid Points!"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:149
+msgid "Points are removed successfully!"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:150
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:552
+#: admin/partials/settings/class-ultimate-woocommerce-points-rewards-admin-settings.php:141
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:8746
+msgid "Days"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:151
+#: admin/partials/settings/class-ultimate-woocommerce-points-rewards-admin-settings.php:142
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:8747
+msgid "Weeks"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:152
+#: admin/partials/settings/class-ultimate-woocommerce-points-rewards-admin-settings.php:143
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:8748
+msgid "Months"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:153
+#: admin/partials/settings/class-ultimate-woocommerce-points-rewards-admin-settings.php:144
+msgid "Years"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:154
+msgid "Expiration Period"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:155
+msgid "Rewards Members with points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:156
+msgid "Rewards Points type"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:157
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:912
+msgid "Free Shipping"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:158
+msgid "Enable Per currency settings"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:159
+msgid "Set per-currency values"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:160
+msgid "Please! fill the correct credentials to add more"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:162
+msgid "Please enter Remark"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:164
+msgid "Do you want to delete it?"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:166
+msgid ""
+"Please note that resetting the points will remove all existing points of "
+"user and assigned zero(0), Are you sure you want to Reset all users points ??"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:167
+msgid "Please choose any option"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:168
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5778
+msgid "Start date and end date are required."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:184
+msgid "An error occured!"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:289
+msgid "Successfully Verified..."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:296
+msgid "License Verification Failed."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:425
+msgid "Minimum Referrals Required"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:430
+msgid ""
+"Minimum number of referrals required to get referral points when the new "
+"customer sign-ups."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:433
+msgid "Select page where you want to Redirect"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:437
+msgid "Choose page where you want to redirect user through referral link"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:441
+msgid "Referral Purchase Points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:447
+msgid "Check this box to enable the referral purchase points."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:450
+msgid "Enable Referral Purchase Points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:453
+msgid "Referral Purchase Points Type"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:460
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:581
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2290
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3848
+msgid "Fixed"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:464
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:585
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2294
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3852
+msgid "Percentage"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:468
+msgid ""
+"Select the points type on referral purchase depending upon the order total."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:473
+msgid "Enter Referral Purchase Points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:480
+msgid ""
+"Entered Points Will be Assigned to That User by Which Another User Referred "
+"From."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:485
+msgid "Minimum order total for referral purchase reward"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:492
+msgid ""
+"Referral purchase points will be rewarded when the order total exceeds the "
+"minimum required amount."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:497
+msgid "Reward referral purchase points based on product categories."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:501
+msgid ""
+"Referral rewards are calculated based on the category of the purchased "
+"product."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:505
+msgid "Assign Only Referral Purchase Points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:510
+msgid ""
+"Check this if you want to assign only purchase points to referred user not "
+"referral points."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:513
+msgid "Make sure Referral Points & Referral Purchase Points should be enabled."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:516
+msgid "Referral Purchase Limit"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:520
+msgid "Toggle This To Enable The Referral Purchase Points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:522
+msgid "Toggle this to Set the Limit on the Orders for the Referee"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:527
+msgid "Number of Orders for the Referral Purchase Limit"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:533
+msgid ""
+"The Number of orders, the Referee would get assigned only until the limit of "
+"orders is reached"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:538
+msgid "Static Referral Link"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:542
+msgid "Check this box to make the referral key permanent."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:543
+msgid "Make Referral Link Permanent"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:546
+msgid "Referral Link Expiry"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:551
+msgid "Number of Days After the Referral Link Will be Expired"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:555
+msgid "Refer Via Referral Coupon Code"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:558
+msgid "Enable to Refer via referral Coupon code"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:559
+msgid "Toggle This to Assign Only Purchase Points to Referred User."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:563
+msgid "Amount for the Referral Coupon Discount"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:569
+msgid "Enter the amount for the referral coupon discount"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:574
+msgid "Referral Purchase Coupon Type"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:589
+msgid "Select Coupon type on referral purchase depending upon the order total."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:597
+msgid "Review/Comment Points Settings"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:601
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5818
+msgid "Comments Points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:604
+msgid "Enable Comments Points for Rewards"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:605
+msgid "Check this box to enable the Comment Points when a comment is approved."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:609
+msgid "Enter Comments Points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:613
+msgid ""
+"The points which new customers will get after their comments are approved."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:616
+msgid "User per post comment"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:620
+msgid "Number of Comments a User Can Have Per Post."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:643
+msgid "Comment Points Notification Settings"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:647
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:679
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:712
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:744
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:776
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:808
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1602
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1631
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2910
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2954
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2998
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3040
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3082
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3124
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3166
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3208
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3250
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3292
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3335
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3378
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3823
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3879
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3919
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3992
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4040
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4129
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4175
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4222
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4268
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4632
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5963
+msgid "Enable"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:651
+msgid "Check this box to enable the comment points notification."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:652
+msgid "Enable Comment Points Notification"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:655
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:687
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:720
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:752
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:784
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:816
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4048
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4137
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4183
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4230
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4276
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4640
+#: admin/partials/template/wps-par-churn-customers.php:660
+msgid "Email Subject"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:659
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:691
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:724
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:756
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:788
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:820
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4052
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4141
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4187
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4234
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4280
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4644
+msgid "Input subject for the email."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:660
+msgid "Comment Points Notification"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:663
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:695
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:728
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:760
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:792
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:824
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4056
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4145
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4191
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4238
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4284
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4648
+msgid "Email Description"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:667
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:699
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:732
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:764
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:796
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:828
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4060
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4149
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4195
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4242
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4288
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4652
+msgid "Enter the Email Description for the user."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:668
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:765
+msgid "You have received"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:668
+msgid " points and your total points are"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:668
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:765
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:797
+msgid "."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:669
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:701
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:734
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:766
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:798
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:830
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4062
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4151
+msgid "Use "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:669
+msgid " shortcode in place of comment points "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:669
+msgid " shortcode in place of username "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:669
+msgid " shortcode in place of Referral points. Use "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:669
+msgid " shortcode in place of per currency spent points and "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:669
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:701
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:766
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:798
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4062
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4151
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4244
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4290
+msgid " shortcode in place of Total Points."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:675
+msgid "Referral Purchase Points Notification Settings"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:683
+msgid "Check this box to enable the referral purchase points notification."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:684
+msgid "Enable Referral Purchase Notification"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:692
+msgid "Referral Purchase Points Notification"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:700
+msgid "You have received "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:700
+msgid " points and your total points are "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:701
+msgid " shortcode in place of Referral Purchase Points "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:701
+msgid " in place of Referral points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:701
+msgid " in place of Per Currency spent points and "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:708
+msgid "Deduct Per Currency Spent Point Notification"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:716
+msgid ""
+"Check this box to enable the Deduct Per Currency Spent points notification."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:717
+msgid "Enable Deduct Per Currency Spent Points Notification"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:725
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:821
+msgid "Your Points have been Deducted"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:733
+msgid ""
+"Your [DEDUCTEDPOINT] has been deducted from your total points as you have "
+"request for your refund, and your Total Point are [TOTALPOINTS]."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:734
+msgid " shortcode in place of points which have been deducted. Use  "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:734
+msgid " shortcode in place of username and use "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:734
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:830
+msgid " shortcode in place of Total Remaining Points."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:740
+msgid "Point Sharing Notification"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:748
+msgid "Check this box to enable the points sharing notification."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:749
+msgid "Enable Points Sharing Notification"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:757
+msgid "Received Points Successfully!!"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:765
+msgid "by your one of the friends having an Email Id is"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:765
+msgid "and your total points are"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:766
+msgid " shortcode in place of points which have been received. Use "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:766
+msgid " shortcode in place of a username, "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:766
+msgid " shortcode in place of the email id of the Sender, and "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:772
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:781
+msgid "Purchase Products through Points Notification"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:780
+msgid ""
+"Check this box to enable the purchase of products through points "
+"notification."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:789
+msgid "Product Purchased Through Points Notification"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:797
+msgid "Product Purchased Point"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:797
+msgid ""
+" has been deducted from your points on purchasing, and your Total Points are "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:798
+msgid " shortcode in place of purchasing points, "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:798
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4062
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4151
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4244
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4290
+msgid " shortcode in place of a username, and "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:804
+msgid "Return Product Purchase through Point Notification"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:812
+msgid ""
+"Toggle This to Enable the Notification for Return Product Purchase Through "
+"Points."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:813
+msgid "Return Product Purchase through Point"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:829
+msgid ""
+"Your [RETURNPOINT] has been returned to your point account as you have "
+"request for your refund and your Total Point is [TOTALPOINTS]."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:830
+msgid " shortcode in place of points which have been returned, "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:830
+msgid " shortcode in place of username, and "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:852
+msgid "Coupon Settings"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:856
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:861
+msgid "Points Conversion"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:860
+msgid "Enable Points Conversion Fields"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:861
+msgid ""
+"Toggle This to Enable The Coupon Generation Functionality for Customers."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:865
+msgid "Redeem Points Conversion"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:866
+msgid ""
+"Enter the redeem points for the coupon. (i.e. how many points will be "
+"equivalent to the amount)"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:875
+#: admin/partials/template/wps-pro-purchase-points.php:73
+msgid "="
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:883
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1974
+#: admin/partials/template/wps-par-transaction-log.php:720
+#: admin/partials/template/wps-pro-purchase-points.php:86
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:237
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:927
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1043
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1315
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1441
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:2374
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3332
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3342
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3441
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3450
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:5142
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6313
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:7688
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:8309
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:8397
+msgid "Points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:888
+msgid "Enter Minimum Points Required For Generating Coupon"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:892
+msgid ""
+"The minimum points customer requires for converting their points to coupon"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:896
+msgid "Custom Convert Points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:900
+msgid ""
+"Enable to allow customers to convert some of the points to coupon out of "
+"their given total points."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:901
+msgid ""
+"Toggle This to Allow Customers to Convert Their Custom Points to Coupons Out "
+"of Their Total Points."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:904
+msgid "Individual Use"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:908
+msgid "Allow Coupons to use Individually."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:909
+msgid ""
+"Toggle This if the Coupon Can Not Be Used in Conjunction WIth Another coupon."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:916
+msgid "Allow Coupons on Free Shipping."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:917
+msgid ""
+"Check this box if the coupon grants free shipping. A free shipping method "
+"must be enabled in your shipping zone and be set to require \" a valid free "
+"shipping coupon\" (see the \"Free Shipping Requires\" setting)."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:920
+msgid "Coupon Length"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:924
+msgid "Enter Coupon length excluding the prefix.(Minimum length is set to 5"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:928
+msgid "Coupon Expiry After Days"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:932
+msgid ""
+"Enter The Number of Days After the Coupon Will Expire When the Order is "
+"Completed. Keep Value Zero for No Expiration."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:936
+msgid "Minimum Spend"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:940
+msgid ""
+"This field allows you to set the minimum spend (subtotal, including taxes) "
+"allowed to use the coupon. Keep value \"0\" for no limit."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:944
+msgid "Maximum Spend"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:948
+msgid ""
+"This field allows you to set the maximum spend (subtotal, including taxes) "
+"allowed when using the Coupon. Keep value \"0\" for no limit."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:952
+msgid "Coupon No of time uses"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:956
+msgid ""
+"How many times this coupon can be used before the Coupon is void. Keep value "
+"\"0\" for no limit."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:960
+msgid "Enable to let users share coupons with friends."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:964
+msgid "Activate this option to let users distribute their coupons to friends."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:965
+msgid "Enable coupon sharing functionality for user accounts."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:991
+msgid "Thankyou Page Settings"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:997
+msgid "Thank You Order Message When Your Customers Gain Some Points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:998
+msgid ""
+"Entered Message will appears at thankyou page when any ordered item is "
+"having some of the points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1000
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1014
+msgid ""
+"Use these shortcodes to provide an appropriate message for your customers. "
+"Use "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1000
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1014
+msgid " shortcode for product points and "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1000
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1014
+msgid " for their Total Points "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1011
+msgid "Thank You Order Message When Your Customers Spent Some of Their Points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1012
+msgid ""
+"Entered Message will appears at thankyou page when any item has been "
+"purchased through points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1025
+msgid "Points Sharing"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1031
+msgid "Point Sharing"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1032
+msgid ""
+"Toggle This to Enable Your Customers to Share Some of Their Points to Other "
+"Users"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1034
+#: admin/partials/template/points-and-rewards-for-woocommerce-pro-addon.php:77
+msgid "Enable Point Sharing"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1182
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1187
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1251
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1256
+#, php-format
+msgid ""
+"You've earned comment points for posting a comment. Your total points "
+"balance is now %s"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1326
+#: admin/partials/template/wps-pro-purchase-points.php:207
+msgid ""
+"This is a category-wise setting to assign points to a product of categories. "
+"Enter some valid points for assigning, and leave blank fields to remove "
+"assigned points."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1330
+#: admin/partials/template/wps-pro-purchase-points.php:212
+msgid "Categories"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1332
+#: admin/partials/template/wps-pro-purchase-points.php:214
+msgid "Assign/Remove"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1346
+#: admin/partials/template/wps-pro-purchase-points.php:228
+msgid "Submit"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1378
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1506
+msgid "Fail due to an error"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1451
+msgid "Product Purchase Points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1455
+#: admin/partials/template/wps-point-expiration.php:22
+#: admin/partials/template/wps-point-expiration.php:26
+msgid "Points Expiration"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1477
+msgid "License"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1568
+msgid "Points and Rewards"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1603
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:8622
+msgid "Enable Points Per Product"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1610
+msgid "Enter the Points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1613
+msgid "Please enter the number of points for this product "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1622
+msgid "Do not allow to purchase through points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1623
+msgid "Do not allow to purchase this product through points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1632
+msgid "Enable Purchase through points only"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1639
+msgid "Enter the Points For Purchase"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1642
+msgid "Please enter the number of points for purchase of this product "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1686
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:8676
+msgid "Customers will earn assigned points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1689
+msgid "Product Point"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1706
+msgid "Required points to purchase this product"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1709
+msgid "Product Point for purchase"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1828
+msgid "Redeem your Points before they expire!"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1855
+msgid "Hurry!! Points Expiration has just a few days"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1897
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1902
+msgid "Oops! Some of your points have expired."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1908
+msgid "Points have expired!"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:1910
+#: admin/partials/template/wps-point-expiration.php:151
+msgid ""
+"Your Points has been expired, you may earn more Points and use the benefit "
+"more"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2025
+#, php-format
+msgid "%s day"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2029
+#: ultimate-woocommerce-points-and-rewards.php:453
+msgid "Activate"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2031
+msgid " the license key before "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2033
+msgid ""
+" or you may risk losing data and the plugin will also become dysfunctional."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2045
+msgid "Unfortunately, Your trial has expired. Please"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2046
+msgid "activate"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2047
+msgid "your license key to avail the premium features."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2063
+msgid ""
+"Your Subscription has expired. Please renew immediately to continue using "
+"Points and Rewards For WooCommerce Pro."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2069
+#, php-format
+msgid "We have extended your access for 15 days and %d days remains."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2074
+msgid ""
+"Your grace period has ended. Please renew immediately to avoid interruption."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2079
+msgid "Renew Subscription"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2097
+msgid "Your Subscription is Expired. "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2101
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5067
+msgid "Stay on track! Renew your subscription for"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2101
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5067
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5089
+msgid " Points and Rewards For WooCommerce Pro "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2101
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5067
+msgid "now to maintain uninterrupted service!"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2101
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5067
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5089
+msgid "Renew Now"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2101
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5067
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5089
+msgid "If already renewed"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2101
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5067
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5089
+msgid "Validate Now"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2118
+msgid "Per Currency Points & Coupon Settings"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2130
+msgid "View Coupon Detail"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2143
+msgid "Import/Export Users Points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2148
+msgid "Instructions"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2149
+msgid "To import user points. You need to choose a CSV file and click Import."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2150
+msgid ""
+"CSV for users points must have 3 columns in this order(User Email, Points, "
+"Reason Also the first row must have respective headings)."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2151
+msgid "Click on Export Button to export points table data."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2155
+msgid "Choose a CSV file:"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2161
+msgid "Maximum size:128 MB"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2164
+msgid "Export Demo CSV"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2171
+msgid "Import"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2174
+msgid "Export"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2176
+msgid "Exporting table please wait..."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2185
+msgid "Reset Users Points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2190
+msgid ""
+"To Reset Points of all users in a single go, click on Reset Points Button."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2191
+msgid ""
+"Please note that resetting the points will remove all existing points of "
+"user and assigned zero(0)"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2194
+msgid "Reset Points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2206
+msgid "Add / Remove Points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2211
+msgid ""
+"To add/remove points to all users at once, simply click on the \"Update "
+"Points\" button."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2212
+msgid ""
+"Please note that this action will overwrite and update the existing points "
+"for all users."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2215
+msgid "Update Points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2233
+msgid "Please choose an option : "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2235
+msgid "Add Points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2236
+msgid "Substract Points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2237
+msgid "Override Points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2240
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2258
+msgid "Proceed"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2251
+msgid "Enter Points : "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2252
+msgid "Enter Reason : "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2254
+msgid "Add"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2275
+msgid "Point Usage Limitation"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2278
+msgid "Allow customers to pay a particular part of the order using points."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2279
+msgid "Check this box to enable the Maximum Points to apply to the cart"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2282
+msgid "Select Points Limitation Type"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2286
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3844
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4598
+msgid "Select the discount Type to apply points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2299
+msgid "Enter Amount"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2303
+msgid "Enter the amount that customers can pay using their points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2304
+msgid " Enter the amount that customer can pay using their points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2308
+msgid "Point Restriction on sale Product"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2311
+msgid "Toggle This To Restrict The Points Discount on Sale Items."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2312
+msgid "Check this box to restrict the points discount on sales item"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2315
+msgid "Minimum points you want to start the redemption"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2319
+msgid "Enter the min points you want the user to redeem points."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2320
+msgid "Enter the minimum points you want the user to redeem."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2323
+msgid "Restrict points redemption by category"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2327
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2351
+msgid ""
+"Select the categories in which you want to allow customers to redeem points."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2331
+msgid "Enable this setting to apply coupons or points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2334
+msgid ""
+"Enable this setting to restrict users from applying both a coupon and points "
+"simultaneously; they can use only one at a time."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2336
+msgid ""
+"Toggle this setting to restrict users from applying either a coupon or "
+"points, but not both at the same time."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2339
+msgid "Enable redemption based on the users membership level."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2342
+msgid ""
+"After enabling this setting, only members will be able to redeem points."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2344
+msgid ""
+"Enable this setting to allow users to redeem points based on their "
+"membership level."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2347
+msgid "Choose a membership level to allow redemption."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2442
+msgid "Allow selected user role to use points feature"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2447
+msgid "Allow user roles"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2451
+msgid ""
+"Allow Selected User Roles to Use Points Features. Leave Empty for All Users"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2470
+msgid "Select the option to assign points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2474
+msgid "Select the option to assign points for signups."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2732
+msgid "Reset Points Log"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2771
+msgid "Notification Addon"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2797
+msgid ""
+"Use shortcode [WPS_REFERRAL_LINK] for displaying referral link anywhere on "
+"site"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2810
+#: admin/partials/template/wps-wpr-api-features.php:23
+msgid "API Settings"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2828
+msgid "Per currency points in subtotal"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2831
+msgid "Allow per currency points conversion on subtotal."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2832
+msgid ""
+"Check this box if you want to enable per currency points conversion on "
+"subtotal."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2835
+msgid "Limit point earning per currency to specific product categories wise"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2839
+msgid ""
+"Restrict customers from earning points per currency unless they purchase "
+"from the selected categories. If no categories are selected, points will be "
+"rewards to all categories by default."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2843
+msgid "Rewards are calculated based on your order total"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2847
+msgid ""
+"To begin earning points, your order total must exceed a certain amount; "
+"after that, you will receive points for every currency unit spent."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2848
+msgid ""
+"You will earn points per currency spent when your order total exceeds this "
+"amount."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2914
+msgid "Check this box to enable the custom points notification."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2915
+msgid "Custom Points Notification"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2958
+msgid "Check this box to enable the signup points notification."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:2959
+msgid "Signup Points Notification"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3002
+msgid "Check this box to enable the product purchase points notification."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3003
+msgid "Product Purchase Points Notification"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3044
+msgid "Check this box to enable the order amount points notification."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3045
+msgid "Order Amount Points Notification"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3086
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3128
+msgid "Check this box to enable the referral points notification."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3087
+msgid "Referral Points Notification"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3129
+msgid "Upgrade Membership Points Notification"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3170
+msgid "Check this box to enable the deduct assign points notification."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3171
+msgid "Deduct Assign Points Notification"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3212
+msgid "Toggle This to Enable the Notification on Cart Subtotal Points."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3213
+msgid "Points On Cart Sub-Total Notification"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3254
+msgid "Toggle This to Enable the Notification on Order Total Range Points."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3255
+msgid "Points On Order Total Range Notification"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3296
+msgid "Toggle This to Enable The Notification on Order Rewards Points."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3297
+#: admin/partials/template/wps-par-transaction-log.php:70
+#: admin/partials/template/wps-par-transaction-log.php:272
+#: admin/partials/template/wps-par-transaction-log.php:532
+msgid "Order Rewards Points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3339
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3382
+msgid "Toggle This to Enable The Notification on Game Points."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3340
+msgid "Gamification Points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3383
+msgid "Badge Points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3819
+msgid "Enable First order Points settings"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3825
+msgid "Enable to give points on first order purchase"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3827
+msgid "Check this box to enable the first order points setting."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3831
+msgid "Enter First order purchase Points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3837
+msgid "The Points New Customers Will Get After Their First Order"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3840
+msgid "Select Points Type"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3875
+msgid "Enable First Daily login Points settings"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3881
+msgid "Enable to give points on first daily login"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3883
+msgid "Check this box to enable the setting of the daily points."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3887
+msgid "Enter First Daily login Points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3893
+msgid "The Points New Customers Will Get When They Login Daily"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3915
+msgid "Enable Customer Rank Settings"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3921
+msgid "Enable To Rank the Customer on Basis of Points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3923
+msgid "Check this box to enable customer rank points setting."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3927
+msgid "Number of Customers to be Listed With ShortCode [CUSTOMERRANK]"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3933
+msgid "The Number of Customers To Be Listed During Ranking"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3936
+msgid "First Rank Bonus Rewards"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3938
+msgid ""
+"Turn on this option to grant bonus points to users who achieve the first "
+"rank."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3940
+msgid ""
+"Enable this option to apply additional reward points to users occupying the "
+"first-rank position."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3944
+msgid "Points Assignment Type"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3948
+msgid ""
+"Choose the interval at which points will be awarded, either weekly or monthly"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3952
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6277
+msgid "Weekly"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3956
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6277
+msgid "Monthly"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3967
+msgid "Entered points will be assigned to user based on the selected interval"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3988
+msgid "Enable Birthday Points settings"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3994
+msgid "Enable to give points on birthday"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:3996
+msgid "Check this box to enable points on the birthday setting."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4000
+msgid "Enter Birthday Points to give on bday"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4006
+msgid "The Points That The Customers Will Get, Only on Their Birthday"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4009
+msgid "Birthday Month Points Multiplier"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4015
+msgid ""
+"Apply a points multiplier to all orders placed during the user’s birthday "
+"month. The points earned will be multiplied based on the selected value (2X "
+"/ 3X)."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4036
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4045
+msgid "Points Only on First order"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4044
+msgid "Toggle This to Enable Notification On First Order Points."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4053
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4142
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4235
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4281
+#: admin/partials/template/wps-par-churn-customers.php:202
+msgid "Points Added"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4061
+msgid ""
+"Your [FIRSTORDERPOINT] Points have been added. Now your Total Points are "
+"[Total Points]."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4062
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4244
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4290
+msgid " shortcode in place of points which have been added, "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4085
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6372
+msgid "Points earned for placing your first order"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4093
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4317
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4348
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4379
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4414
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4445
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4479
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4511
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4557
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6678
+msgid "Date & Time"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4096
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4320
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4351
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4382
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4417
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4448
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4482
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4514
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4560
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6381
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6413
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6445
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6479
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6513
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6548
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6582
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6614
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6646
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6681
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6727
+msgid "Point Status"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4125
+msgid "Points Only on  First Daily Login"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4133
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4179
+msgid "Toggle This to Enable Notification on FIrst Daily Login Points."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4134
+msgid "Points Only on First Daily Login"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4150
+msgid ""
+"Your [FIRSTLOGINPOINT] Points have been added. Now your Total Points are "
+"[TOTALPOINTNOW]."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4151
+msgid " shortcode in place of points which have been added "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4171
+msgid "Mail template for Email referral"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4180
+msgid "Points Only on Referrel"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4188
+msgid "Use the referral link to join"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4196
+msgid ""
+"You are being referred by [USERNAME] and Your Referral Link is [REFERALLINK]."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4197
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4244
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4290
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4654
+msgid "Use"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4197
+msgid " shortcode in place of the referral link and "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4197
+msgid " shortcode in place of the username "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4218
+msgid "Points Only on Bday Notification"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4226
+msgid "Toggle This to Enable Notification on Birthday Points."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4227
+msgid "Points Only on Birthday"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4243
+msgid ""
+"Your [BIRTHDAYPOINT] Points have been added. Now your Total Points are "
+"[TOTALPOINTS]."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4264
+msgid "Points Only on Anniversary Notification"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4272
+msgid "Toggle This to Enable Notification on Anniversary Points."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4273
+msgid "Points Only on Anniversary"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4289
+msgid ""
+"Your [ANNIVERSARYPOINTS] Points have been added. Now your Total Points are "
+"[TOTALPOINTS]."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4310
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6436
+msgid "Points Earned on Birthday"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4341
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6470
+msgid "Points Earned on Anniversary"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4372
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6504
+msgid "Points expiry extedned"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4385
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6516
+msgid "No. of extended Days"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4407
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6404
+msgid "Points earned on first daily Login"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4438
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6539
+msgid "Points Earned on Coupon Referral"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4451
+msgid "Referred User"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4472
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6573
+msgid "Refunded Coupon Referral Points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4504
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6670
+msgid "Points Updated by Admin through API"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4517
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6684
+msgid "Reason"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4550
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6718
+msgid "Bonus Points for First Rank Holder"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4590
+msgid "Points Round Off"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4594
+msgid "Select Points Roundoff"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4602
+msgid "Round Up"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4606
+msgid "Round Down"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4628
+msgid "Mail Notification for Coupon referral"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4636
+msgid ""
+"Toggle This to Enable Notification for First Order Coupon Referral "
+"Completion."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4637
+msgid "Points when referee gets points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4645
+msgid "Points added"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4653
+msgid ""
+"Your Coupon Code [COUPONCODE] is applied and you will get [POINTS] points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4654
+msgid " shortcode in place of coupon code and "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4654
+msgid " shortcode in place of points "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4711
+msgid "Demo"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4712
+msgid "Documentation"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4713
+msgid "Video"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4714
+msgid "Support"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4715
+msgid "Services"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4828
+msgid "Display Assign Points On Shop Page"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4830
+msgid "Enable this setting to show assign points on Shop Page"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4832
+msgid "Enable this setting to show assigned points on the Shop Page"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4892
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4897
+msgid "Your points balance has been reset by the administrator"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4954
+msgid "Display Total Earning Points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4958
+msgid "Toggle to show the total earning points on the Cart page"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4962
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4971
+msgid ""
+"Inform the user about the number of points they will earn by placing this "
+"order."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4964
+msgid ""
+"Toggle this setting if you want to display the total earning points of an "
+"order on the cart page"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4967
+msgid "Toggle to show the total earning points on the Checkout page"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:4973
+msgid ""
+"Toggle this setting if you want to display the total earning points of an "
+"order on the checkout page"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5003
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5014
+msgid "Subscription is not renewed yet."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5024
+msgid "License Status Updated. Please Wait."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5084
+msgid "Your Subscription Will Expire in "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5086
+msgid " days"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5089
+msgid "Stay on track! Renew your subscription for "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5089
+msgid " now to maintain uninterrupted service! "
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5138
+#, php-format
+msgid "%d Customers at Risk of Churning"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5139
+msgid ""
+"These loyalty customers have high churn scores and may stop engaging soon. "
+"Automated save campaigns have been triggered for eligible customers."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5155
+msgid "Restrict Users"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5193
+msgid "Unrestrict Users"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5264
+msgid "Updated By Admin"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5298
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5303
+#, php-format
+msgid ""
+"Your points have been updated by the admin. Your total points balance is now "
+"%s"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5365
+msgid "Recurring Reward Points Within Range"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5367
+msgid "Enable this setting to reward the user again within the selected range"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5369
+msgid ""
+"By enabling this setting, you can reward the user again within the selected "
+"range based on the number of orders they have placed."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5373
+msgid "Set Next Rewards Date"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5375
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5383
+msgid "Set the time period during which the user will be rewarded with points."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5394
+msgid "Day"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5398
+msgid "Week"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5402
+msgid "Month"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5406
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:8749
+msgid "Year"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5714
+msgid "Enable to automate memberbship"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5718
+msgid ""
+"Enable this setting to automatically assign membership based on the users "
+"points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5719
+msgid ""
+"After enabling this setting, membership will be automatically assigned based "
+"on the users points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5722
+msgid "Toggle to show the next membership level on Single Product page"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5726
+msgid "Inform the user about the next membership level they can achieve."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5728
+msgid ""
+"Toggle this setting if you want to display the next membership level on "
+"Single Product page"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5732
+msgid "Enter Message"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5734
+msgid "The message you enter will be displayed on the product and cart pages."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5736
+msgid ""
+" Enter your message using the shortcodes [POINTS] for points and [LEVEL] for "
+"membership level. For example: ‘You have [POINTS] points left to reach "
+"[LEVEL] level."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5753
+msgid "Start Date :"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5757
+msgid "End Date :"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5802
+msgid "Points and Rewards For WooCommerce Pro"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5821
+msgid "Turn this on to activate the comments points campaign."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5825
+msgid "First Order Points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5828
+msgid "Turn this on to activate the first order points campaign."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5846
+msgid "Enable this setting to display content in the footer"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5849
+msgid "By enabling this setting, you can display content in the modal footer."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5853
+msgid "Set custom content in the modal footer"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5856
+msgid ""
+"Set the footer content in the campaign modal, e.g., ‘Created with ❤ by WP "
+"Swings’."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5959
+msgid "Enable Anniversary Points settings"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5965
+msgid "Enable giving points on the anniversary."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5967
+msgid "Check this box to enable points for the anniversary."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5971
+msgid "Enter the number of anniversary points to be given"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5977
+msgid "The points that customers will receive only on their anniversary."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:5996
+msgid ""
+"Use these shortcodes to provide an appropriate message for your customers on "
+"his no. of [ORDER] and get rewards points [POINTS] within [DAYS]"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:6008
+msgid ""
+"Place [ORDER] orders within [DAYS] day and earn [POINTS] bonus points as a "
+"reward!"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:6022
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:6175
+#: admin/partials/template/wps-par-churn-customers.php:18
+#: admin/partials/template/wps-par-transaction-log.php:20
+msgid "You do not have sufficient permissions to access this page."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:6171
+#: admin/partials/template/wps-par-churn-customers.php:28
+#: admin/partials/template/wps-par-churn-customers.php:79
+#: admin/partials/template/wps-par-churn-customers.php:94
+#: admin/partials/template/wps-par-transaction-log.php:27
+msgid "Security check failed."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:6294
+#: admin/partials/template/wps-par-transaction-log.php:90
+#: admin/partials/template/wps-par-transaction-log.php:293
+#: admin/partials/template/wps-par-transaction-log.php:565
+msgid "Purchase by Points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:6295
+#: admin/partials/template/wps-par-transaction-log.php:62
+#: admin/partials/template/wps-par-transaction-log.php:264
+#: admin/partials/template/wps-par-transaction-log.php:508
+msgid "Points Received"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:6296
+#: admin/partials/template/wps-par-transaction-log.php:93
+#: admin/partials/template/wps-par-transaction-log.php:295
+#: admin/partials/template/wps-par-transaction-log.php:571
+msgid "Points Sent"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:6297
+#: admin/partials/template/wps-par-transaction-log.php:91
+#: admin/partials/template/wps-par-transaction-log.php:294
+#: admin/partials/template/wps-par-transaction-log.php:568
+msgid "Purchase Product with Points Only"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:6298
+#: admin/partials/template/wps-par-transaction-log.php:60
+#: admin/partials/template/wps-par-transaction-log.php:262
+#: admin/partials/template/wps-par-transaction-log.php:502
+msgid "Referral Signup"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:6299
+#: admin/partials/template/wps-par-transaction-log.php:61
+#: admin/partials/template/wps-par-transaction-log.php:263
+#: admin/partials/template/wps-par-transaction-log.php:505
+msgid "Referral Purchase"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:6300
+#: admin/partials/template/wps-par-transaction-log.php:57
+#: admin/partials/template/wps-par-transaction-log.php:259
+#: admin/partials/template/wps-par-transaction-log.php:490
+msgid "Product Purchase"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:6301
+#: admin/partials/template/wps-par-transaction-log.php:92
+#: admin/partials/template/wps-par-transaction-log.php:296
+#: admin/partials/template/wps-par-transaction-log.php:493
+msgid "Cart Subtotal Points"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:6302
+#: admin/partials/template/wps-par-transaction-log.php:56
+#: admin/partials/template/wps-par-transaction-log.php:258
+#: admin/partials/template/wps-par-transaction-log.php:487
+msgid "Registration"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:6303
+#: admin/partials/template/wps-par-transaction-log.php:58
+#: admin/partials/template/wps-par-transaction-log.php:260
+#: admin/partials/template/wps-par-transaction-log.php:496
+msgid "Points on Order"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:6304
+msgid "Membership"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:6305
+#: admin/partials/template/wps-par-transaction-log.php:59
+#: admin/partials/template/wps-par-transaction-log.php:261
+#: admin/partials/template/wps-par-transaction-log.php:499
+msgid "Currency Conversion"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:6320
+msgid "Transaction Log"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:6338
+msgid ""
+"Browse and export complete point transaction history with filters for user, "
+"date, and transaction type."
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:6351
+#: admin/partials/template/wps-par-churn-customers.php:788
+msgid "At-Risk Customers"
+msgstr ""
+
+#: admin/class-points-and-rewards-for-woocommerce-pro-admin.php:6369
+msgid ""
+"View customers at risk of churning based on automated churn detection "
+"scoring and manage retention campaigns."
+msgstr ""
+
+#: admin/class-wps-wpr-custom-widget.php:52
+msgid "Total Point:"
+msgstr ""
+
+#: admin/class-wps-wpr-custom-widget.php:53
+#: admin/class-wps-wpr-custom-widget.php:127
+msgid "User Level:"
+msgstr ""
+
+#: admin/class-wps-wpr-custom-widget.php:54
+msgid "Expiration Date:"
+msgstr ""
+
+#: admin/class-wps-wpr-custom-widget.php:55
+msgid "Subscribe News Letter"
+msgstr ""
+
+#: admin/class-wps-wpr-custom-widget.php:86
+msgid "Subscribe to our newsletter"
+msgstr ""
+
+#: admin/class-wps-wpr-custom-widget.php:119
+msgid "Title:"
+msgstr ""
+
+#: admin/class-wps-wpr-custom-widget.php:123
+msgid "Total Point Text:"
+msgstr ""
+
+#: admin/class-wps-wpr-custom-widget.php:131
+msgid "Expiration Text:"
+msgstr ""
+
+#: admin/class-wps-wpr-custom-widget.php:136
+msgid "MailChimp Subscribe Text:"
+msgstr ""
+
+#: admin/index.php:14 includes/index.php:14 index.php:14 public/index.php:14
+msgid "oops looks like nothing is here"
+msgstr ""
+
+#: admin/partials/points-and-rewards-for-woocommerce-pro-admin-license.php:25
+msgid "License Activation"
+msgstr ""
+
+#: admin/partials/points-and-rewards-for-woocommerce-pro-admin-license.php:26
+msgid "Activate Your Pro License"
+msgstr ""
+
+#: admin/partials/points-and-rewards-for-woocommerce-pro-admin-license.php:29
+msgid ""
+"Use your purchase code to verify this site and unlock all premium features. "
+"You can find the code in your order details on "
+msgstr ""
+
+#: admin/partials/points-and-rewards-for-woocommerce-pro-admin-license.php:31
+msgid "WP Swings"
+msgstr ""
+
+#: admin/partials/points-and-rewards-for-woocommerce-pro-admin-license.php:36
+msgid "Purchase Code"
+msgstr ""
+
+#: admin/partials/points-and-rewards-for-woocommerce-pro-admin-license.php:39
+msgid "Enter your purchase code here"
+msgstr ""
+
+#: admin/partials/points-and-rewards-for-woocommerce-pro-admin-license.php:41
+msgid "Activate License"
+msgstr ""
+
+#: admin/partials/points-and-rewards-for-woocommerce-pro-admin-license.php:53
+msgid "How it works"
+msgstr ""
+
+#: admin/partials/points-and-rewards-for-woocommerce-pro-admin-license.php:55
+msgid "Copy the purchase code from your WP Swings order."
+msgstr ""
+
+#: admin/partials/points-and-rewards-for-woocommerce-pro-admin-license.php:56
+msgid "Paste it into the field and click Activate License."
+msgstr ""
+
+#: admin/partials/points-and-rewards-for-woocommerce-pro-admin-license.php:57
+msgid "Once verified, all Pro features stay available."
+msgstr ""
+
+#: admin/partials/points-and-rewards-for-woocommerce-pro-admin-license.php:59
+msgid ""
+"Need help finding your code? Contact support and share your order email."
+msgstr ""
+
+#: admin/partials/template/points-and-rewards-for-woocommerce-pro-addon.php:21
+msgid "Points notification addon"
+msgstr ""
+
+#: admin/partials/template/points-and-rewards-for-woocommerce-pro-addon.php:25
+#: admin/partials/template/points-and-rewards-for-woocommerce-pro-addon.php:27
+msgid "Enable points notification addon"
+msgstr ""
+
+#: admin/partials/template/points-and-rewards-for-woocommerce-pro-addon.php:29
+msgid "Check this box to enable points notification addon"
+msgstr ""
+
+#: admin/partials/template/points-and-rewards-for-woocommerce-pro-addon.php:33
+msgid "Select Position"
+msgstr ""
+
+#: admin/partials/template/points-and-rewards-for-woocommerce-pro-addon.php:37
+msgid ""
+"Use this shortcode [wps_wpr_notification_button] to display a pop-up button."
+msgstr ""
+
+#: admin/partials/template/points-and-rewards-for-woocommerce-pro-addon.php:38
+msgid ""
+"Select whether you want to display the Notification Button left, right, or "
+"want to use a shortcode.  If you select the shortcode "
+"[wps_wpr_notification_button] then the notification button will work only on "
+"the page you use this code. Note- If you select shortcode then Select Pages "
+"will not work plus you can’t change the position of the Button."
+msgstr ""
+
+#: admin/partials/template/points-and-rewards-for-woocommerce-pro-addon.php:42
+msgid "Right Bottom"
+msgstr ""
+
+#: admin/partials/template/points-and-rewards-for-woocommerce-pro-addon.php:46
+msgid "Left Bottom"
+msgstr ""
+
+#: admin/partials/template/points-and-rewards-for-woocommerce-pro-addon.php:50
+msgid "Top Left"
+msgstr ""
+
+#: admin/partials/template/points-and-rewards-for-woocommerce-pro-addon.php:54
+msgid "Top Right"
+msgstr ""
+
+#: admin/partials/template/points-and-rewards-for-woocommerce-pro-addon.php:58
+msgid "shortcode"
+msgstr ""
+
+#: admin/partials/template/points-and-rewards-for-woocommerce-pro-addon.php:63
+msgid "Select pages"
+msgstr ""
+
+#: admin/partials/template/points-and-rewards-for-woocommerce-pro-addon.php:68
+msgid ""
+"Select the page where you want to display the button, leave blank if you "
+"want to display on all the pages."
+msgstr ""
+
+#: admin/partials/template/points-and-rewards-for-woocommerce-pro-addon.php:74
+msgid "Select Color Notification Bar"
+msgstr ""
+
+#: admin/partials/template/points-and-rewards-for-woocommerce-pro-addon.php:75
+msgid "You can also choose the color for your Notification Bar."
+msgstr ""
+
+#: admin/partials/template/points-and-rewards-for-woocommerce-pro-addon.php:81
+msgid "Notification button text"
+msgstr ""
+
+#: admin/partials/template/points-and-rewards-for-woocommerce-pro-addon.php:84
+msgid "Set the notification button text"
+msgstr ""
+
+#: admin/partials/template/points-and-rewards-for-woocommerce-pro-addon.php:85
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:5772
+msgid "Notify Me"
+msgstr ""
+
+#: admin/partials/template/points-and-rewards-for-woocommerce-pro-addon.php:89
+#: admin/partials/template/wps-point-expiration.php:104
+msgid "Shortcodes"
+msgstr ""
+
+#: admin/partials/template/points-and-rewards-for-woocommerce-pro-addon.php:91
+msgid ""
+"Use the shortcode [wps_wpr_notification_button] to display the notification "
+"addon button."
+msgstr ""
+
+#: admin/partials/template/points-and-rewards-for-woocommerce-pro-addon.php:179
+#: admin/partials/template/wps-point-expiration.php:292
+#: admin/partials/template/wps-pro-purchase-points.php:200
+msgid "Save changes"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:84
+msgid "Churn detection emails have been enabled successfully!"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:87
+msgid ""
+"Churn detection emails have been disabled. Customers will not receive "
+"retention emails."
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:98
+msgid "Churn detection scan completed successfully!"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:184
+msgid "At-Risk Customers - Churn Detection"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:187
+msgid "How Churn Detection Works"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:188
+msgid ""
+"The system automatically calculates a churn risk score (0-100) for each "
+"loyalty customer based on their behavior. Customers scoring 60 or higher are "
+"considered at-risk and receive automated save campaigns."
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:192
+msgid "📊 View Scoring Criteria (Click to Expand)"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:195
+msgid "Churn Risk Scoring System:"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:200
+msgid "Signal"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:201
+msgid "Criteria"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:207
+msgid "1. Inactivity"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:207
+msgid "Days since last order"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:209
+msgid "• 90+ days (3+ months)"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:210
+msgid "• 60-89 days (2-3 months)"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:211
+msgid "• 30-59 days (1-2 months)"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:214
+msgid "+40 points"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:215
+msgid "+25 points"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:216
+#: admin/partials/template/wps-par-churn-customers.php:227
+#: admin/partials/template/wps-par-churn-customers.php:259
+msgid "+10 points"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:220
+msgid "2. Unredeemed Balance"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:220
+msgid "High points, never used"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:222
+msgid "• Points ≥ 3× minimum redemption"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:223
+msgid "• Points ≥ 2× minimum redemption"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:226
+msgid "+20 points"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:231
+msgid "3. Loyal But Inactive"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:231
+msgid "Old account + dormant"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:233
+msgid "• Account 180+ days old + 60+ days inactive"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:234
+msgid "• Account 90+ days old + 45+ days inactive"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:237
+#: admin/partials/template/wps-par-churn-customers.php:248
+msgid "+15 points"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:238
+#: admin/partials/template/wps-par-churn-customers.php:249
+msgid "+8 points"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:242
+msgid "4. Declining Frequency"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:242
+msgid "Comparing last 6 months"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:244
+#, php-format
+msgid "• Recent orders ≤ 50% of previous 3 months"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:245
+msgid "• Recent orders < previous 3 months"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:253
+msgid "5. Never Redeemed"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:253
+msgid "Has points but never used"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:255
+msgid "• Customer has points balance > 0"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:256
+msgid "• Zero redemption history"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:271
+#, php-format
+msgid "⚡ Automated Save Campaign (Score ≥ %d)"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:277
+msgid "When a customer reaches the risk threshold, the system automatically:"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:284
+#, php-format
+msgid "✅ Awards %d bonus points to encourage redemption"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:295
+#, php-format
+msgid "✅ Creates exclusive %d%% off coupon (1 use, 14-day expiry)"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:301
+msgid "✅ Sends personalized WooCommerce email notification"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:307
+#, php-format
+msgid "✅ Prevents duplicate campaigns within %d days"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:317
+msgid "💡 Example:"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:319
+msgid ""
+"Customer last ordered 95 days ago (+40), has 450 points (+20), account 250 "
+"days old (+15), order frequency dropped 75% (+15), never redeemed (+10) = "
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:320
+msgid "100/100 Critical Risk"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:329
+msgid "Who Gets Flagged as At-Risk"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:333
+msgid "Customers who stopped ordering after being active"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:336
+msgid "Customers with high point balances they never use"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:339
+msgid "Long-term customers showing sudden inactivity"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:342
+msgid "Customers whose order frequency dropped significantly"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:345
+msgid "Customers who never engaged with rewards despite earning points"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:354
+msgid "Who Stays Safe (Not At-Risk)"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:358
+msgid "Active customers (ordered in last 30 days)"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:361
+msgid "Customers with low/no points balance"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:364
+msgid "New customers still learning the system"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:367
+msgid "Customers actively redeeming points"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:370
+msgid "Customers with stable/increasing order frequency"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:382
+msgid "⚙️ Save Campaign Settings"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:385
+msgid ""
+"Configure automated save campaign rewards and thresholds. Changes take "
+"effect immediately for future campaigns."
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:402
+msgid "Churn Detection: ACTIVE"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:404
+msgid "Churn Detection: DISABLED"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:411
+msgid ""
+"✓ System is actively scanning customers and triggering save campaigns for at-"
+"risk users."
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:413
+msgid ""
+"✗ All churn detection is disabled. No scans will run and no campaigns will "
+"be triggered until you enable this feature."
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:435
+msgid "Churn Detection Emails: ENABLED"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:437
+msgid "Churn Detection Emails: DISABLED"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:444
+msgid ""
+"At-risk customers will receive retention emails automatically when campaigns "
+"are triggered."
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:446
+msgid ""
+"Email notifications are currently disabled. Customers will not receive "
+"retention emails."
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:456
+msgid ""
+"Are you sure you want to disable churn detection emails? Customers will not "
+"receive retention emails until you re-enable this feature."
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:457
+msgid "Disable Emails"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:461
+msgid "Enable Emails"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:476
+msgid "Enable Churn Detection"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:491
+msgid "Activate churn detection and automated save campaigns"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:495
+msgid "⚠️ Master Control:"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:496
+msgid ""
+"This must be enabled for ANY churn detection to occur. When disabled, the "
+"system will NOT scan customers, calculate scores, or trigger campaigns "
+"regardless of other settings. Only enable when you are fully ready to launch "
+"automated retention campaigns."
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:504
+msgid "Bonus Points"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:520
+msgid "Enable Bonus Points"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:535
+msgid ""
+"Points awarded to at-risk customers when save campaign is triggered. "
+"(Default: 100, Range: 1-10000)"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:543
+msgid "Retention Coupon Discount (%)"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:559
+msgid "Enable Retention Coupon"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:574
+msgid ""
+"Discount percentage for auto-generated retention coupons (1 use, 14-day "
+"expiry). (Default: 10%, Range: 1-100%)"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:582
+msgid "Risk Threshold Score"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:600
+msgid "⚠️ REQUIRED - Always Active"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:601
+msgid ""
+"Minimum churn score (1-100) required to flag a customer as at-risk. Only "
+"customers meeting or exceeding this threshold will trigger save campaigns. "
+"This setting is mandatory and cannot be disabled for safety. (Default: 60, "
+"Recommended: 50-70)"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:609
+msgid "Campaign Cooldown (Days)"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:625
+msgid "Enable Campaign Cooldown"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:640
+msgid ""
+"Minimum days between save campaigns for the same customer to prevent spam. "
+"(Default: 30 days, Range: 1-365 days)"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:649
+msgid "📧 Email Template Customization"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:652
+msgid ""
+"Customize the email sent to at-risk customers. Use placeholders to insert "
+"dynamic content."
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:667
+#: includes/class-wps-par-churn-detection.php:407
+#, php-format
+msgid "We miss you at %s! Here's a special gift"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:681
+msgid "Available placeholders: {site_name}, {user_name}"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:689
+msgid "Email Content"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:697
+#: includes/class-wps-par-churn-detection.php:455
+msgid "We Miss You!"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:700
+#: includes/class-wps-par-churn-detection.php:458
+msgid "Hi {user_name},"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:701
+#: includes/class-wps-par-churn-detection.php:459
+msgid ""
+"It's been a while since we last saw you at {site_name}. We wanted to reach "
+"out and let you know how much we appreciate your loyalty!"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:703
+#: includes/class-wps-par-churn-detection.php:461
+msgid "Special Gift Inside!"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:704
+#: includes/class-wps-par-churn-detection.php:462
+msgid "✨ We've added {bonus_points} bonus points to your account!"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:705
+#: includes/class-wps-par-churn-detection.php:463
+msgid "💎 Your new balance: {total_points} points"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:708
+#: includes/class-wps-par-churn-detection.php:466
+msgid "EXCLUSIVE COUPON CODE"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:709
+#: includes/class-wps-par-churn-detection.php:467
+msgid "🎁 {discount_percentage}% OFF YOUR NEXT PURCHASE"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:713
+#: includes/class-wps-par-churn-detection.php:471
+msgid "Valid for 14 days • One-time use"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:716
+#: includes/class-wps-par-churn-detection.php:474
+msgid "Start Shopping Now"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:718
+#: includes/class-wps-par-churn-detection.php:476
+msgid "Thank you for being a valued member of {site_name}!"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:733
+msgid "Available Placeholders:"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:734
+msgid "Customer's display name"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:735
+msgid "Your store name"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:736
+msgid "Bonus points awarded (e.g., 100)"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:737
+msgid "Customer's total points balance after bonus"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:738
+msgid "Generated coupon code (e.g., SAVE8X3DF9K2)"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:739
+msgid "Coupon discount percentage (e.g., 10)"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:740
+msgid "Link to your shop page"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:748
+msgid "👁️ Email Preview"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:750
+msgid "This is how the email will look to customers (with sample data):"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:779
+#: admin/partials/template/wps-wpr-api-features.php:199
+msgid "Save Settings"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:793
+msgid "Total Scanned"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:798
+msgid "Campaigns Sent"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:803
+msgid "Last Scan"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:810
+#, php-format
+msgid "%s ago"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:815
+#: admin/partials/template/wps-par-churn-customers.php:896
+#: includes/class-wps-par-churn-detection.php:666
+msgid "Never"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:825
+msgid "Run Scan Now"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:828
+msgid ""
+"Manually trigger churn detection scan. This will calculate scores for all "
+"loyalty customers and send save campaigns to at-risk users."
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:839
+#, php-format
+msgid "At-Risk Customers (Score ≥ %1$d) - %2$d Found"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:850
+msgid "Great News! No At-Risk Customers Found"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:851
+msgid ""
+"All your loyalty customers are engaged and active. Run a scan to check for "
+"updates."
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:857
+#: admin/partials/template/wps-par-transaction-log.php:714
+msgid "Customer"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:858
+msgid "Email"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:859
+msgid "Churn Score"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:860
+msgid "Points Balance"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:861
+msgid "Last Order"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:862
+msgid "Risk Factors"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:863
+msgid "Save Campaign"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:911
+#, php-format
+msgid "🔴 Inactive %d days"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:913
+#, php-format
+msgid "🟠 Inactive %d days"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:915
+#, php-format
+msgid "🟡 Inactive %d days"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:919
+msgid "💰 High unredeemed points"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:921
+msgid "💵 Unused points"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:938
+msgid "⚠️ Never redeemed"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:946
+msgid "📅 Long-term customer"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:963
+#, php-format
+msgid "Sent %d days ago"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:966
+msgid "Not sent yet"
+msgstr ""
+
+#: admin/partials/template/wps-par-churn-customers.php:984
+msgid "No specific factors"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:63
+#: admin/partials/template/wps-par-transaction-log.php:265
+#: admin/partials/template/wps-par-transaction-log.php:511
+msgid "Review/Comment Points"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:64
+#: admin/partials/template/wps-par-transaction-log.php:266
+#: admin/partials/template/wps-par-transaction-log.php:514
+msgid "Subscription Renewal"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:65
+#: admin/partials/template/wps-par-transaction-log.php:267
+#: admin/partials/template/wps-par-transaction-log.php:517
+msgid "Payment Method Points"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:66
+#: admin/partials/template/wps-par-transaction-log.php:268
+#: admin/partials/template/wps-par-transaction-log.php:520
+msgid "Quiz Contest Points"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:67
+#: admin/partials/template/wps-par-transaction-log.php:269
+#: admin/partials/template/wps-par-transaction-log.php:523
+msgid "Refunded Points from Cart"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:68
+#: admin/partials/template/wps-par-transaction-log.php:270
+#: admin/partials/template/wps-par-transaction-log.php:526
+msgid "Return Purchase Points"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:69
+#: admin/partials/template/wps-par-transaction-log.php:271
+#: admin/partials/template/wps-par-transaction-log.php:529
+msgid "Guest User Rewards"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:71
+#: admin/partials/template/wps-par-transaction-log.php:273
+#: admin/partials/template/wps-par-transaction-log.php:535
+msgid "Badge Rewards Points"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:72
+#: admin/partials/template/wps-par-transaction-log.php:274
+#: admin/partials/template/wps-par-transaction-log.php:538
+msgid "Membership Level Rewards"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:73
+#: admin/partials/template/wps-par-transaction-log.php:275
+#: admin/partials/template/wps-par-transaction-log.php:541
+msgid "Member Assigned Rewards"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:74
+#: admin/partials/template/wps-par-transaction-log.php:276
+#: admin/partials/template/wps-par-transaction-log.php:544
+msgid "Vendor Commission"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:75
+#: admin/partials/template/wps-par-transaction-log.php:277
+#: admin/partials/template/wps-par-transaction-log.php:547
+msgid "Game Claim Points"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:76
+#: admin/partials/template/wps-par-transaction-log.php:278
+#: admin/partials/template/wps-par-transaction-log.php:550
+msgid "Award Points on Previous Order"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:77
+#: admin/partials/template/wps-par-transaction-log.php:279
+#: admin/partials/template/wps-par-transaction-log.php:553
+msgid "API Membership Logs"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:78
+#: admin/partials/template/wps-par-transaction-log.php:85
+#: admin/partials/template/wps-par-transaction-log.php:280
+#: admin/partials/template/wps-par-transaction-log.php:287
+#: admin/partials/template/wps-par-transaction-log.php:556
+msgid "Admin Added Points"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:79
+#: admin/partials/template/wps-par-transaction-log.php:281
+#: admin/partials/template/wps-par-transaction-log.php:559
+msgid "Social Share Points"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:80
+#: admin/partials/template/wps-par-transaction-log.php:282
+#: includes/class-wps-par-churn-detection.php:273
+msgid "Churn Save Bonus"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:81
+#: admin/partials/template/wps-par-transaction-log.php:283
+msgid "Points On First Login Daily"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:82
+#: admin/partials/template/wps-par-transaction-log.php:284
+msgid "Points On First Order"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:83
+#: admin/partials/template/wps-par-transaction-log.php:285
+msgid "User Badges Rewards Points"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:84
+#: admin/partials/template/wps-par-transaction-log.php:286
+msgid "Rank Holder Points"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:94
+#: admin/partials/template/wps-par-transaction-log.php:298
+#: admin/partials/template/wps-par-transaction-log.php:574
+msgid "Coupon Generated"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:95
+#: admin/partials/template/wps-par-transaction-log.php:299
+#: admin/partials/template/wps-par-transaction-log.php:577
+msgid "Membership Purchase"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:96
+#: admin/partials/template/wps-par-transaction-log.php:300
+#: admin/partials/template/wps-par-transaction-log.php:580
+msgid "Deduction on Order Cancel"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:97
+#: admin/partials/template/wps-par-transaction-log.php:301
+#: admin/partials/template/wps-par-transaction-log.php:583
+msgid "Currency Spent Deduction"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:98
+#: admin/partials/template/wps-par-transaction-log.php:302
+#: admin/partials/template/wps-par-transaction-log.php:586
+msgid "Refund Order Points"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:99
+#: admin/partials/template/wps-par-transaction-log.php:303
+#: admin/partials/template/wps-par-transaction-log.php:589
+msgid "Refund Payment Points"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:100
+#: admin/partials/template/wps-par-transaction-log.php:304
+#: admin/partials/template/wps-par-transaction-log.php:592
+msgid "Refund Subscription Renewal"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:101
+#: admin/partials/template/wps-par-transaction-log.php:305
+#: admin/partials/template/wps-par-transaction-log.php:595
+msgid "Cancel Order Total Points"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:102
+#: admin/partials/template/wps-par-transaction-log.php:306
+#: admin/partials/template/wps-par-transaction-log.php:598
+msgid "Refund Member Assigned Rewards"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:103
+#: admin/partials/template/wps-par-transaction-log.php:307
+#: admin/partials/template/wps-par-transaction-log.php:601
+msgid "Membership Level Points Refunded"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:104
+#: admin/partials/template/wps-par-transaction-log.php:308
+#: admin/partials/template/wps-par-transaction-log.php:604
+msgid "Points Expired"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:105
+#: admin/partials/template/wps-par-transaction-log.php:309
+#: admin/partials/template/wps-par-transaction-log.php:607
+msgid "Deduct Currency Points on Cancel"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:106
+#: admin/partials/template/wps-par-transaction-log.php:310
+#: admin/partials/template/wps-par-transaction-log.php:610
+msgid "Deduct Because Cancel"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:107
+#: admin/partials/template/wps-par-transaction-log.php:311
+#: admin/partials/template/wps-par-transaction-log.php:613
+msgid "Purchase Points Cancel"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:108
+#: admin/partials/template/wps-par-transaction-log.php:312
+#: admin/partials/template/wps-par-transaction-log.php:616
+msgid "Points Reset by Admin"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:109
+#: admin/partials/template/wps-par-transaction-log.php:313
+#: admin/partials/template/wps-par-transaction-log.php:619
+msgid "Points Deducted to Wallet"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:110
+#: admin/partials/template/wps-par-transaction-log.php:314
+#: admin/partials/template/wps-par-transaction-log.php:622
+msgid "Reset User Points Logs"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:111
+#: admin/partials/template/wps-par-transaction-log.php:315
+msgid "Upgrade Points Expiration"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:446
+msgid "Date From"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:457
+msgid "Date To"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:468
+msgid "Customer Email"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:474
+msgid "Search by email"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:480
+msgid "Transaction Type"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:483
+msgid "All Types"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:485
+msgid "Credits (Points Earned)"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:563
+msgid "Debits (Points Deducted)"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:631
+msgid "Apply Filters"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:643
+msgid "Clear Filters"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:668
+msgid "Active Filters:"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:693
+msgid "Export to CSV"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:699
+#, php-format
+msgid "%d transaction found"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:711
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6378
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6410
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6442
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6476
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6510
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6545
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6579
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6611
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6643
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6724
+msgid "Date"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:717
+msgid "Type"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:776
+#, php-format
+msgid "%d page"
+msgstr ""
+
+#: admin/partials/template/wps-par-transaction-log.php:817
+msgid "No transactions found. Try adjusting your filters."
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:28
+msgid "Enable Point Expiration."
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:30
+msgid ""
+"Check this, If you want to set the expiration period for the Rewarded Points."
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:34
+msgid "Show Points expiration on My Account Page"
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:38
+msgid ""
+"Check this, If you want to show the expiration period for the Rewarded "
+"Points on My Account Page."
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:40
+msgid "Expiration will get displayed just below the Total Point."
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:43
+msgid "Set the Required Threshold"
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:49
+msgid ""
+"Set the threshold for points expiration, The expiration period will be "
+"calculated when the threshold has been reached."
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:52
+msgid "Set Expiration Time"
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:54
+#: admin/partials/template/wps-point-expiration.php:62
+msgid ""
+"Set the Time-Period for \"When do the points need to expire?\" It will "
+"calculated over the above Threshold Time"
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:69
+#: admin/partials/template/wps-pro-purchase-points.php:45
+msgid ""
+"Select those categories which you want to allow to customers for purchase "
+"that product through points."
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:75
+msgid "Enable this setting to Notify user on Mail"
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:79
+msgid ""
+"After enabling this setting, user will get notification for his points "
+"expire."
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:81
+msgid ""
+"Check this, If you want to notify user on mail for points expiration "
+"notifications."
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:84
+msgid "Email Notification(Re-Notify Days)"
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:90
+msgid "Days."
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:91
+msgid "Set the number of days before the Email will get sent out."
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:94
+msgid "Enable to show the Points Expiration Shortcode"
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:98
+msgid ""
+"Once this setting is enabled, the points expiration shortcode will function "
+"properly."
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:100
+msgid "Enable this setting to display the points expiration shortcode."
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:106
+msgid ""
+"Use the shortcode [WPS_POINTS_EXPIRATION] to display the current user points "
+"expiration date."
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:112
+msgid "Points Expiry Notifications"
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:116
+msgid "Threshold Message"
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:124
+msgid ""
+"Entered Message will appears inside the Email Template for notifying the "
+"Customer that they have reached the Threshold now they should redeem their "
+"Points before it will get expired"
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:125
+msgid "You have reached your Threshold and your Total Point is:"
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:125
+msgid ", which will get expired on"
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:126
+msgid ""
+"Use these shortcodes to provide an appropriate message to your customers "
+"that their total points are expiring on"
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:126
+msgid " [EXPIRYDATE] ."
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:129
+msgid "Re-notify Message before some days"
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:137
+msgid ""
+"Entered Message will appears inside the Email Template for notifying the "
+"Customer that they have left just some days more before the expiration"
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:138
+msgid "Do not forget to redeem your points"
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:138
+msgid "before it will get expired on"
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:139
+msgid ""
+"Use these shortcodes for providing an appropriate message for your customers"
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:139
+msgid "for their Total Points [EXPIRYDATE] for the Expiration Date "
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:142
+msgid "Message when Points has been Expired"
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:150
+msgid ""
+"Entered Message will appears inside the Email Template for notifying the "
+"Customer that the Points has been expired"
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:152
+msgid "This message will be sent when the points are expired."
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:158
+msgid "Upgrade Points Validity"
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:162
+msgid "Extend Expiration"
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:164
+msgid ""
+"Enable this setting to allow users to extend their points expiration date."
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:166
+msgid ""
+"To allow users to extend their points expiration date, please enable this "
+"setting."
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:170
+msgid "Conversion Rate for Expiration Upgrade"
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:172
+msgid ""
+"This is the conversion rate that allows users to extend their points "
+"expiration date."
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:179
+msgid " Points = "
+msgstr ""
+
+#: admin/partials/template/wps-point-expiration.php:188
+msgid " Days "
+msgstr ""
+
+#: admin/partials/template/wps-pro-purchase-points.php:21
+#: admin/partials/template/wps-pro-purchase-points.php:25
+msgid "Purchase through Points"
+msgstr ""
+
+#: admin/partials/template/wps-pro-purchase-points.php:27
+msgid "Purchase Products through Points"
+msgstr ""
+
+#: admin/partials/template/wps-pro-purchase-points.php:29
+msgid "Check this box to enable purchasing products through points"
+msgstr ""
+
+#: admin/partials/template/wps-pro-purchase-points.php:33
+msgid "Restrictions for above setting"
+msgstr ""
+
+#: admin/partials/template/wps-pro-purchase-points.php:35
+msgid "Allow some of the products for purchasing through points"
+msgstr ""
+
+#: admin/partials/template/wps-pro-purchase-points.php:37
+msgid "Toggle This to Allow Some Products to Be Purchased Through Points"
+msgstr ""
+
+#: admin/partials/template/wps-pro-purchase-points.php:49
+msgid "Enter Text"
+msgstr ""
+
+#: admin/partials/template/wps-pro-purchase-points.php:53
+#: admin/partials/template/wps-pro-purchase-points.php:54
+msgid "The entered text will get displayed on the Single Product Page"
+msgstr ""
+
+#: admin/partials/template/wps-pro-purchase-points.php:55
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1643
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:2400
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:2872
+msgid "Use your Points for purchasing this Product"
+msgstr ""
+
+#: admin/partials/template/wps-pro-purchase-points.php:58
+msgid "Purchase Points Conversion"
+msgstr ""
+
+#: admin/partials/template/wps-pro-purchase-points.php:70
+msgid ""
+"Entered points will be converted to price. (i.e., how many points will be "
+"equivalent to the product price)"
+msgstr ""
+
+#: admin/partials/template/wps-pro-purchase-points.php:83
+msgid ""
+"Entered points will be converted to price.(i.e., how many points will be "
+"equivalent to the product price)"
+msgstr ""
+
+#: admin/partials/template/wps-pro-purchase-points.php:93
+msgid "Make \"Per Product Redemption\" Readonly"
+msgstr ""
+
+#: admin/partials/template/wps-pro-purchase-points.php:95
+msgid "Readonly for entering Number of Points for Redemption "
+msgstr ""
+
+#: admin/partials/template/wps-pro-purchase-points.php:97
+msgid ""
+"Check this box if you want to make the redemption box read-only(where the "
+"end-user can enter the number of points they want to redeem)"
+msgstr ""
+
+#: admin/partials/template/wps-pro-purchase-points.php:206
+msgid "Purchase Product Through Points Only"
+msgstr ""
+
+#: admin/partials/template/wps-wpr-api-features.php:27
+msgid "API Features"
+msgstr ""
+
+#: admin/partials/template/wps-wpr-api-features.php:29
+msgid "Enable API Features."
+msgstr ""
+
+#: admin/partials/template/wps-wpr-api-features.php:31
+msgid "Toggle This to Enable API Features."
+msgstr ""
+
+#: admin/partials/template/wps-wpr-api-features.php:35
+#: admin/partials/template/wps-wpr-api-features.php:62
+msgid "API secret key"
+msgstr ""
+
+#: admin/partials/template/wps-wpr-api-features.php:39
+#: admin/partials/template/wps-wpr-api-features.php:67
+msgid "Use this secret key to use API features"
+msgstr ""
+
+#: admin/partials/template/wps-wpr-api-features.php:197
+msgid "Generate Secret Key"
+msgstr ""
+
+#: admin/partials/template/wps-wpr-api-features.php:206
+msgid "Plugin API Details"
+msgstr ""
+
+#: admin/partials/template/wps-wpr-api-features.php:209
+msgid "Authentication"
+msgstr ""
+
+#: admin/partials/template/wps-wpr-api-features.php:213
+msgid "For authentication you need "
+msgstr ""
+
+#: admin/partials/template/wps-wpr-api-features.php:214
+msgid " Consumer Secret "
+msgstr ""
+
+#: admin/partials/template/wps-wpr-api-features.php:216
+msgid " keys. Response on wrong api details:"
+msgstr ""
+
+#: admin/partials/template/wps-wpr-api-features.php:233
+msgid "To Retrive Particular User Points"
+msgstr ""
+
+#: admin/partials/template/wps-wpr-api-features.php:237
+msgid "Base Url to get user points : "
+msgstr ""
+
+#: admin/partials/template/wps-wpr-api-features.php:244
+#: admin/partials/template/wps-wpr-api-features.php:284
+#: admin/partials/template/wps-wpr-api-features.php:333
+#: admin/partials/template/wps-wpr-api-features.php:371
+#: admin/partials/template/wps-wpr-api-features.php:409
+#: admin/partials/template/wps-wpr-api-features.php:448
+#: admin/partials/template/wps-wpr-api-features.php:498
+msgid "Example : "
+msgstr ""
+
+#: admin/partials/template/wps-wpr-api-features.php:246
+msgid "/wp-json/wpr/wps-get-points/user"
+msgstr ""
+
+#: admin/partials/template/wps-wpr-api-features.php:251
+#: admin/partials/template/wps-wpr-api-features.php:292
+#: admin/partials/template/wps-wpr-api-features.php:341
+#: admin/partials/template/wps-wpr-api-features.php:379
+#: admin/partials/template/wps-wpr-api-features.php:417
+#: admin/partials/template/wps-wpr-api-features.php:456
+#: admin/partials/template/wps-wpr-api-features.php:506
+msgid "Parameters Required : "
+msgstr ""
+
+#: admin/partials/template/wps-wpr-api-features.php:256
+#: admin/partials/template/wps-wpr-api-features.php:297
+#: admin/partials/template/wps-wpr-api-features.php:345
+#: admin/partials/template/wps-wpr-api-features.php:383
+#: admin/partials/template/wps-wpr-api-features.php:421
+#: admin/partials/template/wps-wpr-api-features.php:460
+#: admin/partials/template/wps-wpr-api-features.php:510
+msgid "JSON response example:"
+msgstr ""
+
+#: admin/partials/template/wps-wpr-api-features.php:273
+msgid "To Retrive Particular User Points Log"
+msgstr ""
+
+#: admin/partials/template/wps-wpr-api-features.php:277
+msgid "Base Url to get user points log : "
+msgstr ""
+
+#: admin/partials/template/wps-wpr-api-features.php:286
+msgid "/wp-json/wpr/wps-get-points/user/log"
+msgstr ""
+
+#: admin/partials/template/wps-wpr-api-features.php:322
+msgid "To Update Points of Particular Users"
+msgstr ""
+
+#: admin/partials/template/wps-wpr-api-features.php:326
+msgid "Base Url to add points : "
+msgstr ""
+
+#: admin/partials/template/wps-wpr-api-features.php:335
+msgid "/wp-json/wpr/wps-add-par-points/user"
+msgstr ""
+
+#: admin/partials/template/wps-wpr-api-features.php:360
+msgid "To Remove Points of Particular Users"
+msgstr ""
+
+#: admin/partials/template/wps-wpr-api-features.php:364
+msgid "Base Url to remove points : "
+msgstr ""
+
+#: admin/partials/template/wps-wpr-api-features.php:373
+msgid "/wp-json/wpr/wps-remove-par-points/user"
+msgstr ""
+
+#: admin/partials/template/wps-wpr-api-features.php:398
+msgid "To Retrive Particular Users Membership Level"
+msgstr ""
+
+#: admin/partials/template/wps-wpr-api-features.php:402
+msgid "Base Url to get user membership level : "
+msgstr ""
+
+#: admin/partials/template/wps-wpr-api-features.php:411
+msgid "/wp-json/wpr/wps-get-user-level/user"
+msgstr ""
+
+#: admin/partials/template/wps-wpr-api-features.php:437
+msgid "To Retrive Membership Details"
+msgstr ""
+
+#: admin/partials/template/wps-wpr-api-features.php:441
+msgid "Base Url to get membership details : "
+msgstr ""
+
+#: admin/partials/template/wps-wpr-api-features.php:450
+msgid "/wp-json/wpr/wps-membership-details/user"
+msgstr ""
+
+#: admin/partials/template/wps-wpr-api-features.php:487
+msgid "To Update Membership Level"
+msgstr ""
+
+#: admin/partials/template/wps-wpr-api-features.php:491
+msgid "Base Url to update membership level : "
+msgstr ""
+
+#: admin/partials/template/wps-wpr-api-features.php:500
+msgid "/wp-json/wpr/wps-update-member-level/user"
+msgstr ""
+
+#: admin/wps-wpr-points-expiration-email-template.php:29
+msgid "Thank You"
+msgstr ""
+
+#: class-points-and-rewards-for-woocommerce-pro-update.php:242
+msgid "Plugin Description"
+msgstr ""
+
+#: class-points-and-rewards-for-woocommerce-pro-update.php:246
+msgid "Plugin Change Log"
+msgstr ""
+
+#: includes/class-points-and-rewards-for-woocommerce-pro-api.php:575
+#: includes/class-points-and-rewards-for-woocommerce-pro-api.php:598
+#: includes/class-points-and-rewards-for-woocommerce-pro-api.php:660
+msgid "This user doesn't exist"
+msgstr ""
+
+#: includes/class-points-and-rewards-for-woocommerce-pro-api.php:637
+msgid "This user does not exist"
+msgstr ""
+
+#: includes/class-points-and-rewards-for-woocommerce-pro-api.php:711
+msgid "No Points Generated Yet."
+msgstr ""
+
+#: includes/class-points-and-rewards-for-woocommerce-pro-api.php:767
+#: includes/class-points-and-rewards-for-woocommerce-pro-api.php:890
+msgid "Loyality"
+msgstr ""
+
+#: includes/class-points-and-rewards-for-woocommerce-pro-api.php:789
+#: includes/class-points-and-rewards-for-woocommerce-pro-api.php:794
+#, php-format
+msgid ""
+"Points have been deducted by the administrator via API. Your total points "
+"balance is now %s"
+msgstr ""
+
+#: includes/class-points-and-rewards-for-woocommerce-pro-api.php:823
+msgid "Points Reduced Successfully"
+msgstr ""
+
+#: includes/class-points-and-rewards-for-woocommerce-pro-api.php:864
+#, php-format
+msgid "Sorry! Points go in the negative. Users have only %s points."
+msgstr ""
+
+#: includes/class-points-and-rewards-for-woocommerce-pro-api.php:872
+msgid "No, points have been given to reduce"
+msgstr ""
+
+#: includes/class-points-and-rewards-for-woocommerce-pro-api.php:910
+#: includes/class-points-and-rewards-for-woocommerce-pro-api.php:915
+#, php-format
+msgid ""
+"Points have been added by the administrator via API. Your total points "
+"balance is now %s"
+msgstr ""
+
+#: includes/class-points-and-rewards-for-woocommerce-pro-api.php:942
+msgid "Points Updated Successfully"
+msgstr ""
+
+#: includes/class-points-and-rewards-for-woocommerce-pro-api.php:979
+msgid "No, points have been given to update"
+msgstr ""
+
+#: includes/class-points-and-rewards-for-woocommerce-pro-api.php:1074
+msgid "Invalid user ID"
+msgstr ""
+
+#: includes/class-points-and-rewards-for-woocommerce-pro-api.php:1082
+msgid "Invalid user"
+msgstr ""
+
+#: includes/class-points-and-rewards-for-woocommerce-pro-api.php:1131
+msgid "No Membership"
+msgstr ""
+
+#: includes/class-points-and-rewards-for-woocommerce-pro-api.php:1178
+msgid "Membership details not found"
+msgstr ""
+
+#: includes/class-points-and-rewards-for-woocommerce-pro-api.php:1211
+msgid "Please enter membership name"
+msgstr ""
+
+#: includes/class-points-and-rewards-for-woocommerce-pro-api.php:1229
+msgid "This membership is already assigned to you"
+msgstr ""
+
+#: includes/class-points-and-rewards-for-woocommerce-pro-api.php:1262
+#: includes/class-points-and-rewards-for-woocommerce-pro-api.php:1267
+#, php-format
+msgid ""
+"Your membership has been upgraded, and %1$s points have been deducted from "
+"your account. Your total points balance is now %2$s"
+msgstr ""
+
+#: includes/class-points-and-rewards-for-woocommerce-pro-api.php:1286
+msgid "Membership assigned successfully"
+msgstr ""
+
+#: includes/class-points-and-rewards-for-woocommerce-pro-api.php:1299
+msgid "Invalid membership name"
+msgstr ""
+
+#: includes/class-points-and-rewards-for-woocommerce-pro-api.php:1308
+msgid "Points is not sufficient to get this membership"
+msgstr ""
+
+#: includes/class-points-and-rewards-for-woocommerce-pro-api.php:1319
+msgid "Membership not found"
+msgstr ""
+
+#: includes/class-wps-par-churn-detection.php:335
+#, php-format
+msgid "Churn Prevention Campaign - User ID#%d"
+msgstr ""
+
+#: includes/class-wps-par-churn-detection.php:338
+msgid "We miss you! Come back and save."
+msgstr ""
+
+#: modal/notify-user-popup.php:92
+msgid "How to Earn More!"
+msgstr ""
+
+#: modal/notify-user-popup.php:99 modal/notify-user-popup.php:383
+msgid "Total Point : "
+msgstr ""
+
+#: modal/notify-user-popup.php:102 modal/notify-user-popup.php:387
+msgid "Gain Points"
+msgstr ""
+
+#: modal/notify-user-popup.php:103 modal/notify-user-popup.php:388
+msgid "Redeem Points"
+msgstr ""
+
+#: modal/notify-user-popup.php:116 modal/notify-user-popup.php:401
+msgid "Register Your Self and Earn"
+msgstr ""
+
+#: modal/notify-user-popup.php:120 modal/notify-user-popup.php:405
+msgid " Points"
+msgstr ""
+
+#: modal/notify-user-popup.php:140 modal/notify-user-popup.php:425
+msgid "Place The Order and Earn Points"
+msgstr ""
+
+#: modal/notify-user-popup.php:143 modal/notify-user-popup.php:428
+msgid "Earn "
+msgstr ""
+
+#: modal/notify-user-popup.php:145 modal/notify-user-popup.php:430
+msgid " Points on every "
+msgstr ""
+
+#: modal/notify-user-popup.php:147 modal/notify-user-popup.php:432
+msgid " spent"
+msgstr ""
+
+#: modal/notify-user-popup.php:167 modal/notify-user-popup.php:449
+msgid "Write Review "
+msgstr ""
+
+#: modal/notify-user-popup.php:170 modal/notify-user-popup.php:196
+#: modal/notify-user-popup.php:240 modal/notify-user-popup.php:476
+#: modal/notify-user-popup.php:515
+msgid "Reward is : "
+msgstr ""
+
+#: modal/notify-user-popup.php:172 modal/notify-user-popup.php:198
+#: modal/notify-user-popup.php:242 modal/notify-user-popup.php:454
+#: modal/notify-user-popup.php:478 modal/notify-user-popup.php:517
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:5546
+msgid " Point"
+msgstr ""
+
+#: modal/notify-user-popup.php:193 modal/notify-user-popup.php:473
+msgid "Refer Someone"
+msgstr ""
+
+#: modal/notify-user-popup.php:204
+msgid "Referral Link"
+msgstr ""
+
+#: modal/notify-user-popup.php:205
+msgid "Share this link and get a reward on their purchase only "
+msgstr ""
+
+#: modal/notify-user-popup.php:216 modal/notify-user-popup.php:496
+msgid "Copy"
+msgstr ""
+
+#: modal/notify-user-popup.php:237 modal/notify-user-popup.php:250
+msgid "Earn on Someone else Purchasing "
+msgstr ""
+
+#: modal/notify-user-popup.php:253
+msgid "You will get : "
+msgstr ""
+
+#: modal/notify-user-popup.php:255
+#, php-format
+msgid "% of Order total"
+msgstr ""
+
+#: modal/notify-user-popup.php:277 modal/notify-user-popup.php:353
+#: modal/notify-user-popup.php:536 modal/notify-user-popup.php:611
+msgid "No Features Are Available Right Now! "
+msgstr ""
+
+#: modal/notify-user-popup.php:299 modal/notify-user-popup.php:557
+msgid "Redeem Points on Particluar Products"
+msgstr ""
+
+#: modal/notify-user-popup.php:302 modal/notify-user-popup.php:320
+#: modal/notify-user-popup.php:338 modal/notify-user-popup.php:560
+#: modal/notify-user-popup.php:578 modal/notify-user-popup.php:596
+msgid "Conversion Rule : "
+msgstr ""
+
+#: modal/notify-user-popup.php:317 modal/notify-user-popup.php:575
+msgid "Apply Points on Cart Total"
+msgstr ""
+
+#: modal/notify-user-popup.php:335 modal/notify-user-popup.php:593
+msgid "Convert Points into Coupons"
+msgstr ""
+
+#: modal/notify-user-popup.php:369
+msgid "Close"
+msgstr ""
+
+#: modal/notify-user-popup.php:452
+msgid "Write reviews and earn "
+msgstr ""
+
+#: modal/notify-user-popup.php:484
+msgid "Refer Link"
+msgstr ""
+
+#: modal/notify-user-popup.php:485
+msgid "Share this link and get a reward on their purchase only"
+msgstr ""
+
+#: modal/notify-user-popup.php:512
+msgid "Earn on Someone Else Purchasing "
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:231
+msgid "Try Again Invalid Email Id"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:232
+msgid "email template not assigned by admin Try again after sometime"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:233
+msgid "Please enter Your email address first"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:234
+msgid "success"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:235
+msgid "You can't send an email to yourself!"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:238
+msgid "Please enter a value in this field !!"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:331
+msgid " Minimum "
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:333
+msgid " Invite Required by the User to Get a Reward of  "
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:335
+msgid " Referral Points"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:341
+msgid "Current Invites: "
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:348
+msgid ""
+"Invite Users to get Reward Points on their Purchase using the Referral Link."
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:368
+#, php-format
+msgid ""
+"Get rewarded! Earn %1$s referral purchase points each time your referred "
+"user makes a purchase, up to a maximum of %2$s purchases."
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:378
+#, php-format
+msgid ""
+"Get rewarded! Earn %1$s of the order total as referral purchase points each "
+"time your referred user makes a purchase, up to a maximum of %2$s purchases."
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:378
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:399
+msgid "%"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:389
+#, php-format
+msgid ""
+"Get rewarded! Earn %1$s referral purchase points whenever your referred user "
+"makes a purchase."
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:399
+#, php-format
+msgid ""
+"Get rewarded! Earn %1$s of the order total as referral purchase points "
+"whenever your referred user makes a purchase."
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:494
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:8225
+msgid "You will get "
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:494
+msgid " points for the Products Review"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:590
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:595
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:636
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:641
+#, php-format
+msgid ""
+"Awesome! You earned points from a referral purchase — your total is now %s"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:750
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:754
+#, php-format
+msgid ""
+"You've received points based on the currency value of your purchase. Your "
+"total points balance is now %s"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:816
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:820
+#, php-format
+msgid ""
+"You have received assigned product points. Your total points balance is now "
+"%s"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:865
+msgid "Points Conversion: "
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:866
+msgid " points = "
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:876
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:881
+msgid "Enter your points:"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:883
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:890
+msgid "Generate Coupon"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:888
+msgid "Convert Points To Coupon"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:895
+#, php-format
+msgid "The minimum points required to convert points to coupons is %u"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:921
+msgid "Coupon Details"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:930
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1046
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1318
+msgid "Coupon Code"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:933
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1049
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1321
+msgid "Coupon Amount"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:936
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1052
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1324
+msgid "Amount Left"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:939
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1055
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1327
+msgid "Expiry"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:972
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1208
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1353
+msgid "No Expiry"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1010
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1283
+msgid "Coupon generation error."
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1080
+msgid "No Exprity"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1093
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1366
+msgid "Your points are converted to coupon"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1123
+msgid "Points And Reward - User ID#"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1238
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1243
+#, php-format
+msgid ""
+"A coupon has been created using your points. Your total points balance is "
+"now %s"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1372
+msgid "Points cannot be greater than your current points"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1437
+msgid "Reward your friends by sharing your earned points with them!"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1440
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:7756
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:9298
+msgid "Enter Email"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1442
+msgid "GO"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1468
+msgid "Error during Point Sharing. Try Again!"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1514
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1519
+#, php-format
+msgid ""
+"You have received points shared with you by a colleague. Your total points "
+"balance is now %s"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1533
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1538
+#, php-format
+msgid ""
+"Points have been deducted from your account as you shared them with your "
+"colleagues. Your total points balance is %s"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1554
+msgid "Points assigned successfully"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1560
+msgid "Entered Point should be less than your Total Point"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1565
+msgid "Please Enter a Valid Email"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1569
+msgid "You Cannot Send Points to Administrator"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1574
+msgid "Please Enter Email"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1579
+msgid "Please fill Required fields"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1714
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1756
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1799
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1883
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1926
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1967
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:2968
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3007
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3037
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3071
+msgid "Spend "
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1716
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1758
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1801
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1885
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1928
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1969
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:2968
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3007
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3037
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3071
+msgid " Points for Purchasing this Product for Single Quantity"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1731
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1901
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1943
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1984
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:2977
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3016
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3046
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3080
+msgid "You need extra "
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1733
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1775
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1819
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1903
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1945
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1986
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:2977
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3016
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3046
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3080
+msgid " Points for getting this product for free"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1773
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:1817
+msgid "You need extra  "
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:2122
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:2497
+msgid "Purchased By Points"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:2240
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:2562
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3365
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:4200
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:4691
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:5919
+msgid "Point Discount"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:2325
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:2338
+msgid "You cant purchase that much quantity for Free"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:2498
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:2523
+msgid "Purchasing Option"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:2597
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:2602
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:2642
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:2647
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:4043
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:4048
+#, php-format
+msgid ""
+"Points have been deducted from your account as you used them to purchase a "
+"product. Your total points balance is now %s"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:2798
+msgid "Membership Expiration Alert!"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:2799
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:2810
+msgid "Your User Level "
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:2799
+msgid " is going to expire on the date of "
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:2799
+msgid ""
+" You can upgrade your level or can renew that level again after expiration."
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:2809
+msgid "No Longer Membership User"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:2810
+msgid ""
+" has expired. You can upgrade your level to another or can renew that level "
+"again "
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:2839
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3118
+msgid "Error during various variation handling. Try Again!"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:2899
+msgid "Successfully Assigned!"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3333
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3343
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3442
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3451
+msgid "Apply Points"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3334
+msgid "Points applicable on this order : "
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3344
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3452
+msgid "You require :"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3346
+msgid "more to get redeem"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3369
+msgid "[Remove]"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3385
+msgid "Failed to Remove Cart Discount"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3391
+msgid "Successfully Removed Cart Discount"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3443
+msgid " Points Applicable on this order : "
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3452
+msgid "more points to get redeem"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3629
+msgid "You must Log in to purchase this product"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3634
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3647
+msgid "You don't have sufficient points to purchase this product"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3642
+msgid "You must be logged in to purchase this product"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3657
+msgid "You have already used your points, Now you don't have much!"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3707
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3733
+msgid "You do not have sufficient points for further purchases."
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3824
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3829
+#, php-format
+msgid ""
+"Due to the order cancellation, the points you used for the purchase have "
+"been refunded. Your total points balance is now %s"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3937
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3942
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3980
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:3985
+#, php-format
+msgid ""
+"Deduct assigned product-earned points when an order is canceled. Your total "
+"points balance is now %s"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:4161
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:4166
+#, php-format
+msgid ""
+"Your order has been cancelled, and %1$s points (based on the currency value) "
+"have been deducted from your account. Your total points balance is now %2$s"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:4232
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:4237
+#, php-format
+msgid ""
+"The points discount amount has been refunded due to the order cancellation. "
+"Your total points balance is now %s"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:4258
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:4773
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:7016
+msgid "Cart Discount"
+msgstr "Winkelwagenkorting"
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:4292
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:4297
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:4806
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:4811
+#, php-format
+msgid ""
+"Applied on Cart/Checkout has been refunded due to the order cancellation. "
+"Your total points balance is now %s"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:4397
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:4402
+#, php-format
+msgid ""
+"Points have been deducted from your account as you referred a coupon to "
+"someone. Your total points balance is now %s"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:4473
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:4478
+#, php-format
+msgid ""
+"Assigned product points have been deducted from your due to order "
+"cancellation. Your total points balance is now %s"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:4535
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:4540
+#, php-format
+msgid ""
+"Purchased product using points only points have been added back to your "
+"account due to order cancellation. Your total points balance is now %s"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:4646
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:4651
+#, php-format
+msgid ""
+"Deduct per currency points from your account due to order cancellation. Your "
+"total points balance is now %s"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:4746
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:4751
+#, php-format
+msgid ""
+"Purchase product through points has been added back into your account due to "
+"order cancellation . Your total points balance is now %s"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:4886
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:4891
+#, php-format
+msgid ""
+"Referral purchase points has been deducted from your account due to the "
+"order cancellation. Your total points balance is now %s"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:4988
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:4993
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:5099
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:5104
+#, php-format
+msgid ""
+"Order total points deducted from your account due to the order cancellation. "
+"Your total points balance is now %s"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:5982
+msgid "Membership Expiry"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6111
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6116
+#, php-format
+msgid ""
+"You have received first order points as a rewards. Your total points balance "
+"is now %s"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6197
+#, php-format
+msgid ""
+"You have received daily login points as a reward. Your total points balance "
+"is now %s"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6285
+#, php-format
+msgid "%s Bonus"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6296
+#, php-format
+msgid "Top rank holder gets %s reward points automatically every week."
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6311
+msgid "Customer Ranking"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6312
+msgid "Name"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6346
+msgid "#"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6551
+msgid "refered user"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6605
+msgid "Refunded referral purchase point"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6637
+msgid "Return referral purchase point"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:6768
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:7616
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:8432
+msgid "Points will not be applied to Sales products"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:7405
+msgid "Date Of Birth"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:7408
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:7423
+msgid "disabled"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:7420
+msgid "Anniversary Date"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:7506
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:7511
+#, php-format
+msgid ""
+"Happy Birthday! To celebrate your special day, you've received %1$s reward "
+"points. Your total points balance is now %2$s"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:7688
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:8309
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:8397
+msgid "Upon placing this order, you will receive"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:7757
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:9300
+msgid "Send"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:7844
+msgid "Your Coupon Referral Code is "
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:7855
+msgid "and anyone you refer who buys from using this coupon is entitled to  "
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:7855
+msgid " off as a discount."
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:7859
+msgid "and anyone you refer who buys from using this coupon is entitled to "
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:7859
+#, php-format
+msgid "% off as a discount."
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:7980
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:7985
+#, php-format
+msgid ""
+"You have received coupon referral points. Your total points balance is now %s"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:8064
+msgid "Referral code cannot be used by self"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:8079
+msgid "The coupon code is valid only on the first order"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:8167
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:8186
+msgid "Reward Points"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:8175
+msgid " Reward Points"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:8225
+msgid " points for the Post Comment"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:8463
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:8468
+#, php-format
+msgid "You have received signup points. Your total points balance is now %s"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:8614
+msgid "Point and Rewards Settings"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:8630
+msgid "Assign product points here"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:8637
+msgid "0.00"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:8677
+msgid "Enter product assign points."
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:8728
+msgid "Extend your points expiration date using points"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:8733
+#, php-format
+msgid "Upgrade Points Expiration Validity Rate: %1$s points = %2$s days"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:8739
+msgid "Enter your value and select range"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:8744
+msgid "Enter your value"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:8753
+msgid "Upgrade Validity"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:8767
+msgid "No relevant data found at the moment!"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:8787
+msgid "Please enter valid points !!"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:8853
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:8858
+#, php-format
+msgid ""
+"You've upgraded your points expiration time, and %1$s points have been "
+"deducted from your account. Your total points balance is now %2$s"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:8861
+msgid "Points Expiration Date Extension"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:8862
+msgid ""
+"Your points expiration date has been extended. The updated expiration date "
+"is [DATE], and your total points are [TOTALPOINTNOW]."
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:8871
+msgid "Your points expiration date has been successfully extended."
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:8875
+msgid "You do not have sufficient points to upgrade for the selected days"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:9125
+msgid "Expiring On : "
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:9175
+msgid "Only members are eligible to redeem points!"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:9294
+msgid "Give your friends a WooCommerce coupon treat"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:9299
+msgid "coupons"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:9313
+msgid "Oops! No coupon details are available at the moment"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:9330
+msgid "Coupon or email fields are empty"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:9346
+msgid "Invalid email address"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:9355
+msgid "No user found with this email"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:9364
+msgid "Invalid or non-existent coupon code"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:9372
+msgid "This coupon is not valid for use"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:9384
+msgid "You have received a WooCommerce coupon!"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:9430
+msgid "Hi,"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:9431
+msgid "You've received a WooCommerce coupon code:"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:9436
+msgid "Description:"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:9440
+msgid "Discount:"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:9441
+msgid "Use this coupon during checkout on our store."
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:9442
+msgid "Thanks!"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:9456
+#, php-format
+msgid "Coupon sent successfully to %s"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:9460
+msgid "Failed to send email. Please try again."
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:9680
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:9713
+#, php-format
+msgid "Congratulations 🎉 You already qualify for %s level."
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:9722
+msgid "You are already at the highest membership level."
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:9750
+msgid "Birthday Bonus!"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:9758
+#, php-format
+msgid ""
+"Celebrate your birthday with rewards — place an order on your birthday and "
+"earn %s× points on that order!"
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:9807
+msgid "Please log in."
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:9811
+msgid "Mailchimp is not configured."
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:9838
+msgid "Subscription queued."
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:9839
+msgid "Unsubscription queued."
+msgstr ""
+
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:9896
+#: public/class-points-and-rewards-for-woocommerce-pro-public.php:9901
+#, php-format
+msgid ""
+"Happy Anniversary! To celebrate your special day, you've received %1$s "
+"reward points. Your total points balance is now %2$s"
+msgstr ""
+
+#: ultimate-woocommerce-points-and-rewards.php:338
+msgid "Settings"
+msgstr ""
+
+#: ultimate-woocommerce-points-and-rewards.php:436
+msgid ""
+"WooCommerce is not activated, Please activate WooCommerce first to activate "
+"Ultimate WooCommerce Points and Rewards."
+msgstr ""
+
+#: ultimate-woocommerce-points-and-rewards.php:444
+msgid "Points and Rewards For WooCommerce is not activated, Please activate "
+msgstr ""
+
+#: ultimate-woocommerce-points-and-rewards.php:445
+msgid "Points and Rewards For WooCommerce "
+msgstr ""
+
+#: ultimate-woocommerce-points-and-rewards.php:446
+msgid "first to activate Points and Rewards For WooCommerce Pro."
+msgstr ""
+
+#: ultimate-woocommerce-points-and-rewards.php:459
+msgid "Install"
+msgstr ""
+
+#: ultimate-woocommerce-points-and-rewards.php:653
+msgid ""
+"WooCommerce is not activated, Please activate WooCommerce first to activate "
+"Points and Rewards for WooCommerce."
+msgstr ""
