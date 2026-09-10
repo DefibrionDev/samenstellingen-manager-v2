@@ -427,6 +427,39 @@ Route zoals FR: samenstellingen via de tool, losse artikelen via vinkjes.
 - [x] **26 verkooprelaties** aan via
       `apply-defibsolutionseu-relatie-vlaggen.php` (26 ok / 0 fail).
 
+### GEEN-MATCH-besluiten verwerkt (Martina, sheet + mail 10 sep 10:21Z; akkoord Cas 10 sep)
+
+Alle 45 rijen hebben een besluit. Verwerking (alles idempotent in de scriptstappen):
+- **15× schrappen** → `work/schraplijst-defibsolutionseu.csv` (+15, reden
+  "Martina 10 sep") → stap10. Incl. kale AED's Defibtech View (114) en Zoll AED
+  Pro (111) en de Zoll-trainer-talen HR/GR/TR.
+- **24× koppelen** → `work/sku-correcties-defibsolutionseu.csv` (+24: shop-SKU :=
+  bestaande AFAS-BHV-code, of itemcode als BHV = itemcode; géén AFAS-BHV-write)
+  → stap18 → stap6. AFAS-vlaggen Sync/Tonen EU via `maak-vinkjes-input`
+  (`MARTINA_AAN`, 26 codes incl. 10681 en de CU-heads) → `fix-defibsolutionseu-
+  vinkjes.php --apply` 10 sep (25 ok, 0 fail; 1 stond al goed via publications).
+- **CU Medical SP-1 = ARKY-structuur**: EN-bases 064.1339-UK (vol) en
+  064.1309-SAM-UK (half) `base:publish` op "DefibSolutions EU" +
+  `publications:sync --apply` (16 ok). Omzet-lijst: `HANDMATIG_DOEL` in
+  `maak-omzet-aed` zet 103295→064.1339-UK en 103294→064.1309-SAM-UK op OMZETTEN
+  (waren KANDIDAAT met NL-doel; 103294 stond dus nog als kale AED gepubliceerd).
+  stap6 → stap16 vormt beide om tot container.
+- **Zoll Trainer FR 103255 → 10681**: parent stond live al op 10698 (cache van
+  9 sep was stale; `fix-defibsolutionseu-trainer-parent.php` dry-run: 0 te doen).
+  SKU-correctie → stap6 → stap8 (conversie naar variatie onder de trainer-container).
+- **5 rijen terug naar Martina**: 4 codes zijn al aan een ander shop-product
+  gekoppeld (224→70231 is de Airway, suggestie 70202 "Ambu Man Defib Wireless
+  Next Generation"; 634→10526-IQF is de Basic; 121→10595 is adult; 187→90257 is
+  de QCPR-tas) — mail-handoff `work/handoff-mail-martina-4-rijen-en-ambu.md`.
+  Rij 306 (Ambu Man Advanced Wireless zonder I.V.): nieuw AFAS-artikel nodig —
+  aanvraag-info voor financieel in `work/aanvraag-afas-artikel-ambu-advanced-
+  zonder-iv.md`; product blijft tot dan ongekoppeld in de shop.
+- **Les (10 sep):** een volle `migrate.sh` (pull+upload, proefverhuizing) overschrijft
+  de lokale wp-content met live (lefcreative weg, b2bking terug, mu-plugins weg)
+  terwijl de lokale DB de runner-stand houdt → lokaal is daarna inconsistent
+  (stap10 crashte op wc-product-table-pro zonder de wcpt-mu-fix). Na elke volle
+  migratie eerst `--pull --local-refresh` + runner voordat je lokaal iets draait.
+
 ## Livegang-lessen NL (8 sept) — verwerken vóór fase 2
 
 Bron: `work/handoff-livegang-lessen-defibsolutions.md`. Status EU-checks
@@ -459,11 +492,32 @@ tabellen nog niet — na de 2.0.7-upgrade opnieuw checken); wél 115
 
 ### Draaiboek venster (concept, 9 sep)
 
-1. **Vooraf (dagen ervoor):** proefverhuizing `cd ~/projects/wordpress-migrater
-   && ./migrate.sh --config defibsolutionseu` (pull + upload naar cp-01 +
-   rewrite naar de dev-URL), daarna `DEFIBSEU_TARGET=cp01 runner` → dev-site
-   bekijken. Bron Order 75 in AFAS-lijst (Kevin). DNS-plan: A-record
-   `shop.defibsolutions.eu` → 138.199.223.146, alleen IPv4 (Cas).
+1. **Vooraf (dagen ervoor):** [x] proefverhuizing 10 sep 10:27–10:36
+   (`./migrate.sh --config defibsolutionseu`: pull + upload naar cp-01 + 155
+   URL-vervangingen naar de dev-URL, caches geleegd; migrater-schoonheidsfout
+   in de samenvatting gefixt). Dev-site = getrouwe kopie (366 producten, 129
+   users, jonradio actief). Daarna `DEFIBSEU_TARGET=cp01 runner`: eerste run
+   strandde op stap4 — `/tmp/lefcreative-afas-b2b.zip` op cp-01 is van de
+   NL-site-user (8 sep, mode 640) en een andere site-user mag het niet
+   overschrijven → stap4 uploadt nu naar de home van de site-user (les voor
+   alle shop-scripts: geen gedeeld /tmp op een multi-site-server). Tweede
+   run 10 sep 10:39–11:09 groen ("KLAAR — volledige reeks groen op cp01 in
+   30 min"), aantallen gelijk aan lokaal (321 simple, 22 containers, 1209
+   variaties — +1 = 11141 NL-Defibtech, later gepubliceerd), kruischeck schoon,
+   MAAR stap11 gaf 24 warnings + 9 MySQL-deadlocks op
+   `wp_braapf_product_variation_attributes` (lokaal 0). Oorzaak (nginx-log):
+   wp-cron.php-loopbacks vanaf het eigen server-IP midden in de sync — WordPress
+   spawnt die bij elke wp-cli-aanroep én elke bezoeker zodra
+   `action_scheduler_run_queue` due is; de loopback werkt de Action
+   Scheduler-wachtrij (1416 attribute-lookup-acties van onze eigen saves)
+   parallel aan de productsaves af. Lokaal lukt de loopback niet, dus een
+   schone lokale run bewijst niets. Fix in stap11: `DISABLE_WP_CRON` tijdelijk
+   in wp-config (45s wachten op lopende cron-run, herstel via EXIT-trap) +
+   warnings gegroepeerd in de logsamenvatting (de volgende stap11-run wist de
+   woocommerce-channel, dus de 24 waren niet meer te achterhalen). Herhaal-sync
+   `stap11 zonder-prijzen` op cp01 gestart 11:15 ter bevestiging. [x] Bron Order 75 bevestigd (Cas
+   10 sep; Kevin niet betrokken bij .eu). [x] DNS: beide records oranje,
+   shop-hostnaam op 503-hold.
 2. **Maintenance aan op live** (Satserver, via FTP: `.maintenance` met
    `$upgrading = time()+86400`) — verifieer 503 met cache-bust `?x=…`.
    Let op: de rsync/lftp kopieert `.maintenance` mee → direct na de
@@ -478,16 +532,23 @@ tabellen nog niet — na de 2.0.7-upgrade opnieuw checken); wél 115
    a. [x] DNS A-record `shop.defibsolutions.eu` → 138.199.223.146, Cloudflare
       **grijs** (Cas, 10 sep). **Na cert-uitgifte: op oranje zetten** (Cas
       herinneren).
-   b. [x] nginx-vhost op cp-01: `server_name defibsolutionseu.defibrion.dev
-      shop.defibsolutions.eu;` (10 sep, root; backup in /root/nginx-backups),
-      nginx herladen.
+   b. [ ] nginx-vhost op cp-01: `server_name defibsolutionseu.defibrion.dev
+      shop.defibsolutions.eu;` — 10 sep gezet voor de cert-uitgifte, daarna
+      weer teruggedraaid t.g.v. het 503-hold-blok; **in het venster: `rm
+      /etc/nginx/sites-enabled/zz-shop.defibsolutions.eu-hold.conf`, alias
+      terug in de hoofd-vhost, `nginx -t && systemctl reload nginx`.**
    c. [x] cert: `clpctl lets-encrypt:install:certificate
       --domainName=defibsolutionseu.defibrion.dev
       --subjectAlternativeName=shop.defibsolutions.eu` — eerste poging
       NXDOMAIN (de EU-dev-naam had, anders dan NL/FR, geen DNS-record);
       na Cas' A-record (grijs) uitgegeven 10 sep 09:26: Let's Encrypt, SAN
       voor beide namen, geldig t/m 9 dec 2026, nginx herladen en via SNI
-      geverifieerd. **→ Cas: beide records op oranje.**
+      geverifieerd. Cas zette beide records op oranje (10 sep, HTTP 200 via
+      Cloudflare). **Omdat shop.defibsolutions.eu daarmee publiek de staging
+      zou tonen: tijdelijk 503-blok op cp-01**
+      (`/etc/nginx/sites-enabled/zz-shop.defibsolutions.eu-hold.conf`, alias
+      tijdelijk uit de hoofd-vhost). **In het venster: hold-bestand
+      verwijderen + alias terugzetten + nginx reload** (staat in stap 5b).
    d. wp-config: `WP_HOME`/`WP_SITEURL` (door de migrater HARDCODED gezet) →
       `https://shop.defibsolutions.eu`;
    e. `wp search-replace 'https://defibsolutionseu.defibrion.dev'

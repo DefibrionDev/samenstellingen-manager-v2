@@ -268,9 +268,12 @@ stap4() {
         _lokaal_compose run "${_LOKAAL_RUN_OPTS[@]}" -v "$(dirname "$zip"):/defibs-work:ro" wpcli \
             sh -c "php -d memory_limit=512M /usr/local/bin/wp plugin install '/defibs-work/$(basename "$zip")' --force --activate" 2>&1 | _filter_ruis
     else
+        # Niet naar /tmp: dat bestand bestaat daar al van de NL-site-user (8 sep,
+        # mode 640) en een andere site-user mag het niet overschrijven — de
+        # cp01-runner strandde er 10 sep op. Home van de site-user is per site.
         echo "upload $(basename "$zip") ..."
-        scp -q "$zip" "$SERVER:/tmp/lefcreative-afas-b2b.zip"
-        wpr plugin install /tmp/lefcreative-afas-b2b.zip --force --activate
+        scp -q "$zip" "$SERVER:lefcreative-afas-b2b-defibsolutionseu.zip"
+        wpr plugin install "\$HOME/lefcreative-afas-b2b-defibsolutionseu.zip" --force --activate
     fi
 
     local settings="$REPO_ROOT/work/afas-settings-defibsolutionseu.json"
@@ -1196,6 +1199,13 @@ foreach ($wpdb->get_results("SELECT level, COUNT(*) n FROM {$wpdb->prefix}lef_lo
     WHERE channel = 'woocommerce' GROUP BY level", ARRAY_A) as $r) {
     printf("         %s: %d\n", $r['level'], (int) $r['n']);
 }
+// Warnings gegroepeerd in het log zetten: de volgende stap11-aanroep wist de
+// woocommerce-channel weer, dus alleen deze uitvoer overleeft (cp01-run 10 sep:
+// 24 warnings, na de delta-run niet meer te achterhalen).
+foreach ($wpdb->get_results("SELECT COUNT(*) n, LEFT(message, 220) m FROM {$wpdb->prefix}lef_logs
+    WHERE channel = 'woocommerce' AND level = 'warning' GROUP BY m ORDER BY n DESC LIMIT 25", ARRAY_A) as $r) {
+    printf("           %3dx %s\n", (int) $r['n'], $r['m']);
+}
 // Kruischeck (NL-livegang-les 8): gekoppelde klant zonder verkooprelatie-rij =
 // relatie-vlag Sync_Defibsolutions_EU ontbreekt in AFAS -> geen klantprijzen.
 $zonderRij = $wpdb->get_results("SELECT DISTINCT m.meta_value r, u.user_email e
@@ -1226,8 +1236,41 @@ PHP
     else
         sed -i 's/FORCE_PLACEHOLDER/true/' /tmp/afaseu-stap11-payload.php
     fi
+    # Geen wp-cron tijdens de sync (cp01-run 10 sep): elke wp-cli-aanroep én
+    # elke bezoeker spawnt een wp-cron-loopback (nginx-log: UA "WordPress/7.1"
+    # vanaf het eigen server-IP), die de Action Scheduler-wachtrij (o.a. 1400
+    # attribute-lookup-acties uit onze eigen productsaves) parallel aan de
+    # sync afwerkt -> 9 deadlocks op wp_braapf_product_variation_attributes en
+    # 24 warnings; lokaal (geen loopback) 0. DISABLE_WP_CRON stopt het spawnen;
+    # wordt na de sync hersteld, ook bij een fout (EXIT-trap). Bestaande
+    # instelling wordt gerespecteerd (dan ook niets te herstellen).
+    local cron_al_uit
+    cron_al_uit="$(wpr config get DISABLE_WP_CRON --type=constant 2>/dev/null || true)"
+    local cron_uitgezet=""
+    if [[ "$cron_al_uit" != "1" && "$cron_al_uit" != "true" ]]; then
+        wpr config set DISABLE_WP_CRON true --raw --type=constant --quiet || true
+        if [[ "$(wpr config get DISABLE_WP_CRON --type=constant 2>/dev/null || true)" == "1" ]]; then
+            cron_uitgezet="1"
+            trap '_stap11_cron_herstel' EXIT
+            echo "         wp-cron uit tijdens de sync (DISABLE_WP_CRON); 45s wachten tot een lopende cron-run klaar is"
+            sleep 45
+        else
+            echo "         LET OP: wp-config niet schrijfbaar — wp-cron blijft aan tijdens de sync"
+        fi
+    else
+        echo "         wp-cron stond al uit (DISABLE_WP_CRON) — blijft zo"
+    fi
     wpr_stdin eval-file - < /tmp/afaseu-stap11-payload.php
+    if [[ -n "$cron_uitgezet" ]]; then
+        _stap11_cron_herstel
+        trap - EXIT
+    fi
     echo "OK — syncs gedraaid op $(doel_naam)"
+}
+
+_stap11_cron_herstel() {
+    wpr config delete DISABLE_WP_CRON --type=constant --quiet 2>/dev/null || true
+    echo "         wp-cron weer aan (DISABLE_WP_CRON verwijderd)"
 }
 
 # ---------------------------------------------------------------------------
