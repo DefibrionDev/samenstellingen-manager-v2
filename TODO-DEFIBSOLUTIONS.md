@@ -343,9 +343,11 @@ week monitoren, B2BKing opruimen.
       apply 20 ok / 0 fail; besluit Cas "waarom zouden we niet zelf
       aanvinken"). Sync direct getriggerd: relaties 95 -> 115, factuur-meta
       gevuld, kruischeck nog 1.
-- [ ] Restgeval 38170 (info@aedwijzer.nl): bestaat niet als debiteurnummer
-      in AFAS — juiste relatienummer opvragen bij Kevin (zit in de mail),
-      daarna herkoppelen.
+- [x] Restgeval AED Wijzer ✓ 10 sept: Kevin gaf 36210 → csv + stap3 apply +
+      vlaggen (1 ok) + sync. Kruischeck nu 0. NB: account-e-mail door de
+      sync gewijzigd van info@ naar b.devisser@aedwijzer.nl (AFAS-profiel
+      is leidend; zelfde gedrag als Haaglanden) — user_login "Bart" werkt
+      nog gewoon.
 
 ### Fase H — oorspronkelijke planning
 
