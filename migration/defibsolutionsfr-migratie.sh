@@ -473,6 +473,7 @@ PY
 _FR_MU_PLUGINS=(
     wc-variation-threshold.php variations-json-cache.php
     checkout-ajax-fallback.php afas-tracktrace-style.php
+    defibsfr-checkout-restyle.php
     order-email-afas-debiteur.php order-email-unit-prices.php
     afas-preview-winkelmanager.php shop-manager-login-as-klant.php
 )
@@ -1876,6 +1877,12 @@ stap22() {
     wpr option update woocommerce_checkout_company_field hidden
     wpr option update woocommerce_checkout_phone_field optional
     wpr option update woocommerce_checkout_address_2_field optional
+    # Tweekoloms plugin-checkout (melding Cas 10 sep: blokken op volle
+    # breedte): Woodmart heeft een eigen form-checkout.php en die wint van
+    # de plugin-template tenzij deze toggle aan staat. Ook in
+    # work/afas-settings-fr.json gezet (stap4-herrun mag hem niet terugdraaien),
+    # net als het Franse label voor het referentieveld.
+    wpr option update afas_checkout_two_column_template 1
     wpr cache flush
     echo "OK — variatie-knoppen + checkout-velden op $(doel_naam)"
 }
