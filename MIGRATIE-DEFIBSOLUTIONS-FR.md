@@ -449,6 +449,18 @@ en de pickers toonden alleen taal — stap16 heeft nu een fallback die
 zelfvoorzienend. **Naloop: FR-variant-registraties in de tool herstellen**
 (group_variants), anders mist het volgende tool-werk ze ook.
 
+**Checkout-afwerking livegang 10 sep** (meldingen Cas, alle in
+mu-plugin `defibsfr-checkout-restyle.php` + stap22 + settings-json):
+tweekoloms-toggle aan (Woodmart-template won anders) · factuuradres in
+kader · knoppen in Woodmart-accentkleur (inline-block-proof: plugin-JS
+toont Modifier met display:inline-block) · coupon onder besteloverzicht ·
+betaalblok grijs kader · placeholders grijs · "Votre référence" (label uit
+NL-export was Nederlands) · **TVA-veld**: de oude theme-eigen
+reverse-charge-feature (lef_* in woodmart-child) maakte het veld verplicht
+en onzichtbaar-geblokkeerd; de plugin-overname aangezet
+(afas_vat_number_field_enabled/zero_rate/validation = 1) — veld optioneel,
+voorgevuld uit de relatie, VIES + 0%-regel via de plugin.
+
 **Livegang-dag (10 sep):**
 
 1. [ ] Maintenance-besluit + `.maintenance` op live (`$upgrading =
