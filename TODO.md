@@ -270,3 +270,31 @@ NL én DefibSolutions NL.
       nieuwe artikelen komen daar via de live plugin-sync als private
       variaties binnen (locked containers); CPR-as + publiceren + defaults
       moet daar nog, eerst testen op de lokale reseller-kopie.
+
+## Slice SS — Eén stickerset per samenstelling: `bom:strip-component --only-with` (PLAN.md §15)
+
+Aanleiding: besluit Cas 10 sep 2026 — elke samenstelling één stickerset (eigen
+taal), 81111 (NL) hoort niet extra in anderstalige BOMs. 483 AFAS-samenstellingen
+raken; de tool-registraties zijn al correct (behalve de 15 FR-bases waar de
+FR-sessie 81111 bijzette — die rijen gaan met de strip mee).
+
+- [x] `StripBomComponent.onlyWith` + handler-filter (samenstelling moet óók een
+      only-with-component bevatten) + `skippedCount` in het result; leeg =
+      ongewijzigd gedrag.
+- [x] `GroupBaseItemRepository::deleteByItemcodeForBases()` in contract-test,
+      SQLite en InMemory; handler scoped de tool-side DELETE bij onlyWith.
+- [x] CLI-optie `--only-with=a,b,c` op `bom:strip-component`; dry-run print het
+      aantal overgeslagen regels.
+- [x] Dry-run `bom:strip-component 81111 --only-with=81211,81311,81411,81511,81611`
+      → verwacht 483 gepland / 368 overgeslagen; Cas akkoord → `--apply`;
+      failures-CSV leeg.
+- [x] Veiligheidsgordel strip-handler: regels met niet-unieke PrSe binnen hun
+      samenstelling overslaan + rapporteren (AFAS matcht de delete op PrSe alléén;
+      incident 11167, PLAN.md §15). Reader-methode voor "alle regels van
+      samenstelling X" + handler-test met botsende PrSe.
+- [x] Herstel 11167 (10 sep 14:00): 70112 terug (Art, 30); delete PrSe 10 pakte de AED
+      10165 → terug op 40; tweede delete PrSe 10 haalde 81111 weg; `afas:pull` →
+      BOM 10165/70112/81211, 8/8 varianten gematcht, 1783 matched / 0 no_match.
+- [ ] Nazorg: `afas:pull` → `group:sync-afas` voor de 13 heads → `audit:variant-parent`,
+      `audit:no-match` schoon → EU-stap12 apply op lokaal + cp01 (diff met
+      fallback-assen noteren) → handoff-md + EU-runbook bijgewerkt.

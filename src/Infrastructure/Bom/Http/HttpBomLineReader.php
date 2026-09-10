@@ -51,6 +51,23 @@ final readonly class HttpBomLineReader implements BomLineReader
         return $lines;
     }
 
+    public function findAllLines(): array
+    {
+        $lines = [];
+        foreach ($this->client->getConnectorAll('easylinq_stock_item_parts') as $row) {
+            $samenstelling = (string) ($row['item_id'] ?? '');
+            $part = (string) ($row['part_item_id'] ?? '');
+            $vaIt = (string) ($row['type_id'] ?? '');
+            $prSeRaw = $row['Presentatievolgorde'] ?? null;
+            if ($samenstelling === '' || $part === '' || $vaIt === '' || !is_int($prSeRaw)) {
+                continue;
+            }
+            $lines[] = new BomLine($samenstelling, $part, $vaIt, $prSeRaw);
+        }
+
+        return $lines;
+    }
+
     public function findMaxPrSePerSamenstelling(): array
     {
         $rows = $this->client->getConnectorAll('easylinq_stock_item_parts');

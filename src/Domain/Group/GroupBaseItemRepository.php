@@ -25,4 +25,13 @@ interface GroupBaseItemRepository
      * voorkomt.
      */
     public function deleteByItemcode(string $itemcode): int;
+
+    /**
+     * Verwijdert `itemcode` alleen uit bases wier `afas_itemcode` in de lijst
+     * staat (scope van `bom:strip-component --only-with`). Bases zonder
+     * afas_itemcode blijven altijd ongemoeid. Geeft het aantal verwijderde rijen.
+     *
+     * @param list<string> $afasItemcodes
+     */
+    public function deleteByItemcodeForBases(string $itemcode, array $afasItemcodes): int;
 }

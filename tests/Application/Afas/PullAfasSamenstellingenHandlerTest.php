@@ -160,6 +160,10 @@ final class PullAfasSamenstellingenHandlerTest extends TestCase
             {
                 return 0;
             }
+            public function deleteByItemcodeForBases(string $itemcode, array $afasItemcodes): int
+            {
+                return 0;
+            }
         };
 
         $syncGroup = new SyncGroupAgainstAfasHandler(

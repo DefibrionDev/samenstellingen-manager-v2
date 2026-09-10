@@ -24,4 +24,14 @@ interface BomLineReader
      * @return array<string, int>
      */
     public function findMaxPrSePerSamenstelling(): array;
+
+    /**
+     * Alle BOM-regels (één bulk-pull). Gebruikt door `bom:strip-component` om
+     * te controleren of de PrSe van een te-strippen regel uniek is binnen
+     * z'n samenstelling: AFAS matcht de FbCompositionPart-delete op PrSe
+     * alléén, dus bij een gedeelde PrSe kan de verkeerde regel verdwijnen.
+     *
+     * @return list<BomLine>
+     */
+    public function findAllLines(): array;
 }

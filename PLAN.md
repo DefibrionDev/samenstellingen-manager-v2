@@ -363,3 +363,67 @@ WiFi/3G bij de CR2 (`variant_label` op de base).
    die uitvoering is; volgorde: taal, CPR-feedback, opties.
 
 **Buiten scope.** Prestan; overige alleen-reseller-artikelen (aparte handoff).
+
+## 15. Eén stickerset per samenstelling — 81111 strippen uit anderstalige BOMs (besluit Cas 10 sep 2026)
+
+**Aanleiding.** FR-handoff `work/handoff-bom-81111-registraties.md`: 43
+anderstalige bases matchen niet meer in `group:sync-afas` omdat hun AFAS-BOM
+81111 (AED stickerset NL) bevat en de tool-registratie niet. Cas' besluit
+(10 sep): **iedere samenstelling krijgt precies één stickerset, die van haar
+eigen taal; de NL-set hoort er niet extra in.** De tool-registraties zijn dus
+correct; AFAS is fout. Fix = 81111 strippen uit AFAS, níet 81111 registreren
+(zoals de FR-sessie voor 15 FR-bases deed — die registraties gaan mee weg).
+
+**Feiten (snapshot 10 sep 11:26).** 851 samenstellingen hebben 81111 in de
+BOM. 368 daarvan alleen 81111 (NL-bases, correct). **483 hebben 81111 plús
+een andere set** (81611 int'l 225, 81211 FR 138, 81511 DE 80, 81411 DK 40):
+43 bases + 302 ongematchte varianten van die bases + 138 FR-gematchte, over
+13 family-heads (10144-UK, 11043, 11142, 11145-EN, 11148, 11149, 11161,
+11162, 11186EN, 21013-UK, 21014-UK, 21018-UK, 21019-UK). Geen enkele
+samenstelling heeft 3 sets. De 56 met "NL" in de taalcode (21011–21019-FR
+FR/EN/NL, 11162-FR NL/FR) zijn FR-bases met 81211: eigen taal = FR, 81111
+extra → strippen (aanname 10 sep, Cas kan afwijken).
+
+**Waarom een scope-optie nodig is.** `bom:strip-component 81111` strip nu
+overal (851) én wist alle tool-registraties van 81111, dus ook bij de 368
+NL-bases. Nieuw: `--only-with=81211,81311,81411,81511,81611` beperkt het plan
+tot samenstellingen die óók een van die componenten bevatten; de tool-side
+DELETE volgt dezelfde scope (alleen bases wier afas_itemcode in het plan zit).
+Generiek ("strip X waar ook Y zit"), geen taal-kennis in het commando.
+
+**Aanpak.**
+1. `StripBomComponent` krijgt `onlyWith: list<string>` (default leeg = oud
+   gedrag). Handler: regels van het doel ophalen, per only-with-code de
+   samenstellingen ophalen (`findLinesByBomItemcode`), plan filteren; result
+   krijgt `skippedCount` voor de dry-run-uitvoer.
+2. `GroupBaseItemRepository::deleteByItemcodeForBases(string $itemcode,
+   list<string> $afasItemcodes): int` — contract-test + SQLite (JOIN
+   group_bases) + InMemory. Handler gebruikt hem zodra onlyWith gezet is.
+3. CLI: optie `--only-with` (komma-gescheiden); dry-run toont "N regels
+   overgeslagen (bevatten geen van …)".
+4. Uitvoering (na Cas' akkoord op de dry-run): `--apply` (~483 AFAS-deletes,
+   ~5 min) → `afas:pull` → `group:sync-afas` per geraakte head (13) →
+   `audit:*` → EU-stap12 opnieuw op lokaal én cp01 (tool-assen i.p.v.
+   fallback) → handoff-md + MIGRATIE-DEFIBSOLUTIONS-EU.md bijwerken.
+
+**Risico's.** (a) Live-shops (reseller/ARKY/NL/FR) tonen BOM-inhoud niet als
+productdata; de plugin synct namen/prijzen, geen stuklijsten → geen
+shop-effect. (b) Prijs: 81111 zit als component in de samenstellingsprijs?
+Samenstellingsprijzen staan als eigen artikelprijs in AFAS (prijslijsten),
+niet als som van componenten → geen prijswijziging; wél checken met
+`audit:missing-cbs`/prijsaudit na de strip. (c) Orderpicking: buitenlandse
+pakketten krijgen voortaan één stickerset mee — dat is het besluit.
+
+**Incident bij apply (10 sep 12:35).** 483 regels gestript, 0 API-fouten, maar
+bij 11167 (Lifepak CR2 semi WiFi FR) verwijderde AFAS **70112 (reanimatiekit)**
+i.p.v. 81111: beide Sam-regels hadden PrSe 10. AFAS matcht de
+FbCompositionPart-delete op **PrSe alléén** — VaIt en ItCd tellen niet (70112 was
+een Art-regel, de delete zei Sam/81111).
+Herstel: `afas-connector-tools/bin/restore-bom-line.php 11167 70112 Sam 30`
+(one-off, dry-run + --apply, weigert bezette PrSe) en `delete-bom-line.php 11167 10`
+(PrSe 10 gedeeld met AED 10165: AFAS kiest; zo nodig AED opnieuw inserten op 40). Overige 482: registratie = BOM, 100 % gematcht.
+**Structurele les → todo:** de strip-handler moet regels weigeren waarvan
+PrSe niet uniek is binnen de samenstelling (dubbele PrSe komt veel voor, bv.
+11165: drie regels op 10) en die als "onveilig, overgeslagen" rapporteren; de reader
+levert daarvoor alle regels van de geraakte samenstellingen.
+

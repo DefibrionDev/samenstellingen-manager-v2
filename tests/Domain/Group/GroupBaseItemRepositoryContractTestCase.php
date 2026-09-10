@@ -87,6 +87,29 @@ abstract class GroupBaseItemRepositoryContractTestCase extends TestCase
     }
 
     #[Test]
+    public function deleteByItemcodeForBasesOnlyTouchesBasesWithGivenAfasItemcodes(): void
+    {
+        $de = $this->bases->saveForGroup('52112', new GroupBase(null, 'AED pakket DE', 'DE', '11145-DE'));
+        $nl = $this->bases->saveForGroup('52112', new GroupBase(null, 'AED pakket NL 2', 'NL', '11142'));
+        self::assertNotNull($de->id);
+        self::assertNotNull($nl->id);
+
+        $this->items->saveForBase($this->baseId, new GroupBaseItem('81111', 'AED stickerset NL')); // base zonder afas_itemcode
+        $this->items->saveForBase($de->id, new GroupBaseItem('81111', 'AED stickerset NL'));
+        $this->items->saveForBase($de->id, new GroupBaseItem('81511', 'AED stickerset DE'));
+        $this->items->saveForBase($nl->id, new GroupBaseItem('81111', 'AED stickerset NL'));
+
+        $deleted = $this->items->deleteByItemcodeForBases('81111', ['11145-DE', '99999']);
+
+        self::assertSame(1, $deleted);
+        $codes = static fn (array $items): array => array_map(static fn (GroupBaseItem $i) => $i->itemcode, $items);
+        self::assertSame(['81511'], $codes($this->items->findAllForBase($de->id)));
+        self::assertSame(['81111'], $codes($this->items->findAllForBase($nl->id)));
+        self::assertSame(['81111'], $codes($this->items->findAllForBase($this->baseId)));
+        self::assertSame(0, $this->items->deleteByItemcodeForBases('81111', []));
+    }
+
+    #[Test]
     public function deleteByItemcodeRemovesAcrossAllBasesAndReportsCount(): void
     {
         // Tweede base in andere taal, beide krijgen dezelfde sticker-code.

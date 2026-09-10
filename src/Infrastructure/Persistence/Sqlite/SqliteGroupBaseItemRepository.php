@@ -76,6 +76,22 @@ final readonly class SqliteGroupBaseItemRepository implements GroupBaseItemRepos
         return $stmt->rowCount();
     }
 
+    public function deleteByItemcodeForBases(string $itemcode, array $afasItemcodes): int
+    {
+        if ($afasItemcodes === []) {
+            return 0;
+        }
+        $placeholders = implode(',', array_fill(0, count($afasItemcodes), '?'));
+        $stmt = $this->pdo->prepare(
+            "DELETE FROM group_base_items WHERE itemcode = ? AND base_id IN (
+                SELECT id FROM group_bases WHERE afas_itemcode IN ($placeholders)
+            )",
+        );
+        $stmt->execute([$itemcode, ...$afasItemcodes]);
+
+        return $stmt->rowCount();
+    }
+
     private function assertBaseExists(int $baseId): void
     {
         $stmt = $this->pdo->prepare('SELECT 1 FROM group_bases WHERE id = :id');

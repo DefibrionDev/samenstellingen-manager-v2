@@ -30,7 +30,15 @@ final class StripBomComponentCommand extends Command
         $this
             ->addArgument('itemcode', InputArgument::REQUIRED, 'AFAS itemcode van de te-strippen BOM-component (bv. 81611).')
             ->addOption('apply', null, InputOption::VALUE_NONE, 'Echt DELETE in AFAS + group_base_items. Default = dry-run.')
-            ->addOption('limit', null, InputOption::VALUE_REQUIRED, 'Beperk tot N AFAS-regels.', '0');
+            ->addOption('limit', null, InputOption::VALUE_REQUIRED, 'Beperk tot N AFAS-regels.', '0')
+            ->addOption(
+                'only-with',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Komma-gescheiden itemcodes: strip alleen uit samenstellingen die óók een van deze componenten bevatten '
+                . '(bv. 81111 strippen waar een anderstalige stickerset 81211,81311,81411,81511,81611 zit). '
+                . 'De tool-side DELETE volgt dezelfde scope.',
+            );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -39,13 +47,35 @@ final class StripBomComponentCommand extends Command
         $itemcode = (string) $input->getArgument('itemcode');
         $apply = (bool) $input->getOption('apply');
         $limit = (int) $input->getOption('limit');
+        $onlyWithRaw = $input->getOption('only-with');
+        $onlyWith = is_string($onlyWithRaw) && trim($onlyWithRaw) !== ''
+            ? array_values(array_filter(array_map('trim', explode(',', $onlyWithRaw)), static fn (string $c): bool => $c !== ''))
+            : [];
 
         $result = ($this->handler)(new StripBomComponent(
             bomItemcode: $itemcode,
             apply: $apply,
             limit: $limit > 0 ? $limit : null,
+            onlyWith: $onlyWith,
         ));
+        if ($onlyWith !== []) {
+            $io->writeln(sprintf(
+                '<info>%d regel(s) overgeslagen</info>: samenstelling bevat geen van %s.',
+                $result->skippedCount,
+                implode(', ', $onlyWith),
+            ));
+        }
 
+        if ($result->unsafeLines !== []) {
+            $io->warning(sprintf(
+                '%d regel(s) ONVEILIG overgeslagen: PrSe niet uniek binnen de samenstelling (AFAS matcht de delete op PrSe alléén). Herstel de volgorde in AFAS en draai opnieuw.',
+                count($result->unsafeLines),
+            ));
+            $io->table(
+                ['Samenstelling', 'VaIt', 'PrSe'],
+                array_map(static fn ($l) => [$l->samenstellingItemcode, $l->vaIt, (string) $l->prSe], $result->unsafeLines),
+            );
+        }
         if ($result->plannedLines === []) {
             $io->success(sprintf('Geen AFAS-samenstellingen bevatten %s.', $itemcode));
 

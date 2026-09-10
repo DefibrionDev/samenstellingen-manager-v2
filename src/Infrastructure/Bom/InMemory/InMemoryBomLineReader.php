@@ -32,6 +32,11 @@ final class InMemoryBomLineReader implements BomLineReader
         return $result;
     }
 
+    public function findAllLines(): array
+    {
+        return $this->lines;
+    }
+
     public function findMaxPrSePerSamenstelling(): array
     {
         $max = [];
