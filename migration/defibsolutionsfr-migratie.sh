@@ -534,6 +534,17 @@ stap8() {
     else
         ssh "$SERVER" "mkdir -p '$WP_ROOT/wp-content/languages/plugins'"
         scp -q "$mo" "$SERVER:$WP_ROOT/wp-content/languages/plugins/"
+        # Maatwerk-vertalingen (les NL 10 sep, klant MLS): de punten-korting is
+        # een virtuele coupon met als code de VERTAALDE naam van 'Cart
+        # Discount'; free en pro moeten identiek vertalen anders keurt de
+        # pro-validator de coupon af. De pro-fr_FR staat gevendored in
+        # migration/languages/ — hier meeplaatsen. NB: na plaatsen cache
+        # flushen (WP cachet de vertaalbestand-lijsten in de object cache).
+        if ls "$REPO_ROOT/migration/languages/"*fr_FR* >/dev/null 2>&1; then
+            scp -q "$REPO_ROOT/migration/languages/"*fr_FR* "$SERVER:$WP_ROOT/wp-content/languages/plugins/"
+            wpr cache flush >/dev/null 2>&1 || true
+            echo "maatwerk-vertalingen (punten-coupon) geplaatst"
+        fi
     fi
     echo "--- controle (vertaling geladen?):"
     wpr_stdin eval-file - <<'PHP'
