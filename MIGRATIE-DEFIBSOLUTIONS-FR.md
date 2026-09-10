@@ -461,6 +461,13 @@ en onzichtbaar-geblokkeerd; de plugin-overname aangezet
 (afas_vat_number_field_enabled/zero_rate/validation = 1) — veld optioneel,
 voorgevuld uit de relatie, VIES + 0%-regel via de plugin.
 
+**LIVE — 10 sep:** testorder wc:9896 → AFAS-order **60108057**
+(relatie 32120, artikel 80210, referentieveld RfCs gevuld, 1 push-poging,
+0 fouten; AFAS-tegencheck gedaan). Cas annuleert de testorder zelf in AFAS.
+Restpunten: Cloudflare-redirect `defibsolutions.fr/boutique*` → subdomein
+(Cas, ná livegang) · oude shop blijft 503 tot de redirect er is · na een
+week stabiel: woocommerce-b2b + oude data opruimen.
+
 **Livegang-dag (10 sep):**
 
 1. [ ] Maintenance-besluit + `.maintenance` op live (`$upgrading =
