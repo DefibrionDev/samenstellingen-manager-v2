@@ -1801,7 +1801,7 @@ stap21() {
         echo "stap21 is alleen voor DEFIBSFR_TARGET=cp01 (lokaal blijft open)." >&2
         exit 1
     fi
-    local settings='{"private_site":true,"reveal_registration":true,"landing":"return","specific_url":"","wplogin_php":false,"custom_login":false,"login_url":"","custom_login_onsite":true,"excl_url":[],"excl_url_prefix":[],"excl_url_reverse":false,"excl_home":false,"check_role":true,"override_omit":false,"hide_admin_bar":false,"compatibility_mode":"STANDARD","registration_spam_guard_checks":[],"recaptcha_login_guard_enabled":false,"recaptcha_login_guard_site_key":"","recaptcha_login_guard_secret_key":"","recaptcha_registration_guard_enabled":false}'
+    local settings='{"private_site":true,"reveal_registration":true,"landing":"return","specific_url":"","wplogin_php":false,"custom_login":true,"login_url":"https://boutique.defibsolutions.fr/my-account/","custom_login_onsite":true,"excl_url":[],"excl_url_prefix":[["https://boutique.defibsolutions.fr/my-account","https://boutique.defibsolutions.fr/my-account"]],"excl_url_reverse":false,"excl_home":false,"check_role":true,"override_omit":false,"hide_admin_bar":false,"compatibility_mode":"STANDARD","registration_spam_guard_checks":[],"recaptcha_login_guard_enabled":false,"recaptcha_login_guard_site_key":"","recaptcha_login_guard_secret_key":"","recaptcha_registration_guard_enabled":false}'
     if [[ "$apply" != "apply" ]]; then
         echo "Zou doen: jonradio-private-site 4.2.3 installeren+activeren en"
         echo "jr_ps_settings op de revendeurs-config zetten (gast -> login-redirect)."
