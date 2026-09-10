@@ -421,6 +421,23 @@ doet het **wordpress-migrater**-project (patroon:
       staat op Betton); (c) pipefail hoort óók in de wrapper om de
       reeks heen, de slotregel "KLAAR — reeks" is de succes-indicator.
 
+**Livegang 10 sep — uitgevoerd:** maintenance 13:xx (FTPS-upload `.maintenance`,
+cert-check via -k: TransIP-cert matcht het IP niet) → verse pull (banner OK,
+exit-1 = cosmetische migrater-bug) → reeks groen → URL-switch (wp-config +
+search-replace mét protocol, 6.695 vervangingen, 0 dev-restanten; NB: raw
+`siteurl`/`home`-opties hielden de oude live-URL vast — constants maskeren
+dat, alsnog gelijkgetrokken) → boutique-cert al vooraf uitgegeven
+(vhost-alias + `--subjectAlternativeName`, DNS grijs→oranje) → `stap20 74
+apply` (push aan, mail aan; trigger-status=processing en banktransfer uit
+— revendeurs-les gedekt) → **stap21 gastenmuur** (melding Cas: producten
+publiek zichtbaar — oude muur was woocommerce-b2b-redirect naar
+"page en cours de contruction", die plugin gaat in stap2 uit; nu
+jonradio-private-site 4.2.3 met revendeurs-settings, in de reeks als
+cp01-slotstap). **Valkuil:** jonradio bouwt redirect_to uit
+`$_SERVER['SERVER_NAME']` = de éérste naam in nginx' server_name — bij de
+URL-switch de nieuwe domeinnaam vooraan zetten, anders landt elke klant na
+login op de dev-URL (cookie-mismatch).
+
 **Livegang-dag (10 sep):**
 
 1. [ ] Maintenance-besluit + `.maintenance` op live (`$upgrading =

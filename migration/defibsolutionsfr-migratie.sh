@@ -1775,7 +1775,46 @@ reeks() {
         # shellcheck disable=SC2086
         "$0" $s || { echo "REEKS GESTOPT op: $s" >&2; exit 1; }
     done
+    if [[ "$TARGET" == "cp01" ]]; then
+        echo ""
+        echo "===================== stap21 apply ====================="
+        "$0" stap21 apply || { echo "REEKS GESTOPT op: stap21" >&2; exit 1; }
+    fi
     echo "KLAAR — reeks volledig doorlopen op $(doel_naam)"
+}
+
+# ---------------------------------------------------------------------------
+# Stap 21 — Gastenmuur (melding Cas livegang 10 sep): de oude shop schermde
+# gasten af via woocommerce-b2b (redirect naar "page en cours de contruction",
+# wc-pagina 5104); die plugin gaat in stap2 uit, waardoor de shop — met
+# Dealers-FR-prijzen — publiek zichtbaar werd. Zelfde oplossing als
+# revendeurs: jonradio-private-site (My Private Site) met identieke settings
+# (gast -> 302 wp-login, terug naar de opgevraagde pagina na login; Mollie-
+# webhooks bewezen werkend met deze muur, revendeurs-testorder 9 sep).
+# Alleen cp01: de lokale kopie hoort open te blijven (migrater deactiveert
+# de plugin daar bij elke pull). Default dry-run; `stap21 apply` schrijft.
+# ---------------------------------------------------------------------------
+stap21() {
+    controleer_config
+    local apply="${1:-}"
+    if [[ "$TARGET" != "cp01" ]]; then
+        echo "stap21 is alleen voor DEFIBSFR_TARGET=cp01 (lokaal blijft open)." >&2
+        exit 1
+    fi
+    local settings='{"private_site":true,"reveal_registration":true,"landing":"return","specific_url":"","wplogin_php":false,"custom_login":false,"login_url":"","custom_login_onsite":true,"excl_url":[],"excl_url_prefix":[],"excl_url_reverse":false,"excl_home":false,"check_role":true,"override_omit":false,"hide_admin_bar":false,"compatibility_mode":"STANDARD","registration_spam_guard_checks":[],"recaptcha_login_guard_enabled":false,"recaptcha_login_guard_site_key":"","recaptcha_login_guard_secret_key":"","recaptcha_registration_guard_enabled":false}'
+    if [[ "$apply" != "apply" ]]; then
+        echo "Zou doen: jonradio-private-site 4.2.3 installeren+activeren en"
+        echo "jr_ps_settings op de revendeurs-config zetten (gast -> login-redirect)."
+        echo "Dry-run — draai '$0 stap21 apply' om uit te voeren."
+        return 0
+    fi
+    wpr plugin install jonradio-private-site --version=4.2.3 --activate --force
+    wpr option update jr_ps_settings --format=json "'$settings'"
+    echo "--- controle (gast hoort 302 naar de login te krijgen):"
+    local url
+    url=$(wpr option get siteurl | tr -d '[:space:]')
+    curl -s -o /dev/null -w "gast %{http_code} -> %{redirect_url}\n" --max-time 20 "$url/?muur=$(date +%s)" || true
+    echo "OK — gastenmuur actief op $(doel_naam)"
 }
 
 hulp() {
@@ -1803,6 +1842,7 @@ Gebruik: $0 <stap> [apply|opties]   (DEFIBSFR_TARGET=lokaal|cp01, default lokaal
   stap19  [apply]  Accounts verwijderen (Randy klanten-sheet, 9 accounts)
   stap20  <bron> [apply]  Livegang-slot: push aan, vrije velden, intervallen, mail aan
   reeks            Volledige stappenreeks (verse pull -> werkende shop)
+  stap21  [apply]  Gastenmuur: jonradio-private-site aan (alleen cp01)
 
 Zie MIGRATIE-DEFIBSOLUTIONS-FR.md voor het fase-overzicht.
 EOF
@@ -1830,5 +1870,6 @@ case "${1:-}" in
     stap19) stap19 "${2:-}" ;;
     stap20) stap20 "${2:-}" "${3:-}" ;;
     reeks) reeks ;;
+    stap21) stap21 "${2:-}" ;;
     *) hulp; [[ -n "${1:-}" ]] && exit 1 || exit 0 ;;
 esac
