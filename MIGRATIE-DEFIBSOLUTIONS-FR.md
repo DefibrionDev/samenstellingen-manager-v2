@@ -446,8 +446,13 @@ was 9 sep 17:29 door een andere sessie herbouwd zónder de FR-rijen in
 group_variants → stap16 sloeg 86 kast-varianten over ("zonder tool-data")
 en de pickers toonden alleen taal — stap16 heeft nu een fallback die
 <base>-<accessoire> afleidt uit group_bases + accessoires en is daarmee
-zelfvoorzienend. **Naloop: FR-variant-registraties in de tool herstellen**
-(group_variants), anders mist het volgende tool-werk ze ook.
+zelfvoorzienend. Naloop afgerond 10 sep: oorzaak was exact-BOM-matching —
+de AFAS-BOMs kregen 81111 (NL-stickerset) terwijl de registraties die
+misten; 15 FR-bases bijgeregistreerd + rematch → 17/17 bases, 140
+varianten gematcht. Niet-FR-bases (43) + business-vraag "hoort 81111 in
+buitenlandse samenstellingen?" belegd via
+`work/handoff-bom-81111-registraties.md`; reseller-90273-melding via
+`work/handoff-reseller-koppeling-90273.md`.
 
 **Checkout-afwerking livegang 10 sep** (meldingen Cas, alle in
 mu-plugin `defibsfr-checkout-restyle.php` + stap22 + settings-json):
