@@ -1802,7 +1802,7 @@ reeks() {
              "stap6 apply" "stap15 apply" "stap7" "stap8" "stap9 apply" \
              "stap12 apply" "stap13" "stap17 apply" "stap10" \
              "stap11 apply" "stap10 zonder-prijzen delta" "stap14 apply" \
-             "stap16 apply" "stap18 apply" "stap19 apply"; do
+             "stap16 apply" "stap22 apply" "stap18 apply" "stap19 apply"; do
         echo ""
         echo "===================== $s ====================="
         # shellcheck disable=SC2086
@@ -1850,6 +1850,30 @@ stap21() {
     echo "OK — gastenmuur actief op $(doel_naam)"
 }
 
+# ---------------------------------------------------------------------------
+# Stap 22 — Variatie-knoppen (melding Cas livegang 10 sep): NL en revendeurs
+# tonen variatie-keuzes als aanklikbare knoppen via woo-variation-swatches
+# (met default_to_button zet die élke dropdown om); FR miste de plugin,
+# waardoor het attribuuttype 'button' (stap16) terugviel op een dropdown.
+# Installeert de plugin (zelfde versie als revendeurs) + settings-kopie.
+# Default dry-run; `stap22 apply` schrijft.
+# ---------------------------------------------------------------------------
+stap22() {
+    controleer_config
+    local apply="${1:-}"
+    local settings='{"tooltip":"1","stylesheet":"1","style":"rounded","default_to_button":"1","threshold":"30","show_variation_label":"1","variation_label_separator":":","attribute_behavior":"blur-no-cross","attribute_image_size":"thumbnail","width":"30","height":"30","single_font_size":"16","_last_active_tab":"advanced","clear_on_reselect":0,"defer_load_js":0,"use_transient":0}'
+    if [[ "$apply" != "apply" ]]; then
+        echo "Zou doen: woo-variation-swatches 2.4.0 installeren+activeren en de"
+        echo "revendeurs-settings zetten (default_to_button aan)."
+        echo "Dry-run — draai '$0 stap22 apply' om uit te voeren."
+        return 0
+    fi
+    wpr plugin install woo-variation-swatches --version=2.4.0 --activate --force
+    wpr option update woo_variation_swatches --format=json "'$settings'"
+    wpr cache flush
+    echo "OK — variatie-knoppen actief op $(doel_naam)"
+}
+
 hulp() {
     cat <<EOF
 Gebruik: $0 <stap> [apply|opties]   (DEFIBSFR_TARGET=lokaal|cp01, default lokaal)
@@ -1876,6 +1900,7 @@ Gebruik: $0 <stap> [apply|opties]   (DEFIBSFR_TARGET=lokaal|cp01, default lokaal
   stap20  <bron> [apply]  Livegang-slot: push aan, vrije velden, intervallen, mail aan
   reeks            Volledige stappenreeks (verse pull -> werkende shop)
   stap21  [apply]  Gastenmuur: jonradio-private-site aan (alleen cp01)
+  stap22  [apply]  Variatie-knoppen: woo-variation-swatches + revendeurs-settings
 
 Zie MIGRATIE-DEFIBSOLUTIONS-FR.md voor het fase-overzicht.
 EOF
@@ -1904,5 +1929,6 @@ case "${1:-}" in
     stap20) stap20 "${2:-}" "${3:-}" ;;
     reeks) reeks ;;
     stap21) stap21 "${2:-}" ;;
+    stap22) stap22 "${2:-}" ;;
     *) hulp; [[ -n "${1:-}" ]] && exit 1 || exit 0 ;;
 esac
