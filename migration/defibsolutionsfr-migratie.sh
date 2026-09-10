@@ -1870,8 +1870,14 @@ stap22() {
     fi
     wpr plugin install woo-variation-swatches --version=2.4.0 --activate --force
     wpr option update woo_variation_swatches --format=json "'$settings'"
+    # Checkout-veldinstellingen conform reseller/NL/revendeurs (zelfde melding
+    # als revendeurs 2 sep: telefoon stond required): bedrijfsnaam verbergen
+    # (komt uit de AFAS-relatie), telefoon en adresregel 2 optioneel.
+    wpr option update woocommerce_checkout_company_field hidden
+    wpr option update woocommerce_checkout_phone_field optional
+    wpr option update woocommerce_checkout_address_2_field optional
     wpr cache flush
-    echo "OK — variatie-knoppen actief op $(doel_naam)"
+    echo "OK — variatie-knoppen + checkout-velden op $(doel_naam)"
 }
 
 hulp() {
