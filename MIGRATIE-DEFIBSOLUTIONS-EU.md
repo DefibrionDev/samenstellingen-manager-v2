@@ -522,6 +522,21 @@ tabellen nog niet — na de 2.0.7-upgrade opnieuw checken); wél 115
 
 ## Fase 2 — livegang op cp-01 (nieuwe site, buiten kantooruren)
 
+### Venster: maandagochtend 14 sep 2026 (besluit Cas 10 sep)
+
+Vooraf (zondagavond/maandag 07:30, AI-agent, ~10 min):
+1. Kantoor-IP gewhitelist op Satserver 3306? (`nc -zw5 87.236.98.21 3306` vanaf
+   kantoor; IP is dynamisch — 10 sep was het 83.80.136.13).
+2. `git status` schoon, `make check` groen, geen runner/stap actief.
+3. AFAS-cache vers (`work/cache/afas-artikelen-defibsolutionseu.json`, ververst
+   10 sep 15:0x) — op de dag zelf nog eens verversen (2 min).
+4. Cloudflare: beide records oranje ✓, 503-hold op shop.defibsolutions.eu ✓,
+   cert geldig ✓ (t/m 9 dec 2026).
+5. Openstaand van Martina (4 rijen) komt eventueel later via stap18/stap6 +
+   delta-sync; blokkeert de livegang niet. Ambu-artikel (306) idem.
+Let op: het venster valt in kantooruren; maintenance op live betekent ~1,5 uur
+geen shop (klanten zien de onderhoudspagina). Cas heeft dat bewust gekozen.
+
 ### Draaiboek venster (concept, 9 sep)
 
 1. **Vooraf (dagen ervoor):** [x] proefverhuizing 10 sep 10:27–10:36
