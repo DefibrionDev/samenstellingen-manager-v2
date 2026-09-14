@@ -569,6 +569,15 @@ tabellen nog niet — na de 2.0.7-upgrade opnieuw checken); wél 115
   cart/checkout-load. Geverifieerd door de checkout server-side te renderen met
   een auth-cookie: billing_country DK, postcode 8260. De factuurvelden zijn
   AFAS-gedreven en read-only, dus er wordt geen klantkeuze overschreven.
+- **Meldingsblokken onleesbaar (Cas 14 sep):** Divi forceert op
+  `.woocommerce-error/-message/-info` `color:#fff !important` met een
+  achtergrond uit het kleurenschema — het Divi-accent van deze site is zwart,
+  en waar een andere regel de tekstkleur terugzet werd het zwart op zwart.
+  De restyle stylet ze nu expliciet (fout: licht rood #fdecea met #611a15 en
+  rode streep; geslaagd: groen; info: wit met blauwe streep), buiten én binnen
+  `.afas-checkout-cols` (WooCommerce print de foutenlijst vóór het formulier)
+  en met selectors die zwaar genoeg zijn voor Divi's `.et-db #et-boc .et-l`.
+  De CSS laadt nu ook op de winkelwagen, want daar verschijnen dezelfde blokken.
 - **Nog te doen in het venster:** testorder door Cas (COD, push staat uit) →
   `stap19 75 apply` → testorder opnieuw (push naar AFAS bewijzen) →
   Cloudflare-redirects `www.defibsolutions.eu/shop*` en

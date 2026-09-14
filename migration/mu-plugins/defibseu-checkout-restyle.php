@@ -89,7 +89,8 @@ add_action('wp_footer', static function (): void {
 }, 100);
 
 add_action('wp_enqueue_scripts', static function (): void {
-    if (!function_exists('is_checkout') || !is_checkout()) {
+    // Ook op de winkelwagen: WooCommerce toont daar dezelfde meldingsblokken.
+    if (!function_exists('is_checkout') || !(is_checkout() || is_cart())) {
         return;
     }
     $css = <<<'CSS'
@@ -346,6 +347,96 @@ add_action('wp_enqueue_scripts', static function (): void {
     font-size: 14px;
 }
 
+/* --- meldingsblokken (fout/geslaagd/info) leesbaar. Divi forceert op
+       .woocommerce-error/-message/-info `color:#fff !important` met een
+       achtergrond uit het kleurenschema; het accent van deze site is zwart,
+       en waar een andere regel de tekstkleur terugzet krijg je zwart op zwart
+       (Cas 14 sep: foutmelding bij de postcode was onleesbaar). Daarom hier
+       expliciet: lichte achtergrond, donkere tekst, gekleurde streep links.
+       Buiten én binnen .afas-checkout-cols, want WooCommerce print de
+       foutenlijst vóór het formulier. Selectors zijn zwaar genoeg voor Divi's
+       `.et-db #et-boc .et-l`-regels. --- */
+.woocommerce-checkout .woocommerce-error,
+.woocommerce-cart .woocommerce-error,
+.et-db #et-boc .et-l .woocommerce-error,
+.woocommerce-checkout ul.woocommerce-error,
+.woocommerce-cart ul.woocommerce-error {
+    background: #fdecea !important;
+    color: #611a15 !important;
+    border: 1px solid #f3c4c0 !important;
+    border-left: 4px solid #b81c23 !important;
+    border-radius: 4px !important;
+    padding: 12px 16px !important;
+    margin: 0 0 16px !important;
+    font-size: 15px !important;
+    line-height: 1.5 !important;
+    list-style: none !important;
+    text-shadow: none !important;
+}
+.woocommerce-checkout .woocommerce-error li,
+.woocommerce-cart .woocommerce-error li,
+.et-db #et-boc .et-l .woocommerce-error li {
+    color: #611a15 !important;
+    list-style: none !important;
+    margin: 0 0 4px !important;
+    padding: 0 !important;
+}
+.woocommerce-checkout .woocommerce-error li:last-child,
+.woocommerce-cart .woocommerce-error li:last-child {
+    margin-bottom: 0 !important;
+}
+.woocommerce-checkout .woocommerce-error strong,
+.woocommerce-cart .woocommerce-error strong,
+.et-db #et-boc .et-l .woocommerce-error strong {
+    color: #611a15 !important;
+}
+.woocommerce-checkout .woocommerce-error a,
+.woocommerce-cart .woocommerce-error a {
+    color: #b81c23 !important;
+    text-decoration: underline !important;
+}
+.woocommerce-checkout .woocommerce-message,
+.woocommerce-cart .woocommerce-message,
+.et-db #et-boc .et-l .woocommerce-message {
+    background: #eaf7ee !important;
+    color: #1e4620 !important;
+    border: 1px solid #c3e6cd !important;
+    border-left: 4px solid #2e7d32 !important;
+    border-radius: 4px !important;
+    padding: 12px 16px !important;
+    margin: 0 0 16px !important;
+    font-size: 15px !important;
+    line-height: 1.5 !important;
+    text-shadow: none !important;
+}
+.woocommerce-checkout .woocommerce-message a,
+.woocommerce-cart .woocommerce-message a {
+    color: #1e4620 !important;
+    text-decoration: underline !important;
+}
+.woocommerce-checkout .woocommerce-info,
+.woocommerce-cart .woocommerce-info,
+.et-db #et-boc .et-l .woocommerce-info {
+    background: #fff !important;
+    color: #333 !important;
+    border: 1px solid #e2e2e2 !important;
+    border-left: 4px solid #0c71c3 !important;
+    border-radius: 4px !important;
+    padding: 12px 16px !important;
+    font-size: 15px !important;
+    line-height: 1.5 !important;
+    text-shadow: none !important;
+}
+/* Divi's icoon voor de melding uit: past niet bij de compacte balk */
+.woocommerce-checkout .woocommerce-error::before,
+.woocommerce-checkout .woocommerce-message::before,
+.woocommerce-checkout .woocommerce-info::before,
+.woocommerce-cart .woocommerce-error::before,
+.woocommerce-cart .woocommerce-message::before,
+.woocommerce-cart .woocommerce-info::before {
+    display: none !important;
+}
+
 /* --- notices compact (waardebon-zin, punten-melding): reseller-stijl
        rustige balk; Divi zet er standaard een groot icoon en veel padding op --- */
 .afas-checkout-cols .woocommerce-info {
@@ -396,7 +487,7 @@ add_action('wp_enqueue_scripts', static function (): void {
     margin-right: 8px;
 }
 CSS;
-    wp_register_style('defibs-checkout-restyle', false, [], '1.5');
+    wp_register_style('defibs-checkout-restyle', false, [], '1.6');
     wp_enqueue_style('defibs-checkout-restyle');
     wp_add_inline_style('defibs-checkout-restyle', $css);
 }, 20);
