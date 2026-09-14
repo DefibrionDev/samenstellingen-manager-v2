@@ -159,23 +159,29 @@ add_action('wp_enqueue_scripts', static function (): void {
     color: #333;
     margin-bottom: 4px;
 }
-.afas-checkout-cols .input-text,
-.afas-checkout-cols select,
-.afas-checkout-cols textarea {
+/* Alle invoervelden gelijk. Specifieker dan `.afas-checkout-cols …` + !important
+   omdat het childthema de textarea (Order notes) een eigen donkere rand en
+   kleinere padding geeft — die week zichtbaar af van het "Your reference"-veld
+   van de plugin (Cas 14 sep). Focus: dezelfde blauwe rand als de knoppen. */
+.woocommerce-checkout .checkout_v1 .afas-checkout-cols .input-text,
+.woocommerce-checkout .checkout_v1 .afas-checkout-cols select,
+.woocommerce-checkout .checkout_v1 .afas-checkout-cols textarea {
     width: 100%;
-    background: #fff;
-    border: 1px solid #cecece;
-    border-radius: 4px;
-    padding: 10px 12px;
-    font-size: 15px;
-    color: #333;
+    background: #fff !important;
+    border: 1px solid #cecece !important;
+    border-radius: 4px !important;
+    padding: 10px 12px !important;
+    font-size: 15px !important;
+    color: #333 !important;
+    box-shadow: none !important;
     box-sizing: border-box;
 }
-.afas-checkout-cols .input-text:focus,
-.afas-checkout-cols select:focus,
-.afas-checkout-cols textarea:focus {
-    border-color: #0c71c3;
-    outline: none;
+.woocommerce-checkout .checkout_v1 .afas-checkout-cols .input-text:focus,
+.woocommerce-checkout .checkout_v1 .afas-checkout-cols select:focus,
+.woocommerce-checkout .checkout_v1 .afas-checkout-cols textarea:focus {
+    border-color: #0c71c3 !important;
+    box-shadow: 0 0 0 1px #0c71c3 !important;
+    outline: none !important;
 }
 .afas-checkout-cols .form-row {
     margin: 0 0 14px;
@@ -390,7 +396,7 @@ add_action('wp_enqueue_scripts', static function (): void {
     margin-right: 8px;
 }
 CSS;
-    wp_register_style('defibs-checkout-restyle', false, [], '1.4');
+    wp_register_style('defibs-checkout-restyle', false, [], '1.5');
     wp_enqueue_style('defibs-checkout-restyle');
     wp_add_inline_style('defibs-checkout-restyle', $css);
 }, 20);

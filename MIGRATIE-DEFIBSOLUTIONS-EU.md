@@ -546,7 +546,11 @@ van de plugin (`btn bg-primary`) krijgen via JS de class `button` voor de
 basisopmaak; de APPLY POINTS-knop (eigen pil van het points-plugin) en de
 adresknoppen (childthema forceert kleinere padding) worden met specifiekere
 selectors gelijkgetrokken — alle vier knoppen 47px hoog, geverifieerd op cp01.
-(b) **dubbel puntenblok bovenaan weg**: dat
+(b) **invoervelden gelijk**: het childthema gaf de textarea van "Order notes" een
+eigen donkere rand en kleinere padding, zichtbaar anders dan het
+"Your reference"-veld van de plugin; nu alle velden 1px #cecece / radius 4px /
+padding 10px 12px / 15px, met bij focus dezelfde blauwe rand + 1px ring als de
+knoppen (geverifieerd op cp01). (c) **dubbel puntenblok bovenaan weg**: dat
 komt niet uit een plugin-hook maar uit een **Divi-codemodule in de paginalayout**
 (`.et_pb_code_inner`) — met CSS verborgen, zodat het elke verse pull overleeft;
 het puntenveld in de rechterkolom (in het verplaatste coupon-blok) blijft.
