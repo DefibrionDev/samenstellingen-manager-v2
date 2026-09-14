@@ -471,6 +471,27 @@ Alle 45 rijen hebben een besluit. Verwerking (alles idempotent in de scriptstapp
   (aanpassing 6, JSON opnieuw gegenereerd; stap4 importeert hem) én expliciet in
   stap19 (livegang-slot). Op de huidige dev-sites staat nog 1 (push uit, dus
   zonder effect); de livegang-runner zet 9.
+- **Administratie-audit alle shops (14 sep; verdeling bevestigd door Cas + collega):**
+  live `afas_sync_orders_administratie` uitgelezen op alle zes sites en alle AFAS-
+  verkooporders (`PowerBI_Verkooporder`/`Get_Verkooporders`) gegroepeerd op
+  Bron Order x administratie. Uitkomst: **DS NL (72), DS FR (74), DS EU (75) ->
+  administratie 9** (BHV Voordeelwinkel B.V. / DefibSolutions); **revendeurs (73),
+  reseller (68), ARKY (71) -> administratie 1** (Defibrion BV). Klanthistorie
+  bevestigt dat: van de gekoppelde shopklanten staat NL 3863/3881, FR 4288/4293 en
+  EU 1748/1786 orders in adm 9, en de oude koppeling (AFAS-gebruiker
+  `85042.woocommerceE3`) pushte pre-migratie ook al naar 9.
+- **11 orders in de verkeerde administratie (9-10 sep):** NL en FR draaiden tot het
+  besluit van 10 sep op het reseller-sjabloon (adm 1). Fout geboekt: DS NL 60107950,
+  60107977, 60107996, 60108037, 60108046, 60108081; DS FR 60108060, 60108074,
+  60108076, 60108078, 60108085. Collega pakt de omzetting op (14 sep).
+- **Omzetten = opnieuw invoeren, dus nieuw ordernummer.** AFAS verplaatst een order
+  niet tussen administraties (eigen nummerreeks per administratie). Webshop-order
+  9902 (FR) is daar al doorheen: 60108095 in adm 1 is verwijderd, staat nu als
+  60108276 in adm 9 (referentie `9902`, EUR 99). Gevolg: de shop houdt het oude nummer
+  in `_afas_order_number` + `*_lef_afas_verkooporders` -> 19 van zulke weesnummers
+  gevonden (DS FR 1, DS EU 1, reseller 4, ARKY 14); alleen voor 9902 is de
+  administratie-omzetting aantoonbaar de oorzaak. Let ook op: 60108276 is EUR 99 tegen
+  EUR 119,79 incl. in de webshop - handmatig opnieuw ingetikt, dus regels natellen.
 - **Stickers afgerond (10 sep):** 483 anderstalige samenstellingen zonder NL-set;
   oorzaak was de prefix-bug in `stickers:restore` (NL-base 10144 zag 10144-UK-… als
   eigen varianten; run 9 sep zette 81111 in ~480 BOMs) — gefixt met test.

@@ -314,9 +314,12 @@ Stand 31 aug:
       15 geschrapt (schraplijst +15, incl. de 3 Randy-twijfelgevallen,
       het 10260-duplicaat wc:2763 — wc:4740 was al gekoppeld — en 2
       drafts: Prestan komt terug als sync-product PP-AM-400M-MS,
-      Reanibex-wit bestond al als variatie 52124-60112). Bijvangst:
-      reseller-shop heeft 123-30050 nog gekoppeld aan het geblokkeerde
-      90273 — doorgeven. Uitgevoerd op de dev-site en geverifieerd
+      Reanibex-wit bestond al als variatie 52124-60112). Bijvangst
+      "reseller-shop heeft 123-30050 nog aan geblokkeerd 90273" bleek
+      10 sep onjuist: wc:100933 was DefibSolutions NL en staat sinds
+      8 sep in de prullenbak; geen shop wijst nog naar 90273
+      (`work/handoff-reseller-koppeling-90273.md`). Uitgevoerd op de
+      dev-site en geverifieerd
       (sync 0 warnings): 3765 €80 · 4352 €204 · nieuw sync-product
       wc:9893 PP-AM-400M-MS €980; eindstand dev 326 published.
       Statussen in `work/defibsolutionsfr-sku-restlijst.csv` · stap 1.6
@@ -523,3 +526,12 @@ poort 8896; reseller-referentie op 8899. wpcli-lessen (uid 33, memory_limit,
 
 **Blijf af (andere sessies):** NL-kopie 8897, cp-01-site `defibsolutionsnl`,
 reseller 8899, .eu-kopie 8895, `migration/revendeurs-migratie.sh`.
+
+## AFAS-administratie (gecontroleerd 14 sep 2026)
+
+Order-push van boutique.defibsolutions.fr (Bron Order 74) gaat naar **administratie 9 —
+BHV Voordeelwinkel B.V. (DefibSolutions)**, gelijk aan pre-migratie. Verdeling bevestigd
+door Cas + collega. Vijf orders van 10 sep staan nog in adm 1 (60108060, 60108074,
+60108076, 60108078, 60108085); webshop-order 9902 is al omgezet (60108095 weg, nu
+60108276 in adm 9 — omzetten geeft altijd een nieuw ordernummer). Volledige audit:
+`MIGRATIE-DEFIBSOLUTIONS-EU.md`, sectie "Administratie-audit alle shops".

@@ -198,3 +198,13 @@ nieuwe server, serveert `defibsolutionsnl.defibrion.dev`.
 **9 klanten met afspraak-zonder-groep**: AFAS kent afspraken die de shop
 regulier bedient — per klant kiezen: afspraak in shop activeren of in AFAS
 beëindigen (tabblad `afspraak-zonder-groep`).
+
+## AFAS-administratie (gecontroleerd 14 sep 2026)
+
+Order-push van shop.defibsolutions.nl (Bron Order 72) gaat naar **administratie 9 —
+BHV Voordeelwinkel B.V. (DefibSolutions)**, gelijk aan waar de oude koppeling
+(`85042.woocommerceE3`) pre-migratie naartoe boekte. Verdeling bevestigd door Cas +
+collega. Zes orders van 9-10 sep zijn nog in adm 1 geboekt (60107950, 60107977,
+60107996, 60108037, 60108046, 60108081) omdat de site tot het besluit van 10 sep op
+het reseller-sjabloon stond; de collega zet ze om. Volledige audit + methode:
+`MIGRATIE-DEFIBSOLUTIONS-EU.md`, sectie "Administratie-audit alle shops".

@@ -26,7 +26,30 @@ het type-label is een dedupe-artefact. Actie: push-fouten monitoren en bij
 een 2e weigering met LEF/AFAS uitzoeken welke adressen FbSales accepteert; (4) MEDHYBRIDE-koppeling na akkoord Randy (stap3-delta); (5) na
 een week: Wholesale-Suite-plugins + restdata weg, bouwlocatie
 revendeursfr.defibrion.dev opruimen, slotstap-herinneringstekst (68)
-opschonen.
+opschonen. (6) **Prestan vooraf in de shop gezet (9 sep, 14:05–14:42 UTC):**
+de 175 ARKY-gepubliceerde Prestan-artikelen (Sync_ARKY+Tonen_ARKY) hadden
+Sync_Revendeurs_FR aan / Tonen uit, maar 154 ontbraken op revendeurs — de
+plugin (2.1.1) maakt nieuwe variaties/containers niet aan zolang Tonen uit
+staat (alleen simples als private). Workaround uitgevoerd via
+`apply-revendeurs-vlaggen.php` met `work/prestan-revendeurs-tonen-aan.csv`
+(175 ok) → sync maakte 18 `-wpbase`-containers + 166 variaties + 8 simples
+aan (published, 14:21Z) → `…-tonen-uit.csv` (175 ok) → alles private
+(14:42Z). Eindstand: 174/175 aanwezig als private, klaar om te vertalen
+(`update_naam` staat uit, vertaling blijft staan). Vergelijking:
+`tmp/prestan-arky-vs-revendeurs.csv`. **Nazorg (9 sep, afgerond):** (a)
+PP-AFM-2000-4-MSDS werd niet aangemaakt — BHV-code in AFAS was
+`PP-AFM-2000-4-MS` (SKU-conflict met de Light-Skin-variant); gefixt met
+`afas-connector-tools/bin/set-bhv-code.php PP-AFM-2000-4-MSDS
+PP-AFM-2000-4-MSDS --apply` (nieuw script, dry-run default, controleert
+uniekheid) → Tonen aan/uit herhaald voor dat ene artikel (`work/prestan-msds-
+tonen-aan/uit.csv`) → variatie 992308 met eigen SKU, private sinds 15:40Z.
+(b) 14 SKU-loze dubbele variaties (2 per oude 2025-draft, ontstaan in één
+run omdat de oude simple nog geen variatie was) verwijderd met
+`wp post delete --force` na check (0 orderregels, SKU-drager per artikel
+intact). **Eindstand 15:40Z: 175/175 aanwezig als private (167 variaties
+onder 18 private `-wpbase`-containers + 8 simples), 0 published, shop-
+tellingen exact als vóór de actie; AFAS 175× Sync aan / Tonen uit.** Les:
+zie memory `lefcreative-inactieve-variaties-niet-aangemaakt`.
 
 **Stand 8 sep 2026:** eindvalidatie groen op plugin **2.0.7** (verse pull →
 reeks 30 min, 0 fouten: 926 artikelen, 69k prijzen, 182 relaties, 57,6k
@@ -447,3 +470,10 @@ gebruikt info@defibsolutions.nl).
   afstemming met de andere sessie.
 - Geen AFAS-mutaties zonder dry-run + akkoord; geen database-drops zonder
   expliciete toestemming.
+
+## AFAS-administratie (gecontroleerd 14 sep 2026)
+
+Order-push van revendeurs.defibrion.fr (Bron Order 73) gaat naar **administratie 1 —
+Defibrion BV**, gelijk aan de klanthistorie (310 orders in adm 1) en aan reseller (68)
+en ARKY (71). Geen afwijkingen gevonden. Volledige audit:
+`MIGRATIE-DEFIBSOLUTIONS-EU.md`, sectie "Administratie-audit alle shops".
