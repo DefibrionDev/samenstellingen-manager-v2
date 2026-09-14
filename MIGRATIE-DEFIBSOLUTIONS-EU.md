@@ -528,6 +528,15 @@ tabellen nog niet — na de 2.0.7-upgrade opnieuw checken); wél 115
 
 ## Fase 2 — livegang op cp-01 (nieuwe site, buiten kantooruren)
 
+### Proefkopie 14 sep 09:11–09:52 ✓ + checkout-restyle
+Volle pull + runner op cp01: groen in 41 min, 0 warnings, 0 deadlocks; 305 simples,
+24 containers, 1227 variaties; 2292 orders (laatste 12 sep). Cas' check: "cart
+layout is lelijk" (op EU is `/cart/` de plugin-checkout). EU had bewust géén
+restyle (NL/FR wel). Nieuw: `migration/mu-plugins/defibseu-checkout-restyle.php`
+= port van de NL-restyle (zelfde divicommerce-childthema, `.checkout_v1`-
+Theme-Builder-sectie aanwezig) met EU-rood #da181f/#b3141a i.p.v. groen; in de
+stap7-EU-lijst, op cp01 gezet + stap15.
+
 ### Venster: maandagochtend 14 sep 2026 (besluit Cas 10 sep)
 
 Vooraf (zondagavond/maandag 07:30, AI-agent, ~10 min):

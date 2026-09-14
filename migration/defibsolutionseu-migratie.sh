@@ -477,7 +477,8 @@ PY
 # zonder deze fix crasht elke CLI-productsave — dus ook de sync), points-pro-
 # variable-price-fix (EU's ultimate-woocommerce-points-and-rewards ís de
 # Points & Rewards Pro-klasse; points blijven aan, besluit B3) en
-# afas-prijzen-orderby (NL-live-pariteit). NIET: de Divi/NL-huisstijl-restyles,
+# afas-prijzen-orderby (NL-live-pariteit) + defibseu-checkout-restyle (EU-port van de
+# NL-checkout-restyle, rood #da181f; Cas 14 sep). NIET: de NL-huisstijl-restyles,
 # de NL-login-fix en de ARKY-Kadence-tweak — die worden actief opgeruimd.
 # Idempotent. Een verse pull (rsync --delete) haalt alles weer weg — deze
 # stap hoort in elke herhaal-reeks.
@@ -488,7 +489,7 @@ _EU_MU_PLUGINS=(
     order-email-afas-debiteur.php order-email-unit-prices.php
     afas-preview-winkelmanager.php shop-manager-login-as-klant.php
     wcpt-cli-cache-fix.php points-pro-variable-price-fix.php
-    afas-prijzen-orderby.php
+    afas-prijzen-orderby.php defibseu-checkout-restyle.php
 )
 _EU_MU_VERBODEN=(defibs-checkout-restyle.php defibs-product-restyle.php
     defibs-login-fix.php checkout-coupon-points-right.php)
