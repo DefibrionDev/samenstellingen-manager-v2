@@ -17,7 +17,7 @@ als bij .fr, geen shop-parameter in het NL-script).
 - [x] Akkoord op dit runbook (Cas, 27 aug)
 - [x] Fase 0 — script-skelet + targetlaag (stap0 groen, 27 aug)
 - [x] Fase 1 — lokale migratie (poort 8895): **afgerond 10 sep** (1.6 groen)
-- [ ] **Fase 2 — livegang op cp-01 (nieuwe site) ← WE ZIJN HIER**
+- [x] **Fase 2 — livegang op cp-01 ✓ 14 sep 2026: shop.defibsolutions.eu LIVE**
       (proefverhuizing 10 sep; venster pas na reactie Martina/Rogier)
 
 ## Wat de verkenning opleverde (27 aug 2026, alles read-only)
@@ -628,6 +628,19 @@ tabellen nog niet — na de 2.0.7-upgrade opnieuw checken); wél 115
   exacte regel voor `/shop`.
   De oude origin is van buitenaf verder dicht (direct op IP: 403) en houdt
   `.maintenance` als vangnet.
+### Nazorg-besluiten Cas 14 sep (na de livegang)
+
+- [x] Improvit **niet** informeren over de 844 webhook-meldingen (besluit Cas).
+- [x] Testorder opgeruimd: WC 107430 + AFAS-verkooporder 60108267.
+- [x] **Gastenmuur blijft**: `jonradio-private-site` blijft aan, net als op de
+      oude shop. Daarmee is beslispunt "login-plugin behouden?" gesloten.
+- [x] Openstaande punten bij derden afgevinkt (4 sheet-rijen Martina, nieuw
+      AFAS-artikel voor de Ambu Man Advanced zonder I.V. bij financieel).
+- [ ] Na een stabiele week opruimen: B2BKing-plugins, 115 `wpstg0_*`-tabellen,
+      mainwp-child; daarna besluit over de oude shop-map op Satserver.
+- [ ] Bewaken: elke nieuwe order naar AFAS (`_afas_push_status`) en of de
+      DNS-time-out richting AFAS (cURL 28, 14 sep 12:54) terugkomt.
+
 - **Nog te doen in het venster:** testorder door Cas (COD, push staat uit) →
   `stap19 75 apply` → testorder opnieuw (push naar AFAS bewijzen) →
   Cloudflare-redirects `www.defibsolutions.eu/shop*` en
