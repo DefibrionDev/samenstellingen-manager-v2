@@ -610,6 +610,19 @@ tabellen nog niet — na de 2.0.7-upgrade opnieuw checken); wél 115
   zojuist verwijderd zijn. Cas informeert Improvit. Les: bij bulkbewerkingen op
   orders eerst `wp_wc_webhooks` controleren en de webhook tijdelijk op `paused`
   zetten.
+- **Cloudflare-redirects actief (Cas 14 sep), getest met curl:**
+  `www.defibsolutions.eu/shop/` → `shop.defibsolutions.eu/` (301),
+  `/shop/product/<slug>/` → `/product/<slug>/` (het `/shop`-voorvoegsel valt weg,
+  precies de nieuwe padstructuur), querystring blijft behouden
+  (`?s=aed&post_type=product`), en het kale domein loopt via www ook goed (2
+  stappen). De hoofdsite `www.defibsolutions.eu/` blijft ongemoeid (200).
+  **Restpuntje:** `…/shop` zónder slash gaat eerst naar de oude origin, die er
+  een slash aan plakt (301, `cf-cache-status: DYNAMIC`), en pas daarna naar de
+  nieuwe shop — 3 stappen in plaats van 1. De exacte regel voor `/shop` vuurt
+  dus niet. Werkt wél, maar leunt op de oude server; los het op met een
+  Redirect Rule die exact `https://www.defibsolutions.eu/shop` matcht.
+  De oude origin is van buitenaf verder dicht (direct op IP: 403) en houdt
+  `.maintenance` als vangnet.
 - **Nog te doen in het venster:** testorder door Cas (COD, push staat uit) →
   `stap19 75 apply` → testorder opnieuw (push naar AFAS bewijzen) →
   Cloudflare-redirects `www.defibsolutions.eu/shop*` en
