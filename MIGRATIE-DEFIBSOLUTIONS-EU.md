@@ -528,6 +528,38 @@ tabellen nog niet — na de 2.0.7-upgrade opnieuw checken); wél 115
 
 ## Fase 2 — livegang op cp-01 (nieuwe site, buiten kantooruren)
 
+### LIVEGANG 14 sep 2026 — uitgevoerd t/m URL-switch
+
+- **10:22 maintenance aan op live** (`.maintenance` via FTPS naar `/shop`,
+  `$upgrading = time()+86400`) → `www.defibsolutions.eu/shop/` HTTP 503.
+  Cas draaide de upload zelf: de classifier blokkeert productie-deploys
+  vanuit de agent (patroon: `!`-oneliner aanleveren).
+- **10:29–11:09 volle migratie + runner op cp01**: pull van live → upload →
+  `.maintenance` op cp-01 direct verwijderd → DB geverifieerd
+  (`defibrion-defibsolutionseu`) → `KLAAR — volledige reeks groen op cp01 in
+  39 min`, 0 warnings, 0 deadlocks, kruischeck schoon. Eindstand: 305 simples,
+  24 containers, 1227 variaties, 129 users, 2292 orders (laatste 12 sep 06:28).
+- **URL-switch** (nginx als root op cp-01): hold-bestand
+  `zz-shop.defibsolutions.eu-hold.conf` verwijderd (backup in
+  `/root/nginx-backups/`), `server_name shop.defibsolutions.eu
+  defibsolutionseu.defibrion.dev;` — **nieuwe naam vóóraan** (FR-les: jonradio
+  bouwt `redirect_to` uit `SERVER_NAME`), `nginx -t` + reload. Daarna
+  `WP_HOME`/`WP_SITEURL` → `https://shop.defibsolutions.eu`, `search-replace`
+  mét protocol over alle tabellen (**20.759 vervangingen**, 0 dev-restanten),
+  raw `home`/`siteurl` gelijkgetrokken, `stap15 apply` (Divi + BeRocket).
+  Controle: shop.defibsolutions.eu serveert via Cloudflare, `redirect_to`
+  wijst naar de nieuwe hostnaam, de dev-naam geeft 301 naar de nieuwe.
+- **Gastenmuur staat aan zoals op live**: `jonradio-private-site` 4.2.3 met
+  `private_site: true` kwam mee uit de live-database; anonieme bezoekers
+  belanden op `wp-login.php`. Besluit "muur behouden?" stond al open (B-punt)
+  en is hiermee *niet* stilzwijgend gewijzigd.
+- **Nog te doen in het venster:** testorder door Cas (COD, push staat uit) →
+  `stap19 75 apply` → testorder opnieuw (push naar AFAS bewijzen) →
+  Cloudflare-redirects `www.defibsolutions.eu/shop*` en
+  `defibsolutions.eu/shop*` → `https://shop.defibsolutions.eu${1}` (301, query
+  string mee; het kale domein 301't nu al naar www, dus één rule op www kan
+  volstaan). Oude live blijft tot dan in maintenance (503).
+
 ### Proefkopie 14 sep 09:11–09:52 ✓ + checkout-restyle
 Volle pull + runner op cp01: groen in 41 min, 0 warnings, 0 deadlocks; 305 simples,
 24 containers, 1227 variaties; 2292 orders (laatste 12 sep). Cas' check: "cart
