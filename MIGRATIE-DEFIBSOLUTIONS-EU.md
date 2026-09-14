@@ -578,6 +578,17 @@ tabellen nog niet — na de 2.0.7-upgrade opnieuw checken); wél 115
   `.afas-checkout-cols` (WooCommerce print de foutenlijst vóór het formulier)
   en met selectors die zwaar genoeg zijn voor Divi's `.et-db #et-boc .et-l`.
   De CSS laadt nu ook op de winkelwagen, want daar verschijnen dezelfde blokken.
+- **1576 processing-orders getrasht (besluit Cas 14 sep, "ik weet wat ik doe").**
+  Het waren historische orders (nov 2019 t/m vandaag, 33 klanten, ~2,58 mln
+  omzet): de oude shop zette orders na verzending niet door naar completed.
+  Geen migratieschade. Vooraf een volledige DB-dump (24 MB) en een TSV met alle
+  order-id's in `~/backups/` op cp-01; WordPress houdt de prullenbak 30 dagen
+  vast, dáárna is de dump de enige weg terug. Getrasht via
+  `WC_Order::delete(false)` (1576 ok, 0 overgeslagen), inclusief de geslaagde
+  testorder 107429 van vandaag. **Geen AFAS-push geraakt**: de plugin pusht
+  alleen op de overgang *naar* processing (`woocommerce_order_status_processing`,
+  trigger-status `processing`), en geen enkele order droeg `_afas_push_status`.
+  Resteert: 588 completed, 119 on-hold, 8 pending, 2 cancelled.
 - **Nog te doen in het venster:** testorder door Cas (COD, push staat uit) →
   `stap19 75 apply` → testorder opnieuw (push naar AFAS bewijzen) →
   Cloudflare-redirects `www.defibsolutions.eu/shop*` en
