@@ -536,6 +536,16 @@ restyle (NL/FR wel). Nieuw: `migration/mu-plugins/defibseu-checkout-restyle.php`
 = port van de NL-restyle (zelfde divicommerce-childthema, `.checkout_v1`-
 Theme-Builder-sectie aanwezig) met EU-rood #da181f/#b3141a i.p.v. groen; in de
 stap7-EU-lijst, op cp01 gezet + stap15.
+Twee correcties na Cas' tweede check (14 sep): (a) **geen eigen knopkleuren meer** —
+Divi + divicommerce stylen `.button` al in de huisstijl (#da171f, blokvorm, Lato
+16/700 uppercase, letter-spacing 1px; te zien op `/shopping-cart/`). De
+leflite-knoppen van de plugin (`btn bg-primary`) kent het thema niet; die krijgen
+via JS de class `button` erbij. De APPLY POINTS-knop (points-plugin zet daar met
+!important een blauwe pil) krijgt dezelfde waarden expliciet. Eigen rood/ronde
+hoeken waren "niet in de huisstijl". (b) **dubbel puntenblok bovenaan weg**: dat
+komt niet uit een plugin-hook maar uit een **Divi-codemodule in de paginalayout**
+(`.et_pb_code_inner`) — met CSS verborgen, zodat het elke verse pull overleeft;
+het puntenveld in de rechterkolom (in het verplaatste coupon-blok) blijft.
 
 ### Venster: maandagochtend 14 sep 2026 (besluit Cas 10 sep)
 
