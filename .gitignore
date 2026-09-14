@@ -31,3 +31,17 @@ migration/reanibex-multilang-attributes.py
 
 # Work-folder voor ad-hoc analyses en uitdraaien (bewust niet versioneren)
 work/
+
+# Afbeeldingen (Cas 14 sep 2026): screenshots/foto's horen niet in de repo
+*.jpg
+*.jpeg
+*.JPG
+*.JPEG
+*.png
+*.PNG
+*.gif
+*.webp
+*.heic
+*.bmp
+*.tif
+*.tiff
