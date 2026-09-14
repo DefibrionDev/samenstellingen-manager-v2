@@ -536,13 +536,17 @@ restyle (NL/FR wel). Nieuw: `migration/mu-plugins/defibseu-checkout-restyle.php`
 = port van de NL-restyle (zelfde divicommerce-childthema, `.checkout_v1`-
 Theme-Builder-sectie aanwezig) met EU-rood #da181f/#b3141a i.p.v. groen; in de
 stap7-EU-lijst, op cp01 gezet + stap15.
-Twee correcties na Cas' tweede check (14 sep): (a) **geen eigen knopkleuren meer** —
-Divi + divicommerce stylen `.button` al in de huisstijl (#da171f, blokvorm, Lato
-16/700 uppercase, letter-spacing 1px; te zien op `/shopping-cart/`). De
-leflite-knoppen van de plugin (`btn bg-primary`) kent het thema niet; die krijgen
-via JS de class `button` erbij. De APPLY POINTS-knop (points-plugin zet daar met
-!important een blauwe pil) krijgt dezelfde waarden expliciet. Eigen rood/ronde
-hoeken waren "niet in de huisstijl". (b) **dubbel puntenblok bovenaan weg**: dat
+Twee correcties na Cas' check (14 sep): (a) **knoppen = het blauw van de
+productpagina** (`#0c71c3`, radius 3px, padding 10px 16px, Lato 16/700 uppercase,
+letter-spacing 1px — de "Add to cart"-knop, besluit Cas: "zoals hier zijn ze
+blauw, maak ze zo"). Let op: dat blauw komt uit Divi's productpagina-selector
+`.single_add_to_cart_button`, die de checkout niet heeft; het `.button`-rood
+(#da171f) van o.a. `/shopping-cart/` is bewust NIET gevolgd. De leflite-knoppen
+van de plugin (`btn bg-primary`) krijgen via JS de class `button` voor de
+basisopmaak; de APPLY POINTS-knop (eigen pil van het points-plugin) en de
+adresknoppen (childthema forceert kleinere padding) worden met specifiekere
+selectors gelijkgetrokken — alle vier knoppen 47px hoog, geverifieerd op cp01.
+(b) **dubbel puntenblok bovenaan weg**: dat
 komt niet uit een plugin-hook maar uit een **Divi-codemodule in de paginalayout**
 (`.et_pb_code_inner`) — met CSS verborgen, zodat het elke verse pull overleeft;
 het puntenveld in de rechterkolom (in het verplaatste coupon-blok) blijft.

@@ -2,9 +2,9 @@
 /**
  * Plugin Name: DefibSolutions EU checkout-restyle
  * Description: Stylet de twee-koloms checkout-template van lefcreative-afas-b2b
- * naar de reseller-layout, in de DefibSolutions-huisstijl (rood #da171f, de
- * knoppen-/prijskleur van shop.defibsolutions.eu). Port van de NL-restyle (14 sep 2026:
- * Cas: "cart layout is lelijk"; op EU is /cart/ de plugin-checkout). Context: het divicommerce-childthema
+ * naar de reseller-layout, met het knopblauw #0c71c3 van de productpagina
+ * (de "Add to cart"-knop; besluit Cas 14 sep 2026). Port van de NL-restyle
+ * ("cart layout is lelijk"; op EU is /cart/ de plugin-checkout). Context: het divicommerce-childthema
  * stylet de OUDE checkout via de .checkout_v1-class op de Theme-Builder-sectie
  * (o.a. .col2-set width:60% !important) — die regels worden hier gericht
  * geneutraliseerd voor de nieuwe .afas-checkout-cols-markup.
@@ -32,8 +32,8 @@ add_action('wp_loaded', static function (): void {
 // toont de plugin de velden weer en komt de sectie vanzelf terug.
 // De AFAS-adresknoppen van de plugin dragen de leflite-classes `btn bg-primary`,
 // die Divi/divicommerce niet kent — daardoor ogen ze anders dan de rest van de
-// shop. Class `button` erbij laat het thema ze stylen (rood #da171f, blokvorm,
-// uppercase, inclusief hover). Ook na elke checkout-herrender opnieuw.
+// shop; class `button` erbij geeft ze de basis-knopopmaak van het thema. De
+// kleur/vorm komt uit de CSS hierboven. Ook na elke checkout-herrender opnieuw.
 add_action('wp_footer', static function (): void {
     if (!function_exists('is_checkout') || !is_checkout()) {
         return;
@@ -174,7 +174,7 @@ add_action('wp_enqueue_scripts', static function (): void {
 .afas-checkout-cols .input-text:focus,
 .afas-checkout-cols select:focus,
 .afas-checkout-cols textarea:focus {
-    border-color: #da171f;
+    border-color: #0c71c3;
     outline: none;
 }
 .afas-checkout-cols .form-row {
@@ -187,17 +187,46 @@ add_action('wp_enqueue_scripts', static function (): void {
     border: none;
 }
 
-/* --- knoppen: GEEN eigen kleuren/vormen. Divi + het divicommerce-childthema
-       stylen `.button` al in de huisstijl (rood #da171f, blokvorm, Lato 16/700
-       uppercase, letter-spacing 1px) — zie de gewone winkelwagen. De
-       leflite-knoppen van de plugin (`btn bg-primary`) kent het thema niet;
-       die krijgen hieronder via JS de class `button` erbij, zodat ze exact
-       hetzelfde ogen inclusief hover. Cas 14 sep: eigen rood/ronde hoeken
-       "lijkt niet in de huisstijl". --- */
-.afas-checkout-cols .btn.bg-primary {
+/* --- knoppen: exact de blauwe "Add to cart"-knop van de productpagina
+       (Cas 14 sep: "zoals hier zijn ze blauw, maak ze zo" — bv.
+       /product/cardiac-science-powerheart-g3-elektroden/). Dat blauw komt uit
+       Divi's productpagina-stijl (`.single_add_to_cart_button`), een selector
+       die de checkout niet heeft; de waarden staan daarom hier letterlijk.
+       Het rood van `.button` elders op de site is bewust NIET overgenomen. --- */
+.afas-checkout-cols .btn,
+.afas-checkout-cols .btn.bg-primary,
+.afas-checkout-cols button.button,
+.afas-checkout-cols a.button,
+.woocommerce-checkout .checkout_v1 .afas-checkout-cols #payment #place_order {
     display: inline-block;
+    background: #0c71c3 !important;
+    color: #fff !important;
+    border: 0 !important;
+    border-radius: 3px !important;
+    padding: 10px 16px !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    line-height: 1.7em;
+    letter-spacing: 1px !important;
+    text-transform: uppercase !important;
     text-decoration: none;
     cursor: pointer;
+    transition: background .15s;
+}
+/* het childthema zet met !important een kleinere padding op `a.button`;
+   deze selector is specifieker, zodat de adresknoppen even hoog zijn als
+   PLACE ORDER en de productpagina-knop */
+.woocommerce-checkout .checkout_v1 .afas-checkout-cols a.btn,
+.woocommerce-checkout .checkout_v1 .afas-checkout-cols button.btn {
+    padding: 10px 16px !important;
+}
+.afas-checkout-cols .btn:hover,
+.afas-checkout-cols .btn.bg-primary:hover,
+.afas-checkout-cols button.button:hover,
+.afas-checkout-cols a.button:hover,
+.woocommerce-checkout .checkout_v1 .afas-checkout-cols #payment #place_order:hover {
+    background: #0a5c9e !important;
+    color: #fff !important;
 }
 .woocommerce-checkout .checkout_v1 .afas-checkout-cols #payment #place_order {
     width: 100%;
@@ -217,23 +246,28 @@ add_action('wp_enqueue_scripts', static function (): void {
 .afas-checkout-cols .custom_point_checkout.woocommerce-info.wps_wpr_checkout_points_class {
     background: #fff !important;
     border: 1px solid #e2e2e2 !important;
-    border-left: 3px solid #da171f !important;
+    border-left: 3px solid #0c71c3 !important;
     color: #333 !important;
 }
 .afas-checkout-cols button#wps_cart_points_apply,
 .afas-checkout-cols .wps_cart_points_apply {
-    /* het points-plugin zet hier met !important een blauwe pil neer; terug naar
-       exact de knopstijl van de shop zelf (waarden uit de gewone winkelwagen) */
+    /* het points-plugin zet hier een eigen blauwe pil neer met afwijkende vorm;
+       gelijktrekken met de knopstijl hierboven */
     width: auto !important;
-    background: #da171f !important;
+    background: #0c71c3 !important;
     color: #fff !important;
     border: 0 !important;
-    border-radius: 0 !important;
-    padding: .3em 1em !important;
+    border-radius: 3px !important;
+    padding: 10px 16px !important;
     font-size: 16px !important;
     font-weight: 700 !important;
     letter-spacing: 1px !important;
     text-transform: uppercase !important;
+}
+.afas-checkout-cols button#wps_cart_points_apply:hover,
+.afas-checkout-cols .wps_cart_points_apply:hover {
+    background: #0a5c9e !important;
+    color: #fff !important;
 }
 
 /* --- dubbel puntenblok bovenaan de checkout. Dit blok komt NIET van een
@@ -311,7 +345,7 @@ add_action('wp_enqueue_scripts', static function (): void {
 .afas-checkout-cols .woocommerce-info {
     background: #fff !important;
     border: 1px solid #e2e2e2 !important;
-    border-left: 3px solid #da171f !important;
+    border-left: 3px solid #0c71c3 !important;
     border-radius: 4px;
     color: #333 !important;
     padding: 12px 16px !important;
@@ -324,7 +358,7 @@ add_action('wp_enqueue_scripts', static function (): void {
     display: none !important;
 }
 .afas-checkout-cols .woocommerce-info a {
-    color: #b0141a;
+    color: #0c71c3;
     font-weight: 600;
     text-decoration: underline;
 }
