@@ -589,6 +589,27 @@ tabellen nog niet — na de 2.0.7-upgrade opnieuw checken); wél 115
   alleen op de overgang *naar* processing (`woocommerce_order_status_processing`,
   trigger-status `processing`), en geen enkele order droeg `_afas_push_status`.
   Resteert: 588 completed, 119 on-hold, 8 pending, 2 cancelled.
+- **Slot uitgevoerd 11:4x** (`stap19 75 apply`): order-push aan, administratie 9,
+  vrije velden met Bron Order 75, intervallen 604800 → 900, `disable-emails`
+  gedeactiveerd (mail aan). Alle 14 sync-taken opnieuw ingepland.
+- **Push bewezen:** testorder 107430 → AFAS-verkooporder **60108267**,
+  verkooprelatie 31239, order daarna automatisch `completed` met
+  `_afas_push_status = pushed` (`complete_on_push`). Kanttekening: de
+  Action-Scheduler-actie bleef eerst hangen door **verouderde claims uit maart
+  2024** in `wp_actionscheduler_claims` ("There are too many concurrent
+  batches"); claims opgeruimd, job daarna handmatig gedraaid (1 poging), en de
+  dubbele pending-actie geannuleerd zodat er geen tweede push volgt. De
+  scheduler draait sindsdien normaal (2427 acties afgerond in 10 min).
+  **Les voor volgende migraties: `wp_actionscheduler_claims` opschonen vóór het
+  slot** — verouderde claims blokkeren élke nieuwe batch, dus ook de order-push.
+- **Neveneffect van het trashen (belangrijk):** de shop heeft een **actieve
+  webhook `order.updated` naar `https://api.improvit.nl/defibrion/…`** (sinds
+  15 feb 2024). Het trashen van 1576 orders zette 1577 afleveringen in de
+  wachtrij; **844 zijn al verzonden** voordat ik ze zag, 733 heb ik geannuleerd.
+  Improvit heeft dus ~844 "order gewijzigd"-meldingen gekregen over orders die
+  zojuist verwijderd zijn. Cas informeert Improvit. Les: bij bulkbewerkingen op
+  orders eerst `wp_wc_webhooks` controleren en de webhook tijdelijk op `paused`
+  zetten.
 - **Nog te doen in het venster:** testorder door Cas (COD, push staat uit) →
   `stap19 75 apply` → testorder opnieuw (push naar AFAS bewijzen) →
   Cloudflare-redirects `www.defibsolutions.eu/shop*` en
