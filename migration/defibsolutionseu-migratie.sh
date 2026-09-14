@@ -490,6 +490,7 @@ _EU_MU_PLUGINS=(
     afas-preview-winkelmanager.php shop-manager-login-as-klant.php
     wcpt-cli-cache-fix.php points-pro-variable-price-fix.php
     afas-prijzen-orderby.php defibseu-checkout-restyle.php
+    afas-checkout-billing-country.php
 )
 _EU_MU_VERBODEN=(defibs-checkout-restyle.php defibs-product-restyle.php
     defibs-login-fix.php checkout-coupon-points-right.php)

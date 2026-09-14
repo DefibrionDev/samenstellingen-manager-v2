@@ -553,6 +553,22 @@ tabellen nog niet — na de 2.0.7-upgrade opnieuw checken); wél 115
   `private_site: true` kwam mee uit de live-database; anonieme bezoekers
   belanden op `wp-login.php`. Besluit "muur behouden?" stond al open (B-punt)
   en is hiermee *niet* stilzwijgend gewijzigd.
+- **Blokkade bij de eerste testorder (11:2x), opgelost:** "Billing Postcode /
+  ZIP is not a valid postcode / ZIP". Oorzaak: lefcreative vult de
+  factuurvelden van de WC-sessie alleen als ze **leeg** zijn
+  (`CheckoutAddressSelectorBlocks`); adres/postcode/plaats zijn in een verse
+  sessie leeg en komen dus uit de AFAS-usermeta, maar het land niet — daar
+  staat al het winkelland NL. Resultaat: factuurland NL naast postcode 8260
+  (Viby J, DK) → WooCommerce toetst een Deense postcode tegen het NL-formaat.
+  Het verzendland stond wél goed (dat komt uit de AFAS-adreskiezer). Dit raakt
+  **elke buitenlandse klant**, dus de hele EU-shop, en verkeerde btw-/
+  verzendberekening (die gaan op het factuurland van de sessie).
+  Fix: mu-plugin `afas-checkout-billing-country.php` (in de stap7-EU-lijst)
+  zet het sessie-factuurland gelijk aan de AFAS-usermeta bij
+  `woocommerce_checkout_init`, `woocommerce_before_checkout_process` en op
+  cart/checkout-load. Geverifieerd door de checkout server-side te renderen met
+  een auth-cookie: billing_country DK, postcode 8260. De factuurvelden zijn
+  AFAS-gedreven en read-only, dus er wordt geen klantkeuze overschreven.
 - **Nog te doen in het venster:** testorder door Cas (COD, push staat uit) →
   `stap19 75 apply` → testorder opnieuw (push naar AFAS bewijzen) →
   Cloudflare-redirects `www.defibsolutions.eu/shop*` en
