@@ -809,6 +809,64 @@ Migrater-config `config-defibsolutionseu.ini` heeft [destination] +
        t/m AFAS, steekproeven) → mail aan, monitoren.
 4. [ ] Na een week stabiel: B2BKing-plugins + overbodige data eruit.
 
+## Fase 3 — klantmigratie defibsolutions.de → .eu (15 sep 2026)
+
+De DACH-klanten van de oude shop defibsolutions.de gaan mee naar .eu. Bron:
+Google Sheet "Migratie defibsolutions.de → .eu" (tab `gid=1322234042`).
+**Kolom `Akkoord Martina` = `ok` is leidend**, niet kolom `Besluit`: 34 rijen
+staan op `ok`, waaronder 5 die in `Besluit` "Niet uitnodigen" zijn (PRODOC24,
+Fleischhacker, Prominis, CAmed, Beerwald) en Wero ("Voorleggen"). Besluit Cas
+15 sep: die gaan gewoon mee.
+
+### Koppelmethode (anders dan B4)
+
+Geen orderhistorie-methode: de sheet geeft e-mailadressen, dus gematcht op
+`E-mail_werk` van de verkooprelatie, met domein-match en de AFAS-contact-
+personen als tweede/derde net. Bij dubbele relaties per bedrijf is gekozen op
+twee criteria die samenvielen:
+
+- **`Profiel` = `DS EU`** — 27 van de 28 al gekoppelde EU-klanten hebben dat
+  profiel; de dubbelen dragen `EU DE ARKY` / `DE DE ARKY` / `EG NL`.
+- **de meeste AFAS-orders** — bij meerdere `DS EU`-dubbelen (reaplus,
+  SBS, Medical Point, Status 6, RIUX MED) had er steeds precies één
+  orderhistorie en de rest nul.
+
+Resultaat: 32 van de 34 eenduidig; alle 32 unieke debiteurnummers.
+Mapping: `work/defibsolutionseu-de-migratie-relatie-mapping.csv`.
+
+### Uitgevoerd 15 sep
+
+- `afas-connector-tools/bin/apply-defibsolutionseu-de-migratie-relatie-vlaggen.php`
+  (kopie van het EU-script, andere CSV/resultaatpad) — dry-run, daarna
+  `--apply`: **32 ok, 0 fail**. Geverifieerd met een verse `Get_Verkooprelaties`:
+  32/32 hebben Sync + Tonen Defibsolutions EU aan, totaal nu 60 relaties,
+  0 met Sync/Tonen uit balans.
+- Shop-kant liep vanzelf mee (sync-interval staat live op 900 s):
+  `wp_lef_afas_verkooprelaties` = 60 en 32/32 hebben een account met
+  `afas_relatie_id`. Landcodes vertaald (D→DE, CH→CH, A→AT), factuuradres
+  en bedrijfsnaam staan op de accounts. Stap3 was hier dus niet nodig —
+  de plugin maakt de accounts zelf aan zodra de vlaggen aan staan.
+
+### Openstaand
+
+1. **Uitnodigingsmails** naar de 28 "Uitnodigen"-klanten. De accounts bestaan,
+   maar wachtwoorden komen niet mee van .de.
+2. **Let op afwijkende e-mailadressen**: de sync zet het AFAS-adres op het
+   account, dat wijkt soms af van het shop-adres in de sheet (31387
+   `einkauf@mediparts24.de` vs sheet `meyer@meddax24.de`; 32219
+   `stefan.schneider@sbs-rettungsschule.ch` vs sheet
+   `leitung@rettungsschulen.ch`). Controleer dit vóór de mailing.
+3. **2 klanten bij Martina** (mail verstuurd 15 sep, handoff
+   `work/handoff-mailer-martina-afas-id-2-klanten.md`):
+   - Medplus24 — shopmail `einkauf@medplus24.de` bestaat niet in AFAS;
+     kandidaten 31226 (DS EU) / 36779 (DE DE ARKY), beide MedPlus
+     Medizintechnik GmbH met Gabriel Oehme als contactpersoon.
+   - Riux Rescue — Mathis Jordan hangt aan 37855 (profiel `EG NL`, 0 orders);
+     collega Maurice Becker aan 37945 RIUX MED (`DS EU`, 9 orders). Eén
+     bedrijf of twee?
+4. **Checkout-test met een CH-klant**: 9 van de 32 zijn Zwitsers (btw-plicht 4,
+   buiten de EU). Die combinatie stond nog niet op .eu.
+
 ## Afbakening (uit de handoff)
 
 Niet aankomen: NL-kopie (8897), cp-01-site `defibsolutionsnl`, reseller
