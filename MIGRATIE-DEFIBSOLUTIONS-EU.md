@@ -831,8 +831,18 @@ twee criteria die samenvielen:
   SBS, Medical Point, Status 6, RIUX MED) had er steeds precies één
   orderhistorie en de rest nul.
 
-Resultaat: 32 van de 34 eenduidig; alle 32 unieke debiteurnummers.
-Mapping: `work/defibsolutionseu-de-migratie-relatie-mapping.csv`.
+Resultaat: 32 van de 34 eenduidig; alle 32 unieke debiteurnummers. De 2
+resterende zijn door Martina beslist (mail 15 sep 10:53):
+
+- **Medplus24** → **31226** (MedPlus Medizintechnik GmbH). Let op: het
+  AFAS-mailadres is `einkauf@medplus.de`, niet het shop-adres
+  `einkauf@medplus24.de`.
+- **Riux Rescue** → "this is indeed one company, let's use only 37945 moving
+  forward". Dus Mathis Jordan en Maurice Becker delen relatie **37945**
+  (RIUX MED); **37855 blijft bewust uit**.
+
+Mapping: `work/defibsolutionseu-de-migratie-relatie-mapping.csv` (33 regels,
+32 unieke relaties — Riux Rescue en maurice.becker wijzen beide op 37945).
 
 ### Uitgevoerd 15 sep
 
@@ -846,6 +856,9 @@ Mapping: `work/defibsolutionseu-de-migratie-relatie-mapping.csv`.
   `afas_relatie_id`. Landcodes vertaald (D→DE, CH→CH, A→AT), factuuradres
   en bedrijfsnaam staan op de accounts. Stap3 was hier dus niet nodig —
   de plugin maakt de accounts zelf aan zodra de vlaggen aan staan.
+- Na Martina's antwoord dezelfde dag **31226** erbij gezet (script idempotent:
+  32 geskipt, 1 ok, 0 fail). Verse pull: 33/33 aan, totaal **61** relaties met
+  Sync + Tonen Defibsolutions EU; 37855 staat bewust op False.
 
 ### Openstaand
 
@@ -856,14 +869,7 @@ Mapping: `work/defibsolutionseu-de-migratie-relatie-mapping.csv`.
    `einkauf@mediparts24.de` vs sheet `meyer@meddax24.de`; 32219
    `stefan.schneider@sbs-rettungsschule.ch` vs sheet
    `leitung@rettungsschulen.ch`). Controleer dit vóór de mailing.
-3. **2 klanten bij Martina** (mail verstuurd 15 sep, handoff
-   `work/handoff-mailer-martina-afas-id-2-klanten.md`):
-   - Medplus24 — shopmail `einkauf@medplus24.de` bestaat niet in AFAS;
-     kandidaten 31226 (DS EU) / 36779 (DE DE ARKY), beide MedPlus
-     Medizintechnik GmbH met Gabriel Oehme als contactpersoon.
-   - Riux Rescue — Mathis Jordan hangt aan 37855 (profiel `EG NL`, 0 orders);
-     collega Maurice Becker aan 37945 RIUX MED (`DS EU`, 9 orders). Eén
-     bedrijf of twee?
+3. ~~2 klanten bij Martina~~ — **afgehandeld 15 sep**, zie hierboven.
 4. **Checkout-test met een CH-klant**: 9 van de 32 zijn Zwitsers (btw-plicht 4,
    buiten de EU). Die combinatie stond nog niet op .eu.
 

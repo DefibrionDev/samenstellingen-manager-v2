@@ -1,3 +1,13 @@
+# AFGEHANDELD (15 sep): mail verstuurd én beantwoord
+
+Martina antwoordde 15 sep 10:53 (thread `1a0a42c220aedb91`):
+**Medplus24 → 31226**; **Riux Rescue → "this is indeed one company, let's use
+only 37945 moving forward"**. Beide verwerkt: 31226 gevlagd (Sync + Tonen
+Defibsolutions EU), 37855 bewust uit. Zie de fase-3-paragraaf in
+`MIGRATIE-DEFIBSOLUTIONS-EU.md`. Onderstaande briefing is historie.
+
+---
+
 # Handoff mailer-agent: mail aan Martina — AFAS-debiteurnummer voor 2 klanten
 
 Nieuwe mail aan **martina@defibrion.nl** (afzender: Cas). Onderwerp-suggestie:
